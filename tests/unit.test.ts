@@ -166,38 +166,6 @@ describe("content", () => {
   });
 });
 
-/**
- * The build has to survive having no embedding key.
- *
- * CI has no NVIDIA_API_KEY, so build-index emits a lexical-only index with
- * `vectors: null`. build-field read `.length` off that null and took the whole
- * pipeline down, which broke the rule the rest of this repo runs on: a missing
- * key degrades, it does not fail. Caught in CI rather than locally, because a
- * local build always has the key.
- */
-describe("keyless build", () => {
-  test("field.json tolerates an index with no vectors", () => {
-    const field = JSON.parse(
-      readFileSync(join(process.cwd(), "lib/agent/field.json"), "utf8"),
-    );
-    // Either a real projection with a stress figure, or an explicit null. Never
-    // a number invented to fill the gap.
-    assert.ok(field.method === "classical-mds" || field.method === "lexical-only");
-    if (field.method === "lexical-only") {
-      assert.equal(field.stress, null, "no vectors means no stress to report");
-    } else {
-      assert.ok(typeof field.stress === "number" && field.stress > 0);
-    }
-    assert.ok(Array.isArray(field.points) && field.points.length > 0);
-  });
-
-  test("build-field guards the null-vector path explicitly", () => {
-    const src = readFileSync(join(process.cwd(), "scripts/build-field.ts"), "utf8");
-    assert.match(src, /if \(!vectors\)/, "the guard must exist, not be implied by types");
-  });
-});
-
-
 describe("corpus directives", () => {
   test("@ask seeds parse and point at a real section", () => {
     const { sections } = loadContent();

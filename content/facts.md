@@ -60,8 +60,11 @@ Role: AI Engineer, Graduate Researcher. May 2026 to present. Boston, MA.
 
 @ask When is multi-agent orchestration worth the coordination cost? | Boston University, Questrom Computational Lab
 
-He architected a document intelligence assistant for an enterprise consulting client, on Azure,
-**owned from ingestion through deployment.**
+**He built a document intelligence assistant on Azure for an enterprise consulting client, owned
+from ingestion through deployment:** a LangGraph agent exposing 14 tools for document question
+answering, cross-document comparison and template-driven generation, grounded by hybrid BM25 and
+vector retrieval with Cohere re-ranking, guarded by PII and entity redaction, and scored for
+hallucination rate by LLM-as-a-Judge evaluations.
 
 The constraint: consultants needed answers grounded in a large private document corpus, where a
 wrong answer delivered confidently is worse than no answer.
@@ -89,10 +92,6 @@ Role: Software Engineering Intern. August 2024 to April 2025. Remote.
 @metric 95% | schema accuracy, up from 75-78% | resume
 @metric 5,000+ | profiles parsed per month
 @metric -25% | REST API latency
-@metric +20% | match accuracy on collaborative filtering, false positives down 18% | resume
-@metric +30% | throughput on the REST microservices | resume
-@metric 12+ hours | saved per week by workflow automation | resume
-@metric 8 sprints | delivered at 95% on-time | resume
 
 @ask What did he over-engineer at IMG, and how did he find out? | IMG Systems
 
@@ -147,7 +146,11 @@ Stack: React, Redux, MySQL, Redis, Node.js, JWT, RBAC, AWS EC2 and S3.
 
 ## BU Life AI
 
-A multi-agent campus assistant for Boston University students. January 2026 to present. Live.
+**A live multi-agent campus assistant for Boston University students, running since January
+2026:** a LangGraph supervisor classifies intent and routes to one of three specialised ReAct
+agents for places, resources and events, each on its own thread so concurrent users never share
+state, retrieving over NVIDIA NV-Embed 1024-dimension vectors in pgvector fused with BM25, which
+cut redundant LLM calls 70 percent.
 
 @metric -70% | redundant LLM calls
 @metric 3 | specialised agents, isolated state
@@ -184,7 +187,9 @@ pooling. He has not needed it yet and has not pretended otherwise.
 
 ## Open source, LangChain deepagents
 
-He found and root-caused a silent error-swallowing bug in LangChain's deepagents SDK.
+**He found and root-caused a silent error-swallowing bug in LangChain's deepagents SDK, and a
+maintainer merged the fix 57 hours after he reported it,** crediting his reproduction in the pull
+request body.
 
 @metric 57 hours | from his report to a merged fix | https://github.com/langchain-ai/deepagents/pull/4925
 @metric 3 | places the file already contradicted itself | https://github.com/langchain-ai/deepagents/issues/4846
@@ -389,7 +394,7 @@ automated.** A link checker resolves every external URL and fails on a dead one.
 A facts gate fails the build when the page renders a section the corpus lacks,
 when a metric carries no source, when the availability date has passed, or when
 a resume keyword has gone missing from this file. A token linter fails on a
-colour written outside the stylesheet. An audit runs 112 structural
+colour written outside the stylesheet. An audit runs 106 structural
 checks. The evaluation suite runs 25, five times each. None of it makes the work better; all
 of it stops the page describing work that is not there.
 

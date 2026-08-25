@@ -838,3 +838,87 @@
   color: var(--ink-faint);
   font-variant-numeric: tabular-nums;
 }
+
+/* The tool registry, made visible.
+ *
+ * A capability nobody can see is a capability nobody uses: the agent has been
+ * able to open a merged pull request, either publication, the source for this
+ * page or a written email since it was built, and the only way to find that
+ * out was to guess the right sentence. Closed by default because it is an
+ * offer rather than the main event, and the count in the summary is what makes
+ * it worth opening.
+ */
+.toolkit {
+  margin-top: 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+
+.toolkitSummary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0.7rem;
+  cursor: pointer;
+  font-family: var(--font-mono), monospace;
+  font-size: var(--step--1);
+  color: var(--ink);
+}
+
+.toolkitSummary::-webkit-details-marker {
+  display: none;
+}
+
+/* Says it is clickable in words as well as in shape. A row of links inside a
+   dark console reads as output until something tells the reader otherwise. */
+.toolkitHint {
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+}
+
+.toolkit[open] .toolkitHint {
+  opacity: 0;
+}
+
+.tools {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.7rem 0.6rem;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.tool {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 2px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid transparent;
+}
+
+.tool:hover,
+.tool:focus-visible {
+  border-color: var(--rule);
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
+}
+
+.toolLabel {
+  font-family: var(--font-mono), monospace;
+  font-size: var(--step--1);
+  /* Underlined rather than coloured: the accent on this page means "live", and
+     a link that is merely available has not earned it. */
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-color: var(--rule);
+}
+
+.toolAbout {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--ink-faint);
+}

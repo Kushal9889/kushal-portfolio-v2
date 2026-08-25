@@ -6,6 +6,7 @@ import { isAcceptance, type Offer } from "@/lib/agent/offers";
 import type { ToolResult } from "@/lib/agent/tools";
 import { listen, speak, silence, speechSupported, synthesisSupported, warmNeural } from "@/lib/voice/speech";
 import { track, trackOnce } from "@/lib/analytics";
+import { mailtoLink } from "@/lib/reach";
 import styles from "./Agent.module.css";
 
 type Result = {
@@ -108,7 +109,20 @@ export type TelemetryPing = {
   provider: string | null;
 };
 
-export default function Agent({ email, linkedin }: { email: string; linkedin: string }) {
+type Openable = { key: string; label: string; url: string; about: string };
+
+export default function Agent({
+  email,
+  linkedin,
+  site,
+  openable,
+}: {
+  email: string;
+  linkedin: string;
+  site: string;
+  /** The tool registry, as things a reader can open without asking first. */
+  openable: Openable[];
+}) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [pending, setPending] = useState(false);
   const [openTrace, setOpenTrace] = useState<number | null>(null);
@@ -141,6 +155,21 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
    * the submit handler -- one await in between and the popup is blocked.
    */
   const pendingOpen = useRef<Extract<Offer, { kind: "open" }> | null>(null);
+
+  /*
+   * Tells the motion layer to stand down while an answer is in flight.
+   *
+   * lib/motion.ts re-measures every ScrollTrigger whenever the document
+   * changes height, and a streaming answer changes it on nearly every token,
+   * so the page was running a full layout pass per frame for the length of an
+   * answer. Driven off `pending` in an effect rather than set beside each
+   * setPending call: there are three of those, one of them an error path, and
+   * a flag left set would silently freeze re-measurement for the rest of the
+   * session.
+   */
+  useEffect(() => {
+    document.documentElement.dataset.streaming = pending ? "yes" : "no";
+  }, [pending]);
 
   // Capability is read after mount: it differs per browser, and rendering a
   // control on the server that will not work on the client is worse than not
@@ -244,11 +273,18 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
      * attempt should have finished, an instant scroll finishes the job.
      */
     if (!calm) {
+      const before = window.scrollY;
       setTimeout(() => {
-        const stillOffscreen =
+        // Only when the smooth attempt did nothing at all. The earlier version
+        // re-checked "is it offscreen" alone, which is also true whenever a
+        // long answer has grown the agent past the viewport while the reader is
+        // reading it -- so a correction meant for a scroll that never started
+        // fired mid-answer and yanked the page instead.
+        const neverMoved = Math.abs(window.scrollY - before) < 2;
+        const offscreenNow =
           root.getBoundingClientRect().top < 0 ||
           root.getBoundingClientRect().top > window.innerHeight * 0.6;
-        if (stillOffscreen) {
+        if (neverMoved && offscreenNow) {
           root.scrollIntoView({ behavior: "auto", block: "center" });
         }
       }, 700);
@@ -676,6 +712,53 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
           <span>every answer opens its own</span>
         </li>
       </ul>
+
+      {/* The registry, as controls rather than as a capability the reader has
+          to discover by guessing.
+          
+          These are the exact targets `open_evidence` routes over, and the
+          draft `compose_intro` writes. Both were reachable only by asking for
+          them in words -- the agent would open a merged pull request on
+          request and nothing on screen said so, which makes a working tool
+          layer indistinguishable from an absent one. Rendered as real links,
+          so they are visibly clickable, open without spending a model call,
+          and cannot offer anything the tool itself could not. */}
+      <details className={styles.toolkit}>
+        <summary className={styles.toolkitSummary}>
+          <span>{openable.length + 1} things it can open for you</span>
+          <span className={styles.toolkitHint}>click any of them</span>
+        </summary>
+        <ul className={styles.tools}>
+          {openable.map((t) => (
+            <li key={t.key}>
+              <a
+                className={styles.tool}
+                href={t.url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => track("contact", `toolkit-${t.key}`)}
+              >
+                <span className={styles.toolLabel}>{t.label}</span>
+                {/* What it is, in the words the registry uses to route on it. */}
+                <span className={styles.toolAbout}>{t.about}</span>
+              </a>
+            </li>
+          ))}
+          <li>
+            <a
+              className={styles.tool}
+              href={mailtoLink(email, site, "general")}
+              onClick={() => track("contact", "toolkit-draft")}
+            >
+              <span className={styles.toolLabel}>A written email to him</span>
+              <span className={styles.toolAbout}>
+                Opens your mail app with the message already drafted. Nothing is sent by this
+                site, and you can edit every word.
+              </span>
+            </a>
+          </li>
+        </ul>
+      </details>
 
       {/* Suggestions, until there is something better to look at.
           They rendered unconditionally before, so the same four cards sat above

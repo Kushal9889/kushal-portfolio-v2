@@ -789,6 +789,22 @@ hr {
   animation-delay: calc(var(--rise-n, 0) * 70ms);
 }
 
+/* Smooth scrolling, and room for the sticky rails to sit above an anchor.
+ *
+ * The page never had either. Every jump link -- the palette's, the section
+ * permalinks, the skip link -- teleported, which on a 14,000px document reads
+ * as the page having flinched rather than moved, and the destination heading
+ * then landed underneath the sticky section rail that was already there.
+ * scroll-padding-top is the same measurement the rails pin to.
+ *
+ * Overridden to `auto` in the reduced-motion block below, which is why that
+ * block already carries the property.
+ */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: clamp(1.5rem, 6vh, 3rem);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

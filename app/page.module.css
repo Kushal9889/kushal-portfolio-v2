@@ -72,6 +72,12 @@
   margin-bottom: 1.25rem;
 }
 
+/* The employer, repeated over its own figures. Only earns its place on a wide
+   screen, where the identity has moved into the sticky rail. */
+.roleTag {
+  display: none;
+}
+
 /* The job title leads. It is the line a recruiter is actually looking for, so
    it is set at heading scale rather than as a caption under the employer.
  *
@@ -201,54 +207,206 @@
   }
 
   /*
-   * Rail and content, as two columns of one grid -- not three self-contained
-   * role cards.
+   * Rail and content, two columns of one grid, with the rail sticky as a
+   * single unit.
    *
-   * A sticky element can only stay stuck within its own containing block, and
-   * a per-role grid (the earlier version of this) gives each role's identity
-   * a containing block scoped to that one role's height. It stuck correctly
-   * while scrolling through its own role, then let go the moment the reader
-   * scrolled into the next one -- measured live: the identity block vanished
-   * partway down IMG Systems and left blank space in the rail where AI
-   * Engineer had been, because AI Engineer's own containing block had already
-   * ended.
+   * Three earlier shapes each failed a different way. A per-role grid let
+   * each identity go the moment its own role ended, leaving a blank rail.
+   * One shared full-height box fixed that but put all three titles on screen
+   * from the first moment, so nothing accumulated. Giving each role its own
+   * cell spanning to the last row fixed the reveal, then unstuck them in
+   * reverse order at the section's end -- the third identity came loose 260px
+   * before the first and rode up through the two above it. Padding the cells
+   * to equalise that made it worse still: a sticky element is bounded by its
+   * container's CONTENT box, so padding shortens the range rather than
+   * extending it.
    *
-   * Every role's identity is meant to stay visible once reached, piling up as
-   * the reader scrolls through Work, not swapping out for the next one. That
-   * needs one containing block shared by every role, tall enough to hold all
-   * three, and .roleRail below is what supplies it: with only two children in
-   * this grid (.roleRail, .roleContentCol), the row auto-sizes to the taller
-   * one, which is always .roleContentCol -- so the rail's own box stretches to
-   * match it (the grid default is align-items: stretch, left alone here on
-   * purpose) and its three .roleHead children, normal flow inside that tall
-   * box, can each stick anywhere within the whole thing.
+   * One sticky element holding three children in normal flow has neither
+   * problem. There is a single containing block, so the stack arrives and
+   * leaves as one thing, and the accumulation is done by revealing each
+   * identity as its role is reached rather than by positioning three separate
+   * sticky boxes against each other.
    */
   .roles {
     display: grid;
     grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    grid-template-rows: repeat(var(--role-count, 3), auto);
     column-gap: clamp(1.5rem, 2.5vw, 2.5rem);
   }
 
   .roleRail {
     grid-column: 1;
+    grid-row: 1 / -1;
+    position: sticky;
+    top: var(--role-stack-base);
+    /* Its own height, not the row's: a stretched sticky box has no room to
+       travel inside its own containing block. */
+    align-self: start;
   }
 
-  .roleContentCol {
+  .roleContent {
     grid-column: 2;
+    grid-row: var(--row);
   }
 
   .roleHead {
     display: block;
-    position: sticky;
     /*
-     * --role-stack-offset is a per-role cumulative height set by
-     * WorkStack.tsx: the first role gets 0, the second gets the first role's
-     * rendered height, and so on, so each role's line sits directly under
-     * the one before it rather than on top of it. The fallback of 0px covers
-     * the instant before that script has measured anything, which is also
-     * exactly right for the first role.
+     * Collapsed until the reader reaches this role, then opened. The
+     * identities are still in the document and still in the accessibility
+     * tree while collapsed -- this is a visual reveal, not a mount, so a
+     * screen reader gets all three headings on arrival regardless of scroll
+     * position.
      */
-    top: calc(var(--role-stack-base) + var(--role-stack-offset, 0px));
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    /*
+     * The same reveal for every role, stepping down with depth.
+     *
+     * The current role gets the full movement and the full duration; each
+     * older one arrives a little quicker and travels a little less, so the
+     * newest job is the one that announces itself and the two behind it
+     * settle in rather than compete. One declaration rather than three,
+     * scaled off the same --depth the indent already uses.
+     */
+    transform: translateY(calc(-0.4rem + var(--depth, 0) * 0.1rem));
+    transition:
+      max-height calc(0.34s - var(--depth, 0) * 0.06s) ease,
+      opacity calc(0.34s - var(--depth, 0) * 0.06s) ease,
+      transform calc(0.34s - var(--depth, 0) * 0.06s) ease;
+
+    /*
+     * Three titles in one column have to be told apart at a glance, and each
+     * cue carries a different fact rather than repeating one three times.
+     * The rule on the left is full ink and twice the weight for the current
+     * role against a hairline for past ones, so which job he holds now reads
+     * without reading a date. The indent steps back one notch per role, so
+     * depth in the stack reads as depth in time. Size is set below.
+     *
+     * Deliberately not --mark. That accent is reserved to claims a reader can
+     * go and check, which check 12.10 enforces; "this is the current role" is
+     * state, and spending the evidence colour on it would blunt the one cue
+     * the page uses to mean "verifiable".
+     */
+    margin-left: calc(var(--depth, 0) * 0.9rem);
+    border-left: 1px solid var(--rule);
+    padding-left: 0.85rem;
+  }
+
+  .roleHead[data-revealed="yes"] {
+    /* A ceiling, not a measurement: max-height cannot transition from a
+       computed height, and the tallest identity measures well under this. */
+    max-height: 16rem;
+    opacity: 1;
+    transform: none;
+    padding-block: 0.4rem 0.5rem;
+  }
+
+  .roleHead:not([data-past]) {
+    border-left-width: 2px;
+    border-left-color: var(--ink);
+  }
+
+  /*
+   * The role being read, against the roles already read.
+   *
+   * Revealing the titles solved arriving; it did not solve reading. With
+   * three stacked, "14 tools on one LangGraph agent" sat level with a list
+   * of three jobs and nothing tied it to the first one -- the pairing that
+   * vertical adjacency normally carries is exactly what a sticky stack
+   * gives up. Weight follows the description currently under the reader's
+   * eye, so the rail always answers "whose numbers are these".
+   *
+   * Ink and weight only. This is a reading position, not a checkable claim,
+   * so it stays off the evidence accent (check 12.10).
+   */
+  /*
+   * The stack darkest at the top, lightening downward.
+   *
+   * Depth in the stack is depth in time, and the ink ramp already means
+   * "how much of your attention this wants", so the newest role is set in
+   * full ink and each older one steps back one tone. Read top to bottom the
+   * gradient is the career in the right order without a date being read.
+   *
+   * Which role is being read is carried by the rule on the left instead of
+   * by colour: an earlier version swapped the active title to full ink,
+   * which fought this gradient every time the reader moved between roles and
+   * made the stack flicker between two orderings.
+   */
+  .roleRail > .roleHead:nth-child(2) .roleName,
+  .roleRail > .roleHead:nth-child(2) .roleMeta {
+    color: var(--ink-soft);
+  }
+
+  .roleRail > .roleHead:nth-child(3) .roleName,
+  .roleRail > .roleHead:nth-child(3) .roleMeta {
+    color: var(--ink-faint);
+  }
+
+  .roleHead[data-active="no"] {
+    border-left-width: 1px;
+    border-left-color: var(--rule);
+  }
+
+  .roleHead[data-active="yes"] {
+    border-left-width: 2px;
+    border-left-color: var(--ink);
+  }
+
+  /* The job title leads the tag, the employer follows it, same order as the
+     rail. It is the line a recruiter scans for, so it is the one set in ink. */
+  .roleTagRole {
+    color: var(--ink);
+  }
+
+  .roleTag {
+    display: block;
+    font-family: var(--font-mono), monospace;
+    font-size: var(--step--1);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .roleHead {
+      transition: none;
+      transform: none;
+    }
+  }
+
+  /*
+   * Rail typography is set for a stack, not for a single heading.
+   *
+   * At the page's normal role sizes the three identities measured 274, 137
+   * and 156 pixels, so once all three were open they held 567px -- most of a
+   * 900px viewport, leaving the description they label almost nothing to
+   * show in. Most of it was the meta line: a 240px rail wraps "Boston
+   * University, Questrom Computational Lab" over four lines at body size.
+   */
+  .roleHead .roleName {
+    font-size: 1.2rem;
+    line-height: 1.18;
+  }
+
+  .roleHead[data-past] .roleName {
+    font-size: var(--step-0);
+  }
+
+  .roleHead .roleMeta {
+    display: block;
+    font-size: var(--step--1);
+    line-height: 1.3;
+    margin-top: 0.2rem;
+  }
+
+  .roleHead .company {
+    display: block;
+    font-size: inherit;
   }
 
   .roleHeadMobile {

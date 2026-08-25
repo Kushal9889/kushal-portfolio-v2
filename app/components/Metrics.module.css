@@ -72,14 +72,15 @@ a.source:hover {
 
 /* A figure carries the accent when, and only when, it carries a source.
  *
- * Colouring every number would flood the page and cost the accent its meaning,
- * which is the failure this whole system is built to avoid. Colouring the ones
- * a reader can go and check turns the palette into information: indigo here
- * means "there is a link under this", and the SOURCE tag beside it says where.
- * A figure whose only witness is a former employer stays in ink, honestly. */
-.cell[data-sourced] .value {
-  color: var(--mark);
-}
+* Every figure is set in ink, whichever way it is sourced.
+ *
+ * Sourced figures used to render in the indigo accent so the colour itself
+ * said "there is a link under this". Read as a strip it did the opposite of
+ * informing: four numbers side by side came out two black and two blue with
+ * nothing on screen explaining the split, so the first thing a reader asked
+ * was what the colours meant rather than what the numbers said. The SOURCE
+ * tag beside each figure already carries provenance in words, and it carries
+ * it unambiguously. */
 
 /* On a console surface a metrics strip is a readout bank, not three numbers
    floating in a panel. Cell rules only between cells, so the block reads as one

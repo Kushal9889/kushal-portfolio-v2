@@ -231,7 +231,7 @@ export async function* runStream(
         ...historyMessages(history),
         { role: "user", content: question },
       ],
-      toolSchemas(),
+      toolSchemas(question),
     );
 
     const call = chosen?.calls[0];

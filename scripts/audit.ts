@@ -423,38 +423,7 @@ const domains: Domain[] = [
       { id: "10.6", need: "skip link to main", pass: /#main/.test(allSource) },
     ],
   },
-  {
-    // Was "Corpus graph", checking a static diagram of shared technologies. That
-    // figure was superseded by the retrieval plot, which draws the run the agent
-    // actually performed, so these now check the figure that exists. The bar is
-    // raised rather than relaxed: the old checks asked whether a projection had
-    // been generated, these ask whether it is honest about its own distortion.
-    name: "11. Corpus figure",
-    blocking: false,
-    checks: [
-      { id: "11.1", need: "projection generated at build", pass: has("lib/agent/field.json") },
-      {
-        // stripComments, because the file explains at length why it does NOT use
-        // a random seed, and matching raw text reports that explanation as the
-        // defect. This is the failure mode the helper above exists to prevent.
-        id: "11.2",
-        need: "projection derived from real vectors, not hand-placed",
-        pass: (() => { const src = stripComments(read("scripts/build-field.ts")); return /cosineDistance/.test(src) && !/hardcoded|manual|Math\.random/.test(src); })(),
-      },
-      {
-        // The reason this figure plots rank rather than position: measured
-        // Kruskal stress on the 3D projection is 0.38, and three axes hold only
-        // 47% of the variance. The number has to ship so the page can say so.
-        id: "11.3",
-        need: "projection reports its own distortion",
-        pass: (() => { const f = read("lib/agent/field.json"); if (!f) return false; const d = JSON.parse(f); return typeof d.stress === "number" && d.stress > 0; })(),
-      },
-      { id: "11.4", need: "figure is keyboard reachable", pass: /tabIndex/.test(read("app/components/RetrievalField.tsx")) },
-      { id: "11.5", need: "figure state announced", pass: /aria-live/.test(read("app/components/RetrievalField.tsx")) },
-      { id: "11.6", need: "build regenerates it", pass: /build:field/.test(read("package.json")) },
-    ],
-  },
-  {
+    {
     name: "12. Tone and typographic consistency",
     blocking: false,
     checks: [

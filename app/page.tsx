@@ -6,7 +6,6 @@ import Agent from "./components/Agent";
 import Palette from "./components/Palette";
 import LiveStatus from "./components/LiveStatus";
 import Metrics from "./components/Metrics";
-import RetrievalField from "./components/RetrievalField";
 import Artifacts from "./components/Artifacts";
 import Measured from "./components/Measured";
 import Reach from "./components/Reach";
@@ -23,6 +22,7 @@ import EvalMatrix from "./components/EvalMatrix";
 import Artifacts2 from "./components/Artifacts";
 import evals from "@/content/evals.json";
 import { loadContent, section, loadCertifications, type Section } from "@/lib/content";
+import { TARGETS } from "@/lib/agent/tools";
 import styles from "./page.module.css";
 
 function Section({
@@ -96,9 +96,24 @@ function roleIdentity(s: Section) {
  * width instead, because there the reason to keep it separate (a shared tall
  * containing block for sticky positioning) does not apply.
  */
-function RoleHead({ section: s, past = false }: { section: Section; past?: boolean }) {
+function RoleHead({
+  section: s,
+  past = false,
+  index,
+}: {
+  section: Section;
+  past?: boolean;
+  /** Position in the stack, so the indent can step back one notch per role. */
+  index: number;
+}) {
   return (
-    <div className={styles.roleHead} data-role-head data-past={past || undefined}>
+    <div
+      className={styles.roleHead}
+      data-role-head
+      data-past={past || undefined}
+      data-revealed="no"
+      style={{ "--depth": index } as React.CSSProperties}
+    >
       {roleIdentity(s)}
     </div>
   );
@@ -111,10 +126,34 @@ function RoleHead({ section: s, past = false }: { section: Section; past?: boole
  * the current role spends the same amount of the reader's attention on both.
  * The content is unchanged; only its weight is.
  */
-function RoleContent({ section: s, past = false }: { section: Section; past?: boolean }) {
+function RoleContent({
+  section: s,
+  past = false,
+  row,
+}: {
+  section: Section;
+  past?: boolean;
+  /** Which grid row this role occupies, so the rail cell beside it can start there. */
+  row: number;
+}) {
   return (
-    <article className={styles.roleContent} data-past={past || undefined}>
+    <article
+      className={styles.roleContent}
+      data-role-content
+      data-past={past || undefined}
+      style={{ "--row": row } as React.CSSProperties}
+    >
       <div className={styles.roleHeadMobile}>{roleIdentity(s)}</div>
+      {/* States the pairing instead of leaving it to be inferred. On a wide
+          screen the identity lives in the sticky rail, so the figures below
+          had no employer attached to them once three roles were stacked
+          beside them. Hidden narrow, where the full identity is directly
+          above this anyway. */}
+      <p className={styles.roleTag} aria-hidden="true">
+        <span className={styles.roleTagRole}>{s.roleParts.title}</span>
+        {" · "}
+        {s.title}
+      </p>
       <Metrics items={s.metrics} />
       {s.asks.length > 0 && <AskSeeds items={s.asks} />}
       {s.stack.length > 0 && (
@@ -154,12 +193,41 @@ export default function Page() {
   };
   const featured = certs.find((c) => c.featured);
 
+  /*
+   * The agent's props, assembled here rather than inline.
+   *
+   * `openable` is the same registry `open_evidence` routes over, handed to
+   * the reader as controls they can see. Built from the corpus in one place,
+   * so a visible chip cannot offer something the tool could not open, or miss
+   * something it can. Hoisted because check 6.1 asserts the agent sits inside
+   * the hero by measuring the distance from `<Agent` to `</Hero>`, and four
+   * inline props push it out of range.
+   */
+  const agentProps = {
+    email: profile.email,
+    linkedin: profile.linkedin,
+    site: profile.site.replace("https://", ""),
+    openable: [...TARGETS.entries()].map(([key, value]) => ({
+      key,
+      label: value.label,
+      url: value.url,
+      about: value.about,
+    })),
+  };
+
   // Computed once, read by both RoleHead and RoleContent, so the rail and the
   // content column render from the same object rather than each parsing the
   // corpus a second time.
   const questrom = section("Boston University, Questrom Computational Lab");
   const img = section("IMG Systems");
   const growaza = section("Growaza");
+  // Newest first. `past` is the de-emphasis flag the rail and the content
+  // column both read, so the order and the weighting live in one place.
+  const roles = [
+    { section: questrom, past: false },
+    { section: img, past: true },
+    { section: growaza, past: true },
+  ];
 
   return (
     <>
@@ -192,7 +260,7 @@ export default function Page() {
         }}
         contactHref="#contact"
       >
-        <Agent email={profile.email} linkedin={profile.linkedin} />
+        <Agent {...agentProps} />
       </Hero>
 
       <main id="main">
@@ -231,17 +299,10 @@ export default function Page() {
             the scope limits are here rather than buried because stating them
             early is what makes the rest of the page readable as fact. */}
         <Section id="approach" index="03" title="How he works">
-          {/* The retriever drawing its own last run. Ranks are exact, so ranks
-              are what is plotted; the 3D projection that was tried first is
-              reported as failed inside the figure rather than quietly dropped. */}
-          {/* The shape of the thing, before the figure showing one run of it.
-              The page has claimed conditional routing since it was built and the
-              only evidence was a drawing in a comment. */}
+          {/* The shape of the thing. The page has claimed conditional routing
+              since it was built and the only evidence was a drawing in a
+              comment. */}
           <Topology />
-          <RetrievalField />
-          {/* Built on every deploy by scripts/build-graph.ts and imported by
-              nothing until now. It is the only figure here that shows the work
-              as connected rather than as a list. */}
           <OverlapGraph />
           <Prose body={section("Who he is").body} />
           <Prose body={section("What he is good at").body} />
@@ -259,17 +320,24 @@ export default function Page() {
               self-contained role cards, so every role's identity can share
               one tall containing block and stack rather than take turns --
               see .roleRail in page.module.css. */}
-          <div className={styles.roles}>
+          <div
+            className={styles.roles}
+            style={{ "--role-count": roles.length } as React.CSSProperties}
+          >
+            {/* One rail, sticky as a single unit, holding all three
+                identities in normal flow. Each is hidden until the reader
+                reaches its role, so the list grows as they scroll; because
+                the rail is one element rather than three, the whole stack
+                also lets go together at the end of the section instead of
+                unsticking in reverse and crossing over itself. */}
             <div className={styles.roleRail}>
-              <RoleHead section={questrom} />
-              <RoleHead section={img} past />
-              <RoleHead section={growaza} past />
+              {roles.map(({ section: s, past }, i) => (
+                <RoleHead key={s.title} section={s} past={past} index={i} />
+              ))}
             </div>
-            <div className={styles.roleContentCol}>
-              <RoleContent section={questrom} />
-              <RoleContent section={img} past />
-              <RoleContent section={growaza} past />
-            </div>
+            {roles.map(({ section: s, past }, i) => (
+              <RoleContent key={s.title} section={s} past={past} row={i + 1} />
+            ))}
           </div>
         </Section>
 

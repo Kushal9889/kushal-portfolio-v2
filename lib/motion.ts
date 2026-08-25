@@ -62,12 +62,33 @@ async function load() {
   // disclosure opening, a font swapping in, an image settling. Debounced to the
   // next frame because a streaming answer resizes on nearly every token, and
   // refresh() is a full layout pass.
+  //
+  // Suspended while an answer is streaming. A refresh is a full layout pass
+  // over every trigger on the page, the observer fires on nearly every token,
+  // and the result was a frame-by-frame relayout for the whole length of an
+  // answer -- which is what made pressing a suggested question feel like the
+  // page had seized rather than started. Nothing below the agent can be read
+  // during those few seconds anyway, because the reader is watching the answer
+  // arrive, so the measurements are simply deferred: `data-streaming` is set by
+  // the agent while a request is in flight and cleared when it settles, and the
+  // one refresh that matters runs on that clearing edge.
   let queued = 0;
   const remeasure = () => {
     cancelAnimationFrame(queued);
-    queued = requestAnimationFrame(() => scroll.ScrollTrigger.refresh());
+    queued = requestAnimationFrame(() => {
+      if (document.documentElement.dataset.streaming === "yes") return;
+      scroll.ScrollTrigger.refresh();
+    });
   };
   new ResizeObserver(remeasure).observe(document.body);
+
+  // The deferred re-measure, run once the answer has settled.
+  new MutationObserver(() => {
+    if (document.documentElement.dataset.streaming !== "yes") remeasure();
+  }).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-streaming"],
+  });
 
   // Lets the stylesheet stand down: the CSS scroll timelines are the floor for
   // visitors without this bundle, and running both would animate twice.

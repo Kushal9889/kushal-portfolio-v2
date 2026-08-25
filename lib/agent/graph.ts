@@ -164,7 +164,7 @@ const act = timed("act", async (state) => {
       },
       { role: "user", content: state.question },
     ],
-    toolSchemas(),
+    toolSchemas(state.question),
   );
 
   const call = chosen?.calls[0];
