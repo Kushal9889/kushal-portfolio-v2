@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { loadContent } from "../lib/content";
 import { chunkSection, sentences, estimateTokens, BREAK_BELOW, type Passage } from "../lib/agent/chunk";
 import { indexTokens } from "../lib/agent/tokenize";
+import { EMBED_MODEL } from "../lib/agent/model";
 
 /**
  * Builds the retrieval index at compile time.
@@ -18,6 +19,22 @@ import { indexTokens } from "../lib/agent/tokenize";
 // The index and the query are tokenised by the same function, in one place.
 // They were two near-copies that nothing kept in step.
 const tokenize = indexTokens;
+
+/**
+ * How much a term in a section heading outweighs the same term in its prose.
+ *
+ * Measured on the four questions that name a section directly. At 2, which is
+ * what pasting the heading in twice produced, "What bug did he find in
+ * LangChain?" ranked Publications first. At 6 the heading carries the section
+ * without letting a short title dominate a passage that genuinely answers the
+ * question: every lexical case in `tests/integration.test.ts` passes, and the
+ * one case that needs the embedding half still needs it.
+ *
+ * Raising this further is not free. The title field is tiny, so a large weight
+ * makes any passage of a section beat a passage that actually contains the
+ * answer, which is the failure this was fixing in the other direction.
+ */
+const TITLE_WEIGHT = 6;
 
 /**
  * The embedding model accepts 512 tokens and nothing was enforcing it.
@@ -90,7 +107,7 @@ async function embedAll(texts: string[], inputType: "query" | "passage"): Promis
     const res = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-      body: JSON.stringify({ input: batch, model: "nvidia/nv-embedqa-e5-v5", input_type: inputType }),
+      body: JSON.stringify({ input: batch, model: EMBED_MODEL, input_type: inputType }),
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
@@ -132,7 +149,7 @@ async function embedPassagesLegacy(texts: string[]): Promise<number[][] | null> 
       headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
       body: JSON.stringify({
         input: batch,
-        model: "nvidia/nv-embedqa-e5-v5",
+        model: EMBED_MODEL,
         input_type: "passage",
       }),
     });
@@ -257,15 +274,39 @@ async function main() {
       `p50 ${sizes[Math.floor(sizes.length / 2)]} max ${sizes[sizes.length - 1]}`,
   );
 
-  // BM25 is built over passages, not sections. The heading is repeated into
-  // each passage's searchable text because titles carry the strongest terms in
-  // this corpus and a passage three paragraphs into a section would otherwise
-  // lose the name of the thing it is about.
-  const docs = passages.map((p) => tokenize(`${p.parent} ${p.parent} ${p.text}`));
+  /*
+   * BM25 is built over passages, not sections, and the heading is scored as its
+   * own field.
+   *
+   * A term in a section's heading says what the passage is about; the same term
+   * in running prose says only that it was mentioned. Those are different
+   * signals and they were being counted as one, because the heading was pasted
+   * into the body text twice and then tokenised together with it.
+   *
+   * Twice was not enough. "What bug did he find in LangChain?" returned
+   * Publications ahead of the section titled "Open source, LangChain
+   * deepagents": the publications text names bug detection three times and
+   * cross-references LangChain once, so it carried more of the query's terms
+   * than the section the question is actually about.
+   *
+   * This is the field-weighted form. Per-field term frequencies are summed with
+   * a weight and the result is handed to the single saturation function in
+   * `bm25()`, rather than each field being scored separately and the scores
+   * added. Scoring fields apart and combining afterwards breaks the saturation
+   * curve BM25 depends on, which is the documented failure mode of the naive
+   * version and the reason this is not a second retriever fused by rank.
+   *
+   * The weight is a float, so it is a dial rather than a repeat count.
+   */
+  const docs = passages.map((p) => ({
+    title: tokenize(p.parent),
+    body: tokenize(p.text),
+  }));
 
-  const tf = docs.map((tokens) => {
+  const tf = docs.map(({ title, body }) => {
     const counts: Record<string, number> = {};
-    for (const t of tokens) counts[t] = (counts[t] ?? 0) + 1;
+    for (const t of body) counts[t] = (counts[t] ?? 0) + 1;
+    for (const t of title) counts[t] = (counts[t] ?? 0) + TITLE_WEIGHT;
     return counts;
   });
 
@@ -274,7 +315,9 @@ async function main() {
     for (const term of Object.keys(counts)) df[term] = (df[term] ?? 0) + 1;
   }
 
-  const lengths = docs.map((d) => d.length);
+  // Length has to be measured on the same weighted counts the scores are, or
+  // the normalisation divides by a document length the tf above no longer has.
+  const lengths = docs.map((d) => d.body.length + d.title.length * TITLE_WEIGHT);
   const avgLength = lengths.reduce((a, b) => a + b, 0) / lengths.length;
 
   // Every passage now fits the model's window by construction, so there is no

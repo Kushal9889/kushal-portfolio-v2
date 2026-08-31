@@ -378,6 +378,33 @@ export async function* streamWithFailover(
  * model client and this one was left, because it was written as a function that
  * "returns null on failure" and read like one.
  */
+/**
+ * The embedding model, named once.
+ *
+ * It was written out at three call sites, and on 2026-08-25 the model behind
+ * all three reached end of life. `nvidia/nv-embedqa-e5-v5` now answers 410 Gone,
+ * which `build-index` reports and then continues from, writing an index with
+ * `vectors: null`. That is the documented degrade path and it works, but it
+ * means the dense half of a retriever described on the page as hybrid can stop
+ * existing without anything failing.
+ *
+ * Replaced by measurement rather than by the migration note. NVIDIA documents
+ * `llama-3.2-nv-embedqa-1b-v2` as the successor; the account's model list does
+ * not carry it, and of the seven embedding models it does list, six answer 404
+ * on invocation. This is the one that serves: 2048 dimensions, fixed, measured
+ * at 249ms for a single query.
+ *
+ * Dimensions are not truncatable here. The endpoint rejects any value other
+ * than 2048, so this is not a Matryoshka model and slicing the vector to save
+ * index size would be discarding trained dimensions.
+ *
+ * The index and the query path must always name the same model. Vectors built
+ * by one embedding model and compared against another are not comparable, and
+ * cosine similarity will return plausible numbers for that comparison rather
+ * than an error.
+ */
+export const EMBED_MODEL = "nvidia/nemotron-3-embed-1b";
+
 const EMBED_TIMEOUT_MS = Number(process.env.EMBED_TIMEOUT_MS ?? 4_000);
 
 /**
@@ -424,7 +451,7 @@ export async function embedQuery(text: string): Promise<number[] | null> {
       headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
       body: JSON.stringify({
         input: [text],
-        model: "nvidia/nv-embedqa-e5-v5",
+        model: EMBED_MODEL,
         input_type: "query",
       }),
       /*
