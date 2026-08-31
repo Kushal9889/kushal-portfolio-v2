@@ -1,13 +1,13 @@
 {
   "what has he shipped on azure?": {
-    "answer": "He shipped a document intelligence assistant on Azure for an enterprise consulting client, exposing 14 tools for document question answering, cross-document comparison, and template-driven generation, grounded by hybrid BM25 and vector retrieval with Cohere re-ranking, guarded by PII and entity redaction, and scored for hallucination rate by LLM-as-a-Judge evaluations.",
+    "answer": "He shipped a document intelligence assistant on Azure for an enterprise consulting client, exposing 14 tools for document question answering, cross-document comparison and template-driven generation, grounded by hybrid BM25 and vector retrieval with Cohere re-ranking, guarded by PII and entity redaction, and scored for hallucination rate by LLM-as-a-Judge evaluations.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 288,
-      "answer": 1480
+      "retrieve": 398,
+      "answer": 899
     },
-    "total": 1783,
+    "total": 1317,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "IMG Systems",
@@ -15,7 +15,7 @@
     ],
     "usage": {
       "in": 2038,
-      "out": 74
+      "out": 73
     },
     "action": null,
     "trace": {
@@ -186,14 +186,14 @@
     "provider": "nvidia"
   },
   "what broke in production and how did he find it?": {
-    "answer": "The LangChain deepagents SDK reported success while silently discarding an error, a failure that static analysis missed. He traced the issue to a code path that claimed completion without propagating an exception, then documented the defect precisely enough for a maintainer to ship a fix in 57 hours.",
+    "answer": "The LangChain deepagents SDK reported success while silently discarding an error, a failure that static analysis missed. He traced the issue to a specific code path in the SDK, documented it precisely, and the maintainer shipped a fix within 57 hours.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 217,
-      "answer": 688
+      "retrieve": 320,
+      "answer": 612
     },
-    "total": 911,
+    "total": 939,
     "sources": [
       "What he is good at",
       "Publications",
@@ -202,7 +202,7 @@
     ],
     "usage": {
       "in": 2126,
-      "out": 59
+      "out": 53
     },
     "action": null,
     "trace": {
@@ -365,21 +365,21 @@
     "provider": "nvidia"
   },
   "how does he know the retrieval is actually working?": {
-    "answer": "He knows retrieval is actually working when a chunk earns its place in the context window and the top-k is a ceiling rather than a quota. The first result always survives because a weak best match is still the best match and answering from it beats answering from nothing.",
+    "answer": "He knows retrieval is actually working when the top-k includes the correct chunk and filler is avoided, because a retrieved chunk must earn its place in the context window. The first result always survives, since a weak best match is still the best match and answering from it beats answering from nothing.",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 258,
-      "answer": 478
+      "retrieve": 355,
+      "answer": 497
     },
-    "total": 743,
+    "total": 860,
     "sources": [
       "How retrieval on this page works",
       "What he is good at"
     ],
     "usage": {
       "in": 1422,
-      "out": 55
+      "out": 59
     },
     "action": null,
     "trace": {

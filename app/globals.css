@@ -63,8 +63,20 @@
   --ink-soft: oklch(0.405 0.016 62);
   --ink-faint: oklch(0.487 0.018 62);
 
-  /* Live state. */
+  /* The one accent. Every interactive target wears it and nothing else does.
+   *
+   * It meant "live right now" and was barred from static content, which left
+   * the primary action colourless while four semantic tokens spent theirs on
+   * readouts. --live already says "happening now" and says it better. See
+   * ADR-005: material is free, this tier is one colour, semantic is unchanged.
+   *
+   * --signal-deep is the hover, one step down the lightness axis rather than a
+   * different hue, so pressing reads as the same object under more pressure.
+   * --on-signal is the label colour measured against the fill rather than
+   * assumed from the page ground. */
   --signal: oklch(0.47 0.17 32);
+  --signal-deep: oklch(0.405 0.16 32);
+  --on-signal: oklch(0.985 0.006 88);
   --signal-wash: color-mix(in oklch, var(--signal) 10%, var(--paper));
 
   /* Checkable claim. Deep enough to sit in running prose without shouting,
@@ -159,7 +171,11 @@
    * `var()` with no declaration and no fallback, because a dropped custom
    * property is not a parse error: it renders almost right. */
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Was cubic-bezier(0.34, 1.56, 0.64, 1), which overshoots past its target and
+     springs back. Real mass decelerates, it does not bounce; the overshoot is
+     the tell that an easing curve was picked rather than measured. Exponential
+     out: fast departure, long settle, no overshoot. */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   /* Instrument snap: fast out of the gate, long settle. For readouts that
      change value, where the eye needs to catch that something moved at all. */
   --ease-instrument: linear(
@@ -324,6 +340,11 @@
      the page reads as the same paper under different light: raising lightness
      without dropping chroma makes vermillion fluoresce and teal go acid. */
   --signal: oklch(0.78 0.12 32);
+  /* Deep goes the other way on this ground: pressing lifts toward the light,
+     because moving toward the ink here would move toward the page. The label
+     stays dark against a fill this bright rather than following --paper. */
+  --signal-deep: oklch(0.845 0.115 32);
+  --on-signal: oklch(0.18 0.02 40);
   --signal-wash: color-mix(in oklch, var(--signal) 14%, var(--paper));
 
   --mark: oklch(0.862 0.075 235);

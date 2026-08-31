@@ -43,19 +43,14 @@
 }
 
 /* The graph is the one signature moment on the page. It gets the space that a
-   hero image would normally take, because unlike an image it is the work. */
-.label {
-  font-size: var(--step-0);
-  transition: color var(--t-base) var(--ease-out);
-}
+   hero image would normally take, because unlike an image it is the work.
 
-.ms {
-  font-size: var(--step--1);
-  color: var(--ink-soft);
-  /* Reserve the width a timing will occupy so the row cannot shift when numbers
-     land. Layout shift here would be visible on the very first paint. */
-  min-width: 4.5ch;
-}
+   .label and .ms are declared once, further down with the graph they belong to.
+   There were two of each in this file: the pair here set --step-0 and
+   --ink-soft, the pair below set --step--1 and --ink-faint, and the later pair
+   won every property it named. The one declaration that was doing real work,
+   the reserved timing width, is folded into the surviving .ms rather than left
+   in a block whose other half never rendered. */
 
 .caption {
   margin: 0.75rem 0 0;
@@ -71,38 +66,46 @@
   margin-top: clamp(1.5rem, 3.5vh, 2rem);
 }
 
-/* One primary action, set noticeably larger than anything near it. Competing
-   calls to action cost more than they add: every extra choice is time spent on
-   a decision that is not the one worth making. */
+/* One primary action, larger than anything near it, and the only thing on the
+ * page wearing the accent. Competing calls to action cost more than they add.
+ *
+ * Carries the accent, because it is the one thing on the page to press.
+ *
+ * This was ink on paper: the largest decision on the page rendered in the same
+ * colour as the paragraph above it. The old reason was sound under ADR-003,
+ * where --signal meant "live right now" and a button at rest is not live. That
+ * reading is what left the primary action with no colour at all while four
+ * semantic tokens spent theirs on readouts. ADR-005 moves --signal to the brand
+ * tier: it means "the one thing to press", --live keeps "happening now", and
+ * every interactive target on the page is this colour and nothing else is. */
 .cta {
   display: inline-flex;
   align-items: center;
-  padding: 0.85rem 1.6rem;
-  background: var(--ink);
-  color: var(--paper);
-  font-family: var(--font-mono), monospace;
-  font-size: var(--step-0);
+  padding: 1rem 2rem;
+  background: var(--signal);
+  color: var(--on-signal);
+  border-radius: var(--r-md);
+  /* A step above body, not level with it. Two things follow: it is the largest
+     interactive target on the page, and at this size and weight the label is
+     large text, where the measured Lc 63 on the dark ground clears its 60
+     threshold instead of sitting under the 75 that body copy needs. */
+  font-size: var(--step-1);
+  font-weight: 600;
+  letter-spacing: -0.01em;
   text-decoration: none;
   transition:
     transform var(--t-fast) var(--ease-spring),
     background var(--t-fast) var(--ease-out);
 }
 
-/* One rule, not two.
- *
- * This selector was declared twice in a row. The first set the accent
- * background, the second immediately reset it to ink, so the call to action's
- * hover colour never rendered once and only the lift survived. The accent is
- * not the right answer here anyway: it means "live", and a button at rest is
- * not live. The hover reads as a press instead. */
 .cta:hover {
-  transform: translate3d(0, -2px, 0);
-  box-shadow: var(--lift-2);
+  background: var(--signal-deep);
 }
 
+/* Depth, not lift. A pressed control moves away from the reader, and scale is
+   the only transform that says so without moving the label off its baseline. */
 .cta:active {
-  transform: translate3d(0, 0, 0);
-  box-shadow: none;
+  transform: scale(0.98);
 }
 
 
@@ -191,15 +194,7 @@
 }
 
 .label {
-  font-size: var(--step--1);
-  color: var(--ink-soft);
   transition: color var(--t-normal) var(--ease-out);
-}
-
-.ms {
-  font-size: var(--step--2, 0.7rem);
-  color: var(--ink-faint);
-  min-height: 1em;
 }
 
 /* Completed: the node is filled and its label steps up to full ink. */
@@ -212,17 +207,12 @@
   color: var(--ink);
 }
 
-/* Running: the only place the accent appears in the hero, and it pulses, so
-   "this is happening right now" is carried by motion and colour together. */
+/* Running. The colour is set with the rest of the graph further down, in the
+   block that supersedes this one; only the pulse and the scale live here. The
+   pulse loops only while the state does, which is what check 13.4 asks. */
 .cell[data-state="running"] .dot {
-  background: var(--signal);
-  box-shadow: inset 0 0 0 2px var(--signal);
   transform: scale(1.35);
   animation: node-pulse 1s var(--ease-out) infinite;
-}
-
-.cell[data-state="running"] .label {
-  color: var(--signal);
 }
 
 @keyframes node-pulse {
@@ -454,8 +444,10 @@
   background: var(--ink);
 }
 
+/* --live, not the accent. ADR-005 splits the two: --signal means "press this",
+   --live means "happening now", and a node mid-request is the second. */
 .cell[data-state="running"] .dot {
-  background: var(--signal);
+  background: var(--live);
 }
 
 .cell[data-state="done"] .railLine {
@@ -468,14 +460,22 @@
   text-transform: uppercase;
 }
 
-.cell[data-state="done"] .label,
-.cell[data-state="running"] .label {
+.cell[data-state="done"] .label {
   color: var(--ink);
 }
 
-.ms {
+.cell[data-state="running"] .label {
+  color: var(--live);
+}
+
+/* Scoped to the cell. Unscoped, this shadowed an earlier .ms in the same file
+   and took its reserved width with it, which is the width that stops the row
+   shifting when a timing lands. */
+.cell .ms {
   font-size: var(--step-0);
   color: var(--ink-soft);
+  min-height: 1em;
+  min-width: 4.5ch;
 }
 
 .cell[data-state="done"] .ms {

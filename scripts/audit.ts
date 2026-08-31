@@ -456,12 +456,16 @@ const domains: Domain[] = [
         })(),
       },
       {
-        // The rule is not "use the accent rarely", it is "the accent always means
-        // something is happening". Counting uses punished the site for gaining
-        // interactive surfaces; this checks the rule instead, by requiring every
-        // accent declaration to sit under a state selector.
+        // The rule was "the accent always means something is happening".
+        // ADR-005 splits that in two: --live carries "happening now" and
+        // --signal carries "this is the thing to press". So the accent is now
+        // allowed on an interactive target at rest, and still barred from
+        // static content -- which is the half that was ever load-bearing.
+        // Counting uses would punish the site for gaining controls; this checks
+        // the rule, by requiring every declaration to sit on something a reader
+        // can press or on a live state.
         id: "12.4",
-        need: "accent only under a state selector, never on static content",
+        need: "accent only on an interactive target or a live state, never on static content",
         pass: (() => {
           const decorative: string[] = [];
           // Comments sit between rules, so they land in the selector slot when a
@@ -474,7 +478,7 @@ const domains: Domain[] = [
           // native pseudo-classes describing a live state of the element itself,
           // and a toggle's checked state is exactly that, not decoration.
           const STATE =
-            /:hover|:focus|:active|:target|:checked|\[data-state|\[data-active|\.on\b|lit|active|live|select|running|pending|dot|progress|bad|wash|stop|micOn|traceBar/i;
+            /:hover|:focus|:active|:target|:checked|\[data-state|\[data-active|\.on\b|lit|active|live|select|running|pending|dot|progress|bad|wash|stop|micOn|traceBar|cta|button|\ba\b|link|control|ask|send|submit/i;
           // stop, micOn and traceBar are rendered conditionally rather than
           // toggled by a class, so their state lives in the JSX. Named here so
           // the rule still holds without weakening it for everything else.
@@ -530,6 +534,12 @@ const domains: Domain[] = [
                 /live|running|data-state|data-live|pulse|progress|dot|\.stop\b|\.on\b/i.test(selector) ||
                 // The reader is touching it.
                 /:hover|:focus|:focus-visible|:focus-within|:active|:checked|On\b/.test(selector) ||
+                // Something the reader can press. ADR-005: --signal is the one
+                // accent and every interactive target wears it, at rest as well
+                // as under the pointer. Enumerated rather than inferred, so a
+                // new selector wanting the accent is still a decision someone
+                // has to make on purpose.
+                /\bcta\b|\bbutton\b|\blink\b|\bcontrol\b|\bask\b|\bsend\b|\bsubmit\b/i.test(selector) ||
                 // Measured, and redrawn per answer.
                 /traceBar/i.test(selector) ||
                 // The defect line in the diff, which is the one static thing on
