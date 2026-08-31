@@ -7,7 +7,7 @@
   margin-block: var(--s-5);
   border: var(--border-hair) solid var(--rule);
   border-radius: var(--r-panel);
-  box-shadow: var(--lift-2);
+  box-shadow: var(--bezel);
   overflow: hidden;
 }
 

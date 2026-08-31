@@ -113,6 +113,15 @@
    * against. */
   --paper-sunk: oklch(0.9455 0.0115 88);
 
+  /* Raised, the direction that was missing: two surfaces meant nothing could
+     sit above the ground, so three nested containers read as one flat area.
+     Sunk is toward the ink, raised is away from it; both invert in absolute
+     lightness between schemes and mean the same thing in each. --edge is a 1px
+     inset highlight, which is how a surface reads as lifted without a shadow
+     under it. */
+  --paper-raised: oklch(0.995 0.004 88);
+  --edge: oklch(1 0 0 / 0.72);
+
   /* Semantic colour.
    *
    * The old palette had two accents and a rule that one of them could only
@@ -199,6 +208,10 @@
 
   /* Elevation. Shadow only: `backdrop-filter` and every gradient function are
      banned outright, so depth has to come from a cast edge. */
+  /* Containers get the bezel, not a shadow: a hairline plus the light caught on
+     the top edge. Shadow survives only where an element genuinely floats over
+     something else. */
+  --bezel: inset 0 1px 0 0 var(--edge);
   --lift-1: 0 1px 2px color-mix(in oklch, var(--ink) 8%, transparent);
   --lift-2:
     0 2px 4px color-mix(in oklch, var(--ink) 7%, transparent),
@@ -220,6 +233,9 @@
   --step-1: clamp(1.1rem, 1rem + 0.5vw, 1.35rem);
   --step-2: clamp(1.6rem, 1.2rem + 1.9vw, 2.6rem);
   --step-3: clamp(2.2rem, 1.4rem + 3.6vw, 4.4rem);
+  /* Display step, above the heading scale. --step-3 was the top, so the h1 and
+     the word "Work" set at the same size and carried no hierarchy. */
+  --step-4: clamp(2.75rem, 1.6rem + 5.4vw, 6rem);
   /* Serif prose sets its own reading size: it is the one thing on the page
      measured for continuous reading rather than for scanning, and the mono
      scale is tuned for labels. Declared here so the three components that had
@@ -329,6 +345,13 @@
   --fail-wash: color-mix(in oklch, var(--fail) 14%, var(--paper));
 
   --paper-sunk: oklch(0.225 0.008 88);
+
+  /* Raised is darker here and lighter on paper, because both mean away from
+     the ink and the ink is light on this ground. The edge highlight drops to a
+     tenth of its opacity: a bright hairline that reads as caught light on cream
+     reads as a drawn white line on charcoal. */
+  --paper-raised: oklch(0.145 0.006 88);
+  --edge: oklch(1 0 0 / 0.07);
 }
 
 *,
@@ -345,7 +368,10 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Interface voice. Every readout names mono itself; what changed is the
+     default an element gets when it names nothing -- a heading or a control,
+     not a measurement. */
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-size: var(--step-0);
   line-height: 1.5;
   font-synthesis-weight: none;
@@ -384,6 +410,9 @@ body {
 h1,
 h2,
 h3 {
+  /* Headings take the interface face explicitly rather than by inheritance, so
+     a heading inside a serif or mono block still sets in it. */
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.02em;
@@ -391,10 +420,14 @@ h3 {
   margin: 0;
 }
 
+/* Was weight 400 at --step-3: the largest type on the page was also the
+   thinnest. Tracking tightens with size because letter-spacing is optical --
+   body-copy gaps are too wide once the letters are six times larger. */
 h1 {
-  font-size: var(--step-3);
-  font-weight: 400;
-  letter-spacing: -0.035em;
+  font-size: var(--step-4);
+  font-weight: 600;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
 }
 
 /* The claim and its qualifier are set differently on purpose. Two sentences at
@@ -472,6 +505,9 @@ hr {
 
 /* Small caps label used for section markers and data keys. */
 .label {
+  /* Stays mono now the default does not: a label marks a data key, same job as
+     the readouts beside it. */
+  font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--step--1);
   /* Uppercase at small size with open tracking is already working against the
      reader. Light weight on top of that was the fourth penalty. */

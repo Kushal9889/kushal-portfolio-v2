@@ -21,18 +21,11 @@ import { EMBED_MODEL } from "../lib/agent/model";
 const tokenize = indexTokens;
 
 /**
- * How much a term in a section heading outweighs the same term in its prose.
- *
- * Measured on the four questions that name a section directly. At 2, which is
- * what pasting the heading in twice produced, "What bug did he find in
- * LangChain?" ranked Publications first. At 6 the heading carries the section
- * without letting a short title dominate a passage that genuinely answers the
- * question: every lexical case in `tests/integration.test.ts` passes, and the
- * one case that needs the embedding half still needs it.
- *
- * Raising this further is not free. The title field is tiny, so a large weight
- * makes any passage of a section beat a passage that actually contains the
- * answer, which is the failure this was fixing in the other direction.
+ * Heading terms outweigh body terms by this much. At 2 -- what pasting the
+ * heading in twice produced -- "What bug did he find in LangChain?" ranked
+ * Publications first. At 6 every lexical case in integration.test.ts passes.
+ * Higher is not free: the title field is tiny, so a large weight lets any
+ * passage of a section beat the one that holds the answer.
  */
 const TITLE_WEIGHT = 6;
 

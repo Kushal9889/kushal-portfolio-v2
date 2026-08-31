@@ -1,11 +1,24 @@
 import type { Metadata } from "next";
-import { Martian_Mono, Newsreader } from "next/font/google";
+import { Martian_Mono, Newsreader, Instrument_Sans } from "next/font/google";
 import { loadContent, loadCertifications, section } from "@/lib/content";
 import "./globals.css";
 
 // Self-hosted by next/font at build time. The previous site loaded two of its
 // three families through a render-blocking <link> to fonts.googleapis.com, which
 // put a network round trip in front of the headline.
+
+/*
+ * Three voices, one job each: mono for readouts, serif for prose, this for
+ * headings and interface. Mono was the default for every string including
+ * running text -- every character on one advance, so prose read at the pace of
+ * a log file. Narrow enough to hold tight tracking at display sizes.
+ */
+const sans = Instrument_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
 const mono = Martian_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
@@ -152,7 +165,7 @@ function structuredData() {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${mono.variable} ${serif.variable}`}>
+    <html lang="en" className={`${sans.variable} ${mono.variable} ${serif.variable}`}>
       <head>
         {/* The condensed view was a keystroke nobody finds. As a URL it is a
             second, shorter read of the same page that can be sent in a reply,

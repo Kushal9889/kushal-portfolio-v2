@@ -1,13 +1,15 @@
-/* Vertical rhythm is set by the shorter end of the clamp now. Seven sections at
-   96px of padding on each side spent more than a screen and a half on empty
-   space alone, and the section rules already separate them. */
+/* Was 40-64px, cut so seven sections would not spend a screen and a half on
+   empty space. Measured against the wrong thing: page length is not a cost a
+   reader pays, and a 1px rule with 40px either side draws a table, not a
+   boundary. 72-120px. The rule comes out when the ground change divides
+   sections instead. */
 .section {
-  padding-block: clamp(2.5rem, 6vh, 4rem);
+  padding-block: clamp(4.5rem, 9vh, 7.5rem);
   border-bottom: 1px solid var(--rule);
 }
 
 .head {
-  margin-bottom: clamp(1.5rem, 4vh, 2.5rem);
+  margin-bottom: clamp(2rem, 5vh, 3.5rem);
 }
 
 /* The section numeral, stacked above its heading at display size and held
@@ -25,9 +27,11 @@
   margin-bottom: 0.2rem;
 }
 
+/* Interface face, not the reading face. Serif is reserved for prose, the one
+   thing here set to be read rather than scanned. */
 .title {
-  font-family: var(--font-serif), Georgia, serif;
-  font-weight: 400;
+  font-weight: 600;
+  letter-spacing: -0.025em;
   /* Sized to the rail it sits in, not to the page.
    *
    * At --step-2 this rendered 41.6px inside a 176px column, and "LangChain" -- 

@@ -4,10 +4,10 @@
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 260,
-      "answer": 836
+      "retrieve": 288,
+      "answer": 1480
     },
-    "total": 1115,
+    "total": 1783,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "IMG Systems",
@@ -186,23 +186,23 @@
     "provider": "nvidia"
   },
   "what broke in production and how did he find it?": {
-    "answer": "The LangChain deepagents SDK broke with a silent failure that produced no exception or stack trace, a failure static analysis does not catch. He found it by reading the system closely enough to see where it contradicted itself, tracing the code path that reported success while discarding an error, and writing up the defect precisely enough that a maintainer shipped the fix in 57 hours.",
+    "answer": "The LangChain deepagents SDK reported success while silently discarding an error, a failure that static analysis missed. He traced the issue to a code path that claimed completion without propagating an exception, then documented the defect precisely enough for a maintainer to ship a fix in 57 hours.",
     "route": "answer",
     "timings": {
-      "route": 2,
-      "retrieve": 366,
-      "answer": 1532
+      "route": 1,
+      "retrieve": 217,
+      "answer": 688
     },
-    "total": 1908,
+    "total": 911,
     "sources": [
-      "Publications",
       "What he is good at",
+      "Publications",
       "Who he is",
       "How retrieval on this page works"
     ],
     "usage": {
       "in": 2126,
-      "out": 78
+      "out": 59
     },
     "action": null,
     "trace": {
@@ -301,7 +301,7 @@
           "lexicalScore": 5.1,
           "lexicalRank": 1,
           "denseRank": 5,
-          "fused": 0.031778,
+          "fused": 0.031545,
           "selected": true
         },
         {
@@ -365,21 +365,21 @@
     "provider": "nvidia"
   },
   "how does he know the retrieval is actually working?": {
-    "answer": "He knows retrieval is actually working when a retrieved chunk earns its place in the context window and the top-k is a ceiling rather than a quota. He also knows it when a query like \"Growaza\" or \"NCP-AAI\" lands one chunk far clear of everything else, causing the keyword hit to be decisive and skipping the embedding call. He knows it when the retrieval produces exact ties that are broken by the better single rank, and when the projection drawn beside the page uses classical multidimensional scaling on the full cosine distance matrix rather than UMAP or t-SNE.",
+    "answer": "He knows retrieval is actually working when a chunk earns its place in the context window and the top-k is a ceiling rather than a quota. The first result always survives because a weak best match is still the best match and answering from it beats answering from nothing.",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 252,
-      "answer": 2757
+      "retrieve": 258,
+      "answer": 478
     },
-    "total": 3016,
+    "total": 743,
     "sources": [
       "How retrieval on this page works",
       "What he is good at"
     ],
     "usage": {
       "in": 1422,
-      "out": 155
+      "out": 55
     },
     "action": null,
     "trace": {

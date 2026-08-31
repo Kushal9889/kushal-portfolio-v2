@@ -427,7 +427,15 @@ const domains: Domain[] = [
     name: "12. Tone and typographic consistency",
     blocking: false,
     checks: [
-      { id: "12.1", need: "exactly two typefaces", pass: new Set((builtCss.match(/font-family:\s*([A-Z][A-Za-z ]+)/g) ?? []).map((m) => m.replace(/font-family:\s*/, "").replace(/ Fallback/, "").trim())).size <= 2 },
+      {
+        // Three, one job each: sans for headings and interface, mono for
+        // readouts and labels, serif for continuous prose. This was two, and
+        // the default was the mono -- so the page set its argument in the face
+        // it uses for token counts. Four is where a page stops having a voice.
+        id: "12.1",
+        need: "exactly three typefaces, one job each",
+        pass: new Set((builtCss.match(/font-family:\s*([A-Z][A-Za-z ]+)/g) ?? []).map((m) => m.replace(/font-family:\s*/, "").replace(/ Fallback/, "").trim())).size <= 3,
+      },
       { id: "12.2", need: "type scale is token-driven", pass: countOf(builtCss, /--step-/g) >= 6 },
       {
         // Counting declarations was a proxy for the rule, and it stopped being a
