@@ -3,33 +3,31 @@
    reader pays, and a 1px rule with 40px either side draws a table, not a
    boundary. 72-120px. The rule comes out when the ground change divides
    sections instead. */
+/* Bottom exceeds top. Symmetric padding is mathematically right and optically
+   wrong: a heading reads as belonging to what follows it, so the gap that
+   closes a section has to beat the one that opens the next. */
 .section {
-  padding-block: clamp(4.5rem, 9vh, 7.5rem);
-  border-bottom: 1px solid var(--rule);
+  /* Was two vh clamps. The section frame is the page's largest single piece
+     of rhythm and it resolved to whatever the window was tall: 90/103.5 at a
+     900px viewport, 70/80.5 at 700, 136/156 at 1400. DESIGN.md recorded the
+     900px pair as if it were the rule. Both terms are scale steps now, and the
+     bottom stays the larger of the two because equal padding reads
+     bottom-heavy. */
+  padding-block: var(--s-9) calc(var(--s-9) + var(--s-3));
+  border-bottom: var(--border-hair) solid var(--rule);
 }
 
 .head {
-  margin-bottom: clamp(2rem, 5vh, 3.5rem);
-}
-
-/* The section numeral, stacked above its heading at display size and held
-   light. It is the page's position marker: scanning the left edge gives a
-   reader depth without reading a word, and stacking keeps it working at every
-   width rather than only above a breakpoint. */
-.index {
-  display: block;
-  font-family: var(--font-mono), monospace;
-  font-size: clamp(1.75rem, 1.2rem + 2.2vw, 3rem);
-  font-weight: 300;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  color: var(--ink-faint);
-  margin-bottom: 0.2rem;
+  margin-bottom: var(--s-7);
 }
 
 /* Interface face, not the reading face. Serif is reserved for prose, the one
-   thing here set to be read rather than scanned. */
+   thing here set to be read rather than scanned.
+
+   Positioned, so the copy-link mark can hang in the trailing margin without
+   entering the flow and moving the heading's wrap point. */
 .title {
+  position: relative;
   font-weight: 600;
   letter-spacing: -0.025em;
   /* Sized to the rail it sits in, not to the page.
@@ -39,10 +37,77 @@
    * heading read "A bug in LangChair" with the last letter clipped off, which
    * is the same failure the role titles had before they were sized to their
    * own column. A long single word now breaks rather than escaping. */
-  font-size: clamp(1.45rem, 1.05rem + 1.4vw, 2.05rem);
-  line-height: 1.12;
+  /* One size for this role, from the scale, and no per-family override.
+   *
+   * There were five: 2.05rem here, 3.4rem under banner, 3rem under rule,
+   * 3.4rem under bank and 3.25rem under closing. Five clamps for one job, none
+   * of them a scale step, all of them landing between 33 and 54px against a
+   * headline at 64. Seven section headings within 18% of the page's own
+   * headline is seven headlines, which is why nothing on the page led. */
+  font-size: var(--step-2);
+  line-height: 1.15;
   overflow-wrap: break-word;
   hyphens: auto;
+}
+
+/*
+ * The two registers.
+ *
+ * Measured on the rendered page before this existed: h1 at 68px, six of seven
+ * h2 at 32px, and every one of the seven sections carrying identical 96/108
+ * padding. Seven equal chapters, and below 62rem where the layout families do
+ * not apply, a single column of seven identical blocks.
+ *
+ * The frame is where the density actually lives. DESIGN.md has claimed
+ * "bimodal, never uniform" since it was written and the stylesheet was uniform:
+ * one padding pair for every section on the page. These are 160/172 against
+ * 64/76, which is a ratio of two and a half and is visible without measuring.
+ *
+ * Both values are still sums of scale steps. No fluid clamp for spacing: it
+ * opts out of the scale at every viewport at once, and produced 36, 43.2, 45
+ * and 57.6px on one page the last time it was tried.
+ *
+ * Outside the desktop media query on purpose, so the phone gets the same
+ * oscillation. It is the width where the page had none at all.
+ */
+.section[data-register="chapter"] {
+  /*
+   * Trimmed from 160/172 to 96/108.
+   *
+   * The larger pair was set when the page had two grounds and a chapter had to
+   * announce a change of surface as well as a change of subject. There is one
+   * ground now, the macro heading is doing the announcing on its own, and what
+   * the old padding actually produced was a screen and a half of empty ground
+   * above a single word. Still roughly double the instrument register, so the
+   * density still oscillates; it just no longer oscillates into nothing.
+   */
+  padding-block: var(--s-9) calc(var(--s-9) + var(--s-3));
+}
+
+.section[data-register="instrument"] {
+  padding-block: var(--s-8) calc(var(--s-8) + var(--s-3));
+}
+
+/*
+ * The macro step, and the only place it is used.
+ *
+ * Tracking stops at -0.04em. Tighter is available and the industrial register
+ * asks for it, but past that the glyphs start touching at display size and the
+ * heading reads as damaged rather than as set.
+ *
+ * Leading goes under 1 because at this size the line gap is the loudest piece
+ * of spacing on the screen, and 1.15 leaves a two-line heading looking like two
+ * headings.
+ */
+.section[data-register="chapter"] .title {
+  font-size: var(--step-5);
+  font-weight: 700;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+}
+
+.section[data-register="chapter"] .head {
+  margin-bottom: var(--s-7);
 }
 
 .subhead {
@@ -51,64 +116,11 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink-soft);
-  margin-bottom: 0.75rem;
-}
-
-/* The rail copy of a role's identity. Hidden below 62rem, where .roleContent
-   carries its own copy instead -- see roleHeadMobile below and the comment
-   on .roleRail in the desktop media query. */
-.roleHead {
-  display: none;
-  margin-bottom: 1.25rem;
+  margin-bottom: var(--s-3);
 }
 
 .roleContent {
-  padding-block: clamp(1.5rem, 4vh, 2.5rem);
-  border-top: 1px solid var(--rule);
-}
-
-.roleContent:first-of-type {
-  border-top: none;
-  padding-top: 0;
-}
-
-.roleHeadMobile {
-  margin-bottom: 1.25rem;
-}
-
-/* The employer, repeated over its own figures. Only earns its place on a wide
-   screen, where the identity has moved into the sticky rail. */
-.roleTag {
-  display: none;
-}
-
-/* The job title leads. It is the line a recruiter is actually looking for, so
-   it is set at heading scale rather than as a caption under the employer.
- *
- * Set in the serif, and sized to the rail it actually occupies. At --step-2 in
- * the mono it rendered 41.6px inside a 240px column: "AI Engineer, Graduate
- * Researcher" broke across four lines and still overflowed its column by 43px,
- * because mono runs about 0.6em per character and a rail that width holds
- * fourteen of them. The serif carries roughly a third more characters per line
- * at the same size, which is the whole reason headings on this page are set in
- * it, and this one had been left behind in the body face. */
-.roleName {
-  font-family: var(--font-serif), Georgia, serif;
-  font-size: clamp(1.45rem, 1.15rem + 1vw, 2rem);
-  font-weight: 500;
-  line-height: 1.12;
-  letter-spacing: -0.015em;
-  text-wrap: balance;
-  /* A long title shortens rather than escaping its column. */
-  overflow-wrap: break-word;
-}
-
-.roleMeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.35rem 0.9rem;
-  margin: 0.3rem 0 0;
+  padding-block: 0;
 }
 
 .company {
@@ -122,7 +134,7 @@
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem 0.9rem;
+  gap: var(--s-2) var(--s-4);
   margin: 0 0 1.5rem;
   padding: 0;
   font-family: var(--font-mono), monospace;
@@ -130,31 +142,59 @@
   color: var(--ink-soft);
 }
 
+.stack li {
+  /* The mark sits on the text baseline beside the name, not above it. `gap`
+     rather than a margin so an entry with no mark -- six of the brands named
+     here were withdrawn from simple-icons by their owners -- closes up instead
+     of carrying an empty slot. */
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.stack li svg {
+  /* Optical, not mathematical: a 24-grid logo centres slightly high against a
+     mono lowercase, and the marks read as floating without this. */
+  translate: 0 0.5px;
+  flex: none;
+  opacity: 0.85;
+}
+
 .stack li + li {
-  border-left: 1px solid var(--rule);
-  padding-left: 0.9rem;
+  border-left: var(--border-hair) solid var(--rule);
+  padding-left: var(--s-4);
 }
 
 
 .split {
   display: grid;
-  gap: clamp(2rem, 5vh, 3rem);
-  margin-top: clamp(2rem, 5vh, 3rem);
-  padding-top: clamp(2rem, 5vh, 3rem);
-  border-top: 1px solid var(--rule);
+  gap: var(--s-7);
+  margin-top: var(--s-7);
+  padding-top: var(--s-7);
+  border-top: var(--border-hair) solid var(--rule);
 }
 
 
 .footer {
-  padding-block: clamp(2.5rem, 8vh, 4rem);
+  padding-block: var(--s-7);
   color: var(--ink-soft);
 }
 
+/* Prose, in the prose face. This rule used to re-declare the family as mono,
+   which took the whole colophon -- its lead, its claims and eight paragraphs
+   averaging 56 words -- out of the reading face and set it as data. Mono is
+   for code, identifiers and figures; this is none of the three. */
 .footerNote {
   font-size: var(--step--1);
-  font-family: var(--font-mono), monospace;
   max-width: var(--measure);
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--s-5);
+}
+
+/* Emphasis inside a footnote is weight and colour, not size. `inherit` reads
+   as the guaranteed-invalid value here, which sends var() to its fallback and
+   changes nothing; the block's own step is the value. */
+.footerNote {
+  --lead-step: var(--step--1);
 }
 
 @media (min-width: 62rem) {
@@ -187,7 +227,7 @@
   .grid {
     display: grid;
     grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr);
-    column-gap: clamp(1.5rem, 3vw, 3.5rem);
+    column-gap: var(--s-7);
     align-items: start;
   }
 
@@ -195,8 +235,9 @@
     grid-column: 2;
   }
 
-  /* Shared with .roleHead below, so both rails land on the same line when
-     stuck and a role's stacked offset is additive to one number, not two. */
+  /* Where a rack header comes to rest when it sticks. Shared with the section
+     head so both land on the same line rather than on two numbers that have to
+     be kept equal by hand. */
   .grid {
     --role-stack-base: clamp(1.5rem, 6vh, 3rem);
   }
@@ -211,211 +252,136 @@
   }
 
   /*
-   * Rail and content, two columns of one grid, with the rail sticky as a
-   * single unit.
+   * The second layout family.
    *
-   * Three earlier shapes each failed a different way. A per-role grid let
-   * each identity go the moment its own role ended, leaving a blank rail.
-   * One shared full-height box fixed that but put all three titles on screen
-   * from the first moment, so nothing accumulated. Giving each role its own
-   * cell spanning to the last row fixed the reveal, then unstuck them in
-   * reverse order at the section's end -- the third identity came loose 260px
-   * before the first and rode up through the two above it. Padding the cells
-   * to equalise that made it worse still: a sticky element is bounded by its
-   * container's CONTENT box, so padding shortens the range rather than
-   * extending it.
+   * Seven sections shared one shape: sticky heading in a narrow left rail,
+   * everything else in the column beside it. It is a good shape and it was the
+   * only one, so the page had a single rhythm from the first section to the
+   * last and nothing marked which of them carried the argument.
    *
-   * One sticky element holding three children in normal flow has neither
-   * problem. There is a single containing block, so the stack arrives and
-   * leaves as one thing, and the accumulation is done by revealing each
-   * identity as its role is reached rather than by positioning three separate
-   * sticky boxes against each other.
+   * Banner spans the heading across both columns and lets the content run at
+   * full width underneath. It is given to the two sections whose job is not the
+   * same as the middle five: the one that opens the case, and the one that asks
+   * for the reply.
+   */
+  .section[data-layout="banner"] .grid > * {
+    grid-column: 1 / -1;
+  }
+
+  .section[data-layout="banner"] .head {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    position: static;
+    margin-bottom: var(--s-7);
+    max-width: none;
+  }
+
+  /* The heading is no longer competing with a rail for width, so it takes the
+     size the rail was denying it. */
+  /*
+   * The third family, and the fourth.
+   *
+   * Two shapes across seven sections meant the page had one rhythm from the
+   * first section to the last: a sticky heading in a narrow rail, content
+   * beside it, five times running. Nothing marked which section carried the
+   * argument, because every section looked like the one before it.
+   *
+   * These two are chosen to have different silhouettes rather than different
+   * measurements. A reader scrolling past at speed reads the shape, not the
+   * width: a rail is a heading floating beside a column, a banner is a heading
+   * over a column, a rule is a heading sitting on a line that crosses the page,
+   * and a bank is a wall of panels with the heading out of the way above it.
+   */
+
+  /* RULE. The heading sits on a line that runs the full width, with its key on
+     the far end of the same baseline. It is the section head as a printed rule
+     rather than as a floating label, and it is the one shape here that draws a
+     horizontal across the page, which is what makes it read as a chapter
+     opening rather than as another column heading. */
+  .section[data-layout="rule"] .grid > * {
+    grid-column: 1 / -1;
+  }
+
+  .section[data-layout="rule"] .head {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    position: static;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-6);
+    max-width: none;
+    padding-block-end: var(--s-4);
+    border-block-end: var(--border-emphasis) solid var(--ink);
+    margin-bottom: var(--s-7);
+  }
+
+  /* BANK. The heading clears out above and the instruments run two abreast.
+     Section 02 held four panels in one column and was 3,791px tall on its own,
+     which is four screens of scrolling for a section whose whole argument is
+     that the numbers sit beside each other and agree. Two columns is not a
+     saving in height, it is the argument: a bank of readouts is one object. */
+  .section[data-layout="bank"] .head {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    position: static;
+    max-width: none;
+    margin-bottom: var(--s-7);
+  }
+
+  .section[data-layout="bank"] .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--s-6);
+    align-items: start;
+  }
+
+  /* Auto-placed into the two columns rather than assigned, so the section can
+     gain or lose a panel without anything here changing.
+
+     The head is excluded rather than overridden: a child selector outranks the
+     class rule above it, so `.grid > *` was quietly putting the heading back
+     into column one after the head rule had spanned it. */
+  .section[data-layout="bank"] .grid > *:not(.head) {
+    grid-column: auto;
+  }
+
+  /*
+   * A block that spans says so.
+   *
+   * This was `:nth-child(2)`, which is a layout rule written as a fact about
+   * DOM order. The comment on it explained that `:first-of-type` had matched
+   * two elements because the children are a mix of div and section, and the
+   * conclusion drawn was to count positions instead. That trades one fragile
+   * selector for another: adding a block, reordering two, or wrapping one moves
+   * the span onto whatever lands in slot two, and nothing anywhere fails. The
+   * section renders, it is simply wrong.
+   *
+   * The element that spans carries the attribute. Order is free again.
+   */
+  .section[data-layout="bank"] .grid > [data-span="full"] {
+    grid-column: 1 / -1;
+  }
+
+  /*
+   * Three racks in one column.
+   *
+   * This was a two-column grid: a sticky identity rail on the left and the
+   * evidence on the right, kept in step by a shared containing block, a depth
+   * index and a revealed flag. Four earlier shapes are described in the history
+   * of this file and each failed a different way, all of them for the same
+   * underlying reason -- the title and the figures it labels were two elements
+   * that had to be positioned against each other.
+   *
+   * A rack has no such problem, because the title is part of the unit. Each
+   * role's own header strip sticks, so the identity of the role a reader is
+   * inside is on screen because it belongs to the thing they are reading, not
+   * because a second column is holding a copy of it in place.
    */
   .roles {
     display: grid;
-    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
-    grid-template-rows: repeat(var(--role-count, 3), auto);
-    column-gap: clamp(1.5rem, 2.5vw, 2.5rem);
+    gap: var(--s-6);
   }
 
-  .roleRail {
-    grid-column: 1;
-    grid-row: 1 / -1;
-    position: sticky;
-    top: var(--role-stack-base);
-    /* Its own height, not the row's: a stretched sticky box has no room to
-       travel inside its own containing block. */
-    align-self: start;
-  }
-
-  .roleContent {
-    grid-column: 2;
-    grid-row: var(--row);
-  }
-
-  .roleHead {
-    display: block;
-    /*
-     * Collapsed until the reader reaches this role, then opened. The
-     * identities are still in the document and still in the accessibility
-     * tree while collapsed -- this is a visual reveal, not a mount, so a
-     * screen reader gets all three headings on arrival regardless of scroll
-     * position.
-     */
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    /*
-     * The same reveal for every role, stepping down with depth.
-     *
-     * The current role gets the full movement and the full duration; each
-     * older one arrives a little quicker and travels a little less, so the
-     * newest job is the one that announces itself and the two behind it
-     * settle in rather than compete. One declaration rather than three,
-     * scaled off the same --depth the indent already uses.
-     */
-    transform: translateY(calc(-0.4rem + var(--depth, 0) * 0.1rem));
-    transition:
-      max-height calc(0.34s - var(--depth, 0) * 0.06s) ease,
-      opacity calc(0.34s - var(--depth, 0) * 0.06s) ease,
-      transform calc(0.34s - var(--depth, 0) * 0.06s) ease;
-
-    /*
-     * Three titles in one column have to be told apart at a glance, and each
-     * cue carries a different fact rather than repeating one three times.
-     * The rule on the left is full ink and twice the weight for the current
-     * role against a hairline for past ones, so which job he holds now reads
-     * without reading a date. The indent steps back one notch per role, so
-     * depth in the stack reads as depth in time. Size is set below.
-     *
-     * Deliberately not --mark. That accent is reserved to claims a reader can
-     * go and check, which check 12.10 enforces; "this is the current role" is
-     * state, and spending the evidence colour on it would blunt the one cue
-     * the page uses to mean "verifiable".
-     */
-    margin-left: calc(var(--depth, 0) * 0.9rem);
-    border-left: 1px solid var(--rule);
-    padding-left: 0.85rem;
-  }
-
-  .roleHead[data-revealed="yes"] {
-    /* A ceiling, not a measurement: max-height cannot transition from a
-       computed height, and the tallest identity measures well under this. */
-    max-height: 16rem;
-    opacity: 1;
-    transform: none;
-    padding-block: 0.4rem 0.5rem;
-  }
-
-  .roleHead:not([data-past]) {
-    border-left-width: 2px;
-    border-left-color: var(--ink);
-  }
-
-  /*
-   * The role being read, against the roles already read.
-   *
-   * Revealing the titles solved arriving; it did not solve reading. With
-   * three stacked, "14 tools on one LangGraph agent" sat level with a list
-   * of three jobs and nothing tied it to the first one -- the pairing that
-   * vertical adjacency normally carries is exactly what a sticky stack
-   * gives up. Weight follows the description currently under the reader's
-   * eye, so the rail always answers "whose numbers are these".
-   *
-   * Ink and weight only. This is a reading position, not a checkable claim,
-   * so it stays off the evidence accent (check 12.10).
-   */
-  /*
-   * The stack darkest at the top, lightening downward.
-   *
-   * Depth in the stack is depth in time, and the ink ramp already means
-   * "how much of your attention this wants", so the newest role is set in
-   * full ink and each older one steps back one tone. Read top to bottom the
-   * gradient is the career in the right order without a date being read.
-   *
-   * Which role is being read is carried by the rule on the left instead of
-   * by colour: an earlier version swapped the active title to full ink,
-   * which fought this gradient every time the reader moved between roles and
-   * made the stack flicker between two orderings.
-   */
-  .roleRail > .roleHead:nth-child(2) .roleName,
-  .roleRail > .roleHead:nth-child(2) .roleMeta {
-    color: var(--ink-soft);
-  }
-
-  .roleRail > .roleHead:nth-child(3) .roleName,
-  .roleRail > .roleHead:nth-child(3) .roleMeta {
-    color: var(--ink-faint);
-  }
-
-  .roleHead[data-active="no"] {
-    border-left-width: 1px;
-    border-left-color: var(--rule);
-  }
-
-  .roleHead[data-active="yes"] {
-    border-left-width: 2px;
-    border-left-color: var(--ink);
-  }
-
-  /* The job title leads the tag, the employer follows it, same order as the
-     rail. It is the line a recruiter scans for, so it is the one set in ink. */
-  .roleTagRole {
-    color: var(--ink);
-  }
-
-  .roleTag {
-    display: block;
-    font-family: var(--font-mono), monospace;
-    font-size: var(--step--1);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-    margin-bottom: 0.6rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 1px solid var(--rule);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .roleHead {
-      transition: none;
-      transform: none;
-    }
-  }
-
-  /*
-   * Rail typography is set for a stack, not for a single heading.
-   *
-   * At the page's normal role sizes the three identities measured 274, 137
-   * and 156 pixels, so once all three were open they held 567px -- most of a
-   * 900px viewport, leaving the description they label almost nothing to
-   * show in. Most of it was the meta line: a 240px rail wraps "Boston
-   * University, Questrom Computational Lab" over four lines at body size.
-   */
-  .roleHead .roleName {
-    font-size: 1.2rem;
-    line-height: 1.18;
-  }
-
-  .roleHead[data-past] .roleName {
-    font-size: var(--step-0);
-  }
-
-  .roleHead .roleMeta {
-    display: block;
-    font-size: var(--step--1);
-    line-height: 1.3;
-    margin-top: 0.2rem;
-  }
-
-  .roleHead .company {
-    display: block;
-    font-size: inherit;
-  }
-
-  .roleHeadMobile {
-    display: none;
-  }
 
   .stack {
     margin-bottom: 0;
@@ -445,31 +411,43 @@
 
 /* The closing section is set up a step. Peak-end: the last thing read carries
    disproportionate weight in what a reader remembers. */
-.section[data-weight="closing"] .title {
-  font-size: clamp(2rem, 1.4rem + 2.6vw, 3.25rem);
-}
+/* The closing heading no longer needs its own size.
+ *
+ * This set --step-3 because contact was "the one heading allowed off the h2
+ * step", which was the only way to mark a section when all seven shared one
+ * size. The register does that properly now and this override only fought it:
+ * measured with both in place, contact rendered at 48px while the other two
+ * chapters were at 96, so the section the page is actually asking for was the
+ * smallest of the three. */
 
 .section[data-weight="closing"] .links {
   /* Steps up on a wide screen, holds at body size on a phone: the email address
      is a single unbreakable token and at step-2 it is wider than 375px. */
   font-size: clamp(var(--step-0), 0.7rem + 1.6vw, var(--step-2));
-  gap: 1.25rem 2rem;
+  gap: var(--s-5) var(--s-6);
 }
 
 /* The open-source section leads with the artifact rather than prose, so its
    heading sits tighter to the diff below it. */
 .section[data-lead="artifact"] .title {
-  margin-bottom: clamp(1rem, 2.5vh, 1.5rem);
+  margin-bottom: var(--s-5);
 }
 
 /* A project that runs but is not the argument.
    Separated from the credentials above it by a rule rather than a heading level,
    so it reads as an appendix to this section instead of competing with the work
    that earned its own. */
+/*
+ * The one thing in this section that is running rather than filed.
+ *
+ * It was a hairline and a heading, which is the same treatment as the education
+ * block below it, and it holds a live reachability probe: the only element in
+ * the section that can come back with a different answer than it had a minute
+ * ago. The ladder has a tier for that and this is what it is for.
+ */
 .alsoBuilt {
-  margin-top: clamp(1.5rem, 4vh, 2.5rem);
-  padding-top: clamp(1.25rem, 3vh, 2rem);
-  border-top: 1px solid var(--rule);
+  margin-top: var(--s-6);
+  padding: var(--s-5);
 }
 
 /* The section index, now a permalink. It has to stay quiet: a reader is not
@@ -481,13 +459,11 @@
 }
 
 /* Pre-2025 roles. Context rather than evidence, so they occupy less of the
-   reader's attention without losing anything a screener searches for.
-   Two selectors each below because the identity now renders twice -- once
-   into .roleHead for the desktop rail, once into .roleHeadMobile inside
-   .roleContent for narrow screens -- and data-past is set on both. */
-.roleHead[data-past] .roleName,
-.roleContent[data-past] .roleName {
-  font-size: var(--step-0);
+   reader's attention without losing anything a screener searches for. The
+   identity renders once now, in the rack's own header strip, so this is one
+   selector rather than the pair it needed when a rail held a second copy. */
+.roleContent[data-past] :global(.panel[data-kind="rack"]) {
+  --rack-weight: 500;
 }
 
 /* Opacity was the wrong instrument. Fading the whole article dimmed the
@@ -495,9 +471,7 @@
    quiet, and left two of his three jobs looking like disabled UI. De-emphasis
    is a typographic decision: the heading steps down a size, the body steps back
    one tone, and everything stays at full opacity so nothing reads as broken. */
-.roleContent[data-past] .roleBody,
-.roleHead[data-past] .roleMeta,
-.roleContent[data-past] .roleMeta {
+.roleContent[data-past] .roleBody {
   color: var(--ink-soft);
 }
 
@@ -509,4 +483,74 @@
    hero's wrap, which carries no grid class by design. */
 .roleBody {
   max-width: 62ch;
+}
+
+/* The four terms the roles are written in, moved here from the hero.
+
+   Not pills. A bordered capsule per capability is the shape a skills cloud
+   takes, and it says the same thing about four items that a row of four items
+   says, using four more borders to say it. A row with hairlines between the
+   cells reads as one object with four parts, which is what this is. Drawn by
+   the grid gap rather than by borders, so no cell has to know whether it is
+   first or last. */
+.focus {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--border-hair);
+  margin: 0 0 var(--s-6);
+  padding: 0;
+  background: var(--rule);
+  border-block: var(--border-hair) solid var(--rule);
+}
+
+.focus li {
+  background: var(--paper);
+  padding: var(--s-3) var(--s-4) var(--s-3) 0;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+
+/*
+ * The closing wordmark.
+ *
+ * Outlined rather than filled, and that is the whole reason it can be this
+ * large. The two chapter headings above it are solid with a misregistered second
+ * impression behind them; a third element at that weight would compete with
+ * both. A stroke at the hairline colour occupies the same area and almost none
+ * of the visual weight, so it reads as a watermark on the stock rather than as
+ * another headline.
+ *
+ * It runs past the right edge on purpose. `overflow-x: clip` on the footer
+ * rather than `hidden`, so no scroll container is created and nothing on the
+ * page gains a scrollbar; and because the element is decorative and
+ * aria-hidden, nothing readable is being cut off. That is the difference
+ * between this and the section headings, which wrap instead: those carry a
+ * focusable control inside them.
+ */
+.wordmark {
+  /* Display voice: it is the same register as the chapter headings above it,
+     one level louder and drawn rather than read. */
+  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  margin: var(--s-8) 0 0;
+  font-size: clamp(3rem, 18vw, 15rem);
+  font-weight: 700;
+  line-height: 0.78;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  text-wrap: nowrap;
+  color: transparent;
+  /* 2px and lifted off --rule.
+   *
+   * A 1px stroke in the hairline colour measured L21 against an L4 ground and
+   * was effectively invisible: the same failure mode as a low-opacity border on
+   * a dark surface, which is the thing this scheme replaced everywhere else. It
+   * is still a watermark rather than a headline, it just exists now. */
+  -webkit-text-stroke: 2px color-mix(in oklch, var(--ink) 24%, transparent);
+  user-select: none;
+}
+
+.footer {
+  overflow-x: clip;
 }

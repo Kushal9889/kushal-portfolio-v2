@@ -68,10 +68,19 @@ export default function Palette({
         setTimeout(() => document.querySelector<HTMLInputElement>("#ask")?.focus(), 400);
       },
     },
+    /* Every section, in the order the page reads them.
+     *
+     * Two were missing: "How this is measured" and "How he works" had no jump
+     * at all, so a palette advertising itself as "jump anywhere" could not
+     * reach the section holding the eval suite or the one holding the compiled
+     * graph. The labels match the headings, because a reader who has seen the
+     * page is looking for the words they saw. */
     { kind: "jump", label: "A bug in LangChain", hint: "section", run: go("opensource") },
+    { kind: "jump", label: "How this is measured", hint: "section", run: go("measured") },
+    { kind: "jump", label: "How he works", hint: "section", run: go("approach") },
     { kind: "jump", label: "Work", hint: "section", run: go("work") },
-    { kind: "jump", label: "Research and publications", hint: "section", run: go("research") },
-    { kind: "jump", label: "Proof and certifications", hint: "section", run: go("proof") },
+    { kind: "jump", label: "Research", hint: "section", run: go("research") },
+    { kind: "jump", label: "What else checks out", hint: "section", run: go("proof") },
     { kind: "jump", label: "Get in touch", hint: "section", run: go("contact") },
     {
       kind: "copy",

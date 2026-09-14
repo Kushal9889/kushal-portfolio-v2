@@ -79,6 +79,11 @@ export default function Topology() {
             <path
               key={`${e.from}-${e.to}`}
               className={styles.edge}
+              /* Normalised length, so the draw-on needs no getTotalLength() call
+                 and no measurement that a reflow could invalidate: the dash
+                 units below are fractions of the path, whatever its geometry. */
+              pathLength={1}
+              data-draw
               data-conditional={e.conditional || undefined}
               data-live={edgeLive(e.from, e.to) || undefined}
               // Curved only where the branch changes row. A straight line

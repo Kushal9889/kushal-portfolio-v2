@@ -166,7 +166,6 @@ export default function Reach({
           a hiring process actually runs on. */}
       <p className={styles.plain}>
         <a
-          className={styles.address}
           href="/contact.vcf"
           onClick={() => track("contact", "vcard")}
         >
@@ -179,7 +178,7 @@ export default function Reach({
           needs something they can paste, not a link they must click. */}
       <p className={styles.plain}>
         Or copy it: <span className={styles.address}>{email}</span>
-        {" · "}
+        {", "}
         <a className={styles.address} href={`tel:${phone.replace(/[^+\d]/g, "")}`}>
           {phone}
         </a>

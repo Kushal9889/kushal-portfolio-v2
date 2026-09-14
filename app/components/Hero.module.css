@@ -5,26 +5,43 @@
      of empty space under the openers, and dead space above the fold is worse
      than a short hero: ending early lets the first section show through, which
      is what invites the scroll. */
-  padding-block: clamp(1.25rem, 3vh, 2rem) clamp(2rem, 6vh, 3.5rem);
+  padding-block: var(--s-5) var(--s-4);
 }
 
 .top {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 1rem;
+  gap: var(--s-4);
   /* Was clamp(2.5rem, 10vh, 6rem): 82px of padding under a single 22px line,
      which cost more vertical space than any other decision in the hero. The
      name and the location are a masthead, not a section, and the headline
      below already carries all the separation the eye needs. */
-  padding-bottom: clamp(1.25rem, 4vh, 2.25rem);
+  padding-bottom: var(--s-3);
+}
+
+/* His name, at the size of the thing it names.
+ *
+ * This was 14px mono, uppercase, tracked to 0.14em: the smallest text in the
+ * hero, and the item a reader's first fixation lands on. Mono is the face this
+ * page uses for code, data and measurement, and a person is none of those, so
+ * it was also the one place mono was worn rather than used.
+ *
+ * Sans, at the heading step, tracked in rather than out. It reads as a masthead
+ * instead of as a file header. */
+/* A place is a value, not a field label. It was set in the mono caps this page
+   reserves for data keys, which put "BOSTON, MA" in the same voice as "MERGED"
+   and "AVAILABLE" two blocks below it. */
+.place {
+  font-size: var(--step--1);
+  color: var(--ink-faint);
 }
 
 .name {
-  font-size: var(--step--1);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: var(--step-1);
   font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
 
 .line {
@@ -35,11 +52,31 @@
    * one sentence. Measured at 36.3px per character, the first sentence needs
    * 1270px to sit on one line and the wrap is 1088; at 3.6rem it needs 1048 and
    * fits. Two lines, 127px, and the break lands on the full stop. */
-  font-size: clamp(2.2rem, 1.5rem + 2.6vw, 3.6rem);
-  font-family: var(--font-serif), Georgia, serif;
-  font-weight: 400;
-  letter-spacing: -0.025em;
-  max-width: 36ch;
+  /* The display step, and the only element on the page that uses it.
+   *
+   * It was a serif at 64px/500 while seven sans section headings ran 54px/600
+   * underneath it: the largest thing on the page was lighter than the headings
+   * it outranked, and in a different voice from all of them. Every reference
+   * system at this tier sets display and heading in one family and separates
+   * them by size and weight. The serif keeps prose, where reading happens. */
+  font-size: var(--step-4);
+  /* Display voice. The headline is the one line on this page drawn to be
+     looked at before it is read, and it is the anchor a reader lands on. */
+  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  /* 1.5 came from the body rule and was never overridden. At display size that
+     is a paragraph's leading on a headline: the two lines floated apart and the
+     sentence stopped reading as one object. */
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  /* No cap. A 22ch measure set this on three lines at 1440, and a headline is
+     the one block on the page that is scanned rather than read, so the
+     reading-measure rule that governs prose does not apply to it. Balanced, so
+     the two lines come out near equal instead of leaving one orphan word. */
+  text-wrap: balance;
+  margin-block: 0;
+  /* Descender reserve: the italic qualifier carries a p and a g. */
+  padding-block-end: 0.08em;
 }
 
 /* The graph is the one signature moment on the page. It gets the space that a
@@ -53,17 +90,17 @@
    in a block whose other half never rendered. */
 
 .caption {
-  margin: 0.75rem 0 0;
+  margin: var(--s-3) 0 0;
   font-size: var(--step--1);
   color: var(--ink-soft);
 }
 
+/* One target. The credential that used to sit beside it was a second thing to
+   click next to the only thing worth clicking, and it now sits in the register
+   above where it reads as a fact rather than as an alternative. */
 .actions {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1.25rem;
-  margin-top: clamp(1.5rem, 3.5vh, 2rem);
+  margin-top: var(--s-6);
 }
 
 /* One primary action, larger than anything near it, and the only thing on the
@@ -78,10 +115,15 @@
  * semantic tokens spent theirs on readouts. ADR-005 moves --signal to the brand
  * tier: it means "the one thing to press", --live keeps "happening now", and
  * every interactive target on the page is this colour and nothing else is. */
+/* Fitts: the one thing the page asks for is the largest target in it.
+   It was 182px wide against a 662px instrument, sitting bottom-left as the
+   smallest interactive object on the screen. */
 .cta {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  padding: 1rem 2rem;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--s-4) var(--s-5);
   background: var(--signal);
   color: var(--on-signal);
   border-radius: var(--r-md);
@@ -110,15 +152,9 @@
 
 
 
-.cred {
-  font-size: var(--step--1);
-  color: var(--ink-soft);
-  text-decoration-color: var(--rule);
-}
-
 @media (min-width: 40rem) {
   .graph {
-    gap: 0 1.5rem;
+    gap: 0 var(--s-5);
   }
 }
 
@@ -132,9 +168,9 @@
  *
  * Every reduction above is to spacing. No content was cut. */
 .agentSlot {
-  margin-top: clamp(1.25rem, 3vh, 1.75rem);
-  padding-top: clamp(1rem, 2vh, 1.4rem);
-  border-top: 1px solid var(--rule);
+  margin-top: var(--s-4);
+  padding-top: var(--s-3);
+  border-top: var(--border-hair) solid var(--rule);
 }
 
 /* The graph row.
@@ -149,7 +185,6 @@
      silhouette test looks for. */
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
-  margin-bottom: var(--s-2);
 }
 
 .cell {
@@ -227,24 +262,6 @@
   }
 }
 
-/* The scan line. Mono and tracked out so it reads as metadata rather than as a
-   sentence, which is what stops it competing with the headline directly above
-   it. Uppercase was tried and rejected: four terms in caps at this width wrap
-   into a block that looks like a navigation bar. */
-.focus {
-  margin: 0.7rem 0 0;
-  font-size: var(--step--1);
-  letter-spacing: 0.04em;
-  color: var(--ink-soft);
-  max-width: 46rem;
-}
-
-.available {
-  margin: 0.7rem 0 0;
-  font-size: var(--step--1);
-  color: var(--ink-faint);
-}
-
 /*
  * The phone puts the agent first.
  *
@@ -260,29 +277,24 @@
   }
 
   .caption {
-    margin-block-start: 0.9rem;
+    margin-block-start: var(--s-4);
   }
 
-  /* The credential is a link and was 21px tall, which is not a target. Padding
-     only: nothing about it looks different, it is simply reachable. */
-  .cred {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-  }
-
-  .focus,
-  .proof,
-  .available {
-    margin-block-start: 0.85rem;
+  .proof {
+    margin-block-start: var(--s-3);
   }
 }
 
-/* Below the phone breakpoint too: a mouse is not an excuse for a 21px target. */
-.cred {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
+/* The register's links are the smallest targets in the hero. The row is the
+   target area, so the link fills it rather than growing it: a 44px inline box
+   inside a 40px row would have set the three rows to different heights. */
+.fact a {
+  display: block;
+  padding-block: var(--s-2);
+  /* Cancels its own padding exactly. A literal -0.55rem pulled 0.8px further
+     than the 0.5rem it was undoing, so each row rendered 1.6px short of the
+     height it was laid out for. */
+  margin-block: calc(-1 * var(--s-2));
 }
 
 
@@ -291,7 +303,7 @@
    screen most of them see. Set at label scale so it reads as attribution rather
    than competing with the tagline above it. */
 .current {
-  margin: 0.65rem 0 0;
+  margin: var(--s-3) 0 0;
   font-size: var(--step--1);
   color: var(--ink);
   /* 600, not 500. Martian Mono ships at 300/400/600 and `font-synthesis-weight`
@@ -306,124 +318,97 @@
  * were set as one wrapping monospace line indistinguishable from the two gray
  * lines above and below it. Set as discrete items they read as a list of
  * capabilities in one glance instead of a sentence to be parsed. */
-.focus {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-2) var(--s-2);
-  margin: var(--s-3) 0 0;
-  padding: 0;
-}
-
-.focus li {
-  /* One step down so two sit on a row inside a 23rem column. At --step--1 the
-     longest label measured 190px against a 368px column, so every pill claimed
-     its own line and four short capabilities cost 133px of the first screen. */
-  font-size: var(--step--2);
-  line-height: 1;
-  color: var(--ink-soft);
-  padding: 0.34em 0.62em;
-  border: var(--border-hair) solid var(--rule);
-  border-radius: 100px;
-  white-space: nowrap;
-}
-
-/* The evidence block.
+/* The proof, as a sentence.
  *
- * The isolation effect needs difference in KIND, not degree: this is the only
- * bordered object in the hero, the only place a display-scale tabular figure
- * appears, and it carries more surrounding space than anything else. A reader
- * who takes nothing else from the first screen takes this.
+ * It was a bordered box carrying a display figure over a caption, with a 2px
+ * coloured rule down its leading edge. Three separate problems in one object: a
+ * thick coloured side-border on a callout is the cheapest way an interface says
+ * "notice me", the figure-over-caption shape is the statistic template every
+ * hero on the web already uses, and neither is what this claim is. It is not a
+ * metric. It is an event, with a date and an outside name attached.
  *
- * It is an anchor, so the whole block is the target rather than a phrase inside
- * a sentence. The previous treatment set the strongest claim on the page as an
- * underlined run of text at the same size as the focus line beneath it, which
- * made it read as a footnote. */
-.evidence {
-  display: grid;
-  /* One column. This sat beside a full-width layout that no longer exists, and
-     in the identity column the two-column form crushed the sentence into a
-     99px ribbon 321px tall. The figure reads better stacked over its claim
-     anyway: the number is the thing that stops the eye, and the sentence is
-     what it turns out to mean. */
-  gap: var(--s-3);
-  align-items: start;
-  /* Tightened. The evidence block was spending 90px of pure margin, which
-     pushed the live instrument off a 13-inch first screen. */
-  margin-block: clamp(1rem, 2.6vh, 1.6rem);
-  padding: clamp(1.1rem, 2.5vw, 1.5rem) clamp(1.2rem, 3vw, 1.8rem);
-  max-width: 46rem;
-  text-decoration: none;
-  border: 1px solid var(--rule);
-  /* --mark, not --signal. The accent means "something is happening" and is
-     reserved for live state by an invariant the audit enforces; painting it on
-     a static border would cost it that meaning everywhere else on the page.
-     --mark is the right token by meaning as well as by rule: it is what this
-     page already uses for evidence a reader can go and check, which is exactly
-     what sits inside this box. */
-  border-inline-start: var(--border-emphasis) solid var(--mark);
-  background: var(--paper-sunk);
-  /* Paints its own recessed ground, so it owes the same ink compensation the
-     sunk scope gives. Measured Lc 70.8 on the unit and label against a 75
-     floor before this. */
-  --ink-faint: oklch(0.442 0.018 62);
-  --ink-soft: oklch(0.375 0.016 62);
-  transition:
-    border-color var(--t-base) var(--ease-out),
-    transform var(--t-base) var(--ease-out);
-}
-
-.evidence:hover {
-  border-color: var(--ink);
-  transform: translateY(-1px);
-}
-
-.evidenceFigure {
-  display: flex;
-  align-items: baseline;
-  gap: var(--s-2);
-}
-
-/* Light weight on purpose. A number this large does not need bold to dominate,
-   and bold at display scale reads as shouting rather than as data. */
-.evidenceNumber {
-  font-size: clamp(2.4rem, 1.9rem + 1.6vw, 3.4rem);
-  font-weight: 300;
-  line-height: 0.85;
-  letter-spacing: -0.04em;
-  color: var(--ink);
-}
-
-.evidenceUnit {
-  font-size: 0.68rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-.evidenceBody {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-/* Serif, deliberately. The hero is otherwise monospace, so the one sentence a
-   reader is meant to actually read is set in the family used for reading. */
-.evidenceSentence {
+ * So the box is gone and the sentence carries itself. The serif is deliberate:
+ * this is the one line in the hero meant to be read rather than scanned, and
+ * the page's own rule is that the reading face marks written argument. */
+.proof {
+  margin: var(--s-5) 0 0;
   font-family: var(--font-serif), Georgia, serif;
   font-size: var(--step-1);
-  line-height: 1.35;
+  line-height: 1.4;
   color: var(--ink);
   text-wrap: pretty;
 }
 
-.evidenceLabel {
-  font-size: var(--step--1);
+/* Emphasis inside the sentence, in the sentence's own face.
+ *
+ * This was the sans at 1.28em inside a serif line: a second family injected
+ * into running text to make one figure louder, which is the emphasis mistake
+ * the anti-slop filter names outright. Weight and the accent carry it now, at
+ * the size of the words around it, so the line keeps its leading and the
+ * figure still stops the eye. */
+.proofFigure {
+  font-weight: 600;
+  color: var(--signal);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* The register.
+ *
+ * Three facts a recruiter needs before writing: the record behind the sentence
+ * above, the start date, and the credential. They used to be three blocks in
+ * three treatments with their own margins.
+ *
+ * Ruled by a 1px grid gap over a ruled ground rather than by borders, so no
+ * cell has to know which of its edges is shared with a neighbour and the rules
+ * stay exactly one pixel at any zoom. */
+.facts {
+  display: grid;
+  gap: var(--border-hair);
+  background: var(--rule);
+  border: var(--border-hair) solid var(--rule);
+  margin: var(--s-5) 0 0;
+}
+
+/* Rows, not columns.
+ *
+ * Three columns fitted the width and not the content: inside the 368px identity
+ * rail each cell came out 122px wide, which broke a repository path over three
+ * lines and made the block taller than the stacked version it replaced.
+ *
+ * As rows it reads straight down the scan rail with the keys in one column and
+ * the values in another, which is the shape a specification has and the shape
+ * an eye moving down the left edge is already following. */
+.fact {
+  display: grid;
+  grid-template-columns: 6.25rem minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: var(--s-4);
+  padding: var(--s-3) var(--s-4);
+  background: var(--paper);
+}
+
+.fact dt {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
   color: var(--ink-faint);
 }
 
-.evidence:hover .evidenceLabel {
-  color: var(--mark);
+.fact dd {
+  margin: 0;
+  font-size: var(--step--1);
+  line-height: 1.35;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.fact a {
+  text-decoration-color: var(--rule);
+}
+
+.fact a:hover {
+  text-decoration-color: var(--signal);
 }
 
 
@@ -490,11 +475,22 @@
  * the page had just made and the box that makes another read as unrelated
  * furniture. Same object, one frame, one ground.
  */
+/* The one place on the page where the ground changes, so it has to read as a
+   decision rather than as a box that happened to be dark.
+ *
+ * Three edges rather than one: the outer hairline against the paper, an inner
+ * ring just inside it, and the light caught on the top edge. That is the same
+ * construction a physical instrument has where a panel sits in a housing, and
+ * it is what separates a dark surface that was placed from one that was
+ * filled. No shadow: on a light ground a drop shadow under a dark panel is the
+ * most common way an interface says it was assembled. */
 .console {
-  margin-block-start: clamp(0.9rem, 2.2vh, 1.6rem);
+  margin-block-start: var(--s-5);
   border: var(--border-hair) solid var(--rule);
   border-radius: var(--r-panel);
-  box-shadow: var(--bezel);
+  box-shadow:
+    inset 0 0 0 var(--border-hair) var(--console-ring, transparent),
+    var(--bezel);
   overflow: hidden;
 }
 
@@ -505,7 +501,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--s-4);
-  padding: var(--s-3) var(--s-5);
+  padding: var(--s-2) var(--s-5);
   border-block-end: var(--border-hair) solid var(--rule);
   background: var(--paper-sunk);
 }
@@ -584,13 +580,16 @@
   display: grid;
   gap: var(--s-6);
   align-items: start;
-  margin-block-start: var(--s-5);
+  margin-block-start: var(--s-3);
 }
 
 @media (min-width: 62rem) {
   .body {
-    grid-template-columns: minmax(0, 23rem) minmax(0, 1fr);
-    gap: clamp(var(--s-6), 4vw, var(--s-8));
+    /* 23rem put the hero's one written sentence on a 34-character measure,
+       which is half the comfortable range and the reason the left column read
+       as a narrow strip beside the instrument. */
+    grid-template-columns: minmax(0, 28rem) minmax(0, 1fr);
+    gap: var(--s-7);
   }
 }
 
@@ -607,8 +606,11 @@
 }
 
 /* What the agent said on load. */
+/* Inline padding, which this block was the only one in the console without.
+   Its text started 1px inside the panel edge while every sibling row sat --s-5
+   in, so the answer read as text that had escaped its container. */
 .said {
-  padding-block: var(--s-4);
+  padding: var(--s-3) var(--s-5);
   border-block-start: var(--border-hair) solid var(--rule);
   min-height: 7.5rem;
 }
@@ -638,8 +640,14 @@
    *
    * Scrolled rather than truncated. Clipping would hide part of a real answer
    * on a page whose whole argument is that nothing here needs to be taken on
-   * trust; this keeps every word reachable and the layout fixed. */
-  max-height: 8.2rem;
+   * trust; this keeps every word reachable and the layout fixed.
+   *
+   * A fixed height rather than a ceiling. As a ceiling the pane was whatever
+   * the model had just written, so the panel resized under the reader when the
+   * answer replaced the bars waiting for it -- measured at 1440, the console
+   * jumped 79px and took the ask bar with it. A pane that is always the same
+   * size is also what an instrument looks like. */
+  height: 5.4rem;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -656,7 +664,11 @@
 }
 
 .saidPending {
-  margin: 0;
+  /* The same box the question occupies once there is one, so the block below
+     starts at the same line in both states. Short enough to hold one line at
+     320px: the longer wording wrapped there and the question it stands in for
+     did not, so the panel dropped 21px when the answer landed. */
+  margin: 0 0 var(--s-2);
   font-size: var(--step--1);
   color: var(--ink-faint);
 }
@@ -666,7 +678,13 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--s-1) var(--s-2);
-  margin: var(--s-3) 0 0;
+  margin: var(--s-2) 0 0;
+  /* Reserved, for the same reason the answer pane above it is a fixed height:
+     the chip count comes from the retriever, so the row is one line or two
+     depending on what it grounded against, and the panel moved under the
+     reader when the answer landed. Measured 0.00198 of layout shift. */
+  min-height: 3.4rem;
+  align-content: start;
 }
 
 .saidSrcLabel {
@@ -682,4 +700,73 @@
   padding: 0.2em 0.55em;
   border: var(--border-hair) solid var(--rule);
   border-radius: var(--r-pill);
+}
+
+/* The console fills before it answers.
+ *
+ * The graph reports three latencies within a second or so; the answer they
+ * belong to lands after them, and until it did this block was empty under a
+ * head already claiming to be running. Bars in the answer's own shape -- the
+ * serif measure, then the grounding chips -- so the panel is doing something
+ * visible for the whole time it is working, and nothing shifts when the words
+ * replace them. */
+.skel {
+  display: grid;
+  /* Four rows at the answer's own line pitch, in the pane the answer will
+     occupy. Same height either way, so nothing below moves when the words
+     arrive. */
+  gap: var(--s-5);
+  align-content: start;
+  height: 8.2rem;
+}
+
+.skelBar {
+  height: 0.62rem;
+  border-radius: var(--r-sm);
+  background: var(--rule);
+}
+
+/* The last line of a two-sentence answer rarely fills its measure. */
+.skelBar[data-short] {
+  width: 46%;
+}
+
+.skelChips {
+  display: flex;
+  gap: var(--s-2);
+  margin-block-start: var(--s-3);
+}
+
+/* Sized from the same font step and padding the real chip uses, so the row is
+   the height it will be rather than a guess that shifts. */
+.skelChip {
+  width: 4.5rem;
+  font-size: var(--step--2);
+  height: calc(1.9em + 2 * var(--border-hair));
+  border-radius: var(--r-pill);
+  border: var(--border-hair) solid var(--rule);
+}
+
+.skelChip[data-wide] {
+  width: 6.5rem;
+}
+
+/* The loop names the state it reports, which is the rule every animation on
+   this page is held to: these run only while a request is in flight, and the
+   selector says so. Opacity alone, so the sweep costs a composite and not a
+   paint. */
+.said[data-state="running"] .skelBar,
+.said[data-state="running"] .skelChip {
+  animation: skel 1.6s var(--ease-out) infinite;
+  animation-delay: calc(var(--skel-n, 0) * 130ms);
+}
+
+@keyframes skel {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.42;
+  }
 }

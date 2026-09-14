@@ -1,0 +1,434 @@
+"use client";
+
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMotion } from "@/lib/motion";
+import type { Cloud } from "./cloud-gl";
+import type { FieldInfo } from "./CorpusCloud";
+import { StageContext, type StageApi } from "./StageContext";
+import Commands, { type CommandLinks, type CommandsHandle } from "./Commands";
+import { directField } from "./director";
+import { markFrameReady, parseFrame, waitFor, watchRefresh } from "./frame";
+import "../../stage.css";
+import styles from "./Stage.module.css";
+
+const CorpusCloud = dynamic(() => import("./CorpusCloud"), { ssr: false });
+const Agent = dynamic(() => import("../Agent"), { ssr: false });
+
+/** Same event name Agent.tsx listens for. Importing the constant would pull the agent into this chunk. */
+const ASK_EVENT = "corpus:ask";
+/** Tokens per English word, the usual rule of thumb for BPE tokenisers. */
+const TOKENS_PER_WORD = 1.33;
+
+type Openable = { key: string; label: string; url: string; about: string };
+type Chapter = { id: string; label: string; ground: string };
+
+function onIdle(fn: () => void, timeout: number) {
+  if (typeof window.requestIdleCallback === "function") {
+    const id = window.requestIdleCallback(fn, { timeout });
+    return () => window.cancelIdleCallback(id);
+  }
+  const id = window.setTimeout(fn, Math.min(timeout, 300));
+  return () => window.clearTimeout(id);
+}
+
+/** Moves the page to a chapter or a role, landing where it has settled if it publishes that. */
+function jump(id: string) {
+  const el = document.getElementById(id);
+  if (!el) return false;
+  const settle = Number(el.dataset.settle);
+  if (Number.isFinite(settle) && settle > 0) window.scrollTo({ top: settle, behavior: "instant" });
+  else el.scrollIntoView({ behavior: "instant", block: "start" });
+  history.replaceState(null, "", `#${id}`);
+  return true;
+}
+
+/** Whether a key press belongs to something the reader is typing into. */
+function typing(target: EventTarget | null) {
+  const el = target as HTMLElement | null;
+  return Boolean(el?.closest?.("input, textarea, select, [contenteditable=''], [contenteditable='true']"));
+}
+
+/**
+ * The shell every chapter renders inside: the corpus field, the bar, the chapter
+ * ticks, the command palette and the agent drawer. Chapters mark themselves with `data-chapter` (the
+ * tick label) and `data-ground` (void, sheet or voltage) and the chrome follows,
+ * including when a chapter changes its own ground mid-hold.
+ */
+export default function Stage({
+  name,
+  agent,
+  links,
+  footer,
+  children,
+}: {
+  name: string;
+  agent: { email: string; linkedin: string; site: string; openable: Openable[] };
+  /** Where the palette's reach and read commands go. A page without them offers chapters and the agent only. */
+  links?: CommandLinks;
+  footer?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const cloud = useRef<Cloud | null>(null);
+  const fieldInfo = useRef<FieldInfo | null>(null);
+  const flash = useRef<HTMLDivElement>(null);
+  const dive = useRef(0);
+  const glow = useRef<number[] | null>(null);
+  const commands = useRef<CommandsHandle>(null);
+  const director = useRef<ReturnType<typeof directField> | null>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const meterRef = useRef<HTMLParagraphElement>(null);
+  const [cloudReady, setCloudReady] = useState(false);
+  const [mountCloud, setMountCloud] = useState(false);
+  const [mountAgent, setMountAgent] = useState(false);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [active, setActive] = useState(0);
+  // -1 until an observer has reported. Rendered as 0 on the server, the bar
+  // shipped its clear-over-the-hero state into the HTML, so a page with no
+  // script kept a transparent bar and let chapters scroll through the wordmark.
+  const [underBar, setUnderBar] = useState(-1);
+
+  // The renderer arrives after first paint, never in front of the headline.
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    return onIdle(() => setMountCloud(true), 1500);
+  }, []);
+
+  // The agent is the heaviest thing on the page and nothing on first paint needs
+  // it. It mounts when the page is idle, or at once for a shared question link.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("q")) {
+      setMountAgent(true);
+      dialog.current?.showModal();
+      return;
+    }
+    return onIdle(() => setMountAgent(true), 4000);
+  }, []);
+
+  // An answer started from anywhere (select-to-ask, an opener) opens the drawer,
+  // so it is never streaming into a closed panel.
+  useEffect(() => {
+    const root = document.documentElement;
+    const observer = new MutationObserver(() => {
+      if (root.dataset.streaming === "yes" && dialog.current && !dialog.current.open) dialog.current.showModal();
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ["data-streaming"] });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const nodes = Array.from(document.querySelectorAll<HTMLElement>("[data-chapter]"));
+    const read = () =>
+      setChapters(nodes.map((n) => ({ id: n.id, label: n.dataset.chapter ?? n.id, ground: n.dataset.ground ?? "void" })));
+    read();
+
+    // Two readings, taken at the two heights the chrome actually sits at. A
+    // chapter reaches the middle of the screen a third of a screen before it
+    // reaches the bar, so one shared reading painted the bar in the incoming
+    // chapter's ink while it still hung over the outgoing chapter's ground:
+    // white bar on the black field, and black bar on the white one.
+    const watch = (rootMargin: string, set: (index: number) => void) => {
+      const seen = new Set<Element>();
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) seen.add(entry.target);
+            else seen.delete(entry.target);
+          }
+          // While a boundary crosses the band both chapters are in it; the one
+          // that starts lower is the one arriving.
+          let best = -1;
+          let lowest = -Infinity;
+          for (const el of seen) {
+            const top = el.getBoundingClientRect().top;
+            if (top > lowest) {
+              lowest = top;
+              best = nodes.indexOf(el as HTMLElement);
+            }
+          }
+          if (best >= 0) set(best);
+        },
+        { rootMargin },
+      );
+      nodes.forEach((n) => io.observe(n));
+      return io;
+    };
+    const observers = [watch("0px 0px -92% 0px", setUnderBar), watch("-50% 0px -49% 0px", setActive)];
+
+    // The finale starts as glass over the field and turns orange partway through its hold.
+    const grounds = new MutationObserver(read);
+    nodes.forEach((n) => grounds.observe(n, { attributes: true, attributeFilter: ["data-ground"] }));
+    return () => {
+      observers.forEach((io) => io.disconnect());
+      grounds.disconnect();
+    };
+  }, []);
+
+  const openAsk = useCallback((question?: string) => {
+    setMountAgent(true);
+    const d = dialog.current;
+    if (d && !d.open) d.showModal();
+    if (!question) {
+      waitFor(() => Boolean(document.getElementById("ask")), 5000).then(() => document.getElementById("ask")?.focus());
+      return;
+    }
+    waitFor(() => Boolean(document.getElementById("agent")), 8000).then(() =>
+      requestAnimationFrame(() => window.dispatchEvent(new CustomEvent(ASK_EVENT, { detail: question }))),
+    );
+  }, []);
+
+  const openCommands = useCallback(() => {
+    if (dialog.current?.open) dialog.current.close();
+    commands.current?.open();
+  }, []);
+
+  // ⌘K is the palette; `/` goes straight to the agent. Neither fires while the
+  // reader is typing, so a slash in a question stays a slash.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        openCommands();
+      } else if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey && !typing(e.target)) {
+        if (document.querySelector("dialog[open]")) return;
+        e.preventDefault();
+        openAsk();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [openAsk, openCommands]);
+
+  // A link to a chapter or a role that has published where it settles lands
+  // there, not at the top of its hold.
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const link = (e.target as Element | null)?.closest?.('a[href^="#"]');
+      const id = link?.getAttribute("href")?.slice(1);
+      const settle = id ? Number(document.getElementById(id)?.dataset.settle) : Number.NaN;
+      if (!id || !Number.isFinite(settle) || settle <= 0) return;
+      e.preventDefault();
+      jump(id);
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
+
+  // `?frame=ask` opens the drawer for a reproducible screenshot of it.
+  useEffect(() => {
+    if (parseFrame()?.chapter !== "ask") return;
+    openAsk();
+    waitFor(() => Boolean(document.getElementById("agent")), 10_000).then(markFrameReady);
+  }, [openAsk]);
+
+  // The reading meter: words in each chapter, weighted by how much of that
+  // chapter has passed the reading line. An estimate, and labelled as one. It
+  // stays hidden when motion is off, rather than reading zero.
+  const stageRef = useMotion<HTMLDivElement>(({ ScrollTrigger }, root) => {
+    const frame = parseFrame();
+
+    // One camera for the whole page between the dive and the finale. Created
+    // after every chapter's pin, so it measures the page with its spacers in.
+    const field = directField({
+      getCloud: () => cloud.current,
+      getField: () => fieldInfo.current,
+      glow,
+      framed: frame !== null,
+    });
+    director.current = field;
+    const refresh = watchRefresh(ScrollTrigger);
+    const remeasure = () => {
+      field.measure();
+      field.drive();
+    };
+    ScrollTrigger.addEventListener("refresh", remeasure);
+    ScrollTrigger.create({
+      trigger: root,
+      start: "top top",
+      end: "bottom bottom",
+      onUpdate: () => {
+        if (!refresh.refreshing()) field.drive();
+      },
+    });
+    refresh.onSettled(remeasure);
+    // The field may already be up by the time the motion bundle arrives.
+    remeasure();
+
+    // A shared link to a chapter or a role lands on it once the page has been
+    // measured, rather than on wherever its unpinned position used to be.
+    const hash = decodeURIComponent(window.location.hash.slice(1));
+    if (hash && !frame) {
+      const land = () => {
+        ScrollTrigger.removeEventListener("refresh", land);
+        requestAnimationFrame(() => jump(hash));
+      };
+      ScrollTrigger.addEventListener("refresh", land);
+      ScrollTrigger.refresh();
+    }
+
+    const cleanup = () => {
+      ScrollTrigger.removeEventListener("refresh", remeasure);
+      refresh.stop();
+      director.current = null;
+    };
+
+    const meter = meterRef.current;
+    const count = meter?.querySelector("span");
+    if (!meter || !count) return cleanup;
+
+    let spans: { top: number; height: number; words: number }[] = [];
+    const measure = () => {
+      spans = Array.from(root.querySelectorAll<HTMLElement>("[data-chapter]")).map((el) => {
+        const box = el.parentElement?.classList.contains("pin-spacer") ? el.parentElement : el;
+        return {
+          top: box.getBoundingClientRect().top + window.scrollY,
+          height: box.offsetHeight || 1,
+          words: el.innerText.split(/\s+/).filter(Boolean).length,
+        };
+      });
+    };
+    let shown = -1;
+    const update = () => {
+      const line = window.scrollY + window.innerHeight * 0.6;
+      const words = spans.reduce((sum, s) => sum + s.words * Math.min(Math.max((line - s.top) / s.height, 0), 1), 0);
+      const tokens = Math.round((words * TOKENS_PER_WORD) / 10) * 10;
+      if (tokens === shown) return;
+      shown = tokens;
+      count.textContent = tokens.toLocaleString("en-US");
+    };
+
+    measure();
+    update();
+    meter.dataset.live = "";
+    ScrollTrigger.create({
+      trigger: root,
+      start: "top top",
+      end: "bottom bottom",
+      onUpdate: update,
+      onRefresh: () => {
+        measure();
+        update();
+      },
+    });
+    return cleanup;
+  });
+
+  // The renderer mounts after first paint, so its first pose is set when it arrives.
+  useEffect(() => {
+    if (!cloudReady) return;
+    director.current?.measure();
+    director.current?.drive();
+  }, [cloudReady]);
+
+  const onCloudReady = useCallback((c: Cloud, info: FieldInfo) => {
+    cloud.current = c;
+    fieldInfo.current = info;
+    // And the motion bundle may already be up by the time the field arrives.
+    director.current?.measure();
+    director.current?.drive();
+    Object.assign(window, { __cloud: c, __field: info });
+    setCloudReady(true);
+  }, []);
+
+  const api = useMemo<StageApi>(
+    () => ({ cloud, field: fieldInfo, cloudReady, flash, dive, glow, openAsk }),
+    [cloudReady, openAsk],
+  );
+
+  // The bar takes the ground it hangs over; the ticks take the ground beside them.
+  const barGround = chapters[underBar]?.ground ?? "void";
+  const tickGround = chapters[active]?.ground ?? "void";
+  const atContact = chapters[underBar]?.id === "contact";
+
+  return (
+    <StageContext.Provider value={api}>
+      <div ref={stageRef} data-stage="" className={styles.stage}>
+        {mountCloud && <CorpusCloud onReady={onCloudReady} />}
+        <div ref={flash} className={styles.flash} aria-hidden="true" />
+
+        <header className={styles.bar} data-bar={barGround} data-clear={underBar === 0 || undefined}>
+          <a className={styles.wordmark} href="#top">
+            {name}
+          </a>
+          <nav className={styles.barNav} aria-label="Primary">
+            <p ref={meterRef} className={styles.meter}>
+              ≈ <span>0</span> tokens read
+            </p>
+            <button
+              type="button"
+              className={styles.barButton}
+              onClick={openCommands}
+              aria-keyshortcuts="Meta+K Control+K"
+            >
+              Commands
+              <kbd className={styles.kbd} aria-hidden="true">
+                ⌘K
+              </kbd>
+            </button>
+            <button type="button" className={styles.barButton} onClick={() => openAsk()} aria-keyshortcuts="/">
+              Ask the agent
+              <kbd className={styles.kbd} aria-hidden="true">
+                /
+              </kbd>
+            </button>
+            {/* Offering the way to the contact chapter while standing on it is
+                furniture. It is hidden rather than removed, because taking it
+                out of the bar re-flows the controls beside it. */}
+            <a
+              className={styles.barButton}
+              href="#contact"
+              data-away={atContact || undefined}
+              tabIndex={atContact ? -1 : undefined}
+              aria-hidden={atContact || undefined}
+            >
+              Get in touch
+            </a>
+          </nav>
+        </header>
+
+        {chapters.length > 1 && (
+          <nav className={styles.ticks} data-bar={tickGround} aria-label="Chapters">
+            {chapters.map((c, i) => (
+              <a
+                key={c.id}
+                href={`#${c.id}`}
+                className={styles.tick}
+                aria-current={i === active ? "true" : undefined}
+              >
+                <span className={styles.tickLabel}>{c.label}</span>
+              </a>
+            ))}
+          </nav>
+        )}
+
+        <main id="main">{children}</main>
+        {footer}
+
+        <Commands
+          ref={commands}
+          chapters={chapters}
+          links={links}
+          onJump={jump}
+          onAsk={() => openAsk()}
+        />
+
+        <dialog
+          ref={dialog}
+          className={styles.drawer}
+          aria-label="Ask the agent"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) e.currentTarget.close();
+          }}
+        >
+          <div className={styles.drawerHead}>
+            <p className={styles.drawerTitle}>Ask the agent about him</p>
+            <form method="dialog">
+              <button className={styles.drawerClose}>Close</button>
+            </form>
+          </div>
+          <div className={styles.drawerBody}>{mountAgent && <Agent {...agent} />}</div>
+        </dialog>
+      </div>
+    </StageContext.Provider>
+  );
+}

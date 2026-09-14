@@ -1,424 +1,444 @@
-import Hero from "./components/Hero";
-import Prose from "./components/Prose";
-import Certifications from "./components/Certifications";
-import DiffReveal from "./components/DiffReveal";
-import Agent from "./components/Agent";
-import Palette from "./components/Palette";
-import LiveStatus from "./components/LiveStatus";
-import Metrics from "./components/Metrics";
-import Artifacts from "./components/Artifacts";
-import Measured from "./components/Measured";
-import Reach from "./components/Reach";
-import ReachDock from "./components/ReachDock";
-import SectionLink from "./components/SectionLink";
-import PageMotion from "./components/PageMotion";
-import AskSeeds from "./components/AskSeeds";
-import Topology from "./components/Topology";
-import OverlapGraph from "./components/OverlapGraph";
-import ModelChoice from "./components/ModelChoice";
-import Defects from "./components/Defects";
-import WorkStack from "./components/WorkStack";
-import EvalMatrix from "./components/EvalMatrix";
-import Artifacts2 from "./components/Artifacts";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import evals from "@/content/evals.json";
-import { loadContent, section, loadCertifications, type Section } from "@/lib/content";
+import models from "@/content/models.json";
+import topology from "@/lib/agent/topology.json";
+import { loadCertifications, loadContent, progress, section, type Section } from "@/lib/content";
 import { TARGETS } from "@/lib/agent/tools";
-import styles from "./page.module.css";
+import { forwardBlurb } from "@/lib/reach";
+import { parsePatch } from "@/lib/patch";
+import Stage from "./components/stage/Stage";
+import HeroStage from "./components/stage/HeroStage";
+import BugChapter from "./components/stage/BugChapter";
+import MeasuredChapter from "./components/stage/MeasuredChapter";
+import WorkChapter, { type Role } from "./components/stage/WorkChapter";
+import ResearchChapter from "./components/stage/ResearchChapter";
+import ProofPan, { type ProofCard } from "./components/stage/ProofPan";
+import ContactFinale from "./components/stage/ContactFinale";
+import styles from "./components/stage/Stage.module.css";
 
-function Section({
-  id,
-  index,
-  title,
-  children,
-  ...tone
-}: {
-  id: string;
-  index: string;
-  title: string;
-  children: React.ReactNode;
-  /** Per-section treatment. Five identical sections read as one document. */
-  "data-tone"?: "sunk";
-  "data-weight"?: "closing";
-  "data-lead"?: "artifact";
-}) {
-  return (
-    <section id={id} className={styles.section} {...tone}>
-      {/* Two columns above 62rem: the heading holds a rail on the left and
-          everything else runs beside it. Stacked, seven section headings cost
-          most of a screen on their own and the page used half its width. The
-          children stay direct descendants of the wrap so the scroll batching
-          still sees them individually. */}
-      <div className={`wrap ${styles.grid}`}>
-        <div className={styles.head}>
-          {/* The index was decoration, then an anchor. An anchor still asks a
-              reader to know that right-clicking copies an address; the commonest
-              reason to want one of these is to paste it into a message. */}
-          <SectionLink id={id} index={index} title={title} />
-          <h2 className={styles.title}>{title}</h2>
-        </div>
-        {children}
-      </div>
-    </section>
-  );
+/** The bolded opening of a section, which the corpus writes as its one-line summary. */
+function summary(s: Section) {
+  const bold = (s.body.match(/\*\*([\s\S]+?)\*\*/)?.[1] ?? "").replace(/\s+/g, " ").trim().replace(/[,:;]$/, "");
+  if (!bold) return "";
+  return /[.!?]$/.test(bold) ? bold : `${bold}.`;
+}
+
+/** Capture groups of the first match, or null. Every derived figure below comes through here. */
+function pick(text: string, re: RegExp) {
+  return text.replace(/\s+/g, " ").match(re)?.slice(1) ?? null;
+}
+
+function verifier(url: string) {
+  const name = new URL(url).hostname.split(".").slice(-2)[0];
+  return `Verify on ${name.charAt(0).toUpperCase()}${name.slice(1)}`;
 }
 
 /**
- * Title, employer, dates -- the part of a role a recruiter scans for first.
- *
- * The title leads. It is set largest; the employer and dates sit under it as
- * context. Rendering the company first put the least scannable line in the
- * most prominent position.
+ * The one candid paragraph each role's section already carries: the trade-off it
+ * made, the mistake it fixed, or the correction to how it has been described.
+ * Read by its opening words, so the page shows exactly what the corpus says.
  */
-function roleIdentity(s: Section) {
-  const { title, dates, location } = s.roleParts;
-  return (
-    <>
-      <h3 className={styles.roleName}>{title}</h3>
-      <p className={styles.roleMeta}>
-        <span className={styles.company}>{s.title}</span>
-        <span className="label">
-          {dates}
-          {location ? ` · ${location}` : ""}
-        </span>
-      </p>
-    </>
-  );
+function candor(s: Section): Role["note"] {
+  const paragraphs = s.body.split(/\n\s*\n/).map((p) => p.replace(/\*\*/g, "").replace(/\s*\n\s*/g, " ").trim());
+  const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+  const tradeoff = paragraphs.find((p) => p.startsWith("The trade-off worth asking about:"));
+  if (tradeoff) return { kind: "trade-off", text: sentence(tradeoff.replace(/^The trade-off worth asking about:\s*/, "")) };
+  const mistake = paragraphs.find((p) => p.startsWith("The mistake he made here"));
+  if (mistake) return { kind: "the mistake", text: sentence(mistake.replace(/^The mistake he made here[^:]*:\s*/, "")) };
+  const scope = paragraphs.flatMap((p) => p.split(/(?<=\.)\s+/)).find((p) => /did not manage anyone/.test(p));
+  if (scope) return { kind: "scope", text: scope };
+  return undefined;
+}
+
+function role(s: Section): Role {
+  return {
+    // The short name a link to the role uses: the last clause of the title, first word.
+    slug: (s.title.split(",").pop() ?? s.title).trim().split(/\s+/)[0].toLowerCase(),
+    note: candor(s),
+    company: s.title,
+    role: s.roleParts.title,
+    dates: s.roleParts.dates,
+    span: [...new Set(s.roleParts.dates.match(/\d{4}|present/gi) ?? [])].join(" to "),
+    location: s.roleParts.location,
+    lead: summary(s),
+    metrics: s.metrics.map(({ value, label }) => ({ value, label })),
+    stack: s.stack,
+  };
 }
 
 /**
- * The identity, rendered into the rail column on a desktop-width screen --
- * one sibling per role, deliberately not nested inside that role's own
- * content. See the comment on .roleRail in page.module.css for why the
- * identity has to live in a column shared by every role rather than inside
- * each role's own box: it is what lets every role's title stay visible and
- * stack as the reader scrolls, instead of swapping out for the next one.
- * Hidden below 62rem -- RoleContent carries its own copy of this for that
- * width instead, because there the reason to keep it separate (a shared tall
- * containing block for sticky positioning) does not apply.
+ * The home page as stage chapters. Every figure is read from the corpus, the
+ * credential file or a build artifact; nothing below is typed in as a fact.
  */
-function RoleHead({
-  section: s,
-  past = false,
-  index,
-}: {
-  section: Section;
-  past?: boolean;
-  /** Position in the stack, so the indent can step back one notch per role. */
-  index: number;
-}) {
-  return (
-    <div
-      className={styles.roleHead}
-      data-role-head
-      data-past={past || undefined}
-      data-revealed="no"
-      style={{ "--depth": index } as React.CSSProperties}
-    >
-      {roleIdentity(s)}
-    </div>
-  );
-}
-
-/**
- * A role's evidence: metrics, follow-ups, stack, and the description.
- *
- * Two-year-old work is context, not evidence, and rendering it identically to
- * the current role spends the same amount of the reader's attention on both.
- * The content is unchanged; only its weight is.
- */
-function RoleContent({
-  section: s,
-  past = false,
-  row,
-}: {
-  section: Section;
-  past?: boolean;
-  /** Which grid row this role occupies, so the rail cell beside it can start there. */
-  row: number;
-}) {
-  return (
-    <article
-      className={styles.roleContent}
-      data-role-content
-      data-past={past || undefined}
-      style={{ "--row": row } as React.CSSProperties}
-    >
-      <div className={styles.roleHeadMobile}>{roleIdentity(s)}</div>
-      {/* States the pairing instead of leaving it to be inferred. On a wide
-          screen the identity lives in the sticky rail, so the figures below
-          had no employer attached to them once three roles were stacked
-          beside them. Hidden narrow, where the full identity is directly
-          above this anyway. */}
-      <p className={styles.roleTag} aria-hidden="true">
-        <span className={styles.roleTagRole}>{s.roleParts.title}</span>
-        {" · "}
-        {s.title}
-      </p>
-      <Metrics items={s.metrics} />
-      {s.asks.length > 0 && <AskSeeds items={s.asks} />}
-      {s.stack.length > 0 && (
-        <ul className={styles.stack}>
-          {s.stack.map((t) => (
-            <li key={t}>{t}</li>
-          ))}
-        </ul>
-      )}
-      <Prose body={s.body} className={styles.roleBody} />
-    </article>
-  );
-}
-
 export default function Page() {
   const { profile } = loadContent();
-  const certs = loadCertifications();
-  const asks = loadContent().sections.flatMap((x) => x.asks.map((a) => a.question));
+  const cut = profile.tagline.indexOf(". ");
 
-  /**
-   * The hero's one piece of outside validation, assembled from the corpus.
-   *
-   * Figure, unit and link all come from the open-source section rather than
-   * being typed here: the metric is the same `57 hours` the section renders,
-   * and the link is the same merged pull request the link checker resolves. A
-   * second copy of any of it is a second thing that can drift.
-   */
+  // ---- The bug ----------------------------------------------------------
   const os = section("Open source, LangChain deepagents");
   const hours = os.metrics.find((m) => /hour/i.test(m.value));
+  const places = os.metrics.find((m) => /places/i.test(m.label));
+  const credited = os.metrics.find((m) => /credited/i.test(m.value));
   const merged = os.artifacts.find((a) => a.state === "merged");
-  const evidence = {
-    figure: hours?.value.replace(/\s*hours?$/i, "") ?? "57",
-    unit: "hours to merge",
-    sentence: profile.proof,
-    href: merged?.url ?? profile.github,
-    label: merged?.label ?? "",
-  };
-  const featured = certs.find((c) => c.featured);
+  const issue = os.artifacts.find((a) => a.state === "closed");
+  const proofCut = profile.proof.indexOf(". ");
 
-  /*
-   * The agent's props, assembled here rather than inline.
-   *
-   * `openable` is the same registry `open_evidence` routes over, handed to
-   * the reader as controls they can see. Built from the corpus in one place,
-   * so a visible chip cannot offer something the tool could not open, or miss
-   * something it can. Hoisted because check 6.1 asserts the agent sits inside
-   * the hero by measuring the distance from `<Agent` to `</Hero>`, and four
-   * inline props push it out of range.
-   */
-  const agentProps = {
-    email: profile.email,
-    linkedin: profile.linkedin,
-    site: profile.site.replace("https://", ""),
-    openable: [...TARGETS.entries()].map(([key, value]) => ({
-      key,
-      label: value.label,
-      url: value.url,
-      about: value.about,
-    })),
+  // The report's own timestamps, the precedent it traced, and the invariant it
+  // showed the code breaking, all read from the section's prose.
+  const osText = os.body.replace(/\s+/g, " ");
+  const monthOf = (m: string) => new Date(`${m} 1, 2000`).getMonth();
+  const stamps = pick(
+    osText,
+    /Filed (\d{1,2}) (\w+) (\d{4}) at (\d{2}):(\d{2}) UTC\. ([^,]+), a LangChain maintainer, wrote and merged the fix on (\d{1,2}) (\w+) at (\d{2}):(\d{2}) UTC, [^,]+, in (\d+) added lines across (\d+) files/,
+  );
+  const timeline = stamps
+    ? {
+        filed: new Date(Date.UTC(+stamps[2], monthOf(stamps[1]), +stamps[0], +stamps[3], +stamps[4])).toISOString(),
+        merged: new Date(Date.UTC(+stamps[2], monthOf(stamps[7]), +stamps[6], +stamps[8], +stamps[9])).toISOString(),
+        maintainer: stamps[5],
+        added: +stamps[10],
+        files: +stamps[11],
+      }
+    : null;
+  const lineage = pick(osText, /same bug class as issue #(\d+), fixed for sandbox backends in #(\d+)/);
+  const repoUrl = merged?.url.replace(/\/pull\/\d+\/?$/, "") ?? "";
+  const precedent =
+    lineage && repoUrl
+      ? [
+          { label: `#${lineage[0]}`, note: "same bug class", url: `${repoUrl}/issues/${lineage[0]}` },
+          { label: `#${lineage[1]}`, note: "fixed for sandbox backends", url: `${repoUrl}/pull/${lineage[1]}` },
+          ...(issue ? [{ label: `#${issue.url.split("/").pop()}`, note: "his report", url: issue.url }] : []),
+          ...(merged ? [{ label: `#${merged.url.split("/").pop()}`, note: "the merged fix", url: merged.url }] : []),
+        ]
+      : [];
+  const broken = pick(osText, /quoted from `?([\w_]+)`?:\s*([^.]+\.)/);
+  // The merged patch as GitHub serves it, stored unedited next to the corpus.
+  const patch = (() => {
+    try {
+      return parsePatch(readFileSync(join(process.cwd(), "content/pr-4925.diff"), "utf8"));
+    } catch {
+      return null;
+    }
+  })();
+  const invariant = broken ? { source: broken[0], text: broken[1] } : null;
+
+  // ---- Measured ---------------------------------------------------------
+  const chosen = models.results.find((r) => r.model === models.chosen);
+  const rival = chosen
+    ? models.results.filter((r) => r.model !== chosen.model && r.rate >= chosen.rate).sort((a, b) => a.p95 - b.p95)[0]
+    : undefined;
+
+  // ---- Research ---------------------------------------------------------
+  const pubs = section("Publications");
+  const paper = pubs.artifacts.find((a) => a.url.includes("doi.org"));
+  const chapter = pubs.artifacts.find((a) => a !== paper);
+  const combined = pubs.metrics.find((m) => /combined/i.test(m.label));
+  const alone = pubs.metrics.find((m) => /transformer alone/i.test(m.label));
+  const timed = pubs.metrics.find((m) => /\ds$/.test(m.value));
+  const graphAlone = pick(pubs.body, /graph network alone (\d+(?:\.\d+)?)%/);
+  const against = timed ? pick(timed.label, /^(.*?), against ([\d.]+)s for (.*)$/) : null;
+  const pages = pick(pubs.body, /pages (\d+) to (\d+)/);
+  const code = pick(pubs.body, /\[the code\]\((https?:[^)]+)\)/);
+  const pubsText = pubs.body.replace(/\s+/g, " ");
+  // The paper's method in the corpus's own words, and the sentence that ties it
+  // to the defect in the bug chapter.
+  const method = pick(pubsText, /(a transformer reads the code, a graph neural network reads the structure around it)/)?.[0] ?? null;
+  const bridge = pick(pubsText, /(It was a silent failure[^.]*\.)/)?.[0] ?? null;
+
+  // ---- Proof ------------------------------------------------------------
+  const certs = [...loadCertifications()].sort(
+    (a, b) =>
+      Number(b.featured) - Number(a.featured) || Number(Boolean(b.components)) - Number(Boolean(a.components)) || b.year - a.year,
+  );
+  const credentialCards: ProofCard[] = certs.map((c) => {
+    const done = progress(c);
+    if (done) {
+      return {
+        id: c.id,
+        issuer: c.issuer,
+        top: `${c.issuer}, ${c.year}`,
+        figure: `${done.earned}/${done.total}`,
+        title: c.name,
+        detail: "courses verified, one link each",
+        segments: done,
+        kind: "program" as const,
+        links: (c.components ?? []).flatMap((x) => (x.url ? [{ label: x.name, url: x.url }] : [])),
+        pending: (c.components ?? []).flatMap((x) => (x.url ? [] : [x.name])),
+      };
+    }
+    return {
+      id: c.id,
+      issuer: c.issuer,
+      top: `${c.issuer}, ${c.year}`,
+      figure: c.short,
+      title: c.name,
+      detail: c.why,
+      kind: (c.kind === "proctored-exam" ? "exam" : "course") as ProofCard["kind"],
+      links: c.url ? [{ label: verifier(c.url), url: c.url }] : [],
+    };
+  });
+
+  const life = section("BU Life AI");
+  const liveUrl = pick(life.body, /Live: \[[^\]]+\]\((https?:[^)]+)\)/)?.[0];
+  const sourceUrl = pick(life.body, /Source: \[[^\]]+\]\((https?:[^)]+)\)/)?.[0];
+  const lifeCard: ProofCard = {
+    id: "bu-life-ai",
+    kind: "live",
+    top: life.title,
+    figure: life.metrics[0]?.value,
+    title: life.metrics[0]?.label ?? life.title,
+    detail: summary(life),
+    live: liveUrl ? { url: liveUrl, label: new URL(liveUrl).hostname } : undefined,
+    links: [
+      ...(liveUrl ? [{ label: "Live", url: liveUrl }] : []),
+      ...(sourceUrl ? [{ label: "Source", url: sourceUrl }] : []),
+    ],
   };
 
-  // Computed once, read by both RoleHead and RoleContent, so the rail and the
-  // content column render from the same object rather than each parsing the
-  // corpus a second time.
-  const questrom = section("Boston University, Questrom Computational Lab");
-  const img = section("IMG Systems");
-  const growaza = section("Growaza");
-  // Newest first. `past` is the de-emphasis flag the rail and the content
-  // column both read, so the order and the weighting live in one place.
-  const roles = [
-    { section: questrom, past: false },
-    { section: img, past: true },
-    { section: growaza, past: true },
+  const degrees = section("Education")
+    .body.split(/\n\s*\n/)
+    .map((p) => pick(p, /^(.+?), (\S+) (.+?)\. ([A-Z][a-z]+ \d{4} to [^.]+)\./))
+    .filter((d): d is string[] => d !== null);
+  const educationCard: ProofCard | null = degrees[0]
+    ? {
+        id: "education",
+        kind: "education",
+        top: degrees[0][0],
+        title: `${degrees[0][1]} ${degrees[0][2]}`,
+        detail: degrees[0][3],
+        lines: degrees.slice(1).flatMap((d) => [`${d[1]} ${d[2]}, ${d[0]}`, d[3]]),
+        links: [],
+      }
+    : null;
+
+  const ach = section("Achievements");
+  const jee = ach.metrics.find((m) => /percentile/.test(m.value));
+  const nationally = pick(ach.body, /top ([\d.]+) percent nationally/);
+  const codechef = pick(ach.body, /CodeChef global rank (\d+), ([^.]+)\./);
+  const community = ach.metrics.find((m) => /community/.test(m.label));
+  const founded = pick(ach.body, /Co-founded (\w+), an? [^.]*? at ([^.]+)\./);
+  const achievementCards: ProofCard[] = [
+    ...(jee
+      ? [
+          {
+            id: "jee",
+            kind: "achievement" as const,
+            top: jee.label.split(", ")[0],
+            figure: jee.value.split(" ")[0],
+            title: `${jee.value.split(" ").slice(1).join(" ")}, ${jee.label.split(", ").slice(1).join(", ")}`,
+            detail: nationally ? `Top ${nationally[0]} percent nationally.` : undefined,
+            links: [],
+          },
+        ]
+      : []),
+    ...(codechef
+      ? [{ id: "codechef", kind: "achievement" as const, top: "CodeChef", figure: codechef[0], title: "global rank", detail: codechef[1], links: [] }]
+      : []),
+    ...(community && founded
+      ? [
+          {
+            id: "community",
+            kind: "achievement" as const,
+            top: founded[0],
+            figure: community.value,
+            title: community.label,
+            detail: founded[1],
+            links: [],
+          },
+        ]
+      : []),
   ];
 
+  const [featured, ...otherCredentials] = credentialCards;
+  const proofCards = [
+    ...(featured ? [featured] : []),
+    lifeCard,
+    ...otherCredentials,
+    ...(educationCard ? [educationCard] : []),
+    ...achievementCards,
+  ];
+
+  // ---- Contact ----------------------------------------------------------
+  const availability = section("Availability").body;
+  const openTo = pick(availability, /Open to ([^.]+)\./);
+  const targetRoles = pick(availability, /Target roles: ([^.]+)\./);
+  // Months from today to the month named in availability, computed rather than
+  // restated, so the finale never repeats a countdown that has gone stale.
+  const availMonth = pick(profile.available, /^([A-Z][a-z]+) (\d{4})/);
+  const availableIn = (() => {
+    if (!availMonth) return null;
+    const target = new Date(`${availMonth[0]} 1, ${availMonth[1]}`);
+    const now = new Date();
+    const months = (target.getFullYear() - now.getFullYear()) * 12 + (target.getMonth() - now.getMonth());
+    return months > 0 ? months : null;
+  })();
+
+  const workSample = pick(section("This site").body, /(The page you are reading is the work sample\.)/);
+
   return (
-    <>
-      <Palette email={profile.email} github={profile.github} repo={profile.repo} asks={asks} />
-      {/* Reaching him from wherever the reader is, with the draft written for
-          the section they are actually in. Six of the seven openers in
-          lib/reach.ts have never been reachable, because the contact block is
-          the only caller and it takes the default. */}
-      <ReachDock
-        email={profile.email}
-        site={profile.site.replace("https://", "")}
-        linkedin={profile.linkedin}
-        resumeHref="/kushal-gaddamwar-resume.pdf"
-      />
-      <PageMotion />
-      {/* Scroll progress. Purely decorative, so it is hidden from assistive tech
-          and disappears entirely under reduced-motion. */}
-      <div className={styles.progress} aria-hidden="true" />
-      <Hero
-        name={profile.name}
-        tagline={profile.tagline}
-        location={profile.location}
+    <Stage
+      name={profile.name}
+      agent={{
+        email: profile.email,
+        linkedin: profile.linkedin,
+        site: profile.site.replace("https://", ""),
+        openable: [...TARGETS.entries()].map(([key, v]) => ({ key, label: v.label, url: v.url, about: v.about })),
+      }}
+      links={{
+        email: profile.email,
+        resume: "/kushal-gaddamwar-resume.pdf",
+        repo: profile.repo,
+        github: profile.github,
+        linkedin: profile.linkedin,
+      }}
+      footer={
+        <footer className={styles.footer}>
+          <p>{workSample?.[0]}</p>
+          <p>
+            <a href={profile.repo}>Source for this page</a>
+            Last verified {profile.lastVerified}
+          </p>
+        </footer>
+      }
+    >
+      <HeroStage
+        headline={cut === -1 ? profile.tagline : profile.tagline.slice(0, cut + 1)}
+        qualifier={cut === -1 ? "" : profile.tagline.slice(cut + 2)}
         current={profile.current}
-        focus={profile.focus}
-        evidence={evidence}
         available={profile.available}
-        credential={{
-          label: featured ? `${featured.issuer} Certified · ${featured.short ?? featured.name}` : "",
-          url: featured?.url ?? "#",
+        // Excludes the hero's own fixed demo question at the source, so the
+        // list is identical before and after that answer resolves and never
+        // moves the "also ask" row once it is on screen.
+        followups={evals.cases_detail
+          .filter((c) => c.group === "grounding" && c.pass && c.name !== "What has he shipped on Azure?")
+          .map((c) => c.name)}
+      />
+
+      <BugChapter
+        figure={hours?.value.replace(/\s*hours?$/i, "") ?? ""}
+        unit={hours ? `hours ${hours.label}` : ""}
+        lead={proofCut === -1 ? profile.proof : profile.proof.slice(0, proofCut + 1)}
+        places={places ? { value: places.value, label: places.label, href: places.source ?? issue?.url ?? "" } : null}
+        pr={merged ? { label: merged.label, url: merged.url, state: merged.state } : null}
+        issue={issue ? { label: issue.label, url: issue.url } : null}
+        credit={credited ? `${credited.value} ${credited.label}.` : ""}
+        timeline={timeline}
+        precedent={precedent}
+        invariant={invariant}
+        patch={patch}
+        verifiedOn={profile.lastVerified}
+      />
+
+      <MeasuredChapter
+        measured={evals.measured}
+        evals={{
+          cases: evals.cases,
+          passed: evals.passed,
+          runs: evals.runs,
+          totalRuns: evals.totalRuns,
+          totalPasses: evals.totalPasses,
+          p50: evals.p50,
+          p95: evals.p95,
+          scored: evals.retrieval.scored,
+          precision1: evals.retrieval.precision1,
+          mrr: evals.retrieval.mrr,
+          recallK: evals.retrieval.recallK,
+          denseUsed: evals.denseUsed,
+          retrievals: evals.retrievals,
+          groups: Object.entries(evals.groups).map(([name, g]) => ({ name, cases: g.cases, passed: g.passed })),
+          detail: evals.cases_detail.map((c) => ({
+            name: c.name,
+            group: c.group,
+            asserts: c.asserts,
+            passes: Math.round(c.passRate * c.runs),
+            runs: c.runs,
+            pass: c.pass,
+            modes: c.modes,
+          })),
+          provider: evals.provider,
+          model: evals.model,
         }}
-        contactHref="#contact"
-      >
-        <Agent {...agentProps} />
-      </Hero>
+        model={{
+          chosen: models.chosen,
+          chosenOn: models.chosenOn,
+          observations: models.observations,
+          p95: chosen?.p95 ?? 0,
+          p50: chosen?.p50 ?? 0,
+          next: rival ? { model: rival.model, p95: rival.p95, p50: rival.p50 } : null,
+        }}
+        graph={topology}
+        defects={section("Defects this page shipped and then fixed").defects}
+      />
 
-      <main id="main">
-        <Section id="opensource" index="01" title="A bug in LangChain" data-lead="artifact">
-          {/* The duration and the pull request come from the corpus, not from
-              inside the component: the same three values are rendered by the
-              metrics strip and the artifact rows on this very section. */}
-          <DiffReveal
-            hours={os.metrics.find((m) => /hour/i.test(m.value))?.value ?? ""}
-            prUrl={merged?.url ?? ""}
-            prLabel={merged?.label.replace(/^.*#/, "PR #") ?? ""}
-          />
-          <Metrics items={section("Open source, LangChain deepagents").metrics} />
-          <Prose body={section("Open source, LangChain deepagents").body} />
-          <Artifacts items={section("Open source, LangChain deepagents").artifacts} />
-          <AskSeeds items={section("Open source, LangChain deepagents").asks} />
-        </Section>
+      <WorkChapter
+        roles={[
+          role(section("Boston University, Questrom Computational Lab")),
+          role(section("IMG Systems")),
+          role(section("Growaza")),
+        ]}
+        verifiedOn={profile.lastVerified}
+      />
 
-        {/* The strongest signal in 2026 hiring is evidence that the thing was
-            measured, not that it was built. It sits second because the bug above
-            proves he finds failures and this proves he checks for them. */}
-        <Section id="measured" index="02" title="How this is measured">
-          <Measured />
-          {/* The suite as sixteen objects rather than one ratio. Six of them are
-              attempts to break the agent, which the score cannot say. */}
-          <EvalMatrix />
-          {/* Which model answers, and the measurement that says the choice was
-              not a guess. Beside the eval matrix because both are published
-              results from a build-time run rather than something happening now. */}
-          <ModelChoice />
-          <Defects />
-        </Section>
+      {paper && combined && alone && timed && graphAlone && against && (
+        <ResearchChapter
+          lead={summary(pubs)}
+          paper={{
+            venue: paper.kind.split(", ")[0],
+            title: paper.label,
+            url: paper.url,
+            byline: [
+              paper.kind.split(", ").slice(1).join(", ").replace(/^./, (ch) => ch.toUpperCase()),
+              pages ? `pages ${pages[0]} to ${pages[1]}` : "",
+            ]
+              .filter(Boolean)
+              .join(", "),
+          }}
+          code={code?.[0] ?? null}
+          figure={{ value: combined.value, label: combined.label }}
+          bars={[
+            { value: Number.parseFloat(combined.value), label: combined.label.replace(/\s*accuracy$/, "") },
+            { value: Number.parseFloat(alone.value), label: alone.label },
+            { value: Number.parseFloat(graphAlone[0]), label: "graph network alone" },
+          ]}
+          time={{
+            fast: Number.parseFloat(timed.value),
+            fastLabel: against[0],
+            slow: Number.parseFloat(against[1]),
+            slowLabel: against[2],
+          }}
+          also={chapter ? { venue: chapter.kind, title: chapter.label, url: chapter.url } : null}
+          method={method}
+          bridge={bridge}
+          verifiedOn={profile.lastVerified}
+        />
+      )}
 
-        {/* What he is and what he is not, before the evidence. A reader who has
-            just watched the agent answer wants to know who they are talking to;
-            the scope limits are here rather than buried because stating them
-            early is what makes the rest of the page readable as fact. */}
-        <Section id="approach" index="03" title="How he works">
-          {/* The shape of the thing. The page has claimed conditional routing
-              since it was built and the only evidence was a drawing in a
-              comment. */}
-          <Topology />
-          <OverlapGraph />
-          <Prose body={section("Who he is").body} />
-          <Prose body={section("What he is good at").body} />
-          {/* Condensed mode keeps only the first paragraph of a prose block,
-              which took two thirds of the scope limits with it. This is the one
-              section whose whole value is that it narrows the claim. */}
-          <div data-keep="all">
-            <Prose body={section("What he does not do").body} />
-          </div>
-        </Section>
+      <ProofPan title="What else checks out" cards={proofCards} verifiedOn={profile.lastVerified} />
 
-        <Section id="work" index="04" title="Work">
-          <WorkStack />
-          {/* Rail and content are two columns of one grid, not three
-              self-contained role cards, so every role's identity can share
-              one tall containing block and stack rather than take turns --
-              see .roleRail in page.module.css. */}
-          <div
-            className={styles.roles}
-            style={{ "--role-count": roles.length } as React.CSSProperties}
-          >
-            {/* One rail, sticky as a single unit, holding all three
-                identities in normal flow. Each is hidden until the reader
-                reaches its role, so the list grows as they scroll; because
-                the rail is one element rather than three, the whole stack
-                also lets go together at the end of the section instead of
-                unsticking in reverse and crossing over itself. */}
-            <div className={styles.roleRail}>
-              {roles.map(({ section: s, past }, i) => (
-                <RoleHead key={s.title} section={s} past={past} index={i} />
-              ))}
-            </div>
-            {roles.map(({ section: s, past }, i) => (
-              <RoleContent key={s.title} section={s} past={past} row={i + 1} />
-            ))}
-          </div>
-        </Section>
-
-        {/* Research took this section from BU Life AI.
-            The paper is first-author work with measured numbers and a DOI, and
-            it sat in a one-third column under Credentials while a side project
-            held a top-level heading. It also completes the thread section 01
-            opens: the paper argues context is needed to catch bugs static
-            analysis misses, and the LangChain defect was exactly that shape. */}
-        <Section id="research" index="05" title="Research">
-          <Metrics items={section("Publications").metrics} />
-          <Prose body={section("Publications").body} />
-          {/* Both papers as rows a reader can open, rather than as two links
-              inside a paragraph. The DOI resolves; the link checker proves it. */}
-          <Artifacts2 items={section("Publications").artifacts} />
-        </Section>
-
-
-        <Section id="proof" index="06" title="Credentials" data-tone="sunk">
-          <Certifications certifications={certs} />
-          {/* Demoted from its own section. Still live, still measured, and no
-              longer occupying a top-level heading it did not earn. */}
-          <div className={styles.alsoBuilt}>
-            <h3 className={styles.subhead}>Also running</h3>
-            <LiveStatus url="https://bulife-ai.netlify.app/" label="bulife-ai.netlify.app" />
-            {/* Its three metrics and eight-item stack were parsed out of the
-                body by the corpus loader and rendered nowhere, so the section
-                shipped as prose with the numbers stripped out of it. Demoted is
-                not the same as gutted. */}
-            <Metrics items={section("BU Life AI").metrics} />
-            <Prose body={section("BU Life AI").body} />
-            <ul className={styles.stack}>
-              {section("BU Life AI").stack.map((t) => (
-                <li key={t}>{t}</li>
-              ))}
-            </ul>
-          </div>
-          <div className={styles.split}>
-            <div>
-              <h3 className={styles.subhead}>Education</h3>
-              <Prose body={section("Education").body} />
-            </div>
-            <div>
-              <h3 className={styles.subhead}>Before this</h3>
-              <Metrics items={section("Achievements").metrics} />
-              <Prose body={section("Achievements").body} />
-            </div>
-          </div>
-        </Section>
-
-
-        <Section id="contact" index="07" title="Get in touch" data-weight="closing">
-          <Prose body={section("Availability").body} />
-          {/* Every path from "decided to write" to "message sent", with the
-              draft already composed. The bare mailto that was here opened an
-              empty window at the exact moment the reader had chosen to act. */}
-          <Reach
-            email={profile.email}
-            phone={profile.phone}
-            linkedin={profile.linkedin}
-            github={profile.github}
-            repo={profile.repo}
-            site={profile.site.replace("https://", "")}
-            resumeHref="/kushal-gaddamwar-resume.pdf"
-            forward={{
-              name: profile.name,
-              current: profile.current,
-              proof: profile.proof,
-              site: profile.site,
-              evals,
-            }}
-          />
-        </Section>
-      </main>
-
-      <footer className={styles.footer}>
-        <div className="wrap">
-          <Prose body={section("This site").body} className={styles.footerNote} />
-          <p className="label">Last verified {profile.lastVerified}</p>
-        </div>
-      </footer>
-    </>
+      <ContactFinale
+        register={[
+          { term: "available", value: profile.available },
+          ...(openTo ? [{ term: "open to", value: openTo[0] }] : []),
+          { term: "based in", value: profile.location },
+          ...(targetRoles ? [{ term: "roles", value: targetRoles[0] }] : []),
+        ]}
+        availableIn={availableIn}
+        forwardText={forwardBlurb(
+          { name: profile.name, current: profile.current, proof: profile.proof, site: profile.site },
+          evals,
+        )}
+        reach={{
+          email: profile.email,
+          phone: profile.phone,
+          linkedin: profile.linkedin,
+          github: profile.github,
+          repo: profile.repo,
+          site: profile.site.replace("https://", ""),
+          resumeHref: "/kushal-gaddamwar-resume.pdf",
+          forward: { name: profile.name, current: profile.current, proof: profile.proof, site: profile.site, evals },
+        }}
+      />
+    </Stage>
   );
 }

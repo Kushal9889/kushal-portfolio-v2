@@ -114,6 +114,13 @@ function Foldable({ children, label }: { children: React.ReactNode; label: strin
   );
 }
 
+/**
+ * Paragraphs that render open before the fold.
+ *
+ * One is what shipped, and it hid the reading face; see the seam comment below.
+ */
+const OPEN = 2;
+
 export default function Prose({
   body,
   className,
@@ -137,19 +144,34 @@ export default function Prose({
 
   const root = className ? `prose ${className}` : "prose";
 
-  // A single paragraph has no seam to fold at.
-  if (paras.length < 2) {
+  // Two paragraphs or fewer have no seam worth folding at.
+  if (paras.length <= OPEN) {
     return <div className={root}>{paras.map(render_)}</div>;
   }
 
-  // The opening paragraph carries the argument on its own; the rest is the
-  // evidence for it. That is the seam, so that is where it folds.
-  const [first, ...others] = paras;
+  // Where the seam goes, and why it moved.
+  //
+  // It used to fall after the first paragraph, on the argument that the opener
+  // carries the claim and the rest is evidence for it. That reasoning is sound
+  // and the placement still cost the page a typeface.
+  //
+  // Three voices ship here and one of them, the reading serif, sets prose and
+  // nothing else. Folding at paragraph two meant that on first paint almost
+  // every serif line on the page was inside a closed `details`. The page argues
+  // that paper means written, and it was making that argument in a face the
+  // reader could not see until they opened something.
+  //
+  // Two paragraphs open is enough to establish the voice in every section and
+  // still short enough that no section becomes a wall.
+  const open = paras.slice(0, OPEN);
+  const folded = paras.slice(OPEN);
 
   return (
     <div className={root}>
-      {render_(first, 0)}
-      <Foldable label="Read more">{others.map((p, i) => render_(p, i + 1))}</Foldable>
+      {open.map(render_)}
+      <Foldable label="Read more">
+        {folded.map((p, i) => render_(p, i + OPEN))}
+      </Foldable>
     </div>
   );
 }

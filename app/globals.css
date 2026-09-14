@@ -10,24 +10,26 @@
  * after an edit.
  *
  * -------------------------------------------------------------------------
- * The two accents mean different things, and that is the whole system.
+ * Three tiers, three rules. See ADR-005.
  *
- *   --signal   vermillion   HAPPENING NOW. The agent is thinking, a request is
- *                           in flight, a measurement just landed. Never on
- *                           static text.
- *   --mark     deep indigo  CHECKABLE. A claim an outsider can verify: a merged
- *                           pull request, a resolvable DOI, a figure a test
- *                           produced. Never on decoration.
+ *   MATERIAL   ground, the surface ladder, hairlines, the edge highlight. Free.
+ *              Encodes nothing, has to stay consistent, and may not imitate a
+ *              semantic colour.
+ *   BRAND      --signal, vermillion. THE THING TO PRESS. One accent, worn by
+ *              every interactive target and by nothing else. It meant
+ *              "happening now" until --live took that over, which is what had
+ *              left the primary action with no colour at all.
+ *   SEMANTIC   --live running, --warn a limit, --fail a defect, --mark a claim
+ *              an outsider can check. Each may only appear on a selector that
+ *              names the status it carries.
  *
- * Two accents rather than one because the page makes two different kinds of
- * claim and had no way to distinguish them. Two rather than three because a
- * third would stop either of them meaning anything. The audit enforces both
- * rules; see checks 12.8 and 12.10.
+ * Checks 12.4, 12.8, 12.10 and blocking 13.1 enforce these.
  *
- * The hues sit 242 degrees apart and were chosen by simulating protanopia,
- * deuteranopia and tritanopia rather than by eye: the first pairing looked
- * correct and collapsed to a single colour under two of the three. Both sit
- * against a warm ground (hue 88), so neither reads as pasted on.
+ * --signal and --mark sit 242 degrees apart and were chosen by simulating
+ * protanopia, deuteranopia and tritanopia rather than by eye: the first pairing
+ * looked correct and collapsed to one colour under two of the three.
+ *
+ * Both sit against a warm ground (hue 88), so neither reads as pasted on.
  *
  * -------------------------------------------------------------------------
  * The ink ramp, and the bug that flattened it.
@@ -50,18 +52,45 @@
  *   --ink-soft    7.6:1   body prose after the lead
  *   --ink-faint   5.4:1   small uppercase labels, still comfortably AA
  *   --mark        7.1:1   verified claims, emphasis inside prose
- *   --signal      6.9:1   live state only
+ *   --signal      6.9:1   interactive targets
  */
 :root {
-  --paper: oklch(0.972 0.009 88);
-  --ink: oklch(0.225 0.014 62);
-  --rule: oklch(0.86 0.006 88);
+  /* Two families. Interface and reading text use the display face at text sizes. */
+  --font-sans: var(--font-display);
+  --font-serif: var(--font-display);
+
+  /* Achromatic, very slightly cool.
+   *
+   * This was oklch(0.972 0.009 88) over oklch(0.225 0.014 62): a warm cream
+   * ground under a warm near-black, which together with the clay accent below
+   * is the exact three-part palette the anti-slop filter names as its
+   * second-most-recurring generated tell -- cream paper, oxblood accent,
+   * espresso text. Measured as hex the page was #f8f6ef / #211a15 / #a5220b,
+   * which sits inside all three of the banned families.
+   *
+   * The warmth was doing no work. It was there because warm reads as
+   * "editorial", and every generated editorial page reaches for it. A neutral
+   * substrate is what a measuring instrument is printed on, and it lets the
+   * one accent be the only chromatic thing in the field of view. */
+  color-scheme: dark;
+
+  /* Four grounds, not two.
+   *
+   * Depth on a dark substrate comes from stacked surfaces, not from outlines: a
+   * 1px rule at low opacity disappears and at high opacity reads as drawn-on
+   * furniture, which is why the previous ground looked flat and over-ruled at
+   * the same time. Each step is roughly 0.045 in L, which is the smallest
+   * difference that still separates two panels sitting on each other. */
+  --paper: oklch(0.170 0.008 258);
+  --paper-high: oklch(0.265 0.012 258);
+  --ink: oklch(0.965 0.003 258);
+  --rule: oklch(0.320 0.008 258);
 
   /* Set explicitly rather than mixed, so the three steps stay three steps.
      Chroma rises slightly as they lighten, which keeps a pale tone from
      drifting toward grey and reading as disabled rather than as secondary. */
-  --ink-soft: oklch(0.405 0.016 62);
-  --ink-faint: oklch(0.487 0.018 62);
+  --ink-soft: oklch(0.855 0.005 258);
+  --ink-faint: oklch(0.740 0.008 258);
 
   /* The one accent. Every interactive target wears it and nothing else does.
    *
@@ -74,9 +103,21 @@
    * different hue, so pressing reads as the same object under more pressure.
    * --on-signal is the label colour measured against the fill rather than
    * assumed from the page ground. */
-  --signal: oklch(0.47 0.17 32);
-  --signal-deep: oklch(0.405 0.16 32);
-  --on-signal: oklch(0.985 0.006 88);
+  /* Electric cobalt, and it is now the only accent on the page.
+   *
+   * It was oklch(0.47 0.17 32) -- a dark, half-saturated red-brown that reads
+   * as clay. --mark was a second chromatic family at 34 elements, so the page
+   * ran two accents against each other while claiming one.
+   *
+   * They were the same job. --signal meant "the one thing to press" and --mark
+   * meant "a claim you can go and check": both say *the reader should act on
+   * this*. One colour now carries both, which is the difference between a page
+   * with an accent and a page with a palette. Red is released to --fail, where
+   * it is unambiguous, and nothing else on the page is chromatic except two
+   * strictly semantic states. */
+  --signal: oklch(0.700 0.135 258);
+  --signal-deep: oklch(0.780 0.115 258);
+  --on-signal: oklch(0.150 0.020 258);
   --signal-wash: color-mix(in oklch, var(--signal) 10%, var(--paper));
 
   /* Checkable claim. Deep enough to sit in running prose without shouting,
@@ -103,12 +144,23 @@
    * which is what a reference mark should look like in running text. Compared
    * against 255, 248, 235, 222 and 205 as real bold prose on both grounds
    * before choosing. */
-  --mark: oklch(0.43 0.075 235);
+  /* One accent, one value. This was a step deeper than --signal on the
+     argument that a mark inside running prose is not a fill. Measured, the two
+     stand at a contrast ratio of 1.24 against each other: the same colour to
+     anyone reading the page, carrying two meanings the eye cannot separate,
+     which is a worse system than one token because it claims a distinction it
+     does not deliver. The distinction is real and it is carried by form -- a
+     fill for the thing to press, an underline for the thing to check -- the
+     way every reference system at this tier carries it.
+
+     The --mark-* names stay: they mark the role at 25 call sites, and a role
+     is worth naming even when it shares a value. */
+  --mark: var(--signal);
   --mark-wash: color-mix(in oklch, var(--mark) 12%, var(--paper));
   --mark-rule: color-mix(in oklch, var(--mark) 38%, var(--paper));
   /* For mark-coloured text sitting on a mark wash, where the wash has already
      eaten the contrast the plain token was measured against. */
-  --mark-ink: oklch(0.355 0.14 274);
+  --mark-ink: var(--signal-deep);
 
   /* Stated, not mixed.
    *
@@ -123,7 +175,7 @@
    * The dark theme already stated its own value literally for a different
    * reason. This one now does too, at the same warm hue as the paper it sits
    * against. */
-  --paper-sunk: oklch(0.9455 0.0115 88);
+  --paper-sunk: oklch(0.135 0.007 258);
 
   /* Raised, the direction that was missing: two surfaces meant nothing could
      sit above the ground, so three nested containers read as one flat area.
@@ -131,8 +183,26 @@
      lightness between schemes and mean the same thing in each. --edge is a 1px
      inset highlight, which is how a surface reads as lifted without a shadow
      under it. */
-  --paper-raised: oklch(0.995 0.004 88);
-  --edge: oklch(1 0 0 / 0.72);
+  --paper-raised: oklch(0.215 0.010 258);
+  --edge: oklch(1 0 0 / 0.06);
+
+  /* The chassis.
+   *
+   * The page is a sheet clamped into a machine. Paper is what the machine
+   * prints; this is what it is bolted to, and it shows at the chapter seams
+   * where one argument ends and the next begins. Darker than the console on
+   * purpose: console still means "running", chassis means "structure", and two
+   * dark grounds that mean different things have to look different.
+   *
+   * --plate is the same body offset behind a housing, so an enclosure reads as
+   * a part sitting proud of the chassis rather than as a rectangle drawn on it.
+   * --hazard is the stripe that marks where the chassis is cut. It is material,
+   * not semantic: it says "edge of the machine", never "something failed", and
+   * it is a different hue from --fail so the two never trade meanings. */
+  --chassis: oklch(0.115 0.006 258);
+  --plate: oklch(0.070 0.010 258 / 0.55);
+  --hazard: oklch(0.760 0.120 68);
+  --chamfer: 0.875rem;
 
   /* Semantic colour.
    *
@@ -151,15 +221,17 @@
    *   --fail      a defect, a struck line, a failed assertion
    *   --mark      a claim an outsider can go and check
    */
-  --live: oklch(0.52 0.14 152);
+  --live: oklch(0.780 0.130 152);
   --live-wash: color-mix(in oklch, var(--live) 12%, var(--paper));
-  --warn: oklch(0.58 0.12 74);
+  /* Measured 3.77:1 against the new ground at L0.60, which is under the 4.5 body
+     floor. The cool substrate is lighter than the cream it replaced, so every
+     token had to be re-measured against it and this was the one that failed. */
+  --warn: oklch(0.820 0.110 78);
   --warn-wash: color-mix(in oklch, var(--warn) 14%, var(--paper));
-  /* Moved off --signal's hue. At 27 against the accent's 32 these were five
-     degrees apart: two different meanings rendering as the same colour. Red
-     rather than orange-red, so a defect and an active control cannot be
-     confused when they appear together in the diff. */
-  --fail: oklch(0.505 0.19 15);
+  /* Red belongs to failure and to nothing else now that the accent is cobalt.
+     It no longer has to dodge the accent's hue, so it can be the red a struck
+     line in a diff is expected to be. */
+  --fail: oklch(0.720 0.140 25);
   --fail-wash: color-mix(in oklch, var(--fail) 11%, var(--paper));
 
   /* Motion.
@@ -208,18 +280,66 @@
   --s-8: 4rem;
   --s-9: 6rem;
 
-  /* Radius. Seven values were in use (1px, 2px, 3px, 4px, 50%, 100px, 999px)
-     with nothing deciding between them. */
-  --r-sm: 2px;
-  --r-md: 4px;
-  --r-lg: 8px;
-  --r-panel: 12px;
+  /*
+   * Radius, and the one rule that decides between the values.
+   *
+   * Seven were in use (1px, 2px, 3px, 4px, 50%, 100px, 999px) with nothing
+   * deciding between them. Five is not a fix on its own: a scale without a rule
+   * is still five numbers picked by feel. The rule is size, and it has one
+   * exception:
+   *
+   *   --r-sm     2px   marks and chips: things smaller than a line of text
+   *   --r-md     4px   controls: anything the reader presses or types into
+   *   --r-lg     8px   inner surfaces nested inside a panel
+   *   --r-panel 12px   enclosures: a panel, a console, a housing
+   *   --r-pill  999px  round by nature, never by size. Dots and switches only,
+   *                    which is why it is exempt from the ladder above.
+   *
+   * A container is never smaller than what it holds, so a radius never steps up
+   * as it nests. That is the whole rule, and `scripts/audit.ts` check 3.9 holds
+   * the page to it.
+   *
+   * --r-inner is the concentric correction. Two boxes at the same radius do not
+   * share an arc centre: the outer corner is centred at (R, R) and the inner one
+   * at (p + r, p + r), so they coincide only when r = R - p. Nesting a 12px box
+   * inside a 12px box at 8px of padding is the commonest reason a rounded
+   * interface looks very slightly wrong without anyone being able to say why.
+   * Give the enclosure `--r-out` and `--pad` and its child takes --r-inner. */
+  /* Square. Measured before this: 2px on 46 elements, 12px on 5, 8px on one.
+     A five-step radius scale existed in the stylesheet and the page rendered
+     as very slightly rounded everywhere, which is the corner you pick when you
+     have not decided. The page is an instrument; instruments have edges. The
+     only round things are the ones that are round by nature. */
+  --r-sm: 0px;
+  --r-md: 0px;
+  --r-lg: 0px;
+  --r-panel: 0px;
   --r-pill: 999px;
+  --r-inner: max(var(--r-sm), calc(var(--r-out, var(--r-panel)) - var(--pad, 0px)));
+
+  /* Layers.
+   *
+   * Six raw values were in use across five files: -1, 40, 40, 50, 50, 100, with
+   * nothing deciding between them and two pairs colliding by accident rather
+   * than by intent. The dock and the select-to-ask button both sat at 40 and
+   * their overlap was undefined; the palette scrim and the progress rule both
+   * sat at 50 and the scrim won by document order.
+   *
+   * Named, the collisions become decisions: the dock is furniture, the palette
+   * is an overlay over everything including furniture, and the skip link beats
+   * both because a keyboard user has to be able to leave. */
+  --z-under: -1;
+  --z-furniture: 40;
+  --z-grain: 45;
+  --z-overlay: 50;
+  --z-escape: 100;
 
   /* Border weights, so "quiet rule" and "this is an object" are a choice
      rather than a number typed from memory. */
   --border-hair: 1px;
-  --border-solid: 1.5px;
+  /* Was 1.5px, which rendered on 22 elements and is a width no screen can draw
+     cleanly. A rule is quiet or it is structural; there is no third weight. */
+  --border-solid: 1px;
   --border-emphasis: 2px;
 
   /* Elevation. Shadow only: `backdrop-filter` and every gradient function are
@@ -243,23 +363,43 @@
      `Artifacts .state`, `Reach .glyph` and `RetrievalField .stress` all
      rendered at their parent's size instead of stepping down. 0.68rem had
      separately become a de-facto sixth step in four places. */
-  --step--2: 0.6875rem;
-  --step--1: clamp(0.875rem, 0.85rem + 0.12vw, 0.9375rem);
-  --step-0: clamp(1rem, 0.97rem + 0.15vw, 1.0625rem);
-  --step-1: clamp(1.1rem, 1rem + 0.5vw, 1.35rem);
-  --step-2: clamp(1.6rem, 1.2rem + 1.9vw, 2.6rem);
-  --step-3: clamp(2.2rem, 1.4rem + 3.6vw, 4.4rem);
-  /* Display step, above the heading scale. --step-3 was the top, so the h1 and
-     the word "Work" set at the same size and carried no hierarchy. */
-  --step-4: clamp(2.75rem, 1.6rem + 5.4vw, 6rem);
+  --step--2: 0.75rem;
+  --step--1: 0.875rem;
+  --step-0: 1.0625rem;
+  --step-1: 1.3125rem;
+  /* Section headings. This was clamp(1.6rem, 1.2rem + 1.9vw, 2.6rem) and
+     components then overrode it with clamps of their own, so the seven h2s
+     rendered at 54px against a 64px h1: a ratio of 1.18, where the reference
+     systems run 2.4 to 2.9. Seven headings the same size as the headline is
+     seven headlines. */
+  --step-2: clamp(1.6rem, 1.35rem + 1.2vw, 2rem);
+  --step-3: clamp(2rem, 1.6rem + 1.8vw, 3rem);
+  /* The one display size, and the only thing on the page allowed to use it. */
+  --step-4: clamp(2.5rem, 1.7rem + 3.2vw, 4.25rem);
+  /* The macro step, for chapter headings only.
+   *
+   * Seven headings at --step-2 read as seven equal chapters, which is what the
+   * page shipped: a 54px h2 against a 68px h1 is a ratio of 1.18, where the
+   * reference systems run 2.4 to 2.9. The fix is not a bigger h2 everywhere. It
+   * is two registers, and this is the one the three chapters get.
+   *
+   * Capped at 7.5rem rather than the 13rem the industrial register would take,
+   * because "A bug in LangChain" has to set on two lines at 1440 and stay one
+   * heading at 390. Verified against the real copy at both widths, not chosen
+   * off a scale. */
+  --step-5: clamp(2.75rem, 1.5rem + 5vw, 7.5rem);
   /* Serif prose sets its own reading size: it is the one thing on the page
      measured for continuous reading rather than for scanning, and the mono
      scale is tuned for labels. Declared here so the three components that had
      each guessed at it stop disagreeing by fractions of a pixel. */
-  --step-prose: clamp(1rem, 0.95rem + 0.25vw, 1.15rem);
+  /* The reading face, one deliberate step above the interface face. A serif at
+     the same nominal size reads smaller because its x-height is smaller; this
+     is the only size on the page that is not a ladder step, and it is that for
+     an optical reason rather than by accident. */
+  --step-prose: 1.1875rem;
   /* One size for inline code, everywhere. It was `em`-relative to whatever
      contained it and rendered at 12.6, 13.2, 13.3 and 13.6px on one page. */
-  --step-code: 0.86rem;
+  --step-code: var(--step--1);
 
   /*
    * Four sanctioned departures from the scale, and no others.
@@ -325,54 +465,429 @@
  * the argument the page makes, so light is what everyone gets unless the root
  * carries data-theme="dark". Every value here stays measured and correct.
  */
-:root[data-theme="dark"] {
-  --paper: oklch(0.185 0.008 88);
-  --ink: oklch(0.95 0.01 88);
-  --rule: oklch(0.485 0.01 88);
+/*
+ * Light, and it is the option now rather than the default.
+ *
+ * The page was paper with one dark console cut into it, then paper for half its
+ * length and machine for the other half. The second of those read as two
+ * documents stapled together, which is what it was: a ground that changes
+ * partway down is a seam, and a seam is the first thing a reader notices and
+ * the last thing they forget.
+ *
+ * So there is one substrate and it is dark, for the reason the subject gives:
+ * everything on this page that is worth looking at is a running instrument --
+ * the agent, the graph, the eval matrix, the latency trace. Those belong on a
+ * console. Setting them on paper and then cutting a console into the paper was
+ * the compromise that produced the seam.
+ *
+ * Light survives as a deliberate choice a reader can make from the command
+ * palette, and these are the values it had when it was the default: measured
+ * against paper, not derived from the dark scale, because a percentage tuned
+ * against one ground does not transfer to the other.
+ */
+:root[data-theme="light"] {
+  color-scheme: light;
 
-  /* The ramp had collapsed here too: 0.9 against 0.88 is a step nobody can see.
-     Dark grounds need wider spacing than light ones, not narrower, because the
-     eye loses discrimination faster as tones darken. */
-  --ink-soft: oklch(0.862 0.012 88);
-  --ink-faint: oklch(0.782 0.014 88);
+  --paper: oklch(0.975 0.0015 250);
+  --paper-sunk: oklch(0.948 0.002 250);
+  --paper-raised: oklch(0.998 0.001 250);
+  --paper-high: oklch(1 0 0);
+  --ink: oklch(0.185 0.004 250);
+  --ink-soft: oklch(0.415 0.006 250);
+  --ink-faint: oklch(0.505 0.008 250);
+  --rule: oklch(0.885 0.002 250);
+  --edge: oklch(1 0 0 / 0.72);
 
-  /* Both accents lift and lose chroma on a dark ground. Held at the same hue so
-     the page reads as the same paper under different light: raising lightness
-     without dropping chroma makes vermillion fluoresce and teal go acid. */
-  --signal: oklch(0.78 0.12 32);
-  /* Deep goes the other way on this ground: pressing lifts toward the light,
-     because moving toward the ink here would move toward the page. The label
-     stays dark against a fill this bright rather than following --paper. */
-  --signal-deep: oklch(0.845 0.115 32);
-  --on-signal: oklch(0.18 0.02 40);
-  --signal-wash: color-mix(in oklch, var(--signal) 14%, var(--paper));
+  --signal: oklch(0.485 0.205 258);
+  --signal-deep: oklch(0.40 0.19 258);
+  --on-signal: oklch(0.99 0.001 250);
+  --signal-wash: color-mix(in oklch, var(--signal) 10%, var(--paper));
+  --mark: var(--signal);
+  --mark-wash: color-mix(in oklch, var(--mark) 12%, var(--paper));
+  --mark-rule: color-mix(in oklch, var(--mark) 38%, var(--paper));
+  --mark-ink: var(--signal-deep);
 
-  --mark: oklch(0.862 0.075 235);
-  --mark-wash: color-mix(in oklch, var(--mark) 14%, var(--paper));
-  --mark-rule: color-mix(in oklch, var(--mark) 45%, var(--paper));
-
-  /* The semantic three were never restated here.
-   *
-   * They were added when this block was unreachable -- nothing set data-theme,
-   * so nobody could see what fell through. With the toggle working they would
-   * have inherited values tuned against a light ground: --live at L0.52 and
-   * --fail at L0.505 are legible on cream and close to invisible on charcoal.
-   * Lifted and de-chroma'd on the same principle as the two above. */
-  --live: oklch(0.80 0.17 152);
-  --live-wash: color-mix(in oklch, var(--live) 14%, var(--paper));
-  --warn: oklch(0.83 0.14 78);
+  --live: oklch(0.52 0.14 152);
+  --live-wash: color-mix(in oklch, var(--live) 12%, var(--paper));
+  --warn: oklch(0.515 0.125 70);
   --warn-wash: color-mix(in oklch, var(--warn) 14%, var(--paper));
-  --fail: oklch(0.815 0.145 15);
-  --fail-wash: color-mix(in oklch, var(--fail) 14%, var(--paper));
+  --fail: oklch(0.52 0.20 25);
+  --fail-wash: color-mix(in oklch, var(--fail) 11%, var(--paper));
 
-  --paper-sunk: oklch(0.225 0.008 88);
+  --plate: oklch(0.145 0.006 258 / 0.30);
+  --lift-1: 0 1px 2px color-mix(in oklch, var(--ink) 8%, transparent);
+  --lift-2:
+    0 2px 4px color-mix(in oklch, var(--ink) 7%, transparent),
+    0 8px 20px color-mix(in oklch, var(--ink) 6%, transparent);
+}
 
-  /* Raised is darker here and lighter on paper, because both mean away from
-     the ink and the ink is light on this ground. The edge highlight drops to a
-     tenth of its opacity: a bright hairline that reads as caught light on cream
-     reads as a drawn white line on charcoal. */
-  --paper-raised: oklch(0.145 0.006 88);
-  --edge: oklch(1 0 0 / 0.07);
+/*
+ * The form ladder.
+ *
+ * Every radius on this page is 0 and shadow is banned on chrome, which is
+ * correct and is the page's signature. The cost was that roughly four hundred
+ * elements shared one silhouette: hierarchy had exactly one axis, size, and the
+ * page had reached the end of it. Seven section headings sat at 32px against a
+ * 68px headline because there was nothing else left to say "this outranks that"
+ * with.
+ *
+ * So form becomes the second axis, without giving the page back its corners.
+ * Four materials, and an element declares which one it is:
+ *
+ *   (none)        ground. Bare. Sits on paper. Prose and section heads.
+ *   compartment   cells divided by the parent showing through a 1px gap.
+ *   housing       a drawn enclosure. Emphasis border, caught edge, corner marks.
+ *   console       the machine. Housing plus material, and the material only
+ *                 runs while the machine does.
+ *
+ * The ladder is declarative rather than a set of classes so a component opts in
+ * by naming what it is, and so the audit can read the page's own claim about
+ * itself.
+ */
+
+/* Cells divided by the parent showing through, not by borders on the cells.
+ *
+ * `gap: 1px` over a contrasting ground means no cell has to know which of its
+ * edges is shared, which is the detail that makes a wall of readings look
+ * milled rather than assembled. Border collapsing does the same job and needs
+ * every cell to agree about its neighbours. */
+[data-tier="compartment"] {
+  display: grid;
+  gap: var(--border-hair);
+  background: var(--rule);
+  border: var(--border-hair) solid var(--rule);
+}
+
+[data-tier="compartment"] > * {
+  background: var(--paper);
+  margin: 0;
+}
+
+/* A drawn enclosure.
+ *
+ * Two weights of border is the whole difference between a rule that separates
+ * and a frame that contains, and the page had only the first. Depth still comes
+ * from the caught edge rather than a shadow: a cast shadow under a 1px frame is
+ * the ghost card, and this page has no light source to justify one. */
+/*
+ * The cut corner, where the engine can cut one.
+ *
+ * `clip-path` was the obvious way to do this and it is the wrong one: it masks
+ * the painted output, so the 2px frame and the offset plate get sliced off along
+ * the diagonal and the corner reads as damaged rather than as machined.
+ * `corner-shape` changes the box geometry instead, so the border, the outline
+ * and the shadow all follow the cut.
+ *
+ * Chromium only as of 2026, with nothing announced from Firefox or WebKit, so it
+ * sits behind @supports and the radius is declared inside the guard rather than
+ * outside it. An engine without the property must not be handed a 24px
+ * border-radius as a consolation prize: the square corner is this page's
+ * signature, and the fallback here is the design rather than a degraded copy of
+ * it.
+ *
+ * Two corners, not four, and they are the two the registration marks do not
+ * occupy. The marks sit on the top-left and bottom-right diagonal; the cuts take
+ * the other one. Cutting all four would put a bevel through both marks and leave
+ * them overhanging the corner they are supposed to register.
+ */
+@supports (corner-top-right-shape: bevel) {
+  /*
+   * The selector is doubled to raise specificity, and that is not decoration.
+   *
+   * `Panel.module.css` sets `border-radius: var(--r-panel)` on `.panel`, which
+   * is the same specificity as a single attribute selector, so which one wins
+   * comes down to stylesheet order -- and Next.js gives no guarantee about the
+   * order of a CSS Module against a global sheet. Measured: the module won, the
+   * radius resolved to 0, and the corners stayed square while
+   * `corner-top-right-shape` reported `bevel`, because a bevel is sized by the
+   * radius and a radius of zero cuts nothing.
+   */
+  [data-tier="housing"][data-tier] {
+    border-top-right-radius: var(--s-5);
+    border-bottom-left-radius: var(--s-5);
+    corner-top-right-shape: bevel;
+    corner-bottom-left-shape: bevel;
+  }
+}
+
+/*
+ * The pointer, reported on the surface it is over.
+ *
+ * A radial fade is the usual way to build this and it is banned here, correctly:
+ * an interpolated gradient is the one texture this page has never carried, and
+ * audit 2.5 exists to keep it that way. Stepped hard stops do the same job in
+ * this page's own vocabulary -- the falloff is posterised, the way a tint is
+ * posterised on a press, and it reads as ink rather than as a glow.
+ *
+ * The position comes from --px/--py, written directly to the element's style by
+ * PageMotion. Off-canvas by default, so a panel nobody has pointed at carries
+ * nothing, and a visitor with no JavaScript never sees an inert light stuck in
+ * a corner.
+ */
+@property --px {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: -200%;
+}
+
+@property --py {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: -200%;
+}
+
+[data-tier="housing"] {
+  position: relative;
+
+  /*
+   * Elevation, not outline.
+   *
+   * This was a 2px frame in --rule plus a hard offset plate. On a dark ground a
+   * drawn border is the fragile signal: at low opacity it vanishes into the
+   * surface, at high opacity it reads as furniture bolted around the content,
+   * and the page managed to look flat and over-ruled at the same time. A panel
+   * is a surface lifted off the one behind it now, so the ground carries the
+   * separation the border was failing to carry.
+   *
+   * The hairline stays, at roughly half strength, as an edge rather than a
+   * frame: it catches where two surfaces meet and claims to contain nothing.
+   */
+  background-color: var(--paper-raised);
+  border: var(--border-hair) solid color-mix(in oklch, var(--rule) 60%, transparent);
+  box-shadow:
+    var(--bezel),
+    0 1px 2px oklch(0.07 0.01 258 / 0.5),
+    0 14px 34px oklch(0.07 0.01 258 / 0.34);
+}
+
+/* The surface answers the pointer by rising, which is the same mechanism the
+   rest of the scheme uses for depth: one step up the ground scale, no glow and
+   no coloured light. */
+[data-tier="housing"]:hover {
+  background-color: color-mix(in oklch, var(--paper-raised) 82%, var(--paper-high));
+}
+
+
+
+/*
+ * Registration marks.
+ *
+ * A printed specification sheet carries them, which is what this page is, so
+ * they are drawn from the subject rather than applied as trim. They mark the
+ * corners of an enclosure and they say nothing they have not measured: no
+ * serial, no revision number, no coordinates. Two corners on the diagonal,
+ * because four reads as a border and two reads as a drawing.
+ *
+ * Inset by a hair so they sit inside the frame rather than on it, and drawn
+ * with borders rather than a background so there is no image to load and
+ * nothing to interpolate.
+ */
+[data-tier="housing"]::before,
+[data-tier="housing"]::after {
+  content: "";
+  position: absolute;
+  /* 9px at hairline weight was a mark you had to go looking for, which is the
+     same as no mark. At 22px in the emphasis weight it registers the corner
+     from reading distance, which is the only distance a corner mark is for. */
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+  border-color: color-mix(in oklch, var(--ink) 55%, transparent);
+  border-style: solid;
+}
+
+[data-tier="housing"]::before {
+  inset-block-start: var(--s-2);
+  inset-inline-start: var(--s-2);
+  border-width: var(--border-emphasis) 0 0 var(--border-emphasis);
+}
+
+[data-tier="housing"]::after {
+  inset-block-end: var(--s-2);
+  inset-inline-end: var(--s-2);
+  border-width: 0 var(--border-emphasis) var(--border-emphasis) 0;
+}
+
+/*
+ * Not every enclosure is a machine.
+ *
+ * A registration mark says "this face was aligned against something". That is
+ * true of an instrument and it is not true of a list of links or a set of
+ * printed readings, which are contained rather than calibrated. Marking all
+ * three identically is how a system with one idea ends up looking like a system
+ * with none, and it is also what would turn twenty new enclosures into twenty
+ * copies of the same box.
+ */
+/* Scoped to the housing on purpose. `data-kind` was already in use on this page
+   for the work cards, so an unqualified attribute selector here would reach
+   across two unrelated vocabularies that happen to share an attribute name. */
+[data-tier="housing"][data-kind="record"]::before,
+[data-tier="housing"][data-kind="record"]::after,
+[data-tier="housing"][data-kind="readout"]::before,
+[data-tier="housing"][data-kind="readout"]::after {
+  content: none;
+}
+
+/*
+ * Edges that draw themselves.
+ *
+ * `pathLength="1"` on the element normalises the geometry, so one dash of
+ * length 1 covers the whole path whatever its actual length, and the offset is a
+ * fraction rather than a pixel measurement nobody has to take. No
+ * getTotalLength() call, and nothing to re-measure when the panel reflows.
+ *
+ * The dash array ships in the stylesheet and the offset does not. A dash of the
+ * full path length with a gap of the same is a solid line: this declaration
+ * changes not one pixel on its own, which is the point. The edge is painted and
+ * complete before any script runs, and PageMotion animates the offset from 1
+ * down to the 0 it already has. Nothing here is hidden waiting for a bundle.
+ */
+[data-draw] {
+  stroke-dasharray: 1;
+}
+
+/*
+ * The instrument powering on.
+ *
+ * One rule about what this is allowed to touch, and it decides the whole shape
+ * of it: no content. Not the headline, not a paragraph, not a figure. An opacity
+ * animation on a fast-painting element can take that element out of the running
+ * for Largest Contentful Paint entirely, which means a boot sequence that fades
+ * the hero in does not merely delay the metric, it can make the browser measure
+ * something slower instead. The h1 is already excluded from every script on this
+ * page for that reason and this holds the same line.
+ *
+ * So only the chrome arrives: the corner marks that register each enclosure.
+ * They are drawn furniture, they carry no text, and nothing about the page's
+ * meaning waits on them. The reader gets the words at first paint and the
+ * instrument assembles around them.
+ *
+ * CSS rather than script, so it cannot be delayed by a bundle and cannot fail
+ * to run. Once, no loop, and the whole sequence is inside 700ms.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  [data-tier="housing"]::before,
+  [data-tier="housing"]::after {
+    animation: mark-register var(--t-slow) var(--ease-spring) both;
+  }
+
+  [data-tier="housing"]::before {
+    transform-origin: top left;
+  }
+
+  [data-tier="housing"]::after {
+    transform-origin: bottom right;
+    /* The second corner lands after the first. A registration mark is struck one
+       corner at a time, and two arriving together reads as a box appearing. */
+    animation-delay: 120ms;
+  }
+}
+
+@keyframes mark-register {
+  from {
+    scale: 0.2;
+    opacity: 0;
+  }
+  to {
+    scale: 1;
+    opacity: 1;
+  }
+}
+
+/*
+ * The lead sentence, arriving.
+ *
+ * The page had no motion bound to content anywhere: every animation fired on a
+ * container entering and then the surface was dead. This binds a faint one to
+ * the single sentence the corpus marks as the one to read first, so the emphasis
+ * follows the content rather than whatever happens to sit at the top of a block.
+ *
+ * This looped at first, pulsing the weight on a seven second cycle. It was a bad
+ * idea for the obvious reason: a line whose weight is moving is a line that is
+ * continuously slightly harder to read, and the sentence chosen for it was the
+ * one most worth reading. It also put auto-moving content under WCAG 2.2.2 for
+ * no gain. It settles once now, on its own view timeline, and then holds.
+ *
+ * Weight rather than opacity: a lead that fades in is briefly less legible,
+ * which is the opposite of what marking it is for. Nothing is hidden waiting on
+ * this -- the sentence is painted at its settled weight and the range only
+ * carries it there from slightly lighter.
+ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .prose .lead {
+      animation: lead-settle linear both;
+      animation-timeline: view();
+      animation-range: entry 10% entry 55%;
+    }
+  }
+}
+
+@keyframes lead-settle {
+  from {
+    font-variation-settings: "wght" 380;
+  }
+  to {
+    font-variation-settings: "wght" 500;
+  }
+}
+
+/*
+ * The machine, working.
+ *
+ * The console already carries a dot grid at rest, which is the surface it is
+ * printed on. This is the surface with current through it: a scanline field,
+ * and it exists only while a request is actually in flight. `data-streaming` is
+ * set on the root by the agent for the duration of the stream and is already
+ * read by lib/motion.ts, so this reports a state the system computed rather
+ * than decorating a dark box.
+ *
+ * Every stop is hard, so this is a rule ruled onto a surface and not a fade.
+ * Audit 2.5 tests exactly that distinction and scripts/gradients.ts holds it.
+ *
+ * The layer is a pseudo-element rather than a second background on the console
+ * itself, so the dot grid underneath it is untouched and the two never have to
+ * agree about background-size.
+ */
+[data-surface="console"] {
+  position: relative;
+}
+
+:root[data-streaming="yes"] [data-surface="console"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-grain);
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--ink) 22%, transparent) 0 1px,
+    transparent 1px 3px
+  );
+  opacity: 0.5;
+}
+
+/* The field sweeps while the machine is working, and stops when it stops. The
+   selector names the state, which is what audit 13.4 requires of any loop. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-streaming="yes"] [data-surface="console"]::after {
+    animation: scan 5s linear infinite;
+  }
+}
+
+@keyframes scan {
+  from {
+    background-position-y: 0;
+  }
+  to {
+    background-position-y: 60px;
+  }
+}
+
+/* The inner ring of the console housing. Scoped to the surface rather than the
+   scheme, because it belongs to the panel construction and not to the page. */
+[data-surface="console"] {
+  --console-ring: oklch(1 0 0 / 0.06);
 }
 
 *,
@@ -388,6 +903,20 @@ html {
 body {
   margin: 0;
   background: var(--paper);
+  /*
+   * No pattern on the ground, and that is the decision rather than an omission.
+   *
+   * This carried a halftone dot field: two tiles at coprime pitches, meant to
+   * read as ink on stock. At 13px the dots are individually countable at reading
+   * distance, so it read as polka dot applied to the page rather than as a
+   * surface the page was printed on, and it was the loudest thing in every
+   * screenshot including the ones with a headline in them.
+   *
+   * Depth on a dark substrate comes from stacked grounds instead: --paper-sunk
+   * through --paper-high are four measured steps, and a panel sitting on the
+   * one below it is a surface rather than a texture. That is the mechanism this
+   * scheme is built for, and it does not compete with type for attention.
+   */
   color: var(--ink);
   /* Interface voice. Every readout names mono itself; what changed is the
      default an element gets when it names nothing -- a heading or a control,
@@ -412,7 +941,7 @@ body {
 .prose {
   text-wrap: pretty;
   font-family: var(--font-serif), Georgia, serif;
-  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.15rem);
+  font-size: var(--step-prose);
   line-height: 1.6;
   /* Measured, not assumed. `ch` is the width of the zero glyph, which in this
      serif is far wider than the average lowercase letter: 65ch rendered as 89
@@ -428,12 +957,31 @@ body {
  * `pretty` only prevents an orphan, which is what a paragraph needs. Applying
  * balance to body copy is expensive and applying pretty to a heading does
  * nothing for the ragged edge that actually shows. */
+/*
+ * The display voice, and the two levels that get it.
+ *
+ * h1 and h2 are the only headings set in it. An h3 is a subhead inside a
+ * section, it runs at interface size, and a face drawn to be looked at is the
+ * wrong tool for a line that is meant to be scanned past. Giving it to all three
+ * is how a display face stops reading as display.
+ */
+h1,
+h2 {
+  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+h3 {
+  /* The subhead takes the interface face explicitly rather than by inheritance,
+     so a subhead inside a serif or mono block still sets in it. h1 and h2 are
+     excluded deliberately: they take the display voice in the rule above, and
+     listing them here as well overrode it silently -- same specificity, later in
+     the file, so the display face was requested and never rendered. */
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
 h1,
 h2,
 h3 {
-  /* Headings take the interface face explicitly rather than by inheritance, so
-     a heading inside a serif or mono block still sets in it. */
-  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.02em;
@@ -446,7 +994,7 @@ h3 {
    body-copy gaps are too wide once the letters are six times larger. */
 h1 {
   font-size: var(--step-4);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 0.95;
   letter-spacing: -0.04em;
 }
@@ -497,7 +1045,7 @@ button {
 
 hr {
   border: none;
-  border-top: 1px solid var(--rule);
+  border-top: var(--border-hair) solid var(--rule);
   margin: 0;
 }
 
@@ -517,6 +1065,122 @@ hr {
   color: var(--ink);
 }
 
+/* The surfaces the browser draws that belong to no design system until someone
+   claims them. Caret and scrollbar shipped as platform defaults: a blue caret
+   in the ask field on a warm ground, and a light-grey scrollbar track beside a
+   dark console. Both are visible on every screen of this page. */
+:where(input, textarea, [contenteditable]) {
+  caret-color: var(--signal);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: var(--r-pill);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-faint);
+  background-clip: content-box;
+}
+
+/*
+ * The headpiece.
+ *
+ * Guilloche: the interlacing line-work engraved on banknotes, share
+ * certificates and passports. It is there because a curve cut by a geometric
+ * lathe is expensive to forge and trivial to check by eye, so its presence is a
+ * claim that the document can be verified. That is the argument this page makes
+ * about itself, which is the only reason it is here. A pattern chosen because
+ * it looked good would be the halftone field again.
+ *
+ * "Headpiece" is the printing term for the ornament at the head of a chapter,
+ * and it goes on the three sections already marked as chapters and on nothing
+ * else. The four instrument sections get none: an instrument face is not a
+ * title page, and putting it everywhere is how one idea turns into wallpaper.
+ *
+ * Carried as a mask rather than as a background image, because an external SVG
+ * cannot see `currentColor`. The file supplies the shape, the stylesheet
+ * supplies the ink, and one file therefore serves both themes.
+ *
+ * Generated by scripts/build-guilloche.ts from a fixed seed, so it is identical
+ * on every build.
+ */
+[data-register="chapter"] > .wrap {
+  position: relative;
+}
+
+[data-register="chapter"] > .wrap::before {
+  content: "";
+  display: block;
+  height: clamp(2.5rem, 6vw, 4.5rem);
+  margin-block-end: var(--s-5);
+  /* Measured on a canvas at the size it is used: the band inks 25% of its strip
+     and the rest is ground, so the mix is set for how a struck line reads, not
+     for the average. At 34% a stroke lands near L 0.44 against an L 0.17 ground
+     -- present, and still well under --ink-faint so it never competes with the
+     heading it sits above. */
+  background-color: color-mix(in oklch, var(--ink) 34%, transparent);
+  mask-image: url("/headpiece.svg");
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  -webkit-mask-image: url("/headpiece.svg");
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+}
+
+/* The seal, on the one credential with a proctored exam behind it.
+ *
+ * A seal is the mark left by whoever stands behind a document. It goes on the
+ * vendor exam and nowhere near the course completions, for the same reason the
+ * NVIDIA mark does: flattening those two into one treatment is exactly the
+ * distinction the credential wall exists to make. */
+.issuer-seal {
+  display: block;
+  width: 4.5rem;
+  height: 4.5rem;
+  flex: none;
+  pointer-events: none;
+  /* The rosette is finer line-work than the band, 18% coverage, so it takes a
+     little less mix to read at the same weight. */
+  background-color: color-mix(in oklch, var(--ink) 30%, transparent);
+  mask-image: url("/seal.svg");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-image: url("/seal.svg");
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+}
+
+/* There is no grain layer, and that is a decision rather than an omission.
+ *
+ * A full-viewport `feTurbulence` overlay was added here and taken out again. It
+ * is the standard way to put tooth on a digital surface and it is also the tell:
+ * fractal noise is not what paper looks like, it is what a filter looks like,
+ * and at the opacity where it stops reading as a filter it stops doing anything
+ * at all. Measured at 0.028 it changed no pixel a reader could name.
+ *
+ * The page gets its material from the surface ladder and the hairlines instead,
+ * which are the things a reader can actually see and which carry structure
+ * rather than atmosphere.
+ */
+
+
 .wrap {
   width: 100%;
   max-width: 76rem;
@@ -524,17 +1188,67 @@ hr {
   padding-inline: clamp(1.25rem, 5vw, 4rem);
 }
 
+/*
+ * Nothing on this page runs past a readable line.
+ *
+ * Measured across every paragraph: 155 characters in the measured-limits rows,
+ * 152 in the case notes, 128 in the certifications list, 91 in three captions.
+ * The comfortable range is 45 to 75; past about 80 the eye stops finding the
+ * start of the next line and the reader is doing work the layout should have
+ * done. Six components had their own width and none of them had this one.
+ *
+ * A ceiling, not a width: anything already narrower keeps its own measure, and
+ * a component that genuinely needs the full track opts out with [data-wide].
+ */
+main :is(p, dd, li, blockquote):not([data-wide]) {
+  max-width: var(--measure);
+}
+
 /* Small caps label used for section markers and data keys. */
+/*
+ * Three voices were doing one class's work, and the mono one was carrying
+ * sentences.
+ *
+ * `.label` was mono, uppercase and tracked at 0.1em, on the argument that a
+ * label marks a data key. Half its call sites are data keys and half are not:
+ * "status could not be checked from here" and "written by the runner, not typed
+ * here" are sentences, and setting a sentence in tracked uppercase mono is the
+ * same substitution the contract bans one level down, where mono stands in for
+ * "technical" on an ordinary word.
+ *
+ * So the jobs are separated and each gets the face that suits it.
+ *
+ *   .label     a short key beside a value. Uppercase earns its place here
+ *              because the string is two or three words and never a sentence.
+ *   .caption   an explanatory phrase. Sentence case, no tracking, because it is
+ *              read rather than scanned.
+ *   .ident     a repository path, a model name, a flag. The data voice, and the
+ *              only one of the three that is still mono.
+ */
 .label {
-  /* Stays mono now the default does not: a label marks a data key, same job as
-     the readouts beside it. */
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-size: var(--step--1);
   /* Uppercase at small size with open tracking is already working against the
      reader. Light weight on top of that was the fourth penalty. */
-  font-weight: 400;
-  letter-spacing: 0.1em;
+  font-weight: 600;
+  letter-spacing: var(--track-caps);
   text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.caption {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: var(--step--1);
+  font-weight: 400;
+  letter-spacing: var(--track-normal);
+  color: var(--ink-faint);
+}
+
+.ident {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--step-code);
+  font-weight: 400;
+  letter-spacing: var(--track-normal);
   color: var(--ink-faint);
 }
 
@@ -563,7 +1277,7 @@ hr {
   color: var(--ink);
   display: inline-flex;
   align-items: center;
-  gap: 0.45em;
+  gap: var(--s-2);
 }
 
 .issuer-dot {
@@ -591,7 +1305,16 @@ hr {
 
 .prose .lead {
   color: var(--ink);
-  font-size: 1.06em;
+  /* An explicit step, not 1.06em. As a multiplier it compounded with the one
+     on `strong` below, so a bold phrase inside a lead sentence rendered at a
+     third size that appears nowhere in the scale: 18.4px became 19.5px became
+     20.67px, and twelve elements on the page were set in that last one.
+
+     Overridable by the block rather than by a more specific selector, because
+     a prose block set below body size needs its emphasis to stay inside its
+     own range: the colophon runs at --step--1 and promoted eighteen elements
+     to 21px, larger than the page it annotates. */
+  font-size: var(--lead-step, var(--step-1));
 }
 
 /*
@@ -609,13 +1332,23 @@ hr {
 /* Identifiers keep the mono face so a symbol read on the page matches the
    symbol typed into an editor. Sized down because mono runs optically larger
    than the serif around it at the same nominal size. */
-.prose code {
+/* Every code carrier, not only the ones inside prose. A bare <code> outside
+   .prose inherited nothing and fell to the user agent's default monospace:
+   eleven elements, the LangChain diff among them, set in a second mono face
+   beside the hundred in the first. */
+code,
+kbd,
+samp,
+pre {
   font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: var(--step-code);
+}
+
+.prose code {
   color: var(--ink);
   background: var(--paper-sunk);
   padding: 0.1em 0.32em;
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   word-break: break-word;
 }
 
@@ -637,8 +1370,10 @@ hr {
  * no code here generates a mark; Prose only renders the ones written by hand.
  */
 .prose strong {
-  font-size: 1.06em;
-  font-weight: 700;
+  /* Size is inherited. Emphasis moves on weight and colour, which is two axes
+     and enough; a third that also changes the line's height is what put three
+     unscheduled sizes into the page. */
+  font-weight: 600;
   letter-spacing: -0.006em;
   color: var(--mark);
   /* Under the text rather than behind it. A wash on every bold phrase reads as
@@ -681,7 +1416,7 @@ hr {
   width: 100%;
   height: 0.3em;
   background: var(--mark-wash);
-  z-index: -1;
+  z-index: var(--z-under);
 }
 
 /*
@@ -741,9 +1476,19 @@ hr {
    claim: something an outsider can open and check. The underline stays -- it is
    the older and more legible signal for "this goes somewhere" -- and the colour
    is what makes it survive a scan that never slows down enough to read. */
-.prose a {
+/* `.prose` was the scope by accident, not by intent: the rule is about a link
+   that goes somewhere an outsider can check, and the hero's proof sentence is
+   the strongest one of those on the page. It sits outside `.prose`, so its
+   citation rendered as ink with a hairline underline and read as ordinary
+   text. Matched on the claim figure it wraps rather than on a new class. */
+.prose a,
+a:has([class*="proofFigure"]) {
   color: var(--mark);
-  font-weight: 500;
+  /* A DOI is one 38-character token with no break opportunity in it. At 320px
+     the paragraph holding `doi:10.1109/ICAICCIT64383.2024.10912101` measured
+     384px against a 280px column and painted the tail past the page edge.
+     Inline code already had this; links did not. */
+  overflow-wrap: break-word;
   text-decoration-thickness: 2px;
   text-decoration-color: var(--mark-rule);
   text-underline-offset: 0.18em;
@@ -755,7 +1500,9 @@ hr {
 /* Hover is a live state, so this is one of the few places both accents meet:
    the link is checkable, and right now it is also being touched. */
 .prose a:hover,
-.prose a:focus-visible {
+.prose a:focus-visible,
+a:has([class*="proofFigure"]):hover,
+a:has([class*="proofFigure"]):focus-visible {
   text-decoration-color: var(--signal);
   background: var(--signal-wash);
 }
@@ -862,14 +1609,32 @@ html {
   scroll-padding-top: clamp(1.5rem, 6vh, 3rem);
 }
 
+/*
+ * Reduce means less movement, not a page that stopped responding.
+ *
+ * This blanket used to set `transition-duration: 1ms` as well, which took out
+ * every hover tint, every focus ring fade and every press acknowledgement on
+ * the page along with the animation it was aiming at. The setting is asking
+ * about large or continuous motion -- parallax, autoplay, loops, things that
+ * travel across the screen -- not about whether a control confirms a click.
+ * A page that answers a press with nothing at all reads as broken rather than
+ * as calm, which is the opposite of what was asked for.
+ *
+ * So animations still collapse to a single 1ms frame, and transitions are
+ * restricted by property instead of by duration: colour, opacity and the ring
+ * still animate at their authored speed, while anything spatial -- transform,
+ * size, position -- snaps rather than travels.
+ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 1ms !important;
     scroll-behavior: auto !important;
+    transition-property:
+      opacity, color, background-color, border-color, box-shadow, outline-color,
+      text-decoration-color, fill, stroke !important;
   }
 }
 
@@ -883,8 +1648,8 @@ html {
   min-height: 44px;
   background: var(--ink);
   color: var(--paper);
-  padding: 0.6rem 1rem;
-  z-index: 100;
+  padding: var(--s-2) var(--s-4);
+  z-index: var(--z-escape);
 }
 
 .skip:focus {
@@ -910,34 +1675,43 @@ html {
 [data-surface="console"] {
   color-scheme: dark;
 
-  --paper: oklch(0.201 0.011 75);
-  --paper-raised: oklch(0.246 0.012 75);
-  --paper-sunk: oklch(0.166 0.010 75);
-  --rule: oklch(0.375 0.010 75);
+  --paper: oklch(0.192 0.004 250);
+  --paper-raised: oklch(0.238 0.005 250);
+  --paper-sunk: oklch(0.155 0.003 250);
+  --rule: oklch(0.352 0.005 250);
 
-  --ink: oklch(0.955 0.008 85);
-  --ink-soft: oklch(0.868 0.010 82);
-  --ink-faint: oklch(0.806 0.012 80);
+  --ink: oklch(0.968 0.002 250);
+  --ink-soft: oklch(0.862 0.004 250);
+  --ink-faint: oklch(0.775 0.006 250);
 
   /* Restated rather than mixed. The light values are tuned against a light
      ground; the same chroma at these lightnesses reads muddy on charcoal, and
      color-mix against a dark paper produces a different result than intended. */
-  --signal: oklch(0.78 0.14 32);
+  --signal: oklch(0.72 0.18 258);
   --signal-wash: color-mix(in oklch, var(--signal) 16%, var(--paper));
-  --mark: oklch(0.862 0.08 235);
+  --mark: var(--signal);
   --mark-wash: color-mix(in oklch, var(--mark) 16%, var(--paper));
   --mark-rule: color-mix(in oklch, var(--mark) 48%, var(--paper));
-  --mark-ink: oklch(0.86 0.11 274);
+  --mark-ink: var(--signal-deep);
 
   --live: oklch(0.80 0.17 152);
   --live-wash: color-mix(in oklch, var(--live) 16%, var(--paper));
   --warn: oklch(0.83 0.14 78);
   --warn-wash: color-mix(in oklch, var(--warn) 16%, var(--paper));
-  --fail: oklch(0.815 0.145 15);
+  --fail: oklch(0.79 0.17 25);
   --fail-wash: color-mix(in oklch, var(--fail) 16%, var(--paper));
 
-  --lift-1: 0 1px 2px oklch(0 0 0 / 0.4);
-  --lift-2: 0 2px 4px oklch(0 0 0 / 0.35), 0 8px 20px oklch(0 0 0 / 0.3);
+  /* Tinted to the ground, not black at opacity.
+   *
+   * Pure black over a hue-258 charcoal desaturates whatever it falls across, so
+   * an edge under a shadow drifts grey while the surface beside it stays cool,
+   * and the two stop looking like the same material. Carrying the ground's own
+   * hue keeps the shadow reading as less light on this surface rather than as a
+   * different surface. */
+  --lift-1: 0 1px 2px oklch(0.06 0.012 258 / 0.44);
+  --lift-2:
+    0 2px 4px oklch(0.06 0.012 258 / 0.38),
+    0 8px 20px oklch(0.06 0.012 258 / 0.32);
 
   background: var(--paper);
   color: var(--ink);
@@ -960,6 +1734,86 @@ html {
   background-size: 22px 22px;
 }
 
+
+
+
+
+
+
+
+
+/*
+ * Chapters run wide, instruments run narrow.
+ *
+ * Every section on this page sat in the same 76rem column, so the seven
+ * sections had one width as well as one silhouette and the register attribute
+ * changed only the padding above and below them. Width is the loudest piece of
+ * rhythm a page has and it was spending none of it.
+ *
+ * A chapter now takes the viewport, less a margin that grows with it. An
+ * instrument keeps the reading column. The page measurably widens and narrows
+ * as the reader scrolls, which is the bimodal density the design has claimed
+ * since it was written.
+ *
+ * Prose is unaffected: `main :is(p, dd, li, blockquote)` still caps at
+ * --measure, so a wider frame gives the data objects room without ever giving a
+ * paragraph a longer line.
+ */
+main > section[data-register="chapter"] > .wrap {
+  max-width: none;
+  padding-inline: clamp(1.25rem, 5vw, 5rem);
+}
+
+
+
+/* `.wrap` is global; the head is a CSS Module class and is not addressable from
+   here. Each section carries exactly one h2 -- every subhead below it is an h3 --
+   so the descendant selector is the whole set and nothing else. */
+/*
+ * Chapter register only, and that qualifier is the whole rule.
+ *
+ * This ran on `#work ~ section`, which is every section below the turn
+ * regardless of register, and an instrument heading does not live in the page
+ * column: it lives in the rail beside its content, 176px wide. `Research` at
+ * 216px in a 176px rail set as eight lines of roughly one letter each and stood
+ * 1417px tall, taller than the section it was introducing. `What else checks
+ * out` took four lines and 708px.
+ *
+ * The two registers are the layout. The macro step belongs to the one with a
+ * frame wide enough to hold it, and instruments go back to --step-2.
+ */
+main > section[data-register="chapter"] > .wrap h2 {
+  font-size: clamp(3.5rem, 15vw, 14rem);
+  line-height: 0.82;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  /*
+   * The two axes the face was chosen for.
+   *
+   * `opsz` is the one doing the work. Width interpolates one drawing wider;
+   * optical size interpolates between drawings, so the ink traps deepen and the
+   * counters open as the heading settles into display size. Both default to
+   * their settled values, so a heading whose motion bundle never arrives is
+   * simply the heading, correctly optically sized.
+   *
+   * The width floor is 75 on this family where the previous one went to 62.
+   * PageMotion opens from 78, not from the 68 it used before: a value below the
+   * axis minimum does not fail, it clamps, and a beat that starts clamped spends
+   * its first frames going nowhere.
+   */
+  font-variation-settings:
+    "wdth" var(--wdth, 100),
+    "opsz" var(--opsz, 96);
+
+
+  /* Wraps. `nowrap` ran the longer headings past the right edge, which is the
+     effect this size is for, and it also carried the copy-link button in the
+     heading off the viewport with them: a focusable control the reader could
+     still tab to and never see. A heading this size fills the frame on two
+     lines just as well as on one that leaves the page. */
+  text-wrap: balance;
+}
+
 /* Declaring the ground back to paper, for a written block sitting inside a live
    one. A console nested in a console is harmless -- these values are absolute,
    not relative, so the inner scope simply restates what it already inherited --
@@ -979,8 +1833,8 @@ html {
  */
 [data-tone="sunk"],
 [data-surface="sunk"] {
-  --ink-faint: oklch(0.442 0.018 62);
-  --ink-soft: oklch(0.375 0.016 62);
+  --ink-faint: oklch(0.455 0.007 250);
+  --ink-soft: oklch(0.385 0.006 250);
 }
 
 /*
@@ -997,17 +1851,17 @@ html {
   :root {
     --paper: white;
     --ink: black;
-    --rule: oklch(0.86 0.006 88);
-    --signal: oklch(0.47 0.17 32);
+    --rule: oklch(0.885 0.002 250);
+    --signal: oklch(0.485 0.205 258);
     /* Pinned like the accent above it. Only --signal was, so a page printed
        from the dark theme carried a lifted --mark onto white paper along with
        every semantic colour that had no print value at all. */
-    --mark: oklch(0.43 0.075 235);
+    --mark: oklch(0.435 0.185 258);
     --mark-wash: color-mix(in oklch, var(--mark) 12%, white);
     --mark-rule: color-mix(in oklch, var(--mark) 38%, white);
     --live: oklch(0.52 0.14 152);
-    --warn: oklch(0.58 0.12 74);
-    --fail: oklch(0.505 0.19 15);
+    --warn: oklch(0.60 0.13 70);
+    --fail: oklch(0.52 0.20 25);
     --paper-sunk: oklch(0.96 0 0);
   }
 
@@ -1052,7 +1906,7 @@ html {
      actually prints, so the stamp is placed there and kept whole. */
   footer {
     break-inside: avoid;
-    border-top: 1px solid var(--rule);
+    border-top: var(--border-hair) solid var(--rule);
     padding-top: 6pt;
   }
 
@@ -1156,7 +2010,7 @@ html {
   height: 2px;
   background: var(--signal);
   transform-origin: 0 50%;
-  z-index: 50;
+  z-index: var(--z-overlay);
   /* Hidden unless the browser can actually drive it.
    *
    * Without this guard the animation resolves against the document timeline
@@ -1239,22 +2093,23 @@ button {
  * not, which matters for printing and for crawlers.
  */
 .more {
-  margin-top: 0.25rem;
+  margin-top: var(--s-1);
 }
 
 .more > summary {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--s-2);
   list-style: none;
   cursor: pointer;
-  padding: 0.5rem 0;
+  padding: var(--s-2) 0;
   min-height: 44px;
-  font-family: var(--font-mono), ui-monospace, monospace;
+  /* A control names an action. Mono here dressed 27 instances of "Read more"
+     and "Show less" as readouts. */
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-size: var(--step--1);
-  letter-spacing: 0.04em;
   color: var(--ink-soft);
-  border-block-end: 1px solid var(--rule);
+  border-block-end: var(--border-hair) solid var(--rule);
   width: fit-content;
   transition:
     color var(--t-fast) var(--ease-standard),
@@ -1425,4 +2280,38 @@ body {
 /* An anchored section should not land flush against the top edge. */
 :target {
   scroll-margin-block-start: clamp(1.5rem, 6vh, 4rem);
+}
+
+/*
+ * The headpiece drawing itself.
+ *
+ * An engine-turned band is cut, not printed, and the cut runs. Scaling it out
+ * from the left as the chapter arrives is the closest a mask gets to that
+ * without an inline SVG to put a dash offset on.
+ *
+ * transform and opacity only, so it stays on the compositor, and it is scroll
+ * driven rather than a timed tween: the band is as far along as the reader is
+ * into the chapter, which makes it a readout of scroll position rather than an
+ * animation playing at the page.
+ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    [data-register="chapter"] > .wrap::before {
+      transform-origin: left center;
+      animation: headpiece-cut linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
+  }
+}
+
+@keyframes headpiece-cut {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
 }

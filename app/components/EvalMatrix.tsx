@@ -136,7 +136,23 @@ export default function EvalMatrix() {
                       aria-label={`${c.name}. Asserts ${c.asserts}. Passed ${Math.round(
                         (c.passRate ?? (c.pass ? 1 : 0)) * runs,
                       )} of ${runs} runs.${reachedModel(c) ? "" : " No model was called."}`}
-                      onClick={() => setOpen(open === c.name ? null : c.name)}
+                      onClick={() => {
+                        const next = open === c.name ? null : c.name;
+                        /* The detail block is one region showing one case at a
+                           time, so swapping it is a state transition rather
+                           than a navigation, and the browser can cross-fade it
+                           itself. Same-document view transitions are Baseline;
+                           where they are not available the state still changes,
+                           just without the fade. */
+                        if (
+                          typeof document.startViewTransition === "function" &&
+                          !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                        ) {
+                          document.startViewTransition(() => setOpen(next));
+                        } else {
+                          setOpen(next);
+                        }
+                      }}
                     >
                       {/* Filled to the rate it actually passed at. A solid cell
                           is reliable, a part-filled one is flaky, and the eye

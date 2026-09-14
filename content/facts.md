@@ -127,20 +127,16 @@ Role: Associate Software Engineer Intern. January 2024 to July 2024. India.
 @metric -30% | API response time | resume
 @metric +22% | engagement, 1,000+ daily users
 @metric 2,000+ | SKUs tracked live
-@metric 90%+ | user satisfaction | resume
-@metric 98% | dashboard figures matching the source inventory | resume
-@metric 3 | features owned end to end, delivered ahead of schedule | resume
 
 **He cut API response time 30 percent using in-memory caching and asynchronous request handling,**
-lifting engagement 22 percent for more than 1,000 daily active users on an e-commerce platform, who
-reported over 90 percent satisfaction.
+lifting engagement 22 percent for more than 1,000 daily active users on an e-commerce platform.
 
-He launched a MySQL inventory dashboard tracking more than 2,000 SKUs, whose figures matched the
-underlying inventory 98 percent of the time, and secured REST endpoints with JWT and role-based
-access control across admin, manager, and staff levels. Deployed on AWS EC2 and S3.
+He launched a MySQL inventory dashboard tracking more than 2,000 SKUs, and secured REST endpoints
+with JWT and role-based access control across admin, manager, and staff levels. Deployed on AWS EC2
+and S3.
 
-He owned three features end to end and delivered them ahead of schedule. He was an intern on that
-team and did not manage anyone, which is worth stating plainly because the resume line said "led".
+He was an intern on that team and did not manage anyone, which is worth stating plainly because the
+resume line said "led".
 
 Stack: React, Redux, MySQL, Redis, Node.js, JWT, RBAC, AWS EC2 and S3.
 
@@ -394,7 +390,7 @@ automated.** A link checker resolves every external URL and fails on a dead one.
 A facts gate fails the build when the page renders a section the corpus lacks,
 when a metric carries no source, when the availability date has passed, or when
 a resume keyword has gone missing from this file. A token linter fails on a
-colour written outside the stylesheet. An audit runs 106 structural
+colour written outside the stylesheet. An audit runs 107 structural
 checks. The evaluation suite runs 25, five times each. None of it makes the work better; all
 of it stops the page describing work that is not there.
 

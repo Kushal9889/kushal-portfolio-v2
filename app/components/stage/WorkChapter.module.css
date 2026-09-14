@@ -1,0 +1,322 @@
+.work {
+  position: relative;
+  z-index: 2;
+}
+
+.inner {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: clamp(32px, 4vw, 72px);
+  padding: 88px clamp(24px, 5vw, 88px) 48px;
+}
+
+.work[data-rack="on"] {
+  height: 100vh;
+  min-height: 760px;
+}
+
+.work[data-rack="on"] .inner {
+  height: 100%;
+}
+
+/* ---- The held side ------------------------------------------------------ */
+
+.side {
+  align-self: start;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-plate);
+  font-size: clamp(5rem, 11vw, 11rem);
+  font-weight: 800;
+  line-height: 0.84;
+  letter-spacing: -0.04em;
+}
+
+.index {
+  display: grid;
+  margin: 44px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--hair);
+}
+
+.index li {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid var(--hair);
+  font-size: 1rem;
+  line-height: 1.3;
+  color: var(--ink-soft);
+  transition: color 200ms linear;
+}
+
+/* Each row is a link to that role's sheet, landed assembled. */
+.index a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.index a:hover {
+  color: var(--ink);
+}
+
+.index a:focus-visible {
+  outline: 2px solid var(--voltage);
+  outline-offset: 2px;
+}
+
+.index li::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: transparent;
+  transition: background-color 200ms linear;
+}
+
+.index li[data-active="true"] {
+  color: var(--ink);
+}
+
+.index li[data-active="true"]::before {
+  background: var(--voltage);
+}
+
+.dates {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+/* ---- The rack ----------------------------------------------------------- */
+
+.rack {
+  display: grid;
+  gap: 24px;
+}
+
+.work[data-rack="on"] .rack {
+  position: relative;
+  display: block;
+  height: 100%;
+  perspective: 1600px;
+  perspective-origin: 50% 0%;
+}
+
+/* An inset border one step inside the edge, the frame every drawing sheet has.
+   It is what makes open space on the sheet read as margin rather than as a gap. */
+.slab {
+  outline: 1px solid var(--hair);
+  outline-offset: -12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: clamp(24px, 2.6vw, 38px);
+  border: 1px solid var(--hair);
+  border-top-color: var(--hair-strong);
+  background: var(--void-raised);
+}
+
+.work[data-rack="on"] .slab {
+  position: absolute;
+  inset: 0;
+}
+
+/* The nameplate, with the sheet number set against it the way a drawing numbers
+   its sheets. */
+.slabHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.company {
+  margin: 0;
+  font-family: var(--font-plate);
+  font-size: clamp(2.25rem, 3.4vw, 3.25rem);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.sheet {
+  flex: none;
+  margin: 6px 0 0;
+  padding: 4px 8px;
+  border: 1px solid var(--hair-strong);
+  font: 400 0.6875rem/1.3 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+.lead {
+  margin: 0;
+  max-width: 66ch;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  border: 1px solid var(--hair);
+  background: var(--hair);
+}
+
+.metric {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 16px 16px;
+  background: var(--void-raised);
+}
+
+.metricValue {
+  margin: 0;
+  font-family: var(--font-plate);
+  font-size: clamp(2.5rem, 3.8vw, 3.75rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.85;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+
+.metricValue[data-long] {
+  font-size: clamp(1.5rem, 2.1vw, 2.125rem);
+  line-height: 1;
+  letter-spacing: -0.015em;
+  white-space: normal;
+}
+
+.metricLabel {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+/* ---- Note --------------------------------------------------------------- */
+
+.note {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+}
+
+.noteKind {
+  margin: 0;
+  font: 400 0.6875rem/1.5 var(--font-mono);
+  color: var(--ink);
+}
+
+/* The mistake is the one note that takes the accent: a fault stated plainly is
+   the most useful thing a sheet can carry. */
+.note[data-kind="the mistake"] .noteKind::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 7px;
+  vertical-align: 1px;
+  background: var(--voltage);
+}
+
+.noteText {
+  margin: 0;
+  max-width: 72ch;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* ---- Foot: parts list and title block ------------------------------------ */
+
+.foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 24px;
+  margin-top: auto;
+}
+
+.partsHead {
+  margin: 0 0 6px;
+  font: 400 0.6875rem/1.3 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.parts ol {
+  columns: 2;
+  column-gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 400 0.75rem/1.7 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+.parts li {
+  break-inside: avoid;
+  white-space: nowrap;
+}
+
+.parts li span {
+  margin-right: 10px;
+  color: var(--ink-faint);
+}
+
+/* The corner block of a drawing: fixed fields, hairline cells, nothing else. */
+.titleBlock {
+  display: grid;
+  gap: 1px;
+  width: 330px;
+  margin: 0;
+  border: 1px solid var(--hair-strong);
+  background: var(--hair-strong);
+}
+
+.titleBlock div {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  background: var(--void-raised);
+}
+
+.titleBlock dt,
+.titleBlock dd {
+  margin: 0;
+  padding: 6px 10px;
+}
+
+.titleBlock dt {
+  border-right: 1px solid var(--hair);
+  font: 400 0.6875rem/1.5 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.titleBlock dd {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.headMeta {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: 8px;
+}

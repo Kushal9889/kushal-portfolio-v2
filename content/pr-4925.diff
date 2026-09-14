@@ -1,0 +1,65 @@
+diff --git a/libs/deepagents/deepagents/backends/composite.py b/libs/deepagents/deepagents/backends/composite.py
+index 60b075b89e..129b7cc6ff 100644
+--- a/libs/deepagents/deepagents/backends/composite.py
++++ b/libs/deepagents/deepagents/backends/composite.py
+@@ -277,6 +277,8 @@ def ls(self, path: str) -> LsResult:
+         if path == "/":
+             results: list[FileInfo] = []
+             default_result = self._coerce_ls_result(self.default.ls(path))
++            if default_result.error:
++                return default_result
+             results.extend(default_result.entries or [])
+             for route_prefix, _backend in self.sorted_routes:
+                 # Add the route itself as a directory (e.g., /memories/)
+@@ -312,6 +314,8 @@ async def als(self, path: str) -> LsResult:
+         if path == "/":
+             results: list[FileInfo] = []
+             default_result = self._coerce_ls_result(await self.default.als(path))
++            if default_result.error:
++                return default_result
+             results.extend(default_result.entries or [])
+             for route_prefix, _backend in self.sorted_routes:
+                 # Add the route itself as a directory (e.g., /memories/)
+diff --git a/libs/deepagents/tests/unit_tests/backends/test_composite_backend.py b/libs/deepagents/tests/unit_tests/backends/test_composite_backend.py
+index 9cc704bc37..b2b276d832 100644
+--- a/libs/deepagents/tests/unit_tests/backends/test_composite_backend.py
++++ b/libs/deepagents/tests/unit_tests/backends/test_composite_backend.py
+@@ -12,6 +12,7 @@
+     ExecuteResponse,
+     GlobResult,
+     GrepResult,
++    LsResult,
+     SandboxBackendProtocol,
+     WriteResult,
+ )
+@@ -420,6 +421,30 @@ async def _aglob_error(*_a: object, **_k: object) -> GlobResult:
+     assert glob_result.error == "sandbox RPC failed"
+ 
+ 
++def test_composite_ls_root_propagates_default_error(monkeypatch: pytest.MonkeyPatch) -> None:
++    comp, default, _routed = _merge_composite()
++    monkeypatch.setattr(default, "ls", lambda _path: LsResult(error="Error: connection to sandbox lost"))
++
++    result = comp.ls("/")
++
++    assert result.error == "Error: connection to sandbox lost"
++    assert result.entries is None
++
++
++async def test_composite_als_root_propagates_default_error(monkeypatch: pytest.MonkeyPatch) -> None:
++    comp, default, _routed = _merge_composite()
++
++    async def _als_error(_path: str) -> LsResult:
++        return LsResult(error="Error: connection to sandbox lost")
++
++    monkeypatch.setattr(default, "als", _als_error)
++
++    result = await comp.als("/")
++
++    assert result.error == "Error: connection to sandbox lost"
++    assert result.entries is None
++
++
+ def test_composite_backend_ls_nested_directories(tmp_path: Path):
+     root = tmp_path
+ 

@@ -1,0 +1,576 @@
+.root {
+  display: contents;
+}
+
+.hero {
+  position: relative;
+  z-index: 1;
+  height: 100vh;
+}
+
+.heroInner {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(24px, 3vw, 56px);
+  padding: 0 clamp(24px, 5vw, 88px);
+}
+
+.identity {
+  position: relative;
+  z-index: 2;
+  align-self: center;
+}
+
+/* -0.045em collided glyph pairs at opsz 96 ("LL", "ar"); -0.03em is the tightest
+   setting that keeps every pair apart at this size. */
+.headline {
+  margin: 0;
+  font-family: var(--font-macro);
+  font-size: clamp(3.25rem, 5.6vw, 5.6rem);
+  font-weight: 900;
+  line-height: 0.92;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  color: var(--ink);
+}
+
+.qualifier {
+  display: block;
+  margin-top: 0.22em;
+  font-size: 0.56em;
+  font-weight: 300;
+  letter-spacing: -0.015em;
+  color: var(--ink-soft);
+  font-family: var(--font-spine);
+}
+
+/* Measured against the spine's wider set: 46ch broke the institution's name
+   across two lines. */
+.role {
+  margin: clamp(20px, 2.4vw, 36px) 0 0;
+  max-width: 56ch;
+  font-size: 1.125rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* The second line of the role sentence. Height is reserved before the answer
+   arrives, so nothing moves when it does. */
+.readout {
+  display: block;
+  margin: 6px 0 0;
+  min-height: 1.6em;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  height: 52px;
+  padding: 0 28px;
+  background: var(--voltage);
+  color: var(--on-signal);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    transform 120ms var(--ease-arrive),
+    background-color 120ms linear;
+}
+
+.cta:hover {
+  background: var(--signal-deep);
+}
+
+.cta:active {
+  transform: scale(0.97);
+}
+
+.cta:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.available {
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
+/* Fixed size and parked high: the answer can never resize the hero, and the
+   field below it stays open for the wires. Tray and core are concentric, each
+   with its own hairline, and the core's top edge is the brighter one. The tray
+   is near-opaque so the field reads behind the panel, never through the text. */
+.console {
+  position: relative;
+  z-index: 2;
+  align-self: start;
+  margin-top: clamp(88px, 12vh, 132px);
+  padding: 6px;
+  border: 1px solid var(--hair);
+  background: oklch(0.16 0.002 90 / 0.94);
+}
+
+/* Sized to the tallest real content: question, four answer lines, three rows of
+   source chips and the input. The chips sit on the input, so any slack is air
+   above them rather than a hole in the middle. */
+.consoleCore {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: clamp(380px, 46vh, 420px);
+  padding: clamp(20px, 2vw, 28px);
+  overflow: hidden;
+  border: 1px solid var(--hair);
+  border-top-color: var(--hair-strong);
+  background: var(--void-raised);
+}
+
+.q {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+.note {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+/* Marks the answer line while it is still pending, so the no-script path can
+   take it out of the panel entirely. */
+.pending {
+  color: var(--ink);
+}
+
+.a {
+  display: -webkit-box;
+  flex: 0 1 auto;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+/* Chips and the field ride together at the bottom of the core, so chips arriving
+   grow the dock upward and the field never moves. */
+.dock {
+  display: grid;
+  gap: 12px;
+  margin-top: auto;
+}
+
+/* Two rows of chips reserved, filled from the bottom so they sit on the field. */
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: flex-end;
+  gap: 8px;
+  min-height: 76px;
+}
+
+.sourcesLabel {
+  margin-right: 4px;
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+/* The orange lives on the wire; the chip carries only its end mark. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--hair-strong);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink);
+}
+
+.chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex: none;
+  background: var(--voltage);
+}
+
+.ask {
+  display: flex;
+  border: 1px solid var(--hair-strong);
+  transition: border-color 150ms linear;
+}
+
+.ask:focus-within {
+  border-color: var(--voltage);
+}
+
+.askInput {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 400 0.9375rem/1 var(--font-display);
+}
+
+.askInput::placeholder {
+  color: var(--ink-faint);
+}
+
+/* The field's border carries focus; see .ask:focus-within. */
+.askInput:focus-visible {
+  outline: none;
+}
+
+/* One filled orange control per screen, and it is "Get in touch". */
+.askSubmit {
+  height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-left: 1px solid var(--hair-strong);
+  background: transparent;
+  color: var(--ink);
+  font: 600 0.875rem/1 var(--font-display);
+  cursor: pointer;
+  transition: color 120ms linear;
+}
+
+.askSubmit:hover {
+  color: var(--voltage);
+}
+
+.askSubmit:active {
+  transform: scale(0.97);
+}
+
+.askSubmit:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.wires {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  width: 100vw;
+  height: 100vh;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.wires line {
+  stroke: var(--voltage);
+  stroke-width: 1;
+}
+
+.wires circle {
+  fill: none;
+  stroke: var(--voltage);
+  stroke-width: 1.25;
+}
+
+.landing {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.landing span {
+  display: inline-block;
+  margin: -10px 0 0 22px;
+  padding: 6px 10px;
+  border: 1px solid var(--voltage);
+  background: oklch(0.16 0.002 90 / 0.8);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+/* Corpus terms the dive passes through. A fixed layer out of flow, so a word
+   appearing never moves the page; each slot only changes transform and opacity. */
+.words {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.word {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  color: var(--ink);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* Terms from the section the dive lands in carry the accent into the next chapter. */
+.word[data-landing="true"] {
+  color: var(--voltage);
+}
+
+/* ---- The analyzer ------------------------------------------------------- */
+
+/* A 2px edge on the core that carries the accent only while the agent is
+   generating, and goes dark the moment an answer or a failure is in. */
+.consoleCore {
+  position: relative;
+}
+
+.consoleCore::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  left: -1px;
+  width: 2px;
+  background: var(--voltage);
+  opacity: 0;
+  transition: opacity 300ms linear;
+}
+
+.consoleCore[data-state="pending"]::before {
+  opacity: 1;
+  animation: rail 1.2s var(--ease-glass) infinite alternate;
+}
+
+@keyframes rail {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .consoleCore[data-state="pending"]::before {
+    animation: none;
+  }
+}
+
+/* Inside the same tray as the answer, under the core: the tray holds the answer
+   and its readings as one instrument. */
+.analyzer {
+  display: grid;
+  gap: 8px;
+  padding: 10px 8px 6px;
+}
+
+/* Reserved at full row height from the first paint, populated or not: a gauge
+   that appears only once the answer resolves is the shift the dock's own
+   min-height already exists to avoid, applied to the row below it. */
+.gauge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  min-height: 44px;
+  margin: 0;
+  border: 1px solid var(--hair);
+  background: var(--hair);
+}
+
+.gauge div {
+  flex: 1 1 auto;
+  display: grid;
+  gap: 2px;
+  padding: 6px 10px 7px;
+  background: oklch(0.16 0.002 90);
+}
+
+.gauge dt {
+  font: 400 0.6875rem/1.3 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.gauge dd {
+  margin: 0;
+  font: 400 0.8125rem/1.3 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+/* The graph's path, in the order it ran, with what each node cost. */
+.path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 30px;
+  margin: 0;
+  padding: 0 2px;
+  list-style: none;
+  font: 400 0.75rem/1.4 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.path li {
+  position: relative;
+}
+
+.path li + li::before {
+  content: "\2192";
+  position: absolute;
+  left: -20px;
+  color: var(--ink-faint);
+}
+
+.path span {
+  margin-right: 6px;
+  color: var(--ink);
+}
+
+.corrections {
+  margin: 0;
+  padding: 0 2px;
+  font: 400 0.75rem/1.4 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+.tools {
+  display: grid;
+  gap: 8px;
+}
+
+.why,
+.asks button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--hair-strong);
+  background: transparent;
+  color: var(--ink);
+  font: 500 0.8125rem/1.2 var(--font-display);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms linear;
+}
+
+.why {
+  justify-self: start;
+}
+
+.why:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.why:hover,
+.asks button:hover {
+  border-color: var(--ink);
+}
+
+.why:focus-visible,
+.asks button:focus-visible {
+  outline: 2px solid var(--voltage);
+  outline-offset: 2px;
+}
+
+.asks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.asks > span {
+  margin-right: 4px;
+  font: 400 0.6875rem/1 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+/* Reciprocal rank fusion as the table it is: each section's lexical score and
+   both ranks, and the fused total that decided the order. */
+.fusion {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--hair);
+}
+
+.fusion table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 0.75rem/1.35 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.fusion caption {
+  padding: 8px 10px;
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+.fusion th,
+.fusion td {
+  padding: 6px 10px;
+  border-top: 1px solid var(--hair);
+  text-align: right;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+.fusion thead th {
+  color: var(--ink-faint);
+}
+
+.fusion th[scope="row"],
+.fusion thead th:first-child {
+  text-align: left;
+}
+
+.fusion tr[data-selected] th,
+.fusion tr[data-selected] td {
+  color: var(--ink);
+}
+
+.fusion tr[data-selected] th::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  vertical-align: 1px;
+  background: var(--voltage);
+}

@@ -1,0 +1,322 @@
+.stage {
+  min-height: 100vh;
+}
+
+.flash {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 2px var(--voltage);
+}
+
+/* ---- Bar --------------------------------------------------------------- */
+
+.bar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 clamp(24px, 5vw, 88px);
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.bar > * {
+  pointer-events: auto;
+}
+
+/* The ground under the bar is the same everywhere, so the bar never changes
+   colour between chapters. It is solid, so a chapter scrolling under it never
+   prints through the wordmark, and clear over the hero, where the field
+   runs up to the top edge. Without a script it keeps the ground. The attribute
+   is `data-bar` and not `data-ground` on purpose: `data-ground` paints a
+   full-width surface, which on a fixed bar is the wrong object. */
+.bar {
+  background: color-mix(in oklch, var(--void) 100%, transparent);
+  transition: background-color 400ms var(--ease-glass);
+}
+
+.bar[data-clear] {
+  background: color-mix(in oklch, var(--void) 0%, transparent);
+}
+
+.bar[data-bar="voltage"] {
+  background: var(--voltage);
+}
+
+.bar[data-bar="voltage"],
+.ticks[data-bar="voltage"] {
+  --ink: oklch(0.14 0.002 90);
+  --hair: oklch(0.14 0.002 90 / 0.32);
+  --tick-ground: var(--voltage);
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.barNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.barButton {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--hair);
+  background: transparent;
+  color: var(--ink);
+  font: 500 0.875rem/1 var(--font-display);
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 150ms linear;
+}
+
+.barButton:hover {
+  border-color: var(--ink);
+}
+
+/* Holds its place in the bar while it has nothing to offer. */
+.barButton[data-away] {
+  visibility: hidden;
+}
+
+.wordmark:focus-visible,
+.barButton:focus-visible,
+.tick:focus-visible {
+  outline: 2px solid var(--voltage);
+  outline-offset: 3px;
+}
+
+/* ---- Chapter ticks ----------------------------------------------------- */
+
+.ticks {
+  --tick-ground: var(--void);
+  position: fixed;
+  top: 50%;
+  right: clamp(12px, 1.6vw, 28px);
+  z-index: 40;
+  display: grid;
+  gap: 2px;
+  transform: translateY(-50%);
+}
+
+.tick {
+  position: relative;
+  display: block;
+  width: 32px;
+  height: 24px;
+  color: var(--ink);
+}
+
+.tick::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 14px;
+  height: 2px;
+  background: currentColor;
+  opacity: 0.45;
+  transition:
+    width 200ms var(--ease-arrive),
+    opacity 150ms linear;
+}
+
+.tick:hover::before {
+  width: 22px;
+  opacity: 1;
+}
+
+.tick[aria-current="true"]::before {
+  width: 32px;
+  opacity: 1;
+  background: var(--voltage);
+}
+
+.ticks[data-bar="voltage"] .tick[aria-current="true"]::before {
+  background: currentColor;
+}
+
+.tickLabel {
+  position: absolute;
+  top: 50%;
+  right: 44px;
+  padding: 6px 8px;
+  white-space: nowrap;
+  background: var(--tick-ground);
+  font: 500 0.8125rem/1 var(--font-display);
+  opacity: 0;
+  transform: translateY(-50%);
+  pointer-events: none;
+  transition: opacity 150ms linear;
+}
+
+.tick:hover .tickLabel,
+.tick:focus-visible .tickLabel {
+  opacity: 1;
+}
+
+/* The ticks step out of the way while the camera travels through the field,
+   and come back at either end of the dive. */
+.ticks {
+  transition: opacity 200ms linear;
+}
+
+:global(:root[data-diving="yes"]) .ticks {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---- Agent drawer ------------------------------------------------------ */
+
+.drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(620px, 46vw);
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--hair);
+  background: var(--void-raised);
+  color: var(--ink);
+  transform: translateX(100%);
+  transition:
+    transform 380ms var(--ease-glass),
+    overlay 380ms allow-discrete,
+    display 380ms allow-discrete;
+}
+
+.drawer[open] {
+  display: flex;
+  flex-direction: column;
+  transform: translateX(0);
+}
+
+@starting-style {
+  .drawer[open] {
+    transform: translateX(100%);
+  }
+}
+
+.drawer::backdrop {
+  background: oklch(0 0 0 / 0.5);
+}
+
+.drawerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.drawerTitle {
+  margin: 0;
+  font: 600 1rem/1.2 var(--font-display);
+}
+
+.drawerClose {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--hair-strong);
+  background: transparent;
+  color: var(--ink);
+  font: 500 0.875rem/1 var(--font-display);
+  cursor: pointer;
+}
+
+.drawerClose:focus-visible {
+  outline: 2px solid var(--voltage);
+  outline-offset: 2px;
+}
+
+.drawerBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 24px 32px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer {
+    transition: none;
+  }
+}
+
+/* ---- Reading meter and shortcut ---------------------------------------- */
+
+/* Width for the longest reading, so the controls beside it never move. */
+.meter {
+  min-width: 20ch;
+  text-align: right;
+  margin: 0 12px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+
+/* The space is held from first paint, so the bar does not shift when the meter
+   starts reading. It stays invisible when motion is off. */
+.meter:not([data-live]) {
+  visibility: hidden;
+}
+
+.kbd {
+  margin-left: 10px;
+  padding: 3px 6px;
+  border: 1px solid var(--hair);
+  font: 500 0.75rem/1 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+/* ---- Footer ------------------------------------------------------------ */
+
+.footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 32px;
+  padding: 28px clamp(24px, 5vw, 88px);
+  border-top: 1px solid var(--hair);
+  background: var(--void);
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+}
+
+.footer p {
+  margin: 0;
+}
+
+.footer a {
+  margin-right: 20px;
+  color: var(--ink);
+  text-underline-offset: 4px;
+}
+
+.footer a:focus-visible {
+  outline: 2px solid var(--voltage);
+  outline-offset: 3px;
+}

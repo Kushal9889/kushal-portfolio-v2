@@ -32,6 +32,7 @@ import {
   TARGETS,
 } from "../lib/agent/tools";
 import { loadContent, section, loadCertifications, progress } from "../lib/content";
+import { interpolatedGradients } from "../scripts/gradients";
 
 /**
  * Unit tests: one function, no network, no filesystem beyond the corpus.
@@ -982,5 +983,62 @@ describe("tools fail as answers, not as exceptions", () => {
         assert.ok(Array.isArray((prop as { enum?: unknown[] }).enum), "a tool parameter is not enumerated");
       }
     }
+  });
+});
+
+/*
+ * The gradient rule is a design decision expressed as a parser, so it gets a
+ * test rather than a promise. Audit 2.5 is blocking: if this drifts, either a
+ * fade ships or a hatch is refused, and neither failure announces itself.
+ */
+describe("audit 2.5, interpolated gradients", () => {
+  test("a fade is refused, whichever function draws it", () => {
+    for (const css of [
+      "background: linear-gradient(90deg, var(--ink), transparent);",
+      "background: radial-gradient(circle, #fff, #000);",
+      "background: conic-gradient(from 0deg, red, blue);",
+      "background: repeating-linear-gradient(0deg, red, blue 8px);",
+    ]) {
+      assert.ok(interpolatedGradients(css).length > 0, `should refuse: ${css}`);
+    }
+  });
+
+  test("a hard-stop pattern is not a gradient", () => {
+    for (const css of [
+      // A scanline field: every colour ends exactly where the next begins.
+      "background: repeating-linear-gradient(0deg, transparent 0 2px, var(--ink) 2px 4px);",
+      // The console dot grid, which the first draft of this rule wrongly refused.
+      "background-image: conic-gradient(from 90deg at 1px 1px, color-mix(in oklch, var(--ink) 4%, transparent) 0 25%, transparent 0 100%);",
+    ]) {
+      assert.deepEqual(interpolatedGradients(css), [], `should allow: ${css}`);
+    }
+  });
+
+  test("nested var() and color-mix() do not end the argument list early", () => {
+    const css =
+      "background: repeating-linear-gradient(90deg, color-mix(in oklch, var(--ink) 8%, transparent) 0 1px, transparent 1px 6px);";
+    assert.deepEqual(interpolatedGradients(css), []);
+  });
+});
+
+describe("merged patch", () => {
+  test("the stored diff is the patch the corpus describes", async () => {
+    const { parsePatch } = await import("../lib/patch");
+    const patch = parsePatch(readFileSync(join(process.cwd(), "content/pr-4925.diff"), "utf8"));
+    const facts = readFileSync(join(process.cwd(), "content/facts.md"), "utf8").replace(/\s+/g, " ");
+    const said = facts.match(/in (\d+) added lines across (\d+) files with nothing deleted/);
+    assert.ok(said, "facts.md states the size of the merged patch");
+    assert.equal(patch.added, Number(said[1]));
+    assert.equal(patch.files.length, Number(said[2]));
+    assert.equal(patch.removed, 0);
+  });
+
+  test("every line keeps the line number it has in the file", async () => {
+    const { parsePatch } = await import("../lib/patch");
+    const patch = parsePatch("diff --git a/x.py b/x.py\n--- a/x.py\n+++ b/x.py\n@@ -10,2 +10,3 @@ def f():\n     a\n+    b\n     c\n");
+    assert.deepEqual(
+      patch.files[0].lines.map((l) => [l.mark, l.old, l.new]),
+      [["@", null, null], [" ", 10, 10], ["+", null, 11], [" ", 11, 12]],
+    );
   });
 });

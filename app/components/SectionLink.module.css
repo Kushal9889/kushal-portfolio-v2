@@ -1,53 +1,47 @@
-/* The numeral keeps its own look; only the affordance is new. Mono is named
-   here because it was inheriting it from the page default, and the default is
-   now the sans -- which set two digits 22px wider than the rail they sit in. */
-.index {
-  position: relative;
-  display: inline-block;
+/* An address, not a label. It sits inside the heading and stays out of the way
+   until the head is pointed at, so the page is not covered in instructions for
+   an affordance most readers will never want.
+
+   Absolutely positioned in the trailing margin rather than in flow: in flow it
+   changed the heading's wrap point on the two sections whose titles already run
+   to the column edge. */
+.mark {
+  position: absolute;
+  inset-inline-start: 100%;
+  margin-inline-start: 0.4em;
+  top: 0.14em;
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: clamp(1.75rem, 1.2rem + 2.2vw, 3rem);
-  font-weight: 300;
-  letter-spacing: var(--track-tight);
-  line-height: 1;
+  font-size: var(--step--1);
+  font-weight: 400;
+  letter-spacing: var(--track-caps);
   color: var(--ink-faint);
   text-decoration: none;
-  transition: color var(--t-fast) var(--ease-out);
-}
-
-.index:hover,
-.index:focus-visible {
-  color: var(--ink);
-}
-
-/* Named only when the pointer is on it, so the page is not covered in
-   instructions for an affordance most readers will never want. */
-.said {
-  position: absolute;
-  inset-inline-start: 0;
-  top: 100%;
-  white-space: nowrap;
-  font-size: var(--step--2);
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
-  color: var(--ink-faint);
   opacity: 0;
-  transition: opacity var(--t-fast) var(--ease-out);
+  transition: opacity var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out);
 }
 
-.index:hover .said,
-.index:focus-visible .said,
-.index[data-copied] .said {
+/* Revealed by the head, not by itself: a target that only appears once the
+   pointer is already on it cannot be found by moving toward it. */
+.mark:where(:hover, :focus-visible),
+:where(:hover, :focus-within) > .mark,
+.mark[data-copied] {
   opacity: 1;
 }
 
-.index[data-copied] .said {
-  color: var(--ink);
+.mark:hover,
+.mark[data-copied] {
+  color: var(--signal);
+}
+
+/* Narrow screens have no pointer to reveal it and no room to put it. */
+@media (max-width: 48rem) {
+  .mark {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .index,
-  .said {
+  .mark {
     transition: none;
   }
 }

@@ -212,3 +212,11 @@
     animation: none;
   }
 }
+
+/* Named so the browser can carry it across the state change rather than
+   repainting it. Only the detail block is named: naming the whole panel would
+   animate the sixteen cells as one image and lose the one thing worth seeing,
+   which is that a different case is now open. */
+.detail {
+  view-transition-name: eval-detail;
+}

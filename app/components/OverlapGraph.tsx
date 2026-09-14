@@ -63,6 +63,8 @@ export default function OverlapGraph() {
             <line
               key={i}
               className={styles.edge}
+              pathLength={1}
+              data-draw
               data-live={open === i || undefined}
               x1={x1}
               y1={y1}

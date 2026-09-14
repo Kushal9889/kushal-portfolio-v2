@@ -18,11 +18,16 @@ import styles from "./Certifications.module.css";
 export default function Certifications({ certifications }: { certifications: Certification[] }) {
   const featured = certifications.find((c) => c.featured);
   const rest = certifications.filter((c) => !c.featured);
-
   return (
     <div className={styles.wrap}>
       {featured && (
         <a className={styles.featured} href={featured.url ?? "#"} target="_blank" rel="noreferrer">
+          {/* A seal, in the sense a seal has always been used: the mark left by
+              whoever stands behind the document. This one credential has a
+              proctored exam behind it and the rest are course completions, so
+              it is the only place on the page the mark appears. Drawn from the
+              same generated line-work as the chapter ornaments. */}
+          <span className="issuer-seal" aria-hidden="true" />
           {/* The only credential mark on the page. It sits on the proctored exam
               and nowhere else: putting the same treatment on course completions
               would flatten the distinction this section exists to make. */}

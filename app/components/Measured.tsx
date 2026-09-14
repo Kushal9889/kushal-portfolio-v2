@@ -64,7 +64,10 @@ export default function Measured() {
   const retrievals = evals.retrievals ?? 0;
 
   return (
-    <div className={styles.wrap}>
+    /* This block is the section's own summary and reads as a caption at half
+       width, so it spans. It says so itself rather than being selected by
+       position: see the note on [data-span] in page.module.css. */
+    <div className={styles.wrap} data-span="full">
       <dl className={styles.grid}>
         {ROWS.map((r) => (
           <div key={r.label} className={styles.row}>
@@ -106,7 +109,7 @@ export default function Measured() {
         <details className={styles.cases}>
           <summary className={styles.summary}>
             Read all {cases.length} assertions
-            <span className="label"> written by the runner, not typed here</span>
+            <span className="caption"> written by the runner, not typed here</span>
           </summary>
           <ol className={styles.caseList}>
             {cases.map((c) => (

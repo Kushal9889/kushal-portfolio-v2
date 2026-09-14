@@ -1,0 +1,144 @@
+/*
+ * Pinned to the left edge, outside the reading column.
+ *
+ * Hidden below 62rem rather than collapsed into something smaller. That is the
+ * width where the page drops to one column and the reading measure already
+ * takes the full viewport, so a rail there is either overlapping the text or
+ * squeezing it, and a phone has a scrollbar and a thumb for the job this does.
+ */
+.rail {
+  display: none;
+}
+
+@media (min-width: 62rem) {
+  .rail {
+    position: fixed;
+    inset-block-start: 50%;
+    inset-inline-start: 0;
+    translate: 0 -50%;
+    z-index: var(--z-furniture);
+    display: block;
+    /* The ticks are the target; the strip between them is not. Without this the
+       rail is an invisible 240px column sitting over the left edge of the page,
+       eating every click that lands near it. */
+    pointer-events: none;
+  }
+
+  .list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s-1);
+  }
+
+  .link {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    /* 24px of height on a 2px mark: the hit area is the padding, not the glyph,
+       which is how a mark this small clears the target minimum without being
+       drawn any larger. */
+    padding: var(--s-2) var(--s-4);
+    text-decoration: none;
+    color: var(--ink-faint);
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    font-size: var(--step--2);
+    letter-spacing: var(--track-wide);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .tick {
+    display: block;
+    inline-size: var(--s-5);
+    block-size: var(--border-emphasis);
+    background: var(--rule);
+    flex: none;
+    transition:
+      inline-size var(--t-normal) var(--ease-out),
+      background-color var(--t-normal) var(--ease-out);
+  }
+
+  /*
+   * The label is present and readable at every width; it is the visible width
+   * that changes, never the content. `clip` rather than `hidden` so nothing
+   * here can become a scroll container, and the text stays in the accessibility
+   * tree either way, which is the whole reason it is not a tooltip.
+   */
+  .label {
+    max-inline-size: 0;
+    overflow-x: clip;
+    opacity: 0;
+    transition:
+      max-inline-size var(--t-mid) var(--ease-spring),
+      opacity var(--t-normal) var(--ease-out);
+  }
+
+  .rail:hover .label,
+  .rail:focus-within .label {
+    max-inline-size: 18ch;
+    opacity: 1;
+  }
+
+  .link:hover .tick,
+  .link:focus-visible .tick {
+    inline-size: var(--s-6);
+    background: var(--ink-soft);
+  }
+
+  .link:hover,
+  .link:focus-visible {
+    color: var(--ink);
+  }
+
+  /* The state the observer computes, and the only thing on this rail that
+     encodes one. Accent rather than ink: this is the reader's own position,
+     which is the one piece of information the rail exists to carry. */
+  .link[aria-current="true"] {
+    color: var(--ink);
+  }
+
+  .link[aria-current="true"] .tick {
+    inline-size: var(--s-7);
+    background: var(--signal);
+  }
+}
+
+/*
+ * The rail arrives one mark at a time.
+ *
+ * Part of the same power-on as the registration marks, and held to the same
+ * rule: this is chrome, so it may animate. The links are present and clickable
+ * from the first frame -- only the tick's width is animated, never the anchor's
+ * opacity -- so a reader who reaches for a section during the first half second
+ * hits it.
+ */
+@media (min-width: 62rem) and (prefers-reduced-motion: no-preference) {
+  .tick {
+    animation: rail-arrive var(--t-slow) var(--ease-spring) both;
+  }
+
+  .list li:nth-child(1) .tick { animation-delay: 60ms; }
+  .list li:nth-child(2) .tick { animation-delay: 110ms; }
+  .list li:nth-child(3) .tick { animation-delay: 160ms; }
+  .list li:nth-child(4) .tick { animation-delay: 210ms; }
+  .list li:nth-child(5) .tick { animation-delay: 260ms; }
+  .list li:nth-child(6) .tick { animation-delay: 310ms; }
+  .list li:nth-child(7) .tick { animation-delay: 360ms; }
+}
+
+@keyframes rail-arrive {
+  from {
+    inline-size: 0;
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tick,
+  .label {
+    transition-property: background-color, opacity, color;
+  }
+}

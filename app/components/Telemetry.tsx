@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import evals from "@/content/evals.json";
 import { TELEMETRY_EVENT, type TelemetryPing } from "./Agent";
+import Panel from "./Panel";
 import styles from "./Telemetry.module.css";
 
 /**
@@ -50,7 +51,17 @@ export default function Telemetry() {
   const ceiling = Math.max(BASE_P95, ...samples.map((s) => s.ms), 1);
 
   return (
-    <div className={styles.wrap}>
+    /* Console, and it earns it: every bar here arrived while the reader was
+       looking at the page. This is the one block in the section that is not a
+       published result from a build-time run, which is exactly the distinction
+       the ground is for. */
+    <Panel
+      kind="instrument"
+      surface="console"
+      label="this session"
+      state={samples.length === 0 ? "idle" : "done"}
+      status={samples.length === 0 ? "waiting" : `${samples.length} served`}
+    >
       <div className={styles.chart} role="img" aria-label={
         samples.length === 0
           ? `No requests yet this session. The measured median is ${BASE_P50} milliseconds.`
@@ -97,6 +108,6 @@ export default function Telemetry() {
           <dd>{provider ?? "—"}</dd>
         </div>
       </dl>
-    </div>
+    </Panel>
   );
 }

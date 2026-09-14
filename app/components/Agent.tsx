@@ -46,12 +46,14 @@ type Turn = { question: string; result: Result | null };
  * answer is useful rather than a demonstration that the box works.
  */
 const OPENERS = [
-  { q: "What has he shipped on Azure?", shows: "grounding" },
   { q: "What broke in production and how did he find it?", shows: "failure" },
-  // Swapped in for an architecture question that the third opener already
-  // covered. A 2026 screen opens on evidence, not on design: the first thing
-  // asked of anyone claiming a working agent is how they know it works.
+  // A 2026 screen opens on evidence, not on design: the first thing asked of
+  // anyone claiming a working agent is how they know it works.
   { q: "How does he know the retrieval is actually working?", shows: "evals" },
+  // Two, not three. The third asked what he shipped on Azure, which demonstrates
+  // grounding -- and the answer already rendered above this bar demonstrates
+  // grounding with its own source chips. A suggestion that repeats what is
+  // already on screen spends a row of the first viewport to show nothing new.
 ];
 
 /**
@@ -652,7 +654,7 @@ export default function Agent({
         {canVoice && !pending && (
           <button
             type="button"
-            className={listening ? `${styles.mic} ${styles.micOn}` : styles.mic}
+            className={listening ? `${styles.mic} ${styles.micLive}` : styles.mic}
             onClick={startListening}
             aria-pressed={listening}
             aria-label={listening ? "Stop listening" : "Ask by voice"}
@@ -703,13 +705,13 @@ export default function Agent({
           <span className={styles.gesture} aria-hidden="true">
             drag
           </span>
-          <span>highlight any sentence to ask about it</span>
+          <span>select text to ask</span>
         </li>
         <li>
           <span className={styles.gesture} aria-hidden="true">
             trace
           </span>
-          <span>every answer opens its own</span>
+          <span>opens with every answer</span>
         </li>
       </ul>
 
@@ -738,7 +740,9 @@ export default function Agent({
                 rel="noreferrer"
                 onClick={() => track("contact", `toolkit-${t.key}`)}
               >
-                <span className={styles.toolLabel}>{t.label}</span>
+                <span className={styles.toolLabel} data-id={/\s/.test(t.label) ? undefined : ""}>
+                  {t.label}
+                </span>
                 {/* What it is, in the words the registry uses to route on it. */}
                 <span className={styles.toolAbout}>{t.about}</span>
               </a>
@@ -1152,10 +1156,11 @@ export default function Agent({
         })}
       </div>
 
-      {/* A preference, so it sits after the conversation rather than inside it.
-          Between the ask bar and the suggested questions it spent 44px of the
-          first screen on a control most visitors never touch. */}
-      {canVoice && (
+      {/* A preference, so it sits after the conversation rather than inside it,
+          and only once there is a conversation: before the first answer there
+          is nothing to read aloud, and the control spent 44px of the first
+          screen offering to speak silence. */}
+      {canVoice && turns.length > 0 && (
         <label className={styles.voiceToggle}>
           <input
             type="checkbox"

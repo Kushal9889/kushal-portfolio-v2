@@ -1,0 +1,199 @@
+.finale {
+  position: relative;
+  z-index: 2;
+  height: 100vh;
+  min-height: 760px;
+  /* Soft ink on the orange is set darker than the stage default so the
+     14px lines under each contact row stay above 4.5:1. */
+  --ink-soft: oklch(0.14 0.002 90 / 0.86);
+}
+
+/* While the motion runs, the chapter is clear glass over the field until the
+   orange floods it from the gathered point. */
+.finale.finale[data-flood="on"] {
+  background: transparent;
+}
+
+/* Unclipped on purpose. While pinned, the disc runs past the screen edge; in
+   flow, the footer paints over it and the stage root clips the rest. */
+.flood {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: none;
+  width: 170vmax;
+  height: 170vmax;
+  margin: -85vmax 0 0 -85vmax;
+  border-radius: 50%;
+  background: var(--voltage);
+  transform: scale(0);
+  pointer-events: none;
+}
+
+.finale[data-flood="on"] .flood {
+  display: block;
+}
+
+.inner {
+  position: relative;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+  align-items: end;
+  gap: clamp(32px, 4vw, 72px);
+  padding: 88px clamp(24px, 5vw, 88px) 28px;
+}
+
+.side {
+  align-self: stretch;
+  display: grid;
+  align-content: center;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-macro);
+  font-size: clamp(6rem, 13vw, 13rem);
+  font-weight: 900;
+  line-height: 0.84;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.rest {
+  display: grid;
+  gap: 14px;
+}
+
+.register {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid oklch(0.14 0.002 90 / 0.3);
+}
+
+.register div {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: 16px;
+  padding: 6px 0;
+  border-bottom: 1px solid oklch(0.14 0.002 90 / 0.3);
+}
+
+.register dt {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  line-height: 1.65;
+}
+
+.register dd {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+}
+
+/* The contact rows are the shared Reach component; on the orange its hairlines
+   and hover wash are restated in ink. */
+.reach {
+  --rule: oklch(0.14 0.002 90 / 0.38);
+  --paper-sunk: oklch(0.14 0.002 90 / 0.08);
+}
+
+.reach :global(.wrap),
+.reach > div {
+  margin-top: 0;
+}
+
+/* The one filled control on the chapter: square, ink on orange, reversed. */
+.reach a[href^="mailto:"] {
+  --ink: var(--voltage);
+  --ink-soft: oklch(0.975 0.004 90 / 0.82);
+  border-color: oklch(0.16 0.002 90);
+  background: oklch(0.16 0.002 90);
+  color: var(--voltage);
+}
+
+.reach a[href^="mailto:"]:hover {
+  background: oklch(0.22 0.002 90);
+}
+
+/* A second saturated hue beside the orange reads as noise; the mark takes the ink. */
+.reach button svg,
+.reach button svg * {
+  fill: currentColor;
+}
+
+.reach a:focus-visible,
+.reach button:focus-visible {
+  outline: 2px solid oklch(0.14 0.002 90);
+  outline-offset: 3px;
+}
+
+/* Computed rather than restated: the month named in availability, read against
+   today, so this line can never drift out of sync with the date above it. */
+.countdown {
+  margin: 10px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+/* The forward line as a visible artifact rather than a copy button's hidden
+   payload. Reach's own hidden copy of the same three lines is suppressed on
+   this chapter (below), so there is exactly one control for one action. */
+.forward {
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid oklch(0.14 0.002 90 / 0.3);
+}
+
+.forwardText {
+  margin: 0 0 6px;
+  padding: 8px 10px;
+  border: 1px solid oklch(0.14 0.002 90 / 0.3);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+
+.forwardFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.forwardCaption {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--ink-soft);
+}
+
+.forwardCopy {
+  padding: 6px 12px;
+  border: 1px solid oklch(0.14 0.002 90 / 0.4);
+  background: transparent;
+  color: var(--ink);
+  font: 600 0.75rem/1 var(--font-display);
+  cursor: pointer;
+}
+
+.forwardCopy:hover {
+  border-color: oklch(0.14 0.002 90 / 0.7);
+}
+
+.forwardCopy:focus-visible {
+  outline: 2px solid oklch(0.14 0.002 90);
+  outline-offset: 3px;
+}
+
+/* Reach's own "copy three lines" control does the same thing the artifact
+   above already shows in full; two controls for one action is noise. The
+   attribute selector targets the CSS-module suffix rather than a hash that
+   changes per build. */
+.reach [class$="__forward"] {
+  display: none;
+}

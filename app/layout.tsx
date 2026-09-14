@@ -1,22 +1,36 @@
 import type { Metadata } from "next";
-import { Martian_Mono, Newsreader, Instrument_Sans } from "next/font/google";
+import { Martian_Mono, Bricolage_Grotesque } from "next/font/google";
+import localFont from "next/font/local";
 import { loadContent, loadCertifications, section } from "@/lib/content";
-import "./globals.css";
+// The stage page's share of the old stylesheet: tokens, the element base, and
+// the global classes the reused components match. The classic document's own
+// system is imported by the routes that render it, so the home page no longer
+// ships 68KB of CSS it never matches.
+import "./base.css";
 
 // Self-hosted by next/font at build time. The previous site loaded two of its
 // three families through a render-blocking <link> to fonts.googleapis.com, which
 // put a network round trip in front of the headline.
 
 /*
- * Three voices, one job each: mono for readouts, serif for prose, this for
- * headings and interface. Mono was the default for every string including
- * running text -- every character on one advance, so prose read at the pace of
- * a log file. Narrow enough to hold tight tracking at display sizes.
+ * Two voices. Display, interface and reading are one family at different
+ * optical sizes, and data is the other.
+ *
+ *   display    Bricolage Grotesque   headlines, labels, controls, prose
+ *   data       Martian Mono          figures, identifiers, code
+ *
+ * Every non-default axis is requested explicitly. next/font ships only `wght`,
+ * so anything else has to be named or `font-variation-settings` silently does
+ * nothing.
  */
-const sans = Instrument_Sans({
+// The classic document's display face. The stage no longer uses it, so it is
+// not preloaded: a preload on the home page would fetch 131KB nothing renders.
+const display = Bricolage_Grotesque({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-display",
   display: "swap",
+  axes: ["opsz", "wdth"],
+  preload: false,
 });
 
 const mono = Martian_Mono({
@@ -26,11 +40,75 @@ const mono = Martian_Mono({
   weight: ["300", "400", "600"],
 });
 
-const serif = Newsreader({
-  subsets: ["latin"],
-  variable: "--font-serif",
+/*
+ * The stage's voices. One per kind of document a chapter is, self-hosted and
+ * subset to Latin (licences in app/fonts/LICENSES.md). Only the two faces the
+ * first screen renders are preloaded; the rest arrive with their chapters.
+ *
+ *   spine     Switzer              interface, labels, body
+ *   macro     Basement Grotesque   the two poster lines: hero and contact
+ *   plate     Cabinet Grotesk      work nameplates
+ *   readout   Nippo                measured figures
+ *   paper     Sentient             the research chapter, which is a paper
+ *   code      Commit Mono          source code in the bug chapter
+ */
+const spine = localFont({
+  src: [
+    { path: "./fonts/Switzer-300.woff2", weight: "300" },
+    { path: "./fonts/Switzer-400.woff2", weight: "400" },
+    { path: "./fonts/Switzer-500.woff2", weight: "500" },
+    { path: "./fonts/Switzer-600.woff2", weight: "600" },
+  ],
+  variable: "--font-spine",
   display: "swap",
-  style: ["normal", "italic"],
+});
+
+const macro = localFont({
+  src: "./fonts/BasementGrotesque-900.woff2",
+  weight: "900",
+  variable: "--font-macro",
+  display: "swap",
+});
+
+const plate = localFont({
+  src: [
+    { path: "./fonts/CabinetGrotesk-700.woff2", weight: "700" },
+    { path: "./fonts/CabinetGrotesk-800.woff2", weight: "800" },
+  ],
+  variable: "--font-plate",
+  display: "swap",
+  preload: false,
+});
+
+const readout = localFont({
+  src: [
+    { path: "./fonts/Nippo-500.woff2", weight: "500" },
+    { path: "./fonts/Nippo-700.woff2", weight: "700" },
+  ],
+  variable: "--font-readout",
+  display: "swap",
+  preload: false,
+});
+
+const paper = localFont({
+  src: [
+    { path: "./fonts/Sentient-400.woff2", weight: "400" },
+    { path: "./fonts/Sentient-500.woff2", weight: "500" },
+    { path: "./fonts/Sentient-700.woff2", weight: "700" },
+  ],
+  variable: "--font-paper",
+  display: "swap",
+  preload: false,
+});
+
+const code = localFont({
+  src: [
+    { path: "./fonts/CommitMono-400.woff2", weight: "400" },
+    { path: "./fonts/CommitMono-700.woff2", weight: "700" },
+  ],
+  variable: "--font-code",
+  display: "swap",
+  preload: false,
 });
 
 const { profile } = loadContent();
@@ -165,7 +243,10 @@ function structuredData() {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable} ${serif.variable}`}>
+    <html
+      lang="en"
+      className={[display, mono, spine, macro, plate, readout, paper, code].map((f) => f.variable).join(" ")}
+    >
       <head>
         {/* The condensed view was a keystroke nobody finds. As a URL it is a
             second, shorter read of the same page that can be sent in a reply,

@@ -1,15 +1,15 @@
 .wrap {
   display: grid;
-  gap: clamp(1.5rem, 4vh, 2.5rem);
+  gap: var(--s-6);
 }
 
 /* Set apart from the list rather than styled louder. The difference in kind
    (proctored exam versus course completion) is carried by layout, not colour. */
 .featured {
   display: grid;
-  gap: 0.4rem;
-  padding: clamp(1.25rem, 3vw, 2rem);
-  border: 1px solid var(--ink);
+  gap: var(--s-2);
+  padding: var(--s-6);
+  border: var(--border-hair) solid var(--ink);
   background: var(--paper-sunk);
   text-decoration: none;
   transition: transform var(--t-fast) var(--ease-spring);
@@ -38,7 +38,7 @@
 .verify {
   font-size: var(--step--1);
   color: var(--ink);
-  margin-top: 0.35rem;
+  margin-top: var(--s-1);
   text-decoration: underline;
   text-decoration-color: var(--ink-soft);
   text-underline-offset: 0.18em;
@@ -54,12 +54,12 @@
 .item {
   display: flex;
   flex-direction: column;
-  padding-block: 0.9rem;
-  border-top: 1px solid var(--rule);
+  padding-block: var(--s-4);
+  border-top: var(--border-hair) solid var(--rule);
 }
 
 .item:last-child {
-  border-bottom: 1px solid var(--rule);
+  border-bottom: var(--border-hair) solid var(--rule);
 }
 
 .itemHead {
@@ -67,26 +67,26 @@
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
-  gap: 0.5rem 1.5rem;
+  gap: var(--s-2) var(--s-5);
   width: 100%;
 }
 
 .itemMain {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: var(--s-1);
 }
 
 /* Components are indented under their parent and set smaller: the program is
    the credential, each course is evidence for it. */
 .components {
   list-style: none;
-  margin: 0.75rem 0 0;
-  padding: 0 0 0 1rem;
+  margin: var(--s-3) 0 0;
+  padding: 0 0 0 var(--s-4);
   display: grid;
-  gap: 0.3rem;
+  gap: var(--s-1);
   font-size: var(--step--1);
-  border-left: 1px solid var(--rule);
+  border-left: var(--border-hair) solid var(--rule);
 }
 
 /* Each verified component is its own link, standalone rather than inline in a
@@ -116,7 +116,7 @@
 .issuer {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--s-2);
 }
 
 /* Two abreast once there is room.
@@ -128,7 +128,7 @@
 @media (min-width: 62rem) {
   .list {
     grid-template-columns: 1fr 1fr;
-    column-gap: clamp(1.5rem, 3vw, 3rem);
+    column-gap: var(--s-7);
   }
 
   .item:has(.components) {
@@ -144,6 +144,6 @@
   .list::after {
     content: "";
     grid-column: 1 / -1;
-    border-top: 1px solid var(--rule);
+    border-top: var(--border-hair) solid var(--rule);
   }
 }

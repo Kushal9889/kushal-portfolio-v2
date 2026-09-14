@@ -148,19 +148,27 @@ export function useMotion<T extends HTMLElement = HTMLDivElement>(
 
     let live = true;
     let ctx: { revert: () => void } | undefined;
+    let task = 0;
 
     const id = idle(() => {
       motionKit().then((kit) => {
-        // React remounts effects in development, and an idle callback can land
-        // after the element has already left the document.
-        if (!live || !root.isConnected) return;
-        ctx = kit.gsap.context(() => latest.current(kit, root), root);
+        // Every component waiting on the kit resumes in the same microtask
+        // checkpoint, so a page of pinned chapters would build all its triggers
+        // in one long main-thread task. Each one gets its own task instead, still
+        // in mount order, which is document order.
+        task = window.setTimeout(() => {
+          // React remounts effects in development, and an idle callback can land
+          // after the element has already left the document.
+          if (!live || !root.isConnected) return;
+          ctx = kit.gsap.context(() => latest.current(kit, root), root);
+        }, 0);
       });
     });
 
     return () => {
       live = false;
       cancelIdle(id);
+      window.clearTimeout(task);
       ctx?.revert();
     };
   }, []);

@@ -1,5 +1,5 @@
 .wrap {
-  margin: 0 0 1.4rem;
+  margin: 0 0 var(--s-5);
 }
 
 .svg {
@@ -20,7 +20,7 @@
 
 .text {
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 11px;
+  font-size: var(--step--2);
   letter-spacing: 0.06em;
   fill: var(--ink-soft);
   transition: fill var(--t-mid) var(--ease-out);
@@ -41,8 +41,10 @@
 }
 
 /* Live state is the one thing on this page allowed to use the accent. */
+/* The selector names the state, so the colour that means that state is the one
+   it gets. It was wearing the brand accent, which reserves itself for targets. */
 .node[data-live] .box {
-  stroke: var(--signal);
+  stroke: var(--live);
 }
 
 .node[data-live] .text {
@@ -50,12 +52,12 @@
 }
 
 .edge[data-live] {
-  stroke: var(--signal);
+  stroke: var(--live);
   stroke-width: 1.5;
 }
 
 .caption {
-  margin-block-start: 0.7rem;
+  margin-block-start: var(--s-3);
   font-size: var(--step--1);
   line-height: 1.6;
   color: var(--ink-soft);

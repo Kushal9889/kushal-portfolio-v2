@@ -58,14 +58,14 @@
 
 .text {
   font-family: var(--font-mono), monospace;
-  font-size: 12px;
+  font-size: var(--step--2);
   letter-spacing: var(--track-wide);
   fill: var(--ink);
 }
 
 .count {
   font-family: var(--font-mono), monospace;
-  font-size: 10px;
+  font-size: var(--step--2);
   fill: var(--ink-faint);
   font-variant-numeric: tabular-nums;
 }

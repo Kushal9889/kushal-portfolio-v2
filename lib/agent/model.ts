@@ -85,7 +85,22 @@ const PROVIDERS: Record<
   },
 };
 
-const ORDER: ProviderName[] = ["openrouter", "nvidia", "azure", "openai"];
+/*
+ * NVIDIA first, OpenRouter second.
+ *
+ * OpenRouter was primary for its free tier, and that tier stopped serving this
+ * model: the slug now 404s with "This model is unavailable for free. The paid
+ * version is available now". Failover caught it, so nothing broke, and every
+ * request paid a failed round trip to find out. The cooldown bounds that to
+ * once per 15 minutes rather than once per question, which is why it stayed
+ * invisible.
+ *
+ * NVIDIA runs the same model, so this changes where the answer comes from and
+ * not how good it is. OpenRouter stays in the list: the moment its slug or its
+ * tier changes back it is a working second provider, and a dead entry behind a
+ * live one costs nothing.
+ */
+const ORDER: ProviderName[] = ["nvidia", "openrouter", "azure", "openai"];
 
 /**
  * Published list prices, US dollars per million tokens.
@@ -173,6 +188,19 @@ function availableProviders(): ProviderName[] {
   return ready.length ? ready : ordered;
 }
 
+/** The model id a provider is configured to call, read from the environment per call. */
+export function modelOf(name: ProviderName): string;
+export function modelOf(name: string): string | null;
+export function modelOf(name: string) {
+  if (!(name in PROVIDERS)) return null;
+  const provider = PROVIDERS[name as ProviderName];
+  return name === "nvidia"
+    ? (process.env.NVIDIA_MODEL ?? provider.model)
+    : name === "openrouter"
+      ? (process.env.OPENROUTER_MODEL ?? provider.model)
+      : provider.model;
+}
+
 export function activeProvider(): ProviderName | null {
   return availableProviders()[0] ?? null;
 }
@@ -189,12 +217,7 @@ function build(name: ProviderName, streaming: boolean) {
    * several models in one process. A benchmark that silently measured one model
    * five times would have looked exactly like a benchmark.
    */
-  const model =
-    name === "nvidia"
-      ? (process.env.NVIDIA_MODEL ?? provider.model)
-      : name === "openrouter"
-        ? (process.env.OPENROUTER_MODEL ?? provider.model)
-        : provider.model;
+  const model = modelOf(name);
   const shared = {
     streaming,
     temperature: 0.1,

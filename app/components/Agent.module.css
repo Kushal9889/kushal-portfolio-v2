@@ -7,15 +7,15 @@
      the longest opener is wider than a phone. Without this the whole block
      pushes past the viewport and the page scrolls sideways. */
   grid-template-columns: minmax(0, 1fr);
-  gap: 1.25rem;
+  gap: var(--s-3);
 }
 
 .bar {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--s-3);
   align-items: stretch;
-  border: 1px solid var(--ink);
-  padding: 0.35rem 0.35rem 0.35rem 0.9rem;
+  border: var(--border-hair) solid var(--ink);
+  padding: var(--s-2) var(--s-2) var(--s-2) var(--s-4);
 }
 
 .bar:focus-within {
@@ -32,7 +32,7 @@
   color: inherit;
   background: none;
   border: none;
-  padding: 0.6rem 0;
+  padding: var(--s-2) 0;
   /* Height follows the content, so the native handle would fight it. */
   resize: none;
   overflow-y: auto;
@@ -54,10 +54,37 @@
   min-height: 44px;
   padding: 0.5em 1.1em;
   font-size: var(--step--1);
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   background: var(--ink);
   color: var(--paper);
+  transition:
+    background-color var(--t-fast) var(--ease-out),
+    box-shadow var(--t-fast) var(--ease-out);
+}
+
+/*
+ * Ask is the primary action on this page and now looks like one.
+ *
+ * It was --ink on --paper: the same neutral pair as the surrounding chrome, so
+ * the one control the whole hero exists to get pressed sat at the same weight as
+ * the labels beside it. On a dark ground a neutral fill is not a hierarchy, it
+ * is another surface. The accent is the hierarchy, and this is the single place
+ * on the first screen that gets it as a fill.
+ */
+.send {
+  background: var(--signal);
+  color: var(--on-signal);
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--signal) 45%, transparent);
+}
+
+.send:hover {
+  background: var(--signal-deep);
+}
+
+.send:active {
+  scale: 0.98;
 }
 
 /* Stop is the same weight as Ask on purpose. A control that ends something the
@@ -70,26 +97,33 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  /* Grid rather than wrapping flex: each opener is a full-width row now, so
+     there is nothing left to wrap and flex only invited the two to sit side by
+     side at widths where neither question fits. */
+  display: grid;
+  gap: var(--s-2);
 }
 
 .opener {
-  /* Buttons are inline-flex globally, which made the label below the question
-     into a flex sibling sitting beside it: "What has he shipped on Azure?evals"
-     rendered as one run. Stacking the two is the whole point of the label. */
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.3rem;
+  /* One row, not two. The question reads from the left and what its answer
+     will demonstrate sits at the right edge, legible as a pair without
+     stacking. Stacked they measured 58px each and three of them took a fifth
+     of the first viewport.
+
+     Two rules set this element and the second re-centred what the first had
+     aligned to the start, 377 lines apart. One rule now. */
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  min-height: 44px;
   /* Long questions wrap rather than setting the width of everything above them. */
   white-space: normal;
   text-align: left;
   font-size: var(--step--1);
-  text-align: left;
   color: var(--ink-soft);
-  border: 1px solid var(--rule);
+  border: var(--border-hair) solid var(--rule);
   padding: 0.45em 0.8em;
   transition:
     border-color var(--t-fast) var(--ease-out),
@@ -103,14 +137,14 @@
 
 .thread {
   display: grid;
-  gap: 1.5rem;
+  gap: var(--s-5);
 }
 
 .turn {
   display: grid;
-  gap: 0.6rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--rule);
+  gap: var(--s-2);
+  padding-top: var(--s-5);
+  border-top: var(--border-hair) solid var(--rule);
 }
 
 .question {
@@ -151,7 +185,7 @@
   justify-self: start;
   font-size: var(--step--1);
   color: var(--ink-soft);
-  border-bottom: 1px solid var(--rule);
+  border-bottom: var(--border-hair) solid var(--rule);
   padding-bottom: 2px;
 }
 
@@ -163,7 +197,7 @@
 .trace {
   margin: 0;
   display: grid;
-  gap: 0.3rem;
+  gap: var(--s-1);
   font-size: var(--step--1);
 }
 
@@ -171,7 +205,7 @@
   display: grid;
   grid-template-columns: 5.5rem 4rem 1fr;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--s-3);
 }
 
 .traceRow dt {
@@ -183,10 +217,13 @@
 }
 
 /* Proportional bar. Reading the shape is faster than reading the numbers, and
-   the numbers are right there when the shape raises a question. */
+   the numbers are right there when the shape raises a question.
+
+   Ink, not the accent. A duration is a measurement and not a state, so it has
+   no semantic colour to wear, and the accent is spoken for. */
 .traceBar {
   height: 3px;
-  background: var(--signal);
+  background: var(--ink-soft);
   width: var(--w);
   min-width: 1px;
 }
@@ -195,16 +232,16 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--rule);
+  gap: var(--s-4);
+  padding-top: var(--s-5);
+  border-top: var(--border-hair) solid var(--rule);
   font-size: var(--step--1);
 }
 
 .copy {
   font-size: var(--step--1);
   padding: 0.5em 1em;
-  border: 1px solid var(--ink);
+  border: var(--border-hair) solid var(--ink);
   transition:
     background-color var(--t-fast) var(--ease-out),
     color var(--t-fast) var(--ease-out);
@@ -224,7 +261,7 @@
   font-size: var(--step--1);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  border: 1px solid var(--rule);
+  border: var(--border-hair) solid var(--rule);
   transition:
     border-color var(--t-fast) var(--ease-out),
     color var(--t-fast) var(--ease-out);
@@ -234,17 +271,19 @@
   border-color: var(--ink);
 }
 
-/* Listening is live state, so it is the one thing here allowed to take the
-   accent colour. */
-.micOn {
-  border-color: var(--signal);
-  color: var(--signal);
+/* Listening is live state, and --live is the token that means live. This wore
+   the brand accent back when the accent meant "happening now"; under ADR-005 it
+   means "the one thing to press", and a microphone that is already listening is
+   reporting rather than asking. */
+.micLive {
+  border-color: var(--live);
+  color: var(--live);
 }
 
 .voiceToggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--s-2);
   font-size: var(--step--1);
   color: var(--ink-soft);
   cursor: pointer;
@@ -255,7 +294,7 @@
 .selectAsk {
   position: fixed;
   transform: translate(-50%, -100%);
-  z-index: 40;
+  z-index: var(--z-furniture);
   font-size: var(--step--1);
   padding: 0.4em 0.8em;
   background: var(--ink);
@@ -278,7 +317,7 @@
 /* Stated plainly, in body colour rather than an alarm colour: a blocked
    microphone is a limitation to work around, not an error the visitor caused. */
 .micError {
-  margin: 0.6rem 0 0;
+  margin: var(--s-2) 0 0;
   font-size: var(--step--1);
   color: var(--ink-soft);
 }
@@ -290,9 +329,9 @@
   display: block;
   width: 100%;
   text-align: left;
-  padding: 0.5rem 0;
+  padding: var(--s-2) 0;
   border: none;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: var(--border-hair) solid var(--rule);
   background: none;
   font: inherit;
   font-size: var(--step--1);
@@ -320,8 +359,8 @@
 .affordances {
   list-style: none;
   display: grid;
-  gap: 0.55rem;
-  margin: 0.25rem 0 0;
+  gap: var(--s-2);
+  margin: var(--s-1) 0 0;
   padding: 0;
   font-size: var(--step--1);
   color: var(--ink-soft);
@@ -331,7 +370,7 @@
 .affordances li {
   display: grid;
   grid-template-columns: 4.5rem 1fr;
-  gap: 0.75rem;
+  gap: var(--s-3);
   align-items: baseline;
 }
 
@@ -343,7 +382,7 @@
 .keys {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: var(--s-1);
   justify-self: start;
 }
 
@@ -368,8 +407,8 @@
   text-align: center;
   color: var(--ink);
   background: var(--paper);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-md);
   box-shadow: 0 1.5px 0 var(--rule);
   transition:
     transform var(--t-fast) var(--ease-standard),
@@ -447,17 +486,11 @@
  * inline targets, and padding them would break the line rhythm of the prose
  * they sit in for no gain in either compliance or usability.
  */
-.opener {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-}
-
 .traceToggle {
   min-height: 44px;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--s-2);
 }
 
 /* The checkbox itself stays visually small; the label around it becomes the
@@ -465,7 +498,7 @@
 .voiceToggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: var(--s-2);
   min-height: 44px;
   cursor: pointer;
 }
@@ -482,9 +515,10 @@
   accent-color: var(--signal);
 }
 
-/* What an opener demonstrates, set under the question it belongs to. */
+/* What an opener demonstrates, set at the end of the row it belongs to. */
 .shows {
-  font-size: 0.68rem;
+  flex: none;
+  font-size: var(--step--2);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -497,9 +531,9 @@
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.3rem;
+  gap: var(--s-1);
   justify-self: start;
-  margin-block-start: 0.9rem;
+  margin-block-start: var(--s-4);
   text-align: left;
   font-size: var(--step--1);
   color: var(--ink-soft);
@@ -537,10 +571,10 @@
 }
 
 .policy {
-  margin: 0.6rem 0 0;
-  padding: 0.8rem 0.9rem;
+  margin: var(--s-2) 0 0;
+  padding: var(--s-3) var(--s-4);
   background: var(--paper-sunk);
-  border-radius: 3px;
+  border-radius: var(--r-sm);
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--step-code);
   line-height: 1.6;
@@ -611,11 +645,11 @@
 
 /* Listening is a live state, so it takes the accent and it breathes. Border
    colour alone did not read as "the microphone is open right now". */
-.micOn::after {
+.micLive::after {
   content: "";
   position: absolute;
   inset: -3px;
-  border: var(--border-hair) solid var(--signal);
+  border: var(--border-hair) solid var(--live);
   border-radius: inherit;
   animation: mic-listening 1.6s var(--ease-out) infinite;
   pointer-events: none;
@@ -639,7 +673,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .copy[data-copied]::before,
-  .micOn::after {
+  .micLive::after {
     animation: none;
   }
 }
@@ -814,7 +848,7 @@
  * to run it in front of someone. */
 .evalResult {
   display: grid;
-  gap: 2px;
+  gap: var(--s-1);
   margin: var(--s-3) 0 0;
   padding-inline-start: var(--s-3);
   border-inline-start: var(--border-emphasis) solid var(--rule);
@@ -849,19 +883,20 @@
  * it worth opening.
  */
 .toolkit {
-  margin-top: 0.9rem;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
+  margin-top: var(--s-4);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-sm);
 }
 
 .toolkitSummary {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 0.5rem 0.7rem;
+  gap: var(--s-4);
+  padding: var(--s-2) var(--s-3);
   cursor: pointer;
-  font-family: var(--font-mono), monospace;
+  /* "8 things it can open for you" is a sentence. */
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-size: var(--step--1);
   color: var(--ink);
 }
@@ -872,11 +907,15 @@
 
 /* Says it is clickable in words as well as in shape. A row of links inside a
    dark console reads as output until something tells the reader otherwise. */
+/* A sentence, so it is set in the sentence face. Mono here was the face
+   standing in for "technical" on ordinary words, which is the one thing mono
+   is not for; it is for code, identifiers, and figures. */
 .toolkitHint {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   color: var(--ink-faint);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-size: var(--step--1);
 }
 
 .toolkit[open] .toolkitHint {
@@ -886,19 +925,19 @@
 .tools {
   list-style: none;
   margin: 0;
-  padding: 0 0.7rem 0.6rem;
+  padding: 0 var(--s-3) var(--s-2);
   display: grid;
-  gap: 0.15rem;
+  gap: var(--s-1);
 }
 
 .tool {
   display: grid;
-  gap: 0.15rem;
-  padding: 0.5rem 0.6rem;
-  border-radius: 2px;
+  gap: var(--s-1);
+  padding: var(--s-2) var(--s-2);
+  border-radius: var(--r-sm);
   text-decoration: none;
   color: inherit;
-  border: 1px solid transparent;
+  border: var(--border-hair) solid transparent;
 }
 
 .tool:hover,
@@ -907,8 +946,9 @@
   background: color-mix(in oklab, var(--ink) 6%, transparent);
 }
 
+/* Same split as the artifact rows: a repository reference is an identifier and
+   a paper title is a name. `data-id` marks the first, set from the label. */
 .toolLabel {
-  font-family: var(--font-mono), monospace;
   font-size: var(--step--1);
   /* Underlined rather than coloured: the accent on this page means "live", and
      a link that is merely available has not earned it. */
@@ -918,7 +958,35 @@
 }
 
 .toolAbout {
-  font-size: 0.78rem;
+  font-size: var(--step--1);
   line-height: 1.4;
   color: var(--ink-faint);
+}
+
+.toolLabel[data-id] {
+  font-family: var(--font-mono), monospace;
+  overflow-wrap: anywhere;
+}
+
+/* Inside the stage drawer the labels read in sentence case, like every other
+   label on that page. The classic page keeps its small capitals. */
+/* Inside the drawer the shortcut opens this panel, so the line telling the
+   reader it jumps anywhere is describing the page it replaced. */
+:global([data-stage]) .hints li:first-child {
+  display: none;
+}
+
+/* One filled control per screen and no glow behind it: on the stage the send
+   button keeps the accent and drops the ring and the shouting. */
+:global([data-stage]) .send {
+  box-shadow: none;
+}
+
+:global([data-stage]) .send,
+:global([data-stage]) .stop,
+:global([data-stage]) .mic,
+:global([data-stage]) .gesture,
+:global([data-stage]) .shows {
+  text-transform: none;
+  letter-spacing: normal;
 }

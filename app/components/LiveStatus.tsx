@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import styles from "./LiveStatus.module.css";
 import { trackOnce } from "@/lib/analytics";
 
-type State = { up: boolean; ms: number } | "checking" | "unknown";
+type State = { up: boolean; ms: number; at: Date } | "checking" | "unknown";
 
 /**
  * Reachability check against the deployed BU Life AI system.
@@ -20,7 +20,7 @@ type State = { up: boolean; ms: number } | "checking" | "unknown";
  * not that the service is offline, and saying otherwise would repeat the original
  * mistake in the opposite direction.
  */
-export default function LiveStatus({ url, label }: { url: string; label: string }) {
+export default function LiveStatus({ url, label, timed = false }: { url: string; label: string; timed?: boolean }) {
   const [state, setState] = useState<State>("checking");
 
   // Reaching this section means the visitor scrolled past the fold and the work
@@ -34,7 +34,7 @@ export default function LiveStatus({ url, label }: { url: string; label: string 
     const started = performance.now();
 
     fetch(url, { mode: "no-cors", signal: controller.signal, cache: "no-store" })
-      .then(() => setState({ up: true, ms: Math.round(performance.now() - started) }))
+      .then(() => setState({ up: true, ms: Math.round(performance.now() - started), at: new Date() }))
       .catch(() => setState("unknown"));
 
     return () => controller.abort();
@@ -42,15 +42,24 @@ export default function LiveStatus({ url, label }: { url: string; label: string 
 
   return (
     <p className={styles.status}>
-      {state === "checking" && <span className="label">checking {label}</span>}
+      {state === "checking" && <span className="caption">checking {label}</span>}
       {state === "unknown" && (
-        <span className="label">{label} status could not be checked from here</span>
+        <span className="caption">{label} status could not be checked from here</span>
       )}
       {typeof state === "object" && (
         <>
           <span className="live-dot" />{" "}
-          <span className="label">
+          <span className="caption">
             {label} responded in <span className="tabular">{state.ms}ms</span>
+            {timed && (
+              <>
+                {" "}
+                at{" "}
+                <time className="tabular" dateTime={state.at.toISOString()}>
+                  {state.at.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                </time>
+              </>
+            )}
           </span>
         </>
       )}

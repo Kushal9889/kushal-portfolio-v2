@@ -1,0 +1,623 @@
+/*
+ * Measured, set as an instrument panel: a printed run receipt at the top, and
+ * a rack of gauges below it. Figures are set in the readout face, identifiers
+ * and units in the data mono, notes in the spine. Every cell is a readout with
+ * a quantity and a unit, and the panel is something the reader operates.
+ */
+
+.measured {
+  position: relative;
+  z-index: 2;
+  height: 100vh;
+  min-height: 760px;
+}
+
+.inner {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: clamp(16px, 2.2vh, 26px);
+  padding: 84px clamp(24px, 5vw, 88px) 36px;
+}
+
+.head {
+  display: grid;
+  gap: 14px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-readout);
+  font-size: clamp(2.75rem, 4.8vw, 4.75rem);
+  font-weight: 700;
+  line-height: 0.86;
+  letter-spacing: -0.02em;
+}
+
+/* ---- Run receipt -------------------------------------------------------- */
+
+/* Printed fields with hairlines between them, sized to their content rather
+   than stretched: a receipt, not a banner. */
+.receipt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  width: fit-content;
+  margin: 0;
+  border: 1px solid var(--hair);
+  background: var(--hair);
+}
+
+.receipt div {
+  display: grid;
+  gap: 3px;
+  padding: 7px 14px 8px;
+  background: var(--void);
+}
+
+.receipt dt {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--ink-faint);
+}
+
+.receipt dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink);
+}
+
+.receipt code {
+  font: inherit;
+  color: var(--voltage);
+}
+
+/* ---- The rack ----------------------------------------------------------- */
+
+/* Hairlines are the grid's own ground showing through a 1px gap. Every cell is
+   a socket that is there from the start; the gauges fly into them. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 1px;
+  min-height: 0;
+  border: 1px solid var(--hair);
+  background: var(--hair);
+}
+
+.cell {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background: var(--void);
+}
+
+.cellA {
+  grid-column: 1 / span 2;
+  grid-row: 1 / span 2;
+}
+
+.cellB {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.cellC {
+  grid-column: 4;
+  grid-row: 1;
+}
+
+.cellD {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.cellE {
+  grid-column: 4;
+  grid-row: 2;
+}
+
+/* Two panels share the bottom row and open upward over the rack, so a pinned
+   screen never grows past its height. They anchor to the row, not to their own
+   half, so either one opens across the full width. */
+.cellF {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1px;
+  background: var(--hair);
+}
+
+.card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: clamp(16px, 1.6vw, 24px);
+  overflow: hidden;
+  background: var(--void-raised);
+}
+
+/* Every gauge names its quantity on the left and its unit on the right, over a
+   hairline, the way a panel meter is labelled. */
+.readout {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--hair);
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+.readout span:last-child {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--ink-faint);
+}
+
+.big,
+.mid {
+  margin: 0;
+  font-family: var(--font-readout);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+}
+
+.big {
+  margin-top: 6px;
+  font-size: clamp(4.5rem, 8.4vw, 8rem);
+}
+
+.mid {
+  margin-top: 4px;
+  font-size: clamp(2.75rem, 4.4vw, 4.25rem);
+}
+
+.note {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+/* ---- Run counter -------------------------------------------------------- */
+
+/* One mark per run, three to a case. A missed run takes the accent; a case
+   outside the selected group dims rather than disappearing, so the count never
+   changes shape while it is being read. */
+.counter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.counter li {
+  display: flex;
+  gap: 2px;
+  transition: opacity 200ms var(--ease-arrive);
+}
+
+.counter li[data-dim] {
+  opacity: 0.2;
+}
+
+.counter i {
+  width: 4px;
+  height: 20px;
+  background: var(--ink);
+}
+
+.counter i[data-miss] {
+  background: var(--voltage);
+}
+
+/* ---- Groups ------------------------------------------------------------- */
+
+.groups,
+.race {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.groupButton {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr) 3rem;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font: 400 0.8125rem/1 var(--font-mono);
+  text-align: left;
+  cursor: pointer;
+  transition: color 120ms linear;
+}
+
+.groupButton:hover,
+.groupButton[aria-pressed="true"] {
+  color: var(--ink);
+}
+
+.groupButton[aria-pressed="true"] > span:first-child::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  vertical-align: 1px;
+  background: var(--voltage);
+}
+
+.groupButton:focus-visible {
+  outline: 2px solid var(--voltage);
+  outline-offset: 3px;
+}
+
+/* ---- Failing cases ------------------------------------------------------ */
+
+.failing {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--hair);
+}
+
+.failingHead {
+  margin: 0 0 6px;
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+.failing ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.failing li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+.failing li span:last-child {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--voltage);
+}
+
+/* ---- Races and pairs ---------------------------------------------------- */
+
+.race li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.5rem;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 4px 0;
+}
+
+.raceName {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+  color: var(--ink-soft);
+}
+
+.race li:not([data-other]) .raceName {
+  color: var(--ink);
+}
+
+.raceSub {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+
+/* The second reading of a gauge: figures small enough to sit under the headline
+   number without competing with it. */
+.pairs {
+  display: grid;
+  margin: auto 0 0;
+  border-top: 1px solid var(--hair);
+}
+
+.pairs div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--hair);
+  font-size: 0.8125rem;
+}
+
+.pairs dt {
+  color: var(--ink-soft);
+}
+
+.pairs dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.count {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* A bare fill with no track behind it: the count beside each bar carries the
+   denominator, so a grey rail would only add a second, weaker reading. */
+.bar {
+  position: relative;
+  height: 6px;
+}
+
+.bar > span {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  background: var(--ink);
+}
+
+/* A group that dropped a run is the one place a bar takes the accent. */
+.bar[data-full="false"] > span {
+  background: var(--voltage);
+}
+
+.race li[data-other] .bar > span {
+  background: var(--ink-soft);
+}
+
+/* ---- Compiled graph ----------------------------------------------------- */
+
+.graph {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: visible;
+}
+
+.graph line {
+  stroke: var(--ink-soft);
+  stroke-width: 1;
+}
+
+.graph line[data-conditional] {
+  stroke: var(--voltage);
+  stroke-dasharray: 3 3;
+}
+
+.graph rect {
+  fill: var(--ink);
+}
+
+/* Knocked out of whatever edge runs behind it: the stroke is the card's own
+   ground, painted under the glyphs, so a line meets a label and stops. */
+.graph text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--ink-soft);
+  paint-order: stroke;
+  stroke: var(--void-raised);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+}
+
+/* A node the live answer passed through is lit; its time shows on pointer or focus. */
+.graph g[data-ran] rect {
+  fill: var(--voltage);
+}
+
+.graph g[data-ran] {
+  cursor: default;
+  outline: none;
+}
+
+.graph .ms {
+  fill: var(--ink);
+  opacity: 0;
+  transition: opacity 150ms linear;
+}
+
+.graph g[data-ran]:hover .ms,
+.graph g[data-ran]:focus-visible .ms {
+  opacity: 1;
+}
+
+.graph g[data-ran]:focus-visible rect {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+/* ---- Panels ------------------------------------------------------------- */
+
+.panel summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 52px;
+  padding: 0 clamp(16px, 1.6vw, 24px);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  background: var(--void-raised);
+}
+
+.panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.panel summary:focus-visible {
+  outline: 2px solid var(--voltage);
+  outline-offset: -2px;
+}
+
+.panel[open] summary {
+  background: var(--paper-high);
+}
+
+.toggle {
+  position: relative;
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+.toggle::before,
+.toggle::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 0;
+  width: 14px;
+  height: 2px;
+  background: var(--ink);
+  transition: transform 200ms var(--ease-arrive);
+}
+
+.toggle::after {
+  transform: rotate(90deg);
+}
+
+.panel[open] .toggle::after {
+  transform: rotate(0deg);
+}
+
+.panelBody {
+  position: absolute;
+  right: -1px;
+  bottom: 100%;
+  left: -1px;
+  z-index: 3;
+  max-height: min(60vh, 560px);
+  margin: 0;
+  padding: 18px clamp(16px, 1.6vw, 24px) 22px;
+  overflow-y: auto;
+  border: 1px solid var(--hair-strong);
+  background: var(--void-raised);
+}
+
+.filter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+
+.filter button {
+  padding: 6px 10px;
+  border: 1px solid var(--hair-strong);
+  background: transparent;
+  color: var(--ink);
+  font: 500 0.8125rem/1 var(--font-display);
+  cursor: pointer;
+}
+
+.filter button:focus-visible {
+  outline: 2px solid var(--voltage);
+  outline-offset: 2px;
+}
+
+.caseList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.caseList li {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) 7.5rem minmax(0, 1.7fr) 6rem;
+  align-items: baseline;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.caseName {
+  font-size: 0.9375rem;
+  line-height: 1.35;
+}
+
+.caseGroup,
+.caseAsserts,
+.casePasses {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.caseGroup,
+.caseAsserts {
+  color: var(--ink-soft);
+}
+
+.casePasses {
+  display: grid;
+  justify-items: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.casePasses em {
+  font-style: normal;
+  color: var(--ink-faint);
+}
+
+.caseList li[data-pass="false"] .casePasses {
+  color: var(--voltage);
+}
+
+.defectList {
+  display: grid;
+  gap: 14px;
+}
+
+.defectList div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.defectList dt {
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+
+.defectList dd {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}

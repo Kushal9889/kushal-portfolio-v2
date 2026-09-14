@@ -39,7 +39,7 @@
   list-style: none;
   display: flex;
   align-items: flex-end;
-  gap: 3px;
+  gap: var(--s-1);
   height: 100%;
   margin: 0;
   padding: 0;
