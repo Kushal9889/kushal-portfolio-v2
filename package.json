@@ -23,7 +23,7 @@
     "decision-matrix": "tsx scripts/decision-matrix.ts",
     "audit": "tsx scripts/audit.ts",
     "build:graph": "tsx scripts/build-graph.ts",
-    "test:unit": "tsx --test tests/unit.test.ts",
+    "test:unit": "tsx --test tests/unit.test.ts tests/grammar.test.ts",
     "test:integration": "tsx --test tests/integration.test.ts",
     "test:system": "npm run build && tsx --test --test-timeout=120000 tests/system.test.ts",
     "test": "npm run test:unit && npm run test:integration",
