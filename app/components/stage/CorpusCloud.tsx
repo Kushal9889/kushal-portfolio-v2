@@ -73,7 +73,8 @@ export default function CorpusCloud({
       },
       // A reproducible capture measures the page, not the machine it ran on, so
       // the frame-time guard stays out of it.
-      { watchdog: parseFrame() === null && !new URLSearchParams(window.location.search).has("nofreeze") },
+      // It also skips the far-plane arrival, so the first frame is already the pose.
+      { watchdog: parseFrame() === null && !new URLSearchParams(window.location.search).has("nofreeze"), arrive: parseFrame() === null },
     );
 
     if (!cloud) {

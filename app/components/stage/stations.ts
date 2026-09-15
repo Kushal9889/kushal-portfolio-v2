@@ -1,4 +1,4 @@
-import type { Vec3 } from "./cloud-gl";
+import type { RGB, Vec3 } from "./cloud-gl";
 
 /*
  * Where the camera is in the corpus field, chapter by chapter.
@@ -58,10 +58,50 @@ export type Station = {
   fov: number;
   /** Field brightness while the chapter is read over it. */
   dim: number;
+  /** Particle tint for this chapter, as OKLCH lightness is held and only hue and chroma vary (plan 3.1). */
+  tint: Tint;
 };
 
+/** Hue in degrees and chroma, 0.02 to 0.05. Chroma 0 is neutral ink. */
+export type Tint = { hue: number; chroma: number };
+
+export const NEUTRAL: Tint = { hue: 0, chroma: 0 };
+
+/**
+ * An OKLCH tint as an RGB multiplier on the ink colour: the ratio of the tinted
+ * colour to the neutral colour at the same lightness, so tinting never brightens
+ * or dims the field, it only turns it.
+ */
+export function tintRGB({ hue, chroma }: Tint, lightness = 0.95): RGB {
+  const toRGB = (c: number): RGB => {
+    const h = (hue * Math.PI) / 180;
+    const a = c * Math.cos(h);
+    const b = c * Math.sin(h);
+    const l_ = lightness + 0.3963377774 * a + 0.2158037573 * b;
+    const m_ = lightness - 0.1055613458 * a - 0.0638541728 * b;
+    const s_ = lightness - 0.0894841775 * a - 1.291485548 * b;
+    const l = l_ ** 3;
+    const m = m_ ** 3;
+    const s = s_ ** 3;
+    return [
+      4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+      -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+      -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+    ];
+  };
+  const tinted = toRGB(chroma);
+  const neutral = toRGB(0);
+  return tinted.map((v, i) => Math.max(0, v / (neutral[i] || 1))) as RGB;
+}
+
+/*
+ * One station per chapter, in page order. A station whose chapter is not on the
+ * page (a lab, or the page before the restructure) is skipped by the director.
+ * Tints follow plan 3.1: open source cool steel, measured neutral, work warm ink,
+ * built phosphor, research paper warm, credentials spectral, beyond amber.
+ */
 export const STATIONS: Station[] = [
-  { chapter: "bug", sections: [LANDING], from: [0.9, 0.35, 0.6], distance: 4.8, fov: 54, dim: 0.3 },
+  { chapter: "bug", sections: [LANDING], from: [0.9, 0.35, 0.6], distance: 4.8, fov: 54, dim: 0.3, tint: { hue: 235, chroma: 0.03 } },
   {
     chapter: "measured",
     sections: ["How retrieval on this page works", "Defects this page shipped and then fixed", "This site"],
@@ -69,6 +109,7 @@ export const STATIONS: Station[] = [
     distance: 5.4,
     fov: 52,
     dim: 0.22,
+    tint: NEUTRAL,
   },
   {
     chapter: "work",
@@ -77,8 +118,37 @@ export const STATIONS: Station[] = [
     distance: 5.6,
     fov: 50,
     dim: 0.26,
+    tint: { hue: 70, chroma: 0.035 },
   },
-  { chapter: "research", sections: ["Publications"], from: [-0.85, 0.2, 0.55], distance: 4.6, fov: 54, dim: 0.3 },
+  {
+    chapter: "built",
+    sections: ["BU Life AI", "This site"],
+    from: [-0.5, 0.4, 0.8],
+    distance: 5,
+    fov: 52,
+    dim: 0.28,
+    tint: { hue: 150, chroma: 0.045 },
+  },
+  { chapter: "research", sections: ["Publications"], from: [-0.85, 0.2, 0.55], distance: 4.6, fov: 54, dim: 0.3, tint: { hue: 85, chroma: 0.03 } },
+  {
+    chapter: "credentials",
+    sections: ["Certifications"],
+    from: [0.4, 0.5, 0.85],
+    distance: 5.2,
+    fov: 52,
+    dim: 0.3,
+    tint: { hue: 200, chroma: 0.04 },
+  },
+  {
+    chapter: "beyond",
+    sections: ["Education", "Achievements"],
+    from: [0.7, -0.3, 0.7],
+    distance: 5.6,
+    fov: 52,
+    dim: 0.34,
+    tint: { hue: 75, chroma: 0.05 },
+  },
+  // Present until phase 3 splits the proof chapter into built, credentials and beyond.
   {
     chapter: "proof",
     sections: ["Certifications", "Education", "Achievements", "BU Life AI"],
@@ -86,8 +156,21 @@ export const STATIONS: Station[] = [
     distance: 5.2,
     fov: 52,
     dim: 0.3,
+    tint: { hue: 200, chroma: 0.04 },
   },
 ];
+
+/** Seam post pass runs only in the middle 30% of a seam (plan 3.7). */
+export const SEAM_FX_FROM = 0.35;
+export const SEAM_FX_TO = 0.65;
+/**
+ * Seam labels read between these points of a seam (plan 4.3). Inside that window
+ * a name is still withdrawn wherever a chapter's text or surface sits under it.
+ */
+export const SEAM_LABEL_FROM = 0.3;
+export const SEAM_LABEL_TO = 0.85;
+/** Condense pulls for the verb's own duration (lib/verbs.ts), then releases the particles over this (F-017). */
+export const CONDENSE_RETURN_MS = 1500;
 
 /** How hard the field is thrown at the midpoint between two chapters. */
 export const SEAM_DISPERSE = 0.85;

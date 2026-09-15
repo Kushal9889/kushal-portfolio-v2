@@ -378,15 +378,6 @@ export default function HeroStage({
     };
   }, [cloudReady, cloud, field, dive]);
 
-  useEffect(() => {
-    const onMove = (e: PointerEvent) => {
-      if (dive.current > 0.01) return;
-      cloud.current?.setPointer((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    return () => window.removeEventListener("pointermove", onMove);
-  }, [cloud, dive]);
-
   const motionRef = useMotion<HTMLDivElement>(({ gsap, ScrollTrigger }) => {
     const hero = sectionRef.current;
     const head = headlineRef.current;

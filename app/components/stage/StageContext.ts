@@ -16,6 +16,12 @@ export type StageApi = {
    * and puts this back when the reader returns to the hero.
    */
   glow: RefObject<number[] | null>;
+  /**
+   * Condense into `el`: the nearest cluster of the chapter's own sections gathers
+   * at the element and returns to the field (plan 4.3). A no-op before the field
+   * is up and under reduced motion.
+   */
+  retrieveInto: (el: Element, chapter?: string) => void;
   /** Opens the agent drawer, and asks `question` once the agent has mounted. */
   openAsk: (question?: string) => void;
 };

@@ -320,3 +320,85 @@
   outline: 2px solid var(--voltage);
   outline-offset: 3px;
 }
+
+/* ---- Field layers -------------------------------------------------------- */
+
+/* Chapters read above the field and its seam labels (canvas 0, labels 1, main 2). */
+.main {
+  position: relative;
+  z-index: 2;
+}
+
+/*
+ * Seam labels. Each names a corpus cluster at the point its particles sit, so
+ * the field between chapters says what it is. A 4px square marks the centroid;
+ * the name sets off to its right with the passage count beneath it.
+ */
+.seam {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.seamLabel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  gap: 2px;
+  margin: -6px 0 0;
+  padding-left: 14px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 400ms var(--ease-glass);
+  will-change: transform;
+}
+
+.seamLabel::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: -2px;
+  width: 4px;
+  height: 4px;
+  background: var(--ink);
+}
+
+.seamLabel span:first-child {
+  color: var(--ink);
+}
+
+.seamLabel span:last-child {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.seamLabel[data-on="true"] {
+  opacity: 1;
+}
+
+.fieldOff {
+  margin: 0 12px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 767px) {
+  .seam,
+  .fieldOff {
+    display: none;
+  }
+}
+
+/* A frozen or lost field no longer follows the camera, so its names are withdrawn. */
+canvas[data-frozen="true"] ~ .seam,
+canvas[data-lost="true"] ~ .seam {
+  display: none;
+}

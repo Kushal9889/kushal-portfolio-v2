@@ -7,7 +7,8 @@ import type { Cloud } from "./cloud-gl";
 import type { FieldInfo } from "./CorpusCloud";
 import { StageContext, type StageApi } from "./StageContext";
 import Commands, { type CommandLinks, type CommandsHandle } from "./Commands";
-import { directField } from "./director";
+import { directField, type Director } from "./director";
+import { startSensors, subscribe, wake } from "@/lib/sensorBus";
 import { markFrameReady, parseFrame, waitFor, watchRefresh } from "./frame";
 import "../../stage.css";
 import styles from "./Stage.module.css";
@@ -75,12 +76,14 @@ export default function Stage({
   const dive = useRef(0);
   const glow = useRef<number[] | null>(null);
   const commands = useRef<CommandsHandle>(null);
-  const director = useRef<ReturnType<typeof directField> | null>(null);
+  const director = useRef<Director | null>(null);
+  const seamRef = useRef<HTMLDivElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const meterRef = useRef<HTMLParagraphElement>(null);
   const [cloudReady, setCloudReady] = useState(false);
   const [mountCloud, setMountCloud] = useState(false);
   const [mountAgent, setMountAgent] = useState(false);
+  const [fieldOff, setFieldOff] = useState(false);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [active, setActive] = useState(0);
   // -1 until an observer has reported. Rendered as 0 on the server, the bar
@@ -236,6 +239,7 @@ export default function Stage({
       framed: frame !== null,
     });
     director.current = field;
+    Object.assign(window, { __director: field });
     const refresh = watchRefresh(ScrollTrigger);
     const remeasure = () => {
       field.measure();
@@ -247,6 +251,7 @@ export default function Stage({
       start: "top top",
       end: "bottom bottom",
       onUpdate: () => {
+        wake();
         if (!refresh.refreshing()) field.drive();
       },
     });
@@ -313,6 +318,89 @@ export default function Stage({
     return cleanup;
   });
 
+  // Every continuous input reaches the field through the sensor bus, on its own
+  // frame, never through React state: scroll speed stretches the particles,
+  // idleness lets the field wander, and the pointer (or device tilt) moves the
+  // camera a little while the hero is at rest.
+  useEffect(() => {
+    startSensors();
+    return subscribe((s) => {
+      const c = cloud.current;
+      if (!c) return;
+      const still = s.reduced;
+      c.setStreak(still ? 0 : Math.min(Math.abs(s.velocity) / 3000, 1));
+      c.setDrift(s.idle && s.visible && !still ? 1 : 0);
+      if (dive.current <= 0.01 && !still) {
+        const p = s.tilt.active ? s.tilt : s.pointer;
+        c.setPointer(p.x, p.y);
+      }
+    });
+  }, []);
+
+  // Seam labels: the clusters the next chapter is written from, named beside
+  // their particles. Placed on the renderer's own frame so they never trail the
+  // camera, and written straight to the DOM. A name is withdrawn wherever a
+  // chapter's text or surface sits under it, so it never prints over reading.
+  useEffect(() => {
+    const c = cloud.current;
+    const layer = seamRef.current;
+    if (!cloudReady || !c || !layer) return;
+    const slots = Array.from(layer.children) as HTMLElement[];
+
+    // A layout box (a grid, a section, a pin spacer) is not ink: only text of its
+    // own, a replaced element or a painted surface covers the field.
+    const bare = (el: Element | null) => {
+      if (!el || el === document.documentElement || el === document.body || el instanceof HTMLCanvasElement) return true;
+      const own = Array.from(el.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim());
+      if (own || el.matches("img, svg, video, input, textarea, button, pre, code")) return false;
+      const bg = getComputedStyle(el).backgroundColor;
+      // Computed colours serialise with alpha last; a zero alpha paints nothing.
+      return bg === "transparent" || /,\s*0\)$/.test(bg);
+    };
+    // Where a name prints: its marker, middle and end, on both of its lines.
+    const clear = (x: number, y: number) =>
+      [0, 120, 240].every((dx) => bare(document.elementFromPoint(x + dx, y + 4)) && bare(document.elementFromPoint(x + dx, y + 20)));
+
+    const place = () => {
+      const state = director.current?.seam;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      // Read everything first, then write, so the hit tests never force a layout.
+      let lastY = -Infinity;
+      const shown = (state?.visible ? state.labels : [])
+        .map((l) => ({ l, p: c.project(l.point) }))
+        .filter(({ p }) => p.visible && p.x > 0 && p.x < w - 320 && p.y > 72 && p.y < h - 48)
+        .sort((a, b) => a.p.y - b.p.y)
+        .map(({ l, p }) => {
+          // Clusters close on screen stack their names instead of overprinting them.
+          const y = Math.max(p.y, lastY + 34);
+          lastY = y;
+          return { l, x: p.x, y };
+        })
+        .filter(({ x, y }) => y < h - 48 && clear(x, y))
+        .slice(0, slots.length);
+
+      slots.forEach((slot, i) => {
+        const item = shown[i];
+        if (!item) {
+          slot.dataset.on = "false";
+          return;
+        }
+        if (slot.dataset.title !== item.l.title) {
+          slot.dataset.title = item.l.title;
+          const [title, passages] = Array.from(slot.children);
+          title.textContent = item.l.title;
+          passages.textContent = `${item.l.passages} ${item.l.passages === 1 ? "passage" : "passages"}`;
+        }
+        slot.style.transform = `translate3d(${item.x.toFixed(1)}px, ${item.y.toFixed(1)}px, 0)`;
+        slot.dataset.on = "true";
+      });
+    };
+    place();
+    return c.onFrame(place);
+  }, [cloudReady]);
+
   // The renderer mounts after first paint, so its first pose is set when it arrives.
   useEffect(() => {
     if (!cloudReady) return;
@@ -331,7 +419,16 @@ export default function Stage({
   }, []);
 
   const api = useMemo<StageApi>(
-    () => ({ cloud, field: fieldInfo, cloudReady, flash, dive, glow, openAsk }),
+    () => ({
+      cloud,
+      field: fieldInfo,
+      cloudReady,
+      flash,
+      dive,
+      glow,
+      openAsk,
+      retrieveInto: (el: Element, chapter?: string) => director.current?.condense(el, chapter),
+    }),
     [cloudReady, openAsk],
   );
 
@@ -343,7 +440,15 @@ export default function Stage({
   return (
     <StageContext.Provider value={api}>
       <div ref={stageRef} data-stage="" className={styles.stage}>
-        {mountCloud && <CorpusCloud onReady={onCloudReady} />}
+        {mountCloud && <CorpusCloud onReady={onCloudReady} onUnavailable={() => setFieldOff(true)} />}
+        <div ref={seamRef} className={styles.seam} aria-hidden="true">
+          {[0, 1, 2, 3].map((i) => (
+            <p key={i} className={styles.seamLabel} data-on="false">
+              <span />
+              <span />
+            </p>
+          ))}
+        </div>
         <div ref={flash} className={styles.flash} aria-hidden="true" />
 
         <header className={styles.bar} data-bar={barGround} data-clear={underBar === 0 || undefined}>
@@ -351,6 +456,7 @@ export default function Stage({
             {name}
           </a>
           <nav className={styles.barNav} aria-label="Primary">
+            {fieldOff && <p className={styles.fieldOff}>3D field off on this browser</p>}
             <p ref={meterRef} className={styles.meter}>
               ≈ <span>0</span> tokens read
             </p>
@@ -401,7 +507,9 @@ export default function Stage({
           </nav>
         )}
 
-        <main id="main">{children}</main>
+        <main id="main" className={styles.main}>
+          {children}
+        </main>
         {footer}
 
         <Commands
