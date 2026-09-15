@@ -22,14 +22,15 @@ import { useEffect, useRef } from "react";
  */
 
 async function load() {
-  const [core, scroll, split] = await Promise.all([
+  const [core, scroll, split, flip] = await Promise.all([
     import("gsap"),
     import("gsap/ScrollTrigger"),
     import("gsap/SplitText"),
+    import("gsap/Flip"),
   ]);
 
   const { gsap } = core;
-  gsap.registerPlugin(scroll.ScrollTrigger, split.SplitText);
+  gsap.registerPlugin(scroll.ScrollTrigger, split.SplitText, flip.Flip);
 
   // Every duration and curve in this file resolves to the same two values the
   // stylesheet uses, so a tween and a CSS transition on the same element cannot
@@ -98,6 +99,7 @@ async function load() {
     gsap,
     ScrollTrigger: scroll.ScrollTrigger,
     SplitText: split.SplitText,
+    Flip: flip.Flip,
   };
 }
 

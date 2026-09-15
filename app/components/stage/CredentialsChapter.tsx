@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useMotion } from "@/lib/motion";
-import { condense, corners, print, stamp } from "@/lib/verbs";
+import { condense, corners, print, reducedMotion, stamp } from "@/lib/verbs";
 import { segmentsFor } from "@/lib/numbers";
 import { IssuerDot, NvidiaMark } from "../Mark";
 import Glyph from "./Glyph";
@@ -120,39 +120,165 @@ export default function CredentialsChapter({ plates, linksCheckedOn }: { plates:
   const titleRef = useRef<HTMLHeadingElement>(null);
   const machineRef = useRef<HTMLParagraphElement>(null);
 
-  const ref = useMotion<HTMLElement>(({ gsap, ScrollTrigger }, section) => {
+  const innerRef = useRef<HTMLDivElement>(null);
+  const platesRef = useRef<HTMLDivElement>(null);
+  /** The Flip plugin once motion has loaded, and the plate layout captured before a filter change. */
+  const flipRef = useRef<{ gsap: typeof import("gsap").gsap; pinned: boolean; Flip: typeof import("gsap/Flip").Flip; state: ReturnType<typeof import("gsap/Flip").Flip.getState> | null } | null>(null);
+
+  const ref = useMotion<HTMLElement>(({ gsap, ScrollTrigger, Flip }, section) => {
+    flipRef.current = { gsap, Flip, pinned: false, state: null };
     const title = titleRef.current;
     const machine = machineRef.current;
+    const inner = platesRef.current;
+    const plates = Array.from(section.querySelectorAll<HTMLElement>("[data-plate]"));
+    if (!inner || !title) return;
+
     let played = false;
     ScrollTrigger.create({
       trigger: section,
       start: "top 70%",
       onEnter: () => {
-        if (played || !title) return;
+        if (played) return;
         played = true;
         retrieveInto(title, "credentials");
         condense(gsap, title).restart();
         if (machine) print(gsap, machine, { unit: "char" }).restart();
       },
     });
-    // Each plate stamps down as it arrives; only the proctored exam carries the flash.
-    for (const plate of Array.from(section.querySelectorAll<HTMLElement>("[data-plate]"))) {
-      let done = false;
-      ScrollTrigger.create({
-        trigger: plate,
-        start: "top 82%",
-        onEnter: () => {
-          if (done) return;
-          done = true;
-          const exam = plate.dataset.kind === "exam";
-          stamp(gsap, plate, { flash: exam ? flash.current : null, corners: exam }).restart();
-          plate.querySelectorAll<HTMLElement>("[data-earned]").forEach((seg, i) =>
-            gsap.delayedCall(0.45 + i * 0.06, () => stamp(gsap, seg, { scale: 0.6, corners: false }).restart()),
-          );
-        },
-      });
+
+    // Phones and reduced motion read the grid in flow: each plate stamps once as it arrives.
+    if (reducedMotion() || window.innerWidth < 768) {
+      for (const plate of plates) {
+        let done = false;
+        ScrollTrigger.create({
+          trigger: plate,
+          start: "top 82%",
+          onEnter: () => {
+            if (done) return;
+            done = true;
+            stamp(gsap, plate, { corners: false }).restart();
+          },
+        });
+      }
+      return;
     }
+
+    // The pinned hold (plan E.6.2): the exam stamps at double size, the program
+    // arrives from the left, the courses alternate right, left, right, and the view
+    // pans down the registry as later plates land.
+    section.dataset.pinned = "on";
+    flipRef.current.pinned = true;
+    const seq = gsap.timeline({ defaults: { ease: "none" } });
+    const drive = (tl: ReturnType<typeof stamp>, at: number, span: number) => {
+      const proxy = { p: 0 };
+      tl.progress(0);
+      seq.fromTo(proxy, { p: 0 }, { p: 1, duration: span, onUpdate: () => tl.progress(proxy.p) }, at);
+    };
+
+    const keys = section.querySelectorAll<HTMLElement>(`.${styles.filters} button`);
+    if (keys.length) seq.fromTo(keys, { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", stagger: 0.008, duration: 0.02 }, 0.04);
+
+    const exam = plates.find((p) => p.dataset.kind === "exam");
+    const program = plates.find((p) => p.dataset.kind === "program");
+    const courses = plates.filter((p) => p.dataset.kind === "course");
+    gsap.set(plates, { opacity: 0 });
+
+    const focusAt: [number, HTMLElement][] = [];
+    if (exam) {
+      seq.set(exam, { opacity: 1 }, 0.08);
+      drive(stamp(gsap, exam, { scale: 2, corners: false }), 0.08, 0.08);
+      const ticks = exam.querySelectorAll(`.${styles.ring} line`);
+      if (ticks.length) seq.fromTo(ticks, { opacity: 0 }, { opacity: 1, stagger: 0.12 / ticks.length, duration: 0.004 }, 0.14);
+      focusAt.push([0.08, exam]);
+    }
+    const pan = (el: HTMLElement, at: number) =>
+      seq.to(
+        inner,
+        {
+          y: () => {
+            const frame = inner.parentElement?.clientHeight ?? window.innerHeight;
+            return Math.min(0, frame - 24 - (el.offsetTop - inner.offsetTop + el.offsetHeight));
+          },
+          duration: 0.08,
+          ease: "power2.inOut",
+        },
+        at,
+      );
+    if (program) {
+      seq.fromTo(program, { x: "-40vw", opacity: 0 }, { x: 0, opacity: 1, duration: 0.1, ease: "power2.out" }, 0.3);
+      drive(stamp(gsap, program, { corners: false }), 0.38, 0.04);
+      const segs = program.querySelectorAll<HTMLElement>("[data-earned]");
+      if (segs.length) seq.fromTo(segs, { scaleY: 0 }, { scaleY: 1, stagger: 0.012, duration: 0.01, ease: "back.out(2)" }, 0.42);
+      const list = program.querySelector<HTMLElement>(`.${styles.courses}`);
+      if (list) seq.fromTo(list, { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: 0.06 }, 0.44);
+      focusAt.push([0.3, program]);
+    }
+    courses.forEach((c, i) => {
+      const at = 0.5 + i * 0.09;
+      const side = i % 2 === 0 ? 1 : -1;
+      seq.fromTo(c, { x: `${40 * side}vw`, opacity: 0 }, { x: 0, opacity: 1, duration: 0.07, ease: "power2.out" }, at);
+      drive(stamp(gsap, c, { corners: false }), at + 0.06, 0.03);
+      focusAt.push([at, c]);
+    });
+    // Pan to whichever plate sits lowest among those landed so far.
+    [exam, program, ...courses].forEach((el, i) => {
+      if (!el) return;
+      const at = focusAt.find(([, p]) => p === el)?.[0] ?? 0;
+      const lowest = [exam, program, ...courses].slice(0, i + 1).filter(Boolean).reduce((a, b) => (b!.offsetTop + b!.offsetHeight > a!.offsetTop + a!.offsetHeight ? b : a));
+      if (lowest) pan(lowest, at);
+    });
+    seq.to({}, { duration: 0.22 }, 0.78);
+
+    // Registration corners follow the plate that most recently landed; the exam alone flashes.
+    let focus: HTMLElement | null = null;
+    let flashed = false;
+    seq.eventCallback("onUpdate", () => {
+      const p = seq.progress();
+      let next: HTMLElement | null = null;
+      for (const [at, el] of focusAt) if (p >= at + 0.04) next = el;
+      if (next !== focus) {
+        plates.forEach((pl) => corners(pl, pl === next));
+        focus = next;
+      }
+      if (!flashed && p >= 0.14) {
+        flashed = true;
+        if (flash.current) gsap.fromTo(flash.current, { opacity: 1 }, { opacity: 0, duration: 0.16, ease: "power1.out" });
+      } else if (flashed && p < 0.06) flashed = false;
+    });
+
+    ScrollTrigger.create({
+      trigger: section,
+      start: "top top",
+      end: "+=200%",
+      pin: true,
+      scrub: 0.8,
+      animation: seq,
+      anticipatePin: 1,
+      invalidateOnRefresh: true,
+      onRefresh: (self) => {
+        section.dataset.settle = String(Math.round(self.start + (self.end - self.start) * 0.78));
+      },
+    });
+    return () => {
+      plates.forEach((pl) => corners(pl, false));
+      delete section.dataset.pinned;
+    };
   });
+
+  // Matching plates move to the front of the registry; Flip carries each plate from where it was.
+  const choose = (next: Filter) => {
+    const kit = flipRef.current;
+    if (kit && !reducedMotion()) kit.state = kit.Flip.getState(innerRef.current?.querySelectorAll("[data-plate]") ?? []);
+    setFilter(next);
+  };
+  useLayoutEffect(() => {
+    const kit = flipRef.current;
+    if (!kit?.state) return;
+    kit.Flip.from(kit.state, { duration: 0.45, ease: "power3.inOut", scale: false });
+    // The chosen kind moves to the front, so the window returns to the top of the registry.
+    if (kit.pinned) kit.gsap.to(platesRef.current, { y: 0, duration: 0.45, ease: "power3.inOut" });
+    kit.state = null;
+  }, [filter]);
 
   const counts: Record<Filter, number> = {
     all: plates.length,
@@ -185,7 +311,7 @@ export default function CredentialsChapter({ plates, linksCheckedOn }: { plates:
     <section ref={ref} id="credentials" className={styles.credentials} data-chapter="Credentials" data-node="retrieve" data-ground="void">
       {/* Links written before the split land here. */}
       <span id="proof" className={styles.alias} aria-hidden="true" />
-      <div className={styles.inner}>
+      <div ref={innerRef} className={styles.inner}>
         <header className={styles.head}>
           <h2 ref={titleRef} className={styles.title}>
             Credentials
@@ -195,7 +321,7 @@ export default function CredentialsChapter({ plates, linksCheckedOn }: { plates:
           </p>
           <div className={styles.filters} role="group" aria-label="Show one kind of credential">
             {FILTERS.filter((f) => counts[f.key] > 0).map((f) => (
-              <button key={f.key} type="button" data-garment="keycap" aria-pressed={filter === f.key} onClick={() => setFilter(f.key)}>
+              <button key={f.key} type="button" data-garment="keycap" aria-pressed={filter === f.key} onClick={() => choose(f.key)}>
                 {f.label}
                 <span>{counts[f.key]}</span>
               </button>
@@ -203,9 +329,11 @@ export default function CredentialsChapter({ plates, linksCheckedOn }: { plates:
           </div>
         </header>
 
-        <div className={styles.plates}>
+        <div className={styles.window}>
+        <div ref={platesRef} className={styles.plates}>
           {plates.map((p) => {
             const dim = filter !== "all" && p.kind !== filter;
+            const match = filter !== "all" && p.kind === filter;
             const hue = p.identity?.hue;
             return (
               <article
@@ -213,6 +341,7 @@ export default function CredentialsChapter({ plates, linksCheckedOn }: { plates:
                 data-plate
                 data-kind={p.kind}
                 data-dim={dim || undefined}
+                data-match={match || undefined}
                 data-border={p.identity?.border}
                 className={styles.plate}
                 style={{ "--identity": hue ?? "var(--ink)" } as React.CSSProperties}
@@ -333,6 +462,7 @@ export default function CredentialsChapter({ plates, linksCheckedOn }: { plates:
               </article>
             );
           })}
+        </div>
         </div>
       </div>
     </section>
