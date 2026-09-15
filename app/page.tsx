@@ -75,6 +75,7 @@ function role(s: Section): Role {
     lead: summary(s),
     metrics: s.metrics.map(({ value, label }) => ({ value, label })),
     stack: s.stack,
+    ask: s.asks.find((a) => a.source === s.title)?.question,
   };
 }
 

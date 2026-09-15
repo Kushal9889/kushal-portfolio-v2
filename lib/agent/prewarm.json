@@ -4,10 +4,10 @@
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 408,
-      "answer": 1434
+      "retrieve": 288,
+      "answer": 2235
     },
-    "total": 1865,
+    "total": 2557,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "IMG Systems",
@@ -36,7 +36,7 @@
       "rows": [
         {
           "title": "Who he is",
-          "lexicalScore": 34.4431,
+          "lexicalScore": 34.4721,
           "lexicalRank": 2,
           "denseRank": 1,
           "fused": 0.032522,
@@ -44,7 +44,7 @@
         },
         {
           "title": "What he is good at",
-          "lexicalScore": 7.621,
+          "lexicalScore": 7.6282,
           "lexicalRank": 18,
           "denseRank": 18,
           "fused": 0.025641,
@@ -52,7 +52,7 @@
         },
         {
           "title": "What he does not do",
-          "lexicalScore": 8.3247,
+          "lexicalScore": 8.3316,
           "lexicalRank": 17,
           "denseRank": 16,
           "fused": 0.026145,
@@ -60,7 +60,7 @@
         },
         {
           "title": "Boston University, Questrom Computational Lab",
-          "lexicalScore": 38.1897,
+          "lexicalScore": 38.2105,
           "lexicalRank": 1,
           "denseRank": 2,
           "fused": 0.060167,
@@ -68,15 +68,15 @@
         },
         {
           "title": "IMG Systems",
-          "lexicalScore": 2.1501,
-          "lexicalRank": 37,
+          "lexicalScore": 2.0339,
+          "lexicalRank": 43,
           "denseRank": 20,
-          "fused": 0.034752,
+          "fused": 0.033761,
           "selected": true
         },
         {
           "title": "Growaza",
-          "lexicalScore": 5.0029,
+          "lexicalScore": 5.0074,
           "lexicalRank": 30,
           "denseRank": 40,
           "fused": 0.031667,
@@ -84,7 +84,7 @@
         },
         {
           "title": "BU Life AI",
-          "lexicalScore": 11.2078,
+          "lexicalScore": 11.2147,
           "lexicalRank": 12,
           "denseRank": 12,
           "fused": 0.033333,
@@ -100,7 +100,7 @@
         },
         {
           "title": "Certifications",
-          "lexicalScore": 18.733,
+          "lexicalScore": 18.7456,
           "lexicalRank": 9,
           "denseRank": 7,
           "fused": 0.029418,
@@ -108,7 +108,7 @@
         },
         {
           "title": "Education",
-          "lexicalScore": 13.015,
+          "lexicalScore": 13.0207,
           "lexicalRank": 11,
           "denseRank": 9,
           "fused": 0.028577,
@@ -116,7 +116,7 @@
         },
         {
           "title": "Publications",
-          "lexicalScore": 5.0611,
+          "lexicalScore": 5.066,
           "lexicalRank": 28,
           "denseRank": 29,
           "fused": 0.029217,
@@ -124,7 +124,7 @@
         },
         {
           "title": "Skills",
-          "lexicalScore": 27.5892,
+          "lexicalScore": 27.6067,
           "lexicalRank": 5,
           "denseRank": 5,
           "fused": 0.030769,
@@ -140,7 +140,7 @@
         },
         {
           "title": "Availability",
-          "lexicalScore": 25.0365,
+          "lexicalScore": 25.0445,
           "lexicalRank": 8,
           "denseRank": 8,
           "fused": 0.029412,
@@ -156,7 +156,7 @@
         },
         {
           "title": "This site",
-          "lexicalScore": 6.4439,
+          "lexicalScore": 6.4493,
           "lexicalRank": 20,
           "denseRank": 17,
           "fused": 0.025158,
@@ -164,7 +164,7 @@
         },
         {
           "title": "Defects this page shipped and then fixed",
-          "lexicalScore": 9.6693,
+          "lexicalScore": 9.6727,
           "lexicalRank": 14,
           "denseRank": 50,
           "fused": 0.01464,
@@ -172,10 +172,10 @@
         },
         {
           "title": "How retrieval on this page works",
-          "lexicalScore": 5.2597,
+          "lexicalScore": 5.2634,
           "lexicalRank": 25,
           "denseRank": 28,
-          "fused": 0.013952,
+          "fused": 0.014019,
           "selected": false
         }
       ]
@@ -186,11 +186,11 @@
     "answer": "Measured: 91.4% combined transformer and GNN accuracy; 88.2% transformer alone; 13.5s detect and fix, against 25.4s for static analysis\nLinks: IEEE ICAICCIT 2024, first author (published) Deep Learning for Contextual Bug Detection and Automated Fixes https://doi.org/10.1109/ICAICCIT64383.2024.10912101; IGI Global 2024, co-author (published) Cyber-Physical Systems: Security and Optimization Strategies https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities\n**He published research on finding bugs automatically, then found one by hand in\na production SDK.** The IEEE paper is about contextual bug detection: a\ntransformer reads the code, a graph neural network reads the structure around it,\nand the combination reaches 91.4% accuracy where the transformer alone reaches\n88.2% and the graph network alone 85.7%. Detection and fix together run in 13.5\nseconds against 25.4 for static analysis.",
     "route": "answer",
     "timings": {
-      "route": 1,
-      "retrieve": 175,
-      "answer": 2112
+      "route": 2,
+      "retrieve": 243,
+      "answer": 2110
     },
-    "total": 2294,
+    "total": 2364,
     "sources": [
       "Publications",
       "What he is good at",
@@ -212,7 +212,7 @@
       "rows": [
         {
           "title": "Who he is",
-          "lexicalScore": 2.5092,
+          "lexicalScore": 2.5116,
           "lexicalRank": 6,
           "denseRank": 8,
           "fused": 0.029857,
@@ -220,7 +220,7 @@
         },
         {
           "title": "What he is good at",
-          "lexicalScore": 2.5634,
+          "lexicalScore": 2.5658,
           "lexicalRank": 5,
           "denseRank": 1,
           "fused": 0.031778,
@@ -292,7 +292,7 @@
         },
         {
           "title": "Publications",
-          "lexicalScore": 5.0611,
+          "lexicalScore": 5.066,
           "lexicalRank": 1,
           "denseRank": 4,
           "fused": 0.032018,
@@ -348,7 +348,7 @@
         },
         {
           "title": "How retrieval on this page works",
-          "lexicalScore": 3.6276,
+          "lexicalScore": 3.6311,
           "lexicalRank": 4,
           "denseRank": 14,
           "fused": 0.029139,
@@ -363,10 +363,10 @@
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 246,
-      "answer": 1595
+      "retrieve": 144,
+      "answer": 1329
     },
-    "total": 1845,
+    "total": 1479,
     "sources": [
       "How retrieval on this page works",
       "What he is good at"
@@ -386,7 +386,7 @@
       "rows": [
         {
           "title": "Who he is",
-          "lexicalScore": 1.0055,
+          "lexicalScore": 1.0064,
           "lexicalRank": 26,
           "denseRank": 14,
           "fused": 0.025141,
@@ -394,7 +394,7 @@
         },
         {
           "title": "What he is good at",
-          "lexicalScore": 1.0272,
+          "lexicalScore": 1.0281,
           "lexicalRank": 25,
           "denseRank": 3,
           "fused": 0.027638,
@@ -410,7 +410,7 @@
         },
         {
           "title": "Boston University, Questrom Computational Lab",
-          "lexicalScore": 1.7178,
+          "lexicalScore": 1.7188,
           "lexicalRank": 16,
           "denseRank": 16,
           "fused": 0.025816,
@@ -420,8 +420,8 @@
           "title": "IMG Systems",
           "lexicalScore": 0,
           "lexicalRank": null,
-          "denseRank": 24,
-          "fused": 0.011905,
+          "denseRank": 28,
+          "fused": 0.011364,
           "selected": false
         },
         {
@@ -434,7 +434,7 @@
         },
         {
           "title": "BU Life AI",
-          "lexicalScore": 1.0784,
+          "lexicalScore": 1.0794,
           "lexicalRank": 23,
           "denseRank": 19,
           "fused": 0.024563,
@@ -444,13 +444,13 @@
           "title": "Open source, LangChain deepagents",
           "lexicalScore": 0,
           "lexicalRank": null,
-          "denseRank": 25,
-          "fused": 0.011765,
+          "denseRank": 24,
+          "fused": 0.011905,
           "selected": false
         },
         {
           "title": "Certifications",
-          "lexicalScore": 2.255,
+          "lexicalScore": 2.2572,
           "lexicalRank": 6,
           "denseRank": 43,
           "fused": 0.023555,
@@ -474,7 +474,7 @@
         },
         {
           "title": "Skills",
-          "lexicalScore": 1.1684,
+          "lexicalScore": 1.1694,
           "lexicalRank": 21,
           "denseRank": 22,
           "fused": 0.024541,
@@ -506,7 +506,7 @@
         },
         {
           "title": "This site",
-          "lexicalScore": 5.6675,
+          "lexicalScore": 5.6728,
           "lexicalRank": 1,
           "denseRank": 8,
           "fused": 0.027206,
@@ -522,7 +522,7 @@
         },
         {
           "title": "How retrieval on this page works",
-          "lexicalScore": 4.3488,
+          "lexicalScore": 4.3518,
           "lexicalRank": 2,
           "denseRank": 1,
           "fused": 0.031054,

@@ -120,6 +120,8 @@ strict.** Documents that were merely unusual got rejected alongside documents th
 malformed. He fixed it with fallback field validators and logging on the rejection path, which
 turned silent data loss into a visible signal.
 
+Stack: Python, Apache Tika, Pydantic, JSON Schema, PostgreSQL, Redis, Docker, GitHub Actions, Node.js.
+
 ## Growaza
 
 Role: Associate Software Engineer Intern. January 2024 to July 2024. India.
