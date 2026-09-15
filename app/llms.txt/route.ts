@@ -1,22 +1,16 @@
 import { loadContent, loadCertifications } from "@/lib/content";
+import { ALIASES, CHAPTERS } from "@/lib/chapters";
 
 export const dynamic = "force-static";
 
 /**
  * llms.txt
  *
- * Recruiters increasingly paste a candidate's URL into an assistant and read the
- * summary instead of the site. This file is what that assistant reads: the same
- * facts, already structured, with nothing to infer from layout. Serving it means
- * the machine-generated version of him is accurate rather than guessed.
- *
- * Generated from content/facts.md, so it cannot drift from the page.
- *
- * The technology list is flattened out of the same `stack` lines the page
- * renders as chips. A model matching this profile against a job description is
- * looking for those exact strings, and asking it to infer them from prose is
- * work it will do badly. The resume is linked because a screener that wants a
- * document should not have to reconstruct one from a web page.
+ * The page's facts as plain structured text for machine readers, generated from
+ * content/facts.md so it cannot drift from the page. The technology list is
+ * flattened from the same `stack` lines the page renders as chips, the chapter
+ * anchors are listed so a reader can link into the page, and the resume is
+ * linked as a document.
  */
 export function GET() {
   const { profile, sections } = loadContent();
@@ -32,6 +26,11 @@ export function GET() {
 - Resume (PDF, text layer intact): ${profile.site}/kushal-gaddamwar-resume.pdf
 - Available: ${profile.available}
 - Last verified: ${profile.lastVerified}
+
+## Page chapters
+
+${CHAPTERS.map((c) => `- ${c.name}: ${profile.site}/#${c.id}`).join("\n")}
+${Object.entries(ALIASES).map(([from, to]) => `- #${from} lands on #${to}`).join("\n")}
 
 ## Technologies
 

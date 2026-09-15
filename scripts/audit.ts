@@ -1,4 +1,4 @@
-import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { gzipSync } from "node:zlib";
 import { execFileSync } from "node:child_process";
 import { join, extname } from "node:path";
@@ -990,5 +990,20 @@ for (const d of domains) {
 }
 
 console.log(`\n${total - failed}/${total} requirements pass, ${blockingFailed} blocking failures`);
+
+// The page's "this site" pane reads this record, so the figure it shows is the
+// last real run with its commit and date.
+{
+  let commit = "";
+  try {
+    commit = execFileSync("git", ["rev-parse", "--short", "HEAD"], { encoding: "utf8" }).trim();
+  } catch {
+    commit = "";
+  }
+  writeFileSync(
+    "content/audit.json",
+    `${JSON.stringify({ passed: total - failed, total, blocking: blockingFailed, commit, ranOn: new Date().toISOString().slice(0, 10) }, null, 2)}\n`,
+  );
+}
 if (builtCss.length === 0) console.log("note: run `npm run build` first for CSS-dependent checks");
 if (blockingFailed > 0) process.exit(1);

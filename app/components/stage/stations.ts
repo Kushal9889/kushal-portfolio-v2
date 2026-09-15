@@ -148,16 +148,6 @@ export const STATIONS: Station[] = [
     dim: 0.34,
     tint: { hue: 75, chroma: 0.05 },
   },
-  // Present until phase 3 splits the proof chapter into built, credentials and beyond.
-  {
-    chapter: "proof",
-    sections: ["Certifications", "Education", "Achievements", "BU Life AI"],
-    from: [0.4, 0.5, 0.85],
-    distance: 5.2,
-    fov: 52,
-    dim: 0.3,
-    tint: { hue: 200, chroma: 0.04 },
-  },
 ];
 
 /** Seam post pass runs only in the middle 30% of a seam (plan 3.7). */

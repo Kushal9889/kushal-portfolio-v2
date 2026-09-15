@@ -2,6 +2,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import evals from "@/content/evals.json";
 import models from "@/content/models.json";
+import links from "@/content/links.json";
+import cache from "@/content/build-cache.json";
+import audit from "@/content/audit.json";
+import signatures from "@/content/signatures.json";
 import topology from "@/lib/agent/topology.json";
 import { loadCertifications, loadContent, progress, section, type Section } from "@/lib/content";
 import { TARGETS } from "@/lib/agent/tools";
@@ -13,7 +17,9 @@ import BugChapter from "./components/stage/BugChapter";
 import MeasuredChapter from "./components/stage/MeasuredChapter";
 import WorkChapter, { type Role } from "./components/stage/WorkChapter";
 import ResearchChapter from "./components/stage/ResearchChapter";
-import ProofPan, { type ProofCard } from "./components/stage/ProofPan";
+import BuiltChapter from "./components/stage/BuiltChapter";
+import CredentialsChapter, { type Plate } from "./components/stage/CredentialsChapter";
+import BeyondChapter from "./components/stage/BeyondChapter";
 import ContactFinale from "./components/stage/ContactFinale";
 import styles from "./components/stage/Stage.module.css";
 
@@ -27,6 +33,11 @@ function summary(s: Section) {
 /** Capture groups of the first match, or null. Every derived figure below comes through here. */
 function pick(text: string, re: RegExp) {
   return text.replace(/\s+/g, " ").match(re)?.slice(1) ?? null;
+}
+
+/** The code a verification page is keyed by: a Coursera verify code or a Credly badge id. */
+function verifyCode(url: string) {
+  return url.match(/verify\/([A-Z0-9]+)/)?.[1] ?? url.match(/badges\/([\w-]+)/)?.[1] ?? null;
 }
 
 function verifier(url: string) {
@@ -146,118 +157,65 @@ export default function Page() {
   const method = pick(pubsText, /(a transformer reads the code, a graph neural network reads the structure around it)/)?.[0] ?? null;
   const bridge = pick(pubsText, /(It was a silent failure[^.]*\.)/)?.[0] ?? null;
 
-  // ---- Proof ------------------------------------------------------------
+  // ---- Built, Credentials, Beyond (the proof chapter, split) -----------
+  const today = links.checkedOn;
+  const receipt = (url: string) => {
+    const found = links.links.find((l) => l.url === url);
+    return { host: new URL(url).hostname.replace(/^www\./, ""), status: found?.status ?? null, checkedOn: found?.checkedOn ?? profile.lastVerified };
+  };
+
+  const life = section("BU Life AI");
+  const liveUrl = pick(life.body, /Live: \[[^\]]+\]\((https?:[^)]+)\)/)?.[0] ?? "";
+  const sourceUrl = pick(life.body, /Source: \[[^\]]+\]\((https?:[^)]+)\)/)?.[0] ?? "";
+  const lifeRepo = sourceUrl.replace(/^https:\/\/github\.com\//, "").replace(/\/$/, "");
+  const agents = pick(life.body, /agents for (\w+), (\w+) and (\w+)/) ?? [];
+  const lifeFull = (life.body.split(/\n\s*\n/)[0] ?? "").replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
+  const site = section("This site");
+  const siteRepo = profile.repo.replace(/^https:\/\/github\.com\//, "").replace(/\/$/, "");
+
   const certs = [...loadCertifications()].sort(
     (a, b) =>
       Number(b.featured) - Number(a.featured) || Number(Boolean(b.components)) - Number(Boolean(a.components)) || b.year - a.year,
   );
-  const credentialCards: ProofCard[] = certs.map((c) => {
+  const plates: Plate[] = certs.map((c) => {
     const done = progress(c);
-    if (done) {
-      return {
-        id: c.id,
-        issuer: c.issuer,
-        top: `${c.issuer}, ${c.year}`,
-        figure: `${done.earned}/${done.total}`,
-        title: c.name,
-        detail: "courses verified, one link each",
-        segments: done,
-        kind: "program" as const,
-        links: (c.components ?? []).flatMap((x) => (x.url ? [{ label: x.name, url: x.url }] : [])),
-        pending: (c.components ?? []).flatMap((x) => (x.url ? [] : [x.name])),
-      };
-    }
+    const kind: Plate["kind"] = c.kind === "proctored-exam" ? "exam" : c.kind === "program" ? "program" : "course";
     return {
       id: c.id,
+      kind,
+      name: c.name,
+      short: c.short ?? null,
       issuer: c.issuer,
-      top: `${c.issuer}, ${c.year}`,
-      figure: c.short,
-      title: c.name,
-      detail: c.why,
-      kind: (c.kind === "proctored-exam" ? "exam" : "course") as ProofCard["kind"],
-      links: c.url ? [{ label: verifier(c.url), url: c.url }] : [],
+      year: c.year,
+      why: c.why ?? null,
+      verify: c.url ? { label: verifier(c.url), url: c.url, code: verifyCode(c.url), receipt: receipt(c.url) } : null,
+      segments: done,
+      earned: (c.components ?? []).flatMap((x) => (x.url ? [{ name: x.name, url: x.url, code: verifyCode(x.url), receipt: receipt(x.url) }] : [])),
+      pending: (c.components ?? []).flatMap((x) => (x.url ? [] : [x.name])),
+      identity: signatures.issuers[c.issuer as keyof typeof signatures.issuers] ?? null,
     };
   });
 
-  const life = section("BU Life AI");
-  const liveUrl = pick(life.body, /Live: \[[^\]]+\]\((https?:[^)]+)\)/)?.[0];
-  const sourceUrl = pick(life.body, /Source: \[[^\]]+\]\((https?:[^)]+)\)/)?.[0];
-  const lifeCard: ProofCard = {
-    id: "bu-life-ai",
-    kind: "live",
-    top: life.title,
-    figure: life.metrics[0]?.value,
-    title: life.metrics[0]?.label ?? life.title,
-    detail: summary(life),
-    live: liveUrl ? { url: liveUrl, label: new URL(liveUrl).hostname } : undefined,
-    links: [
-      ...(liveUrl ? [{ label: "Live", url: liveUrl }] : []),
-      ...(sourceUrl ? [{ label: "Source", url: sourceUrl }] : []),
-    ],
-  };
-
   const degrees = section("Education")
     .body.split(/\n\s*\n/)
-    .map((p) => pick(p, /^(.+?), (\S+) (.+?)\. ([A-Z][a-z]+ \d{4} to [^.]+)\./))
-    .filter((d): d is string[] => d !== null);
-  const educationCard: ProofCard | null = degrees[0]
-    ? {
-        id: "education",
-        kind: "education",
-        top: degrees[0][0],
-        title: `${degrees[0][1]} ${degrees[0][2]}`,
-        detail: degrees[0][3],
-        lines: degrees.slice(1).flatMap((d) => [`${d[1]} ${d[2]}, ${d[0]}`, d[3]]),
-        links: [],
-      }
-    : null;
-
-  const ach = section("Achievements");
-  const jee = ach.metrics.find((m) => /percentile/.test(m.value));
-  const nationally = pick(ach.body, /top ([\d.]+) percent nationally/);
-  const codechef = pick(ach.body, /CodeChef global rank (\d+), ([^.]+)\./);
-  const community = ach.metrics.find((m) => /community/.test(m.label));
-  const founded = pick(ach.body, /Co-founded (\w+), an? [^.]*? at ([^.]+)\./);
-  const achievementCards: ProofCard[] = [
-    ...(jee
-      ? [
-          {
-            id: "jee",
-            kind: "achievement" as const,
-            top: jee.label.split(", ")[0],
-            figure: jee.value.split(" ")[0],
-            title: `${jee.value.split(" ").slice(1).join(" ")}, ${jee.label.split(", ").slice(1).join(", ")}`,
-            detail: nationally ? `Top ${nationally[0]} percent nationally.` : undefined,
-            links: [],
-          },
-        ]
-      : []),
-    ...(codechef
-      ? [{ id: "codechef", kind: "achievement" as const, top: "CodeChef", figure: codechef[0], title: "global rank", detail: codechef[1], links: [] }]
-      : []),
-    ...(community && founded
-      ? [
-          {
-            id: "community",
-            kind: "achievement" as const,
-            top: founded[0],
-            figure: community.value,
-            title: community.label,
-            detail: founded[1],
-            links: [],
-          },
-        ]
-      : []),
-  ];
-
-  const [featured, ...otherCredentials] = credentialCards;
-  const proofCards = [
-    ...(featured ? [featured] : []),
-    lifeCard,
-    ...otherCredentials,
-    ...(educationCard ? [educationCard] : []),
-    ...achievementCards,
-  ];
+    .map((p) => pick(p, /^(.+?), (\S+) (.+?)\. ([A-Z][a-z]+ \d{4} to [^.]+)\. ([^.]+)\.(?: Coursework: ([^.]+)\.)?/))
+    .filter((d): d is string[] => d !== null)
+    .map((d) => ({
+      school: d[0],
+      degree: `${d[1]} ${d[2]}`,
+      dates: d[3],
+      place: d[4],
+      coursework: d[5] ? d[5].split(/,\s*/) : [],
+      hue: signatures.organisations[d[0].split(",")[0] as keyof typeof signatures.organisations]?.hue ?? null,
+    }));
+  const ach = section("Achievements").body.replace(/\s+/g, " ");
+  const jee = pick(ach, /(JEE Mains \d{4}): ([\d.]+) percentile of ([\d.]+) million candidates, top ([\d.]+) percent nationally/);
+  const chef = pick(ach, /CodeChef global rank (\d+), ([^.]+)\. ([^.]+)\./);
+  const club = pick(ach, /Co-founded (\w+), an? (\d+)-plus member coding community at ([^.]+)\. Mentees reached ([^.]+)\./);
+  const fest = pick(
+    ach,
+    /([A-Z][\w ]+ Head), (Tarang Fest \d{4})\. Coordinated programming across (\d+) colleges and (\d+)-plus students, raised \$([\d,]+) from more than (\d+) sponsors/,
+  );
 
   // ---- Contact ----------------------------------------------------------
   const availability = section("Availability").body;
@@ -380,6 +338,36 @@ export default function Page() {
         verifiedOn={profile.lastVerified}
       />
 
+      <BuiltChapter
+        host={liveUrl ? new URL(liveUrl).hostname : ""}
+        liveUrl={liveUrl}
+        sourceUrl={sourceUrl}
+        repo={lifeRepo}
+        cache={{
+          reach: (cache.reach as Record<string, { ms: number; checkedOn: string }>)[liveUrl] ?? null,
+          commit: (cache.commits as Record<string, { at: string; stars: number; checkedOn: string }>)[lifeRepo] ?? null,
+        }}
+        life={{
+          title: life.title,
+          lead: summary(life),
+          full: lifeFull,
+          agents,
+          metrics: life.metrics.map(({ value, label }) => ({ value, label })),
+          stack: life.stack,
+          hue: signatures.organisations["Boston University"].hue,
+        }}
+        site={{
+          title: site.title,
+          evals: { passes: evals.totalPasses, runs: evals.totalRuns, measured: evals.measured },
+          audit: audit.total > 0 ? audit : null,
+          linksCheckedOn: today,
+          links: links.links.length,
+          defects: section("Defects this page shipped and then fixed").defects.length,
+          auditUrl: `${profile.repo}/blob/main/scripts/audit.ts`,
+          repo: siteRepo,
+        }}
+      />
+
       {paper && combined && alone && timed && graphAlone && against && (
         <ResearchChapter
           lead={summary(pubs)}
@@ -414,7 +402,21 @@ export default function Page() {
         />
       )}
 
-      <ProofPan title="What else checks out" cards={proofCards} verifiedOn={profile.lastVerified} />
+      <CredentialsChapter plates={plates} linksCheckedOn={today} />
+
+      <BeyondChapter
+        education={degrees}
+        jee={jee ? { exam: jee[0], percentile: jee[1], millions: jee[2], top: jee[3] } : null}
+        codechef={chef ? { rank: chef[0], when: chef[1], also: chef[2] } : null}
+        community={club ? { name: club[0], members: +club[1], where: club[2], outcomes: club[3].split(/,\s*(?:and\s+)?|\s+and\s+/) } : null}
+        fest={
+          fest
+            ? { role: fest[0], event: fest[1], colleges: +fest[2], students: +fest[3], raised: fest[4], sponsors: +fest[5] }
+            : null
+        }
+        checkedOn={profile.lastVerified}
+        hues={{ codechef: signatures.organisations.CodeChef.hue }}
+      />
 
       <ContactFinale
         register={[

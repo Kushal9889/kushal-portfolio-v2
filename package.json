@@ -7,7 +7,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "npm run build:index && npm run build:field && npm run build:icons && npm run build:guilloche && npm run build:graph && npm run build:topology && npm run prewarm && next build",
+    "build": "npm run build:index && npm run build:field && npm run build:icons && npm run build:guilloche && npm run build:graph && npm run build:topology && npm run build:cache && npm run prewarm && next build",
+    "build:cache": "tsx scripts/build-cache.ts",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",

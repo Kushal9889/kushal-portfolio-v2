@@ -1,3 +1,4 @@
+import { CHAPTERS } from "@/lib/chapters";
 import type { Metadata } from "next";
 import { Martian_Mono, Bricolage_Grotesque } from "next/font/google";
 import localFont from "next/font/local";
@@ -140,20 +141,16 @@ export const metadata: Metadata = {
 };
 
 /**
- * Person + WebSite in one @graph. Search engines and assistants read this to
- * resolve "who is Kushal Gaddamwar" as an entity rather than guessing from prose,
- * which matters because recruiters increasingly ask a model about a candidate
- * before opening the site.
+ * Person, WebSite and WebPage in one @graph, so machine readers resolve him as an
+ * entity and the page's chapters as addressable parts rather than prose.
  */
 const ORCID = "https://orcid.org/0009-0009-9318-1616";
 
 /**
  * Every technology named anywhere in the corpus, deduplicated.
  *
- * A screener matching this profile against a job description is looking for
- * these strings. Deriving them from the same `stack` lines the page renders
- * means the list cannot fall behind the site, which is exactly what the previous
- * hardcoded array had already done.
+ * Derived from the same `stack` lines the page renders, so the list cannot fall
+ * behind the site, which the previous hardcoded array had already done.
  */
 function knowsAbout() {
   const { sections } = loadContent();
@@ -211,13 +208,10 @@ function structuredData() {
           name: "Boston University, Questrom Computational Lab",
         },
         // Generated from the corpus, not typed here. This was a hardcoded list
-        // of six terms while the sections carried twenty, so the machine-readable
-        // copy of him was a stale subset of the human-readable one. Roughly 90%
-        // of employers now screen with an AI tool before a person opens the page,
-        // which makes this block the version most likely to be read first.
+        // of six terms while the sections carried twenty.
         knowsAbout: knowsAbout(),
-        // Credentials with their verification URL attached, so a screener can
-        // follow the claim instead of taking it.
+        // Credentials with their verification URL attached, so the claim can be
+        // followed rather than taken.
         hasCredential: loadCertifications()
           .filter((c) => c.url)
           .map((c) => ({
@@ -230,6 +224,18 @@ function structuredData() {
         subjectOf: publications(),
       },
       ...publications(),
+      {
+        "@type": "WebPage",
+        "@id": `${profile.site}/#page`,
+        url: profile.site,
+        about: { "@id": `${profile.site}/#person` },
+        hasPart: CHAPTERS.map((c) => ({
+          "@type": "WebPageElement",
+          "@id": `${profile.site}/#${c.id}`,
+          name: c.name,
+          url: `${profile.site}/#${c.id}`,
+        })),
+      },
       {
         "@type": "WebSite",
         "@id": `${profile.site}/#website`,
@@ -261,7 +267,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               // Restores a chosen theme before first paint, so a reader who
               // picked dark never sees the page flash light on the way in.
               // Read from storage only: the ADR keeps light unconditional and
-              // ignores the system preference deliberately, so that a recruiter
+              // ignores the system preference deliberately, so that every reader
               // sees the design that was measured rather than a variant of it.
               // The dark scheme has been in the stylesheet and unreachable since
               // it was written, because nothing ever set this attribute.

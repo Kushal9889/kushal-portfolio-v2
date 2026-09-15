@@ -1,0 +1,330 @@
+/*
+ * Beyond: no boxes (plan D.6 "none"). The field is the surface; each record is
+ * a figure beside the true shape of that figure, alternating sides.
+ */
+
+.beyond {
+  position: relative;
+  min-height: 100vh;
+  padding: 120px clamp(24px, 5vw, 88px) 120px;
+}
+
+.inner {
+  display: grid;
+  gap: 112px;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.head {
+  display: grid;
+  gap: 10px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.machine {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+.machine span {
+  color: var(--ink);
+}
+
+.record {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: center;
+  gap: 24px 48px;
+}
+
+.record > * {
+  grid-column: 1 / -1;
+}
+
+.record[data-side="art-right"] .copy {
+  grid-column: 1 / span 5;
+}
+
+.record[data-side="art-right"] svg {
+  grid-column: 6 / -1;
+}
+
+.record[data-side="art-left"] svg {
+  grid-column: 1 / span 6;
+  grid-row: 1;
+}
+
+.record[data-side="art-left"] .copy {
+  grid-column: 8 / -1;
+  grid-row: 1;
+}
+
+.copy {
+  display: grid;
+  gap: 10px;
+}
+
+.recordTitle {
+  margin: 0;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.figure {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 0;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-size: clamp(5rem, 12vw, 10rem);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.unit {
+  font-family: var(--font-spine), sans-serif;
+  font-size: 1.125rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--ink-soft);
+}
+
+/* The "+" of 70-plus as an open ring: more than counted, not a number. */
+.plus {
+  align-self: center;
+  width: 0.22em;
+  height: 0.22em;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+}
+
+.caption {
+  margin: 0;
+  font-size: 1.0625rem;
+  color: var(--ink);
+}
+
+.also {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+}
+
+
+.legend,
+.source,
+.band {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--ink-soft);
+}
+
+.band {
+  grid-column: 6 / -1;
+  grid-row: 1;
+  align-self: end;
+  margin-bottom: -12px;
+}
+
+.record[data-side="art-right"] .grid {
+  grid-row: 2;
+}
+
+.record[data-side="art-right"]:has(.band) .copy {
+  grid-row: 1 / span 2;
+}
+
+.degrees {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 48px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.degrees > li {
+  display: grid;
+  gap: 6px;
+  padding-top: 14px;
+  box-shadow: inset 0 1px 0 var(--identity);
+}
+
+.degree {
+  margin: 0;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-size: clamp(1.75rem, 2.6vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.school {
+  margin: 0;
+  font-size: 1.0625rem;
+}
+
+.when {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips li {
+  padding: 5px 9px;
+  border: 1px solid var(--hair-strong);
+  border-radius: 2px;
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+.grid,
+.ladder,
+.net,
+.hub {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.ladder {
+  max-height: 360px;
+}
+
+.hub {
+  max-width: 420px;
+  justify-self: center;
+}
+
+.point {
+  fill: var(--hair-strong);
+}
+
+.lit {
+  fill: var(--signal);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.ring {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.rail {
+  stroke: var(--identity);
+  stroke-width: 1;
+}
+
+.tick {
+  stroke: var(--hair-strong);
+  stroke-width: 1;
+}
+
+.rung {
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.link {
+  fill: none;
+  stroke: var(--hair-strong);
+  stroke-width: 0.75;
+}
+
+.dot {
+  fill: var(--ink);
+}
+
+.open {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.label {
+  fill: var(--ink-soft);
+  font: 400 11px var(--font-mono);
+}
+
+.student {
+  fill: var(--ink-soft);
+}
+
+.college {
+  fill: var(--void);
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+/* One bar from true zero to the whole amount, value beside it. */
+.bar {
+  width: 100%;
+  max-width: 420px;
+  height: 2px;
+  margin: 4px 0;
+  background: var(--hair);
+}
+
+.bar span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--ink);
+}
+
+@media (max-width: 767px) {
+  .beyond {
+    padding: 96px 16px 64px;
+  }
+
+  .inner {
+    gap: 72px;
+  }
+
+  .record[data-side] .copy,
+  .record[data-side] svg,
+  .band {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+
+  .degrees {
+    grid-template-columns: 1fr;
+  }
+
+  .grid,
+  .ladder,
+  .net,
+  .hub {
+    max-height: 280px;
+  }
+}
