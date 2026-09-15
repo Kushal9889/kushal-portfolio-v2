@@ -280,12 +280,21 @@ export default function Page() {
         places={places ? { value: places.value, label: places.label, href: places.source ?? issue?.url ?? "" } : null}
         pr={merged ? { label: merged.label, url: merged.url, state: merged.state } : null}
         issue={issue ? { label: issue.label, url: issue.url } : null}
-        credit={credited ? `${credited.value} ${credited.label}.` : ""}
+        credit={pick(osText, /The pull request body reads: (Credit to [^.]+\.)/)?.[0] ?? (credited ? `${credited.value} ${credited.label}.` : "")}
         timeline={timeline}
         precedent={precedent}
         invariant={invariant}
         patch={patch}
         verifiedOn={profile.lastVerified}
+        reporter={pick(osText, /Credit to @(\w+)/)?.[0] ?? ""}
+        offer={(() => {
+          const o = pick(osText, /He offered in the issue to ([^.]+)\./);
+          return o ? `Offered to ${o[0]}.` : "";
+        })()}
+        cached={{
+          issue: issue ? ((cache.states as Record<string, { state: string; checkedOn: string }>)[`${issue.label}`] ?? null) : null,
+          pr: merged ? ((cache.states as Record<string, { state: string; checkedOn: string }>)[`${merged.label}`] ?? null) : null,
+        }}
       />
 
       <MeasuredChapter
