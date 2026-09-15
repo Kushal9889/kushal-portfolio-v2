@@ -18,12 +18,13 @@
 
 .figure {
   display: inline-block;
-  font-family: var(--font-macro);
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-stretch: 90%;
   font-size: clamp(9rem, 22vw, 20rem);
-  font-weight: 900;
+  font-weight: 820;
   font-variant-numeric: tabular-nums;
   line-height: 0.78;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
   color: var(--ink);
   text-decoration: none;
 }
@@ -37,8 +38,10 @@
   margin: 20px 0 0;
   max-width: 20ch;
   text-wrap: balance;
-  font-size: clamp(1.5rem, 2.2vw, 2.25rem);
-  font-weight: 600;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-size: clamp(1.5rem, 2.2vw, 2.4rem);
+  font-weight: 760;
+  font-stretch: 82%;
   line-height: 1.1;
   letter-spacing: -0.02em;
 }

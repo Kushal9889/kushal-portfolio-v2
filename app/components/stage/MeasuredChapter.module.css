@@ -27,7 +27,8 @@
 
 .title {
   margin: 0;
-  font-family: var(--font-readout);
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-stretch: 118%;
   font-size: clamp(2.75rem, 4.8vw, 4.75rem);
   font-weight: 700;
   line-height: 0.86;
@@ -163,8 +164,9 @@
 .big,
 .mid {
   margin: 0;
-  font-family: var(--font-readout);
-  font-weight: 700;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-stretch: 90%;
+  font-weight: 820;
   font-variant-numeric: tabular-nums;
   line-height: 0.85;
   letter-spacing: -0.02em;

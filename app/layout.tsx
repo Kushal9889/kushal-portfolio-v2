@@ -47,11 +47,9 @@ const mono = Martian_Mono({
  * first screen renders are preloaded; the rest arrive with their chapters.
  *
  *   spine     Switzer              interface, labels, body
- *   macro     Basement Grotesque   the two poster lines: hero and contact
- *   plate     Cabinet Grotesk      work nameplates
- *   readout   Nippo                measured figures
+ *   signature Mona Sans            the name and the contact title
+ *   plate     Hubot Sans           chapter titles, settled figures
  *   paper     Sentient             the research chapter, which is a paper
- *   code      Commit Mono          source code in the bug chapter
  */
 const spine = localFont({
   src: [
@@ -64,32 +62,8 @@ const spine = localFont({
   display: "swap",
 });
 
-const macro = localFont({
-  src: "./fonts/BasementGrotesque-900.woff2",
-  weight: "900",
-  variable: "--font-macro",
-  display: "swap",
-});
 
-const plate = localFont({
-  src: [
-    { path: "./fonts/CabinetGrotesk-700.woff2", weight: "700" },
-    { path: "./fonts/CabinetGrotesk-800.woff2", weight: "800" },
-  ],
-  variable: "--font-plate",
-  display: "swap",
-  preload: false,
-});
 
-const readout = localFont({
-  src: [
-    { path: "./fonts/Nippo-500.woff2", weight: "500" },
-    { path: "./fonts/Nippo-700.woff2", weight: "700" },
-  ],
-  variable: "--font-readout",
-  display: "swap",
-  preload: false,
-});
 
 const paper = localFont({
   src: [
@@ -102,14 +76,30 @@ const paper = localFont({
   preload: false,
 });
 
-const code = localFont({
+
+/*
+ * The signature face and the chapter plate face, both variable (plan 3.2, D.3).
+ * Mona Sans carries the name and the contact title; Hubot Sans, its mechanical
+ * sibling, carries chapter titles and settled historical figures. Both expose
+ * wght 200 to 900 and wdth 75 to 125 and nothing else (no ital or opsz axis), so
+ * the D.3 slant coordinate is the Mona italic file, never a synthesised oblique.
+ */
+const signature = localFont({
   src: [
-    { path: "./fonts/CommitMono-400.woff2", weight: "400" },
-    { path: "./fonts/CommitMono-700.woff2", weight: "700" },
+    { path: "./fonts/MonaSans-latin-var.woff2", weight: "200 900", style: "normal" },
+    { path: "./fonts/MonaSans-latin-var-italic.woff2", weight: "200 900", style: "italic" },
   ],
-  variable: "--font-code",
+  variable: "--font-signature",
   display: "swap",
-  preload: false,
+  declarations: [{ prop: "font-stretch", value: "75% 125%" }],
+});
+
+const plate = localFont({
+  src: "./fonts/HubotSans-latin-var.woff2",
+  weight: "200 900",
+  variable: "--font-plate",
+  display: "swap",
+  declarations: [{ prop: "font-stretch", value: "75% 125%" }],
 });
 
 const { profile } = loadContent();
@@ -251,7 +241,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={[display, mono, spine, macro, plate, readout, paper, code].map((f) => f.variable).join(" ")}
+      className={[display, mono, spine, signature, plate, paper].map((f) => f.variable).join(" ")}
     >
       <head>
         {/* The condensed view was a keystroke nobody finds. As a URL it is a

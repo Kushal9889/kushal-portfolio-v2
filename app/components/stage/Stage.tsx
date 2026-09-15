@@ -9,6 +9,7 @@ import { StageContext, type StageApi } from "./StageContext";
 import Commands, { type CommandLinks, type CommandsHandle } from "./Commands";
 import { directField, type Director } from "./director";
 import { startSensors, subscribe, wake } from "@/lib/sensorBus";
+import Glyph from "./Glyph";
 import { markFrameReady, parseFrame, waitFor, watchRefresh } from "./frame";
 import "../../stage.css";
 import styles from "./Stage.module.css";
@@ -318,6 +319,18 @@ export default function Stage({
     return cleanup;
   });
 
+  // Ghost garments fill from the side the pointer entered.
+  useEffect(() => {
+    const onOver = (e: PointerEvent) => {
+      const el = (e.target as Element | null)?.closest?.<HTMLElement>('[data-garment="ghost"]');
+      if (!el || el.contains(e.relatedTarget as Node | null)) return;
+      const box = el.getBoundingClientRect();
+      el.dataset.from = e.clientX > box.left + box.width / 2 ? "right" : "left";
+    };
+    document.addEventListener("pointerover", onOver);
+    return () => document.removeEventListener("pointerover", onOver);
+  }, []);
+
   // Every continuous input reaches the field through the sensor bus, on its own
   // frame, never through React state: scroll speed stretches the particles,
   // idleness lets the field wander, and the pointer (or device tilt) moves the
@@ -466,12 +479,14 @@ export default function Stage({
               onClick={openCommands}
               aria-keyshortcuts="Meta+K Control+K"
             >
+              <Glyph name="Command:regular" size={16} />
               Commands
               <kbd className={styles.kbd} aria-hidden="true">
                 ⌘K
               </kbd>
             </button>
             <button type="button" className={styles.barButton} onClick={() => openAsk()} aria-keyshortcuts="/">
+              <Glyph name="MagnifyingGlass:regular" size={16} />
               Ask the agent
               <kbd className={styles.kbd} aria-hidden="true">
                 /

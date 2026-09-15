@@ -5,6 +5,7 @@ import { useMotion } from "@/lib/motion";
 import { litPoints } from "@/lib/numbers";
 import { condense, print, settle, stamp } from "@/lib/verbs";
 import { useStage } from "./StageContext";
+import Glyph from "./Glyph";
 import styles from "./BeyondChapter.module.css";
 
 type Props = {
@@ -115,7 +116,10 @@ export default function BeyondChapter({ education, jee, codechef, community, fes
             <ol className={styles.degrees} data-lines>
               {education.map((d) => (
                 <li key={d.school} style={{ "--identity": d.hue ?? "var(--hair)" } as React.CSSProperties}>
-                  <p className={styles.degree}>{d.degree}</p>
+                  <p className={styles.degree}>
+                    <Glyph name={d.hue ? "Buildings:thin" : "Circuitry:thin"} size={18} />
+                    {d.degree}
+                  </p>
                   <p className={styles.school}>{d.school}</p>
                   <p className={styles.when}>
                     {d.dates}, {d.place}
@@ -194,7 +198,10 @@ export default function BeyondChapter({ education, jee, codechef, community, fes
               <rect x="80" y="68" width="8" height="8" className={styles.lit} />
             </svg>
             <div className={styles.copy}>
-              <h3 className={styles.recordTitle}>CodeChef</h3>
+              <h3 className={styles.recordTitle}>
+                <Glyph name="Ranking:thin" size={20} />
+                CodeChef
+              </h3>
               <p className={styles.figure}>
                 <span data-settle={codechef.rank}>{codechef.rank}</span>
                 <span className={styles.unit}>global rank</span>
@@ -209,7 +216,10 @@ export default function BeyondChapter({ education, jee, codechef, community, fes
         {community && net && (
           <div className={styles.record} data-record data-side="art-right">
             <div className={styles.copy}>
-              <h3 className={styles.recordTitle}>{community.name}</h3>
+              <h3 className={styles.recordTitle}>
+                <Glyph name="ShareNetwork:thin" size={20} />
+                {community.name}
+              </h3>
               <p className={styles.figure}>
                 <span data-settle={String(community.members)}>{community.members}</span>
                 <span className={styles.plus} aria-label="plus" />
@@ -277,6 +287,7 @@ export default function BeyondChapter({ education, jee, codechef, community, fes
             </svg>
             <div className={styles.copy}>
               <h3 className={styles.recordTitle}>
+                <Glyph name="FlagBanner:thin" size={20} />
                 {fest.role}, {fest.event}
               </h3>
               <p className={styles.figure}>

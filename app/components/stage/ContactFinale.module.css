@@ -52,9 +52,11 @@
 
 .title {
   margin: 0;
-  font-family: var(--font-macro);
+  font-family: var(--font-signature), var(--font-spine), sans-serif;
+  font-style: italic;
+  font-stretch: 104%;
   font-size: clamp(6rem, 13vw, 13rem);
-  font-weight: 900;
+  font-weight: 780;
   line-height: 0.84;
   letter-spacing: -0.02em;
   color: var(--ink);

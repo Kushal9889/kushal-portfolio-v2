@@ -5,6 +5,7 @@ import { useMotion } from "@/lib/motion";
 import { condense, corners, print, stamp } from "@/lib/verbs";
 import { segmentsFor } from "@/lib/numbers";
 import { IssuerDot, NvidiaMark } from "../Mark";
+import Glyph from "./Glyph";
 import { useStage } from "./StageContext";
 import styles from "./CredentialsChapter.module.css";
 
@@ -89,6 +90,13 @@ function ReceiptRow({ receipt, checker }: { receipt: Receipt; checker: string })
       <span className={styles.checker}>{checker}</span>
     </p>
   );
+}
+
+/** The verify control's garment (plan D.8): the issuer's own, except a program opens as a split list and a single IBM course verifies as an underline. */
+function garmentOf(p: Plate) {
+  if (!p.identity) return "ghost";
+  if (p.identity.garment === "split") return p.kind === "program" ? "split" : "underline";
+  return p.identity.garment;
 }
 
 function checkerOf(url: string) {
@@ -187,7 +195,7 @@ export default function CredentialsChapter({ plates, linksCheckedOn }: { plates:
           </p>
           <div className={styles.filters} role="group" aria-label="Show one kind of credential">
             {FILTERS.filter((f) => counts[f.key] > 0).map((f) => (
-              <button key={f.key} type="button" aria-pressed={filter === f.key} onClick={() => setFilter(f.key)}>
+              <button key={f.key} type="button" data-garment="keycap" aria-pressed={filter === f.key} onClick={() => setFilter(f.key)}>
                 {f.label}
                 <span>{counts[f.key]}</span>
               </button>
@@ -234,7 +242,7 @@ export default function CredentialsChapter({ plates, linksCheckedOn }: { plates:
                     </span>
                   </span>
                   <span className={styles.seal} data-kind={p.kind}>
-                    {p.kind === "exam" && <SealRing />}
+                    {p.kind === "exam" ? <SealRing /> : <Glyph name={p.kind === "program" ? "Certificate:fill" : "SealCheck:fill"} size={12} />}
                     {SEAL[p.kind]}
                   </span>
                 </header>
@@ -297,13 +305,16 @@ export default function CredentialsChapter({ plates, linksCheckedOn }: { plates:
                           target="_blank"
                           rel="noopener"
                           className={styles.verify}
-                          data-garment={p.identity?.garment}
+                          data-garment={garmentOf(p)}
+                          data-pressed={opened[p.id] || undefined}
                           onClick={(e) => verify(p, e.currentTarget)}
                         >
                           {opening === p.id ? `Opening ${checkerOf(p.verify.url)}` : p.verify.label}
+                          {garmentOf(p) === "underline" && <Glyph name="ArrowUpRight:regular" size={14} />}
                         </a>
                         {p.verify.code && (
-                          <button type="button" className={styles.copy} onClick={() => copy(p.id, p.verify!.code!)} aria-live="polite">
+                          <button type="button" className={styles.copy} data-garment="keycap" onClick={() => copy(p.id, p.verify!.code!)} aria-live="polite">
+                            <Glyph name="Copy:fill" size={14} />
                             {copied === p.id ? "copied" : "Copy ID"}
                           </button>
                         )}

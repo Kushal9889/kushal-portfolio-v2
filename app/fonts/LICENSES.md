@@ -1,17 +1,15 @@
 # Font licences
 
-Every face here is self-hosted, subset to Latin with fonttools (`pyftsubset`), and
+Every face here is self-hosted, subset to Latin (fonttools `pyftsubset`, or the Fontsource Latin subset for the two variable faces), and
 served as woff2. Subsetting and format conversion are permitted modifications under
 both licences below.
 
 | Face | Weights | Licence | Source |
 |---|---|---|---|
 | Switzer | 300, 400, 500, 600 | ITF Free Font License (Fontshare) | https://www.fontshare.com/fonts/switzer |
-| Cabinet Grotesk | 700, 800 | ITF Free Font License (Fontshare) | https://www.fontshare.com/fonts/cabinet-grotesk |
-| Nippo | 500, 700 | ITF Free Font License (Fontshare) | https://www.fontshare.com/fonts/nippo |
+| Mona Sans | variable 200 to 900, wdth 75 to 125, normal and italic | SIL Open Font License 1.1, text in `OFL-MonaSans.txt` | https://github.com/github/mona-sans, via @fontsource-variable/mona-sans 5.3.0 (Latin subset) |
+| Hubot Sans | variable 200 to 900, wdth 75 to 125 | SIL Open Font License 1.1, text in `OFL-HubotSans.txt` | https://github.com/github/hubot-sans, via @fontsource-variable/hubot-sans 5.3.0 (Latin subset) |
 | Sentient | 400, 500, 700 | ITF Free Font License (Fontshare) | https://www.fontshare.com/fonts/sentient |
-| Basement Grotesque | 900 (Black) | SIL Open Font License 1.1, text in `OFL-BasementGrotesque.txt` | https://github.com/basementstudio/basement-grotesque |
-| Commit Mono | 400, 700 | SIL Open Font License 1.1, text in `OFL-CommitMono.txt` | https://github.com/eigilnikolajsen/commit-mono |
 
 The ITF Free Font License terms are published at
 https://www.fontshare.com/licenses/itf-ffl. That page renders client-side, so its text

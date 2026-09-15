@@ -76,6 +76,13 @@
   gap: 10px;
 }
 
+.recordTitle,
+.degree {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .recordTitle {
   margin: 0;
   font-family: var(--font-plate), var(--font-spine), sans-serif;
@@ -91,7 +98,8 @@
   margin: 0;
   font-family: var(--font-plate), var(--font-spine), sans-serif;
   font-size: clamp(5rem, 12vw, 10rem);
-  font-weight: 800;
+  font-weight: 700;
+  font-stretch: 120%;
   line-height: 0.9;
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;

@@ -6,6 +6,7 @@ import { median, reach, readJson } from "@/lib/probe";
 import { relativeTime } from "@/lib/numbers";
 import { condense, print, pulse, settle } from "@/lib/verbs";
 import { GitHubMark } from "../Mark";
+import Glyph from "./Glyph";
 import { useStage } from "./StageContext";
 import styles from "./BuiltChapter.module.css";
 
@@ -156,7 +157,7 @@ export default function BuiltChapter({ host, liveUrl, sourceUrl, repo, cache, li
           <p ref={machineRef} className={styles.machine} aria-hidden="true">
             observe: <span>{host}</span>
           </p>
-          <button type="button" className={styles.prompt} onClick={runProbes} disabled={probing || !liveUrl}>
+          <button type="button" className={styles.prompt} data-garment="prompt" onClick={runProbes} disabled={probing || !liveUrl}>
             <span aria-hidden="true">$</span> probe again
           </button>
         </header>
@@ -171,6 +172,7 @@ export default function BuiltChapter({ host, liveUrl, sourceUrl, repo, cache, li
                 <i />
               </span>
               <span id="pane-reach" className={styles.paneTitle}>
+                <Glyph name="Pulse:duotone" size={14} />
                 {host}
               </span>
               <StatusWord status={probeStatus} />
@@ -226,6 +228,7 @@ export default function BuiltChapter({ host, liveUrl, sourceUrl, repo, cache, li
                 <i />
               </span>
               <span id="pane-arch" className={styles.paneTitle}>
+                <Glyph name="ChatsCircle:duotone" size={14} />
                 {life.title}, supervisor and {life.agents.length} agents
               </span>
               <StatusWord status="build" />
@@ -288,6 +291,7 @@ export default function BuiltChapter({ host, liveUrl, sourceUrl, repo, cache, li
                 <i />
               </span>
               <span id="pane-repo" className={styles.paneTitle}>
+                <Glyph name="GitCommit:duotone" size={14} />
                 <GitHubMark size={12} /> {repo}
               </span>
               <StatusWord status={commitStatus} />
@@ -331,6 +335,7 @@ export default function BuiltChapter({ host, liveUrl, sourceUrl, repo, cache, li
                 <i />
               </span>
               <span id="pane-site" className={styles.paneTitle}>
+                <Glyph name="Terminal:duotone" size={14} />
                 this page
               </span>
               <StatusWord status="build" />

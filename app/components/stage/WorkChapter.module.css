@@ -187,7 +187,8 @@
   margin: 0;
   font-family: var(--font-plate);
   font-size: clamp(2.5rem, 3.8vw, 3.75rem);
-  font-weight: 800;
+  font-weight: 820;
+  font-stretch: 90%;
   font-variant-numeric: tabular-nums;
   line-height: 0.85;
   letter-spacing: -0.03em;

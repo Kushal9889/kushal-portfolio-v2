@@ -57,10 +57,11 @@
 }
 
 .wordmark {
-  font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-family: var(--font-signature), var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 560;
+  font-stretch: 100%;
+  letter-spacing: 0;
   color: var(--ink);
   text-decoration: none;
 }
@@ -74,6 +75,7 @@
 .barButton {
   display: inline-flex;
   align-items: center;
+  gap: 8px;
   height: 40px;
   padding: 0 16px;
   border: 1px solid var(--hair);

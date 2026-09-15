@@ -141,10 +141,11 @@
 
 .lead {
   margin: 0;
-  max-width: 26ch;
-  font-family: var(--font-paper);
-  font-size: clamp(1.75rem, 2.6vw, 2.625rem);
+  max-width: 24ch;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-size: clamp(1.75rem, 2.8vw, 2.5rem);
   font-weight: 700;
+  font-stretch: 100%;
   line-height: 1.08;
   letter-spacing: -0.025em;
   text-wrap: balance;
