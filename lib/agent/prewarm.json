@@ -4,10 +4,10 @@
     "route": "answer",
     "timings": {
       "route": 2,
-      "retrieve": 319,
-      "answer": 2213
+      "retrieve": 340,
+      "answer": 2200
     },
-    "total": 2577,
+    "total": 2570,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "IMG Systems",
@@ -119,7 +119,7 @@
           "lexicalScore": 5.066,
           "lexicalRank": 28,
           "denseRank": 29,
-          "fused": 0.029379,
+          "fused": 0.029217,
           "selected": false
         },
         {
@@ -186,11 +186,11 @@
     "answer": "Measured: 91.4% combined transformer and GNN accuracy; 88.2% transformer alone; 13.5s detect and fix, against 25.4s for static analysis\nLinks: IEEE ICAICCIT 2024, first author (published) Deep Learning for Contextual Bug Detection and Automated Fixes https://doi.org/10.1109/ICAICCIT64383.2024.10912101; IGI Global 2024, co-author (published) Cyber-Physical Systems: Security and Optimization Strategies https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities\n**He published research on finding bugs automatically, then found one by hand in\na production SDK.** The IEEE paper is about contextual bug detection: a\ntransformer reads the code, a graph neural network reads the structure around it,\nand the combination reaches 91.4% accuracy where the transformer alone reaches\n88.2% and the graph network alone 85.7%. Detection and fix together run in 13.5\nseconds against 25.4 for static analysis.",
     "route": "answer",
     "timings": {
-      "route": 2,
-      "retrieve": 221,
-      "answer": 1817
+      "route": 1,
+      "retrieve": 219,
+      "answer": 1445
     },
-    "total": 2051,
+    "total": 1671,
     "sources": [
       "Publications",
       "What he is good at",
@@ -362,11 +362,11 @@
     "answer": "**The agent answering questions here runs hybrid retrieval: BM25 over the corpus\nand dense cosine over precomputed embeddings, fused with reciprocal rank fusion\nat k=60.** Both retrievers rank every chunk, and a chunk's final score is the\nsum of `1 / (60 + rank)` from each. RRF is used rather than a weighted score\nblend because the two retrievers produce numbers on incomparable scales: BM25 is\nunbounded and corpus-dependent, cosine similarity is bounded to a narrow band\nnear the top, and any fixed weighting between them is a constant that has to be\nretuned every time the corpus changes. Ranks are comparable by construction.",
     "route": "answer",
     "timings": {
-      "route": 7,
-      "retrieve": 239,
-      "answer": 1278
+      "route": 0,
+      "retrieve": 133,
+      "answer": 1245
     },
-    "total": 1558,
+    "total": 1384,
     "sources": [
       "How retrieval on this page works",
       "What he is good at"

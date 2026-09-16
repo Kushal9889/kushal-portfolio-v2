@@ -215,7 +215,7 @@ export default function MeasuredChapter({ measured, evals, model, graph, defects
       ref={sectionRef}
       id="measured"
       className={styles.measured}
-      data-chapter="Measured"
+      data-chapter="Measured" data-node="answer"
       data-ground="void"
     >
       <div className={styles.inner}>

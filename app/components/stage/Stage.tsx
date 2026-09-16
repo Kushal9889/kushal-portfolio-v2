@@ -8,7 +8,7 @@ import type { FieldInfo } from "./CorpusCloud";
 import { StageContext, type StageApi } from "./StageContext";
 import Commands, { type CommandLinks, type CommandsHandle } from "./Commands";
 import { directField, type Director } from "./director";
-import { startSensors, subscribe, wake } from "@/lib/sensorBus";
+import { enableTilt, startSensors, subscribe, tiltAvailable, wake } from "@/lib/sensorBus";
 import Glyph from "./Glyph";
 import { setSound, soundOn } from "@/lib/audio";
 import { markFrameReady, parseFrame, waitFor, watchRefresh } from "./frame";
@@ -24,7 +24,14 @@ const ASK_EVENT = "corpus:ask";
 const TOKENS_PER_WORD = 1.33;
 
 type Openable = { key: string; label: string; url: string; about: string };
-type Chapter = { id: string; label: string; ground: string };
+type Chapter = { id: string; label: string; ground: string; node: string; words: number };
+
+/**
+ * The graph node each chapter is read under, in the order the compiled graph
+ * runs. `deflect` carries no chapter, because the page never takes that path;
+ * it stays on the rail as a hairline so the graph is the real one.
+ */
+const RAIL_NODES = ["start", "route", "retrieve", "answer", "act", "end"] as const;
 
 function onIdle(fn: () => void, timeout: number) {
   if (typeof window.requestIdleCallback === "function") {
@@ -89,8 +96,24 @@ export default function Stage({
   // Sound is off on every first visit; a previous visit's choice is read once,
   // after mount, so the server and the client render the same bar.
   const [sound, setSoundState] = useState(false);
+  // On a touch device the field and the foil can be driven by tilt, which iOS
+  // only grants from inside a press. Offered once, never asked again.
+  const [tiltOffer, setTiltOffer] = useState(false);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [active, setActive] = useState(0);
+  const railStatusRef = useRef<HTMLParagraphElement>(null);
+  // Which graph nodes the reader has passed through, and the one they are in.
+  const currentNode = chapters[active]?.node ?? "start";
+  const reachedNodes = useMemo(() => {
+    const seen = new Set<string>(["start", "route"]);
+    chapters.slice(0, active + 1).forEach((c) => seen.add(c.node));
+    if (active >= chapters.length - 1) seen.add("end");
+    return seen;
+  }, [chapters, active]);
+  const totalTokens = useMemo(
+    () => Math.round((chapters.reduce((sum, c) => sum + c.words, 0) * TOKENS_PER_WORD) / 10) * 10,
+    [chapters],
+  );
   // -1 until an observer has reported. Rendered as 0 on the server, the bar
   // shipped its clear-over-the-hero state into the HTML, so a page with no
   // script kept a transparent bar and let chapters scroll through the wordmark.
@@ -98,6 +121,7 @@ export default function Stage({
 
   useEffect(() => {
     if (soundOn()) setSoundState(true);
+    if (tiltAvailable()) setTiltOffer(true);
   }, []);
 
   // The renderer arrives after first paint, never in front of the headline.
@@ -131,7 +155,17 @@ export default function Stage({
   useEffect(() => {
     const nodes = Array.from(document.querySelectorAll<HTMLElement>("[data-chapter]"));
     const read = () =>
-      setChapters(nodes.map((n) => ({ id: n.id, label: n.dataset.chapter ?? n.id, ground: n.dataset.ground ?? "void" })));
+      setChapters(
+        nodes.map((n) => ({
+          id: n.id,
+          label: n.dataset.chapter ?? n.id,
+          ground: n.dataset.ground ?? "void",
+          node: n.dataset.node ?? "retrieve",
+          // The segment's height is the chapter's share of the page's words, so
+          // the rail is a reading of the corpus rather than a row of equal pips.
+          words: n.innerText.split(/\s+/).filter(Boolean).length,
+        })),
+      );
     read();
 
     // Two readings, taken at the two heights the chrome actually sits at. A
@@ -309,6 +343,28 @@ export default function Stage({
       if (tokens === shown) return;
       shown = tokens;
       count.textContent = tokens.toLocaleString("en-US");
+      const status = railStatusRef.current;
+      const read = status?.querySelector("span");
+      if (!status || !read) return;
+      const all = spans.reduce((sum, s2) => sum + s2.words, 0) * TOKENS_PER_WORD;
+      // "Context full" replaces the count once every chapter has been read, and
+      // is stamped once rather than on every frame that stays at the top.
+      // The last chapter's foot is past the reading line before the page can
+      // scroll further, so the count stops a little short of the total; 98% is
+      // the whole corpus for the purpose of this readout.
+      if (all > 0 && tokens >= Math.round(all / 10) * 10 * 0.98) {
+        if (status.dataset.full !== "yes") {
+          status.dataset.full = "yes";
+          status.textContent = "Context full";
+        }
+        return;
+      }
+      if (status.dataset.full === "yes") {
+        status.dataset.full = "no";
+        status.innerHTML = `<span>${tokens.toLocaleString("en-US")}</span> of ${(Math.round(all / 10) * 10).toLocaleString("en-US")} tokens`;
+        return;
+      }
+      read.textContent = tokens.toLocaleString("en-US");
     };
 
     measure();
@@ -485,6 +541,21 @@ export default function Stage({
             <p ref={meterRef} className={styles.meter}>
               ≈ <span>0</span> tokens read
             </p>
+            {tiltOffer && (
+              <button
+                type="button"
+                className={styles.soundToggle}
+                data-garment="keycap"
+                aria-label="Let tilt move the field"
+                onClick={async () => {
+                  const granted = await enableTilt();
+                  setTiltOffer(!granted);
+                }}
+              >
+                <Glyph name="DeviceMobile:regular" size={16} />
+                <span aria-hidden="true">tilt</span>
+              </button>
+            )}
             {/* The first press creates and resumes the audio context inside the
                 press itself, and plays nothing; from then on each verb sounds. */}
             <button
@@ -536,17 +607,45 @@ export default function Stage({
         </header>
 
         {chapters.length > 1 && (
-          <nav className={styles.ticks} data-bar={tickGround} aria-label="Chapters">
-            {chapters.map((c, i) => (
-              <a
-                key={c.id}
-                href={`#${c.id}`}
-                className={styles.tick}
-                aria-current={i === active ? "true" : undefined}
-              >
-                <span className={styles.tickLabel}>{c.label}</span>
-              </a>
-            ))}
+          <nav className={styles.ticks} data-bar={tickGround} aria-label="Chapters, as the agent graph">
+            {/* The graph the answer actually runs through, drawn from the
+                compiled topology: each chapter hangs under the node that reads
+                it. `deflect` has no chapter and stays hairline. */}
+            <svg className={styles.railGraph} viewBox="0 0 16 100" preserveAspectRatio="none" aria-hidden="true">
+              <line x1="8" y1="2" x2="8" y2="98" />
+              <line className={styles.railBranch} x1="8" y1="34" x2="15" y2="46" />
+              {RAIL_NODES.map((n, i) => (
+                <rect
+                  key={n}
+                  x="5"
+                  y={2 + (i * 96) / (RAIL_NODES.length - 1) - (i === RAIL_NODES.length - 1 ? 6 : 3)}
+                  width="6"
+                  height="6"
+                  data-on={reachedNodes.has(n) || undefined}
+                  data-current={currentNode === n || undefined}
+                />
+              ))}
+            </svg>
+            <div className={styles.railBars}>
+              {chapters.map((c, i) => (
+                <a
+                  key={c.id}
+                  href={`#${c.id}`}
+                  className={styles.tick}
+                  style={{ "--weight": Math.max(c.words, 60) } as React.CSSProperties}
+                  data-read={i < active ? "true" : undefined}
+                  aria-current={i === active ? "true" : undefined}
+                >
+                  <span className={styles.tickLabel}>
+                    {c.label}
+                    <i>≈ {Math.round((c.words * TOKENS_PER_WORD) / 10) * 10} tokens</i>
+                  </span>
+                </a>
+              ))}
+            </div>
+            <p ref={railStatusRef} className={styles.railStatus}>
+              <span>0</span> of {totalTokens.toLocaleString("en-US")} tokens
+            </p>
           </nav>
         )}
 

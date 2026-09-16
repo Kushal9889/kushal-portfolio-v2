@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { reducedMotion } from "./verbs";
 
 /**
  * Motion loads after the page has painted, never before it.
@@ -112,7 +113,6 @@ function motionKit() {
   return (pending ??= load());
 }
 
-const REDUCED = "(prefers-reduced-motion: reduce)";
 
 function idle(fn: () => void) {
   if (typeof window.requestIdleCallback === "function") {
@@ -146,7 +146,10 @@ export function useMotion<T extends HTMLElement = HTMLDivElement>(
 
   useEffect(() => {
     const root = ref.current;
-    if (!root || window.matchMedia(REDUCED).matches) return;
+    // The page's own toggle wins over the OS setting in both directions, so a
+    // reader who asks for motion here gets the bundle even when their system
+    // asks for less of it.
+    if (!root || reducedMotion()) return;
 
     let live = true;
     let ctx: { revert: () => void } | undefined;

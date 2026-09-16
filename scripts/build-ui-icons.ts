@@ -57,6 +57,7 @@ const INVENTORY: Record<string, Weight[]> = {
   FilePdf: ["bold"],
   AddressBook: ["bold"],
   Command: ["regular"],
+  DeviceMobile: ["regular"],
   SpeakerHigh: ["regular"],
   SpeakerSlash: ["regular"],
   Waveform: ["regular"],

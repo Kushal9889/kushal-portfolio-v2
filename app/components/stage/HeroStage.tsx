@@ -491,7 +491,7 @@ export default function HeroStage({
         <span>{LANDING}</span>
       </p>
 
-      <section ref={sectionRef} id="top" className={styles.hero} data-chapter="The agent" data-ground="void">
+      <section ref={sectionRef} id="top" className={styles.hero} data-chapter="The agent" data-node="route" data-ground="void">
         <div className={styles.heroInner}>
           <div className={styles.identity}>
             <h1 ref={headlineRef} className={styles.headline}>

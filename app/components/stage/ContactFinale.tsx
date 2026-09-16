@@ -204,7 +204,7 @@ export default function ContactFinale({
   };
 
   return (
-    <section ref={sectionRef} id="contact" className={styles.finale} data-chapter="Contact" data-ground="voltage">
+    <section ref={sectionRef} id="contact" className={styles.finale} data-chapter="Contact" data-node="act" data-ground="voltage">
       <div ref={floodRef} className={styles.flood} aria-hidden="true" />
       <div ref={innerRef} className={styles.inner}>
         <div className={styles.side}>

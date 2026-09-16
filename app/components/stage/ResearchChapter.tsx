@@ -152,7 +152,7 @@ export default function ResearchChapter({
   };
 
   return (
-    <section ref={sectionRef} id="research" className={styles.research} data-chapter="Research" data-ground="void">
+    <section ref={sectionRef} id="research" className={styles.research} data-chapter="Research" data-node="retrieve" data-ground="void">
       <div ref={innerRef} className={styles.inner}>
         <div className={styles.stand}>
           <article ref={paperRef} className={styles.paper} data-surface="sheet">
