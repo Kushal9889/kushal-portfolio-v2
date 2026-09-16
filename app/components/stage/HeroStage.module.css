@@ -672,3 +672,34 @@
   vertical-align: 1px;
   background: var(--voltage);
 }
+
+/* At phone width the hero is one column: the headline, the role plate, then the
+   agent. Nothing is scaled down to fit; the console simply follows the text. */
+@media (max-width: 767px) {
+  .heroInner {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding-inline: 16px;
+  }
+
+  .identity,
+  .console,
+  .sources,
+  .actions {
+    min-width: 0;
+  }
+
+  .sources {
+    min-height: 0;
+  }
+
+  .sources .chip {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .words,
+  .wires {
+    display: none;
+  }
+}

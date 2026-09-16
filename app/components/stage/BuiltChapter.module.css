@@ -466,8 +466,40 @@
   }
 
   .panes,
-  .arch {
+  .arch,
+  .pane,
+  .bar {
     grid-template-columns: 1fr;
+  }
+
+  /* A machine line and a status word on one row need to be allowed to wrap. */
+  .bar {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .bar > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  /* A grid child's default min-width is its content, so one long machine line
+     pushed each pane past the screen. */
+  .panes > *,
+  .arch > *,
+  .pane {
+    min-width: 0;
+  }
+
+  .pane svg,
+  .arch svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .pane pre,
+  .pane code {
+    overflow-x: auto;
   }
 }
 

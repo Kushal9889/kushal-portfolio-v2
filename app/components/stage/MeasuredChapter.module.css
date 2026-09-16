@@ -642,3 +642,35 @@
   outline: 2px solid var(--signal);
   outline-offset: 3px;
 }
+
+/* The bento becomes a single column in the reading order of section 9: eval,
+   latency, retrieval, graph, model, then the two disclosures. */
+@media (max-width: 767px) {
+  .measured {
+    padding: 96px 16px 64px;
+  }
+
+  .inner,
+  .grid,
+  .head {
+    grid-template-columns: 1fr;
+  }
+
+  .cell,
+  .card,
+  .panel,
+  .grid > * {
+    min-width: 0;
+  }
+
+  .graph,
+  .card svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .caseList,
+  .defectList {
+    overflow-x: auto;
+  }
+}

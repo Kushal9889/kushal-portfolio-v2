@@ -311,3 +311,46 @@
   color: var(--ink-soft);
   white-space: nowrap;
 }
+
+/* One column at phone width: the paper, then its bars, then the references. */
+@media (max-width: 767px) {
+  .research {
+    padding: 96px 16px 64px;
+  }
+
+  .inner,
+  .stand,
+  .paper,
+  .rows {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  /* The section already holds the page gutter; the inner one doubled it and
+     pushed its own column past the screen. */
+  .inner {
+    padding-inline: 0;
+  }
+
+  .copy,
+  .stand,
+  .plate,
+  .rows,
+  .refs,
+  .refs li {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .refs li {
+    overflow-wrap: anywhere;
+  }
+
+  .track,
+  .axis,
+  .stand,
+  .paper {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}

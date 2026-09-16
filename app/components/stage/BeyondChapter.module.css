@@ -318,6 +318,12 @@
     gap: 72px;
   }
 
+  /* The 12-column record grid collapses to one column here; left at 12 the
+     tracks measure zero and every child sizes to its own content instead. */
+  .record {
+    grid-template-columns: 1fr;
+  }
+
   .record[data-side] .copy,
   .record[data-side] svg,
   .band {
@@ -329,10 +335,25 @@
     grid-template-columns: 1fr;
   }
 
+  /* The data art is drawn to a viewBox, so it scales to the column rather than
+     keeping the width its grid track would give it. */
   .grid,
   .ladder,
   .net,
   .hub {
+    width: 100%;
+    max-width: 100%;
     max-height: 280px;
+    height: auto;
+  }
+
+  .record > *,
+  .record svg {
+    min-width: 0;
+  }
+
+  .record,
+  .record > * {
+    min-width: 0;
   }
 }

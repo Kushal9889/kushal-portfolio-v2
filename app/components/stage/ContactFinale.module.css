@@ -262,6 +262,28 @@
 }
 
 @media (max-width: 767px) {
+  .inner,
+  .rest,
+  .forward {
+    grid-template-columns: 1fr;
+  }
+
+  /* The register reads as label over value at this width; 7rem of term column
+     left four characters for the value. */
+  .register div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .rest,
+  .rest > * {
+    min-width: 0;
+  }
+
+  .forwardText {
+    overflow-x: auto;
+  }
+
   .draft {
     margin-bottom: 16px;
   }
