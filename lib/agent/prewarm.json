@@ -4,10 +4,10 @@
     "route": "answer",
     "timings": {
       "route": 2,
-      "retrieve": 372,
-      "answer": 1947
+      "retrieve": 366,
+      "answer": 1792
     },
-    "total": 2354,
+    "total": 2189,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "IMG Systems",
@@ -119,7 +119,7 @@
           "lexicalScore": 5.066,
           "lexicalRank": 28,
           "denseRank": 29,
-          "fused": 0.029217,
+          "fused": 0.029379,
           "selected": false
         },
         {
@@ -187,10 +187,10 @@
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 229,
-      "answer": 1381
+      "retrieve": 136,
+      "answer": 1928
     },
-    "total": 1619,
+    "total": 2071,
     "sources": [
       "Publications",
       "What he is good at",
@@ -295,7 +295,7 @@
           "lexicalScore": 5.066,
           "lexicalRank": 1,
           "denseRank": 4,
-          "fused": 0.032018,
+          "fused": 0.031778,
           "selected": true
         },
         {
@@ -363,10 +363,10 @@
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 234,
-      "answer": 2079
+      "retrieve": 218,
+      "answer": 1895
     },
-    "total": 2321,
+    "total": 2117,
     "sources": [
       "How retrieval on this page works",
       "What he is good at"

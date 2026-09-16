@@ -151,6 +151,13 @@
   text-wrap: balance;
 }
 
+ /*
+ * The paper's headline figure is filled with a matcap: a photograph of light on
+ * a mirror sphere, which is how chrome is shaded everywhere it is shaded well.
+ * The sample point moves with the pointer, so the reflection travels across the
+ * digits the way it would across a real surface. Where background-clip: text is
+ * unsupported the figure keeps its ink colour and nothing is lost.
+ */
 .figure {
   display: inline-block;
   margin: 22px 0 0;
@@ -160,6 +167,24 @@
   font-variant-numeric: tabular-nums;
   line-height: 0.8;
   letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+@supports (background-clip: text) {
+  .figure {
+    background-image: image-set(
+      url("/stage/matcap-chrome.avif") type("image/avif"),
+      url("/stage/matcap-chrome.png") type("image/png")
+    );
+    background-repeat: no-repeat;
+    background-size: 190% 190%;
+    background-position: calc(20% + var(--pointer-x, 0.5) * 60%) calc(20% + var(--pointer-y, 0.5) * 60%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    /* The glyph edge stays legible where the matcap goes dark. */
+    filter: drop-shadow(0 0 1px color-mix(in oklch, var(--ink) 55%, transparent));
+  }
 }
 
 .figureLabel {
