@@ -167,7 +167,7 @@ export default function MeasuredChapter({ measured, evals, model, graph, defects
     const hold = ScrollTrigger.create({
       trigger: section,
       start: "top top",
-      end: "+=100%",
+      end: "+=150%",
       pin: true,
       anticipatePin: 1,
       invalidateOnRefresh: true,

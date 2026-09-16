@@ -139,9 +139,8 @@ export default function Reach({
         </li>
       </ul>
 
-      {/* Most hires that start with a portfolio do not come from the person who
-          found it. They come from that person pasting something into a channel,
-          and what gets pasted is whatever is short enough to paste. */}
+      {/* Copies three lines and a link, short enough to paste into a message,
+          built by forwardBlurb() from the same facts the page renders. */}
       <button
         type="button"
         className={styles.forward}
@@ -161,9 +160,8 @@ export default function Reach({
           : "Copy three lines to forward to a colleague"}
       </button>
 
-      {/* An address in a page lives as long as the tab. This one goes into an
-          address book and is still there in six weeks, which is the timescale
-          a hiring process actually runs on. */}
+      {/* Serves a vCard with the same fields as the addresses above, so the
+          details survive the tab being closed. */}
       <p className={styles.plain}>
         <a
           href="/contact.vcf"

@@ -199,3 +199,74 @@
 .reach [class$="__forward"] {
   display: none;
 }
+
+/* ---- The draft ---------------------------------------------------------- */
+
+/*
+ * The email as an envelope: the header rows are the flap, closed by a shallow
+ * chevron along their bottom edge, and the body is the sheet inside. Its text
+ * is the exact string handed to the mail client.
+ */
+.draft {
+  position: relative;
+  max-width: 62ch;
+  margin: 0 0 22px;
+  padding: 0;
+  border: 1px solid var(--hair-strong);
+  border-radius: 2px;
+  background: var(--void-raised);
+  color: var(--ink-on-void);
+}
+
+.draftHead {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 14px 18px 18px;
+  background: var(--void);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), 50% 100%, 0 calc(100% - 10px));
+}
+
+.draftHead p {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  font: 400 0.75rem/1.5 var(--font-mono);
+  color: var(--ink-on-void);
+}
+
+.draftHead span {
+  min-width: 5ch;
+  color: var(--ink-on-void-soft);
+}
+
+.draftBody {
+  margin: 0;
+  padding: 14px 18px 16px;
+  font-size: 1rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  color: var(--ink-on-void-soft);
+}
+
+/* Printed only after a press: it reports what the browser did, not a delivery. */
+.draftEvent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 18px 12px;
+  border-top: 1px dashed var(--hair-strong);
+  font: 400 0.6875rem/1.4 var(--font-mono);
+  color: var(--ink-on-void);
+}
+
+@media (max-width: 767px) {
+  .draft {
+    margin-bottom: 16px;
+  }
+
+  .draftBody {
+    font-size: 0.9375rem;
+  }
+}

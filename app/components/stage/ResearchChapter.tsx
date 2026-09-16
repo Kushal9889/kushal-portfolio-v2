@@ -112,7 +112,7 @@ export default function ResearchChapter({
     const hold = ScrollTrigger.create({
       trigger: section,
       start: "top top",
-      end: "+=110%",
+      end: "+=150%",
       pin: true,
       scrub: framed ? true : 0.8,
       animation: sequence,

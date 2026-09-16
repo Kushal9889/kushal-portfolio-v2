@@ -3,6 +3,10 @@
 import { useRef, useState } from "react";
 import { useMotion } from "@/lib/motion";
 import Reach from "../Reach";
+import Glyph from "./Glyph";
+import { mailDraft } from "@/lib/reach";
+import { clock } from "@/lib/numbers";
+import { print } from "@/lib/verbs";
 import { useStage } from "./StageContext";
 import { impact, IMPACT_HIT } from "./impact";
 import { markFrameReady, parseFrame, scrollInstant, waitFor, watchRefresh } from "./frame";
@@ -34,6 +38,9 @@ export default function ContactFinale({
   /** The three-line forward blurb, shown as an artifact rather than only behind a copy button. */
   forwardText: string;
 }) {
+  const draft = mailDraft(reach.email, reach.site, reach.context);
+  const [handedAt, setHandedAt] = useState<Date | null>(null);
+  const draftBodyRef = useRef<HTMLParagraphElement>(null);
   const { cloud, flash } = useStage();
   const innerRef = useRef<HTMLDivElement>(null);
   const floodRef = useRef<HTMLDivElement>(null);
@@ -63,6 +70,12 @@ export default function ContactFinale({
       IMPACT_HIT,
     );
 
+    // The draft types itself inside the envelope when the chapter lands. It is
+    // built outside the arrival timeline and played on the landing edge, so a
+    // timeline parked at zero never leaves the draft blank.
+    const body = draftBodyRef.current;
+    const draftPrint = body ? print(gsap, body, { unit: "word" }) : null;
+
     // The one action the whole page is walking toward arrives last and arrives
     // hardest, out of the same depth every other figure on the page came from.
     const mail = rest.querySelector<HTMLElement>('a[href^="mailto:"]');
@@ -78,13 +91,22 @@ export default function ContactFinale({
 
     // Only the hold that is on screen may move the camera.
     let live = false;
+    /** Centre of the "Email him" control, in viewport pixels. */
+    let origin: { x: number; y: number } | null = null;
+    const measureOrigin = () => {
+      const box = mail?.getBoundingClientRect();
+      origin = box && box.width > 0 ? { x: box.left + box.width / 2, y: box.top + box.height / 2 } : null;
+    };
     let arrived = false;
     const apply = (p: number) => {
       const c = cloud.current && !cloud.current.stats.lost ? cloud.current : null;
       const gatherEnd = c ? GATHER : 0.04;
       if (c && live) c.setCollapse(CORE, Math.min(Math.max(p / gatherEnd, 0), 1));
 
-      const at = c && live ? c.project(CORE) : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      // The orange grows out of the one action this chapter leads to, not out
+      // of the middle of the screen: the origin is the centre of "Email him",
+      // measured once per refresh.
+      const at = origin ?? (c && live ? c.project(CORE) : { x: window.innerWidth / 2, y: window.innerHeight / 2 });
       const f = Math.min(Math.max((p - gatherEnd) / FLOOD, 0), 1);
       flood.style.transform = `translate3d(${Math.round(at.x - window.innerWidth / 2)}px, ${Math.round(at.y - window.innerHeight / 2)}px, 0) scale(${(f * f).toFixed(4)})`;
       const ground = f >= 0.98 ? "voltage" : "void";
@@ -93,8 +115,13 @@ export default function ContactFinale({
       const landAt = gatherEnd + FLOOD;
       if (p >= landAt && !arrived) {
         arrived = true;
-        if (framed) arrive.progress(1);
-        else arrive.restart();
+        if (framed) {
+          arrive.progress(1);
+          draftPrint?.progress(1);
+        } else {
+          arrive.restart();
+          draftPrint?.restart();
+        }
       } else if (p < landAt - 0.03 && arrived) {
         arrived = false;
         arrive.pause(0);
@@ -115,14 +142,18 @@ export default function ContactFinale({
       start: "top top",
       // Ends where the chapter has arrived. Holding a screen that has stopped
       // moving is scroll the reader pays for and gets nothing back from.
-      end: "+=90%",
+      end: "+=100%",
       pin: true,
       scrub: framed ? true : 0.8,
       animation: sequence,
       anticipatePin: 1,
       invalidateOnRefresh: true,
       onToggle: (self) => {
-        if (!refresh.refreshing()) live = self.isActive;
+        if (refresh.refreshing()) return;
+        live = self.isActive;
+        // Measured while the chapter is pinned, which is the only time the
+        // button is where the reader will see it.
+        if (self.isActive) measureOrigin();
       },
       onLeaveBack: () => {
         if (!refresh.refreshing()) cloud.current?.setCollapse(CORE, 0);
@@ -195,7 +226,33 @@ export default function ContactFinale({
               </div>
             ))}
           </dl>
-          <div className={styles.reach}>
+          {/* What the mail client receives, shown before the press. The same
+              mailDraft() call builds this text and the mailto URL below it, so
+              the reader sees exactly what they are about to send. The header
+              edge is the envelope flap. */}
+          <figure className={styles.draft} aria-label="Draft email">
+            <div className={styles.draftHead}>
+              <p>
+                <span>To</span>
+                {draft.to}
+              </p>
+              <p>
+                <span>Subject</span>
+                {draft.subject}
+              </p>
+            </div>
+            <p ref={draftBodyRef} className={styles.draftBody}>
+              {draft.body}
+            </p>
+            {handedAt && (
+              <p className={styles.draftEvent}>
+                <Glyph name="EnvelopeSimple:bold" size={12} />
+                handed to your mail client <time dateTime={handedAt.toISOString()}>{clock(handedAt)}</time>
+              </p>
+            )}
+          </figure>
+
+          <div className={styles.reach} onClickCapture={(e) => { if ((e.target as HTMLElement).closest('a[href^="mailto:"]')) setHandedAt(new Date()); }}>
             <Reach {...reach} />
           </div>
 
