@@ -145,7 +145,7 @@ export async function GET(request: Request) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 48, fontSize: 30 }}>
           <span style={{ maxWidth: 700, lineHeight: 1.3 }}>
             {question
-              ? `${evals.passed}/${evals.cases} eval assertions pass, answered live`
+              ? `${evals.passed} of ${evals.cases} eval cases pass on every run, answered live`
               : profile.proof}
           </span>
           <span style={{ color: "#7a7269", flexShrink: 0 }}>{profile.site.replace("https://", "")}</span>

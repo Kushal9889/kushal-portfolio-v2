@@ -156,7 +156,9 @@ export function forwardBlurb(
   return [
     `${profile.name} - ${profile.current}.`,
     profile.proof,
-    `His site runs a live agent over his own resume: ${evals.passed}/${evals.cases} eval assertions pass, ${evals.p50}ms median answer.`,
+    // `passed` counts cases green on every run, not assertions: calling them
+    // assertions overstated what the suite checks by a whole unit.
+    `His site runs a live agent over his own resume: ${evals.passed} of ${evals.cases} eval cases pass on every run, ${evals.p50}ms median answer.`,
     `${profile.site}?mode=condensed`,
   ].join("\n");
 }

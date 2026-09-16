@@ -3,11 +3,11 @@
     "answer": "Role: AI Engineer, Graduate Researcher. May 2026 to present. Boston, MA.\nStack: Azure OpenAI GPT-4o, Azure AI Search, LangGraph, FastAPI, React, Cosmos DB Gremlin, Cohere\nMeasured: 14 tools on one LangGraph agent; BM25 + vector hybrid retrieval, Cohere reranked; LLM-as-a-Judge hallucination and retrieval scoring\n**He built a document intelligence assistant on Azure for an enterprise consulting client, owned\nfrom ingestion through deployment:** a LangGraph agent exposing 14 tools for document question\nanswering, cross-document comparison and template-driven generation, grounded by hybrid BM25 and\nvector retrieval with Cohere re-ranking, guarded by PII and entity redaction, and scored for\nhallucination rate by LLM-as-a-Judge evaluations.",
     "route": "answer",
     "timings": {
-      "route": 1,
-      "retrieve": 276,
-      "answer": 2079
+      "route": 2,
+      "retrieve": 540,
+      "answer": 2204
     },
-    "total": 2372,
+    "total": 2787,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "IMG Systems",
@@ -187,10 +187,10 @@
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 236,
-      "answer": 1608
+      "retrieve": 243,
+      "answer": 1607
     },
-    "total": 1850,
+    "total": 1856,
     "sources": [
       "Publications",
       "What he is good at",
@@ -363,8 +363,8 @@
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 248,
-      "answer": 1729
+      "retrieve": 166,
+      "answer": 1809
     },
     "total": 1982,
     "sources": [

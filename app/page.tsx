@@ -377,6 +377,7 @@ export default function Page() {
           defects: section("Defects this page shipped and then fixed").defects.length,
           auditUrl: `${profile.repo}/blob/main/scripts/audit.ts`,
           repo: siteRepo,
+          lastCommit: (cache.commits as Record<string, { at: string; checkedOn: string }>)[siteRepo] ?? null,
         }}
       />
 

@@ -735,7 +735,8 @@ export default function Agent({
           <span className={styles.gesture} aria-hidden="true">
             trace
           </span>
-          <span>opens with every answer</span>
+          {/* It sits under every answer as a control; it does not open itself. */}
+          <span>under every answer</span>
         </li>
       </ul>
 

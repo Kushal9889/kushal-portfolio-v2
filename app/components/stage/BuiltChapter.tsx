@@ -35,6 +35,8 @@ type Props = {
     links: number;
     defects: number;
     auditUrl: string;
+    /** The portfolio repository's own last commit, from the build cache. */
+    lastCommit: { at: string; checkedOn: string } | null;
     repo: string;
   };
 };
@@ -366,6 +368,24 @@ export default function BuiltChapter({ host, liveUrl, sourceUrl, repo, cache, li
                   <dt>defects</dt>
                   <dd>{site.defects} shipped and guarded</dd>
                 </div>
+                {/* This page's own repository, so the pane names both: the one
+                    it is about and the one it is served from. */}
+                {site.lastCommit && (
+                  <div>
+                    <dt>last commit</dt>
+                    <dd>
+                      <time dateTime={site.lastCommit.at}>
+                        {new Date(site.lastCommit.at).toLocaleDateString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          timeZone: "UTC",
+                        })}
+                      </time>{" "}
+                      on {site.repo}, read {site.lastCommit.checkedOn}
+                    </dd>
+                  </div>
+                )}
               </dl>
             </div>
             <footer className={styles.status}>
