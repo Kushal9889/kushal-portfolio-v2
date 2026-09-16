@@ -5,6 +5,7 @@ import { useMotion } from "@/lib/motion";
 import { litPoints } from "@/lib/numbers";
 import { condense, print, settle, stamp } from "@/lib/verbs";
 import { useStage } from "./StageContext";
+import { reducedMotion } from "@/lib/verbs";
 import Glyph from "./Glyph";
 import styles from "./BeyondChapter.module.css";
 
@@ -53,7 +54,7 @@ function constellation(count: number) {
  * 1,200 points, the top 0.9 percent is 10 full points and an eleventh at 80%.
  */
 export default function BeyondChapter({ education, jee, codechef, community, fest, checkedOn, hues }: Props) {
-  const { retrieveInto } = useStage();
+  const { retrieveInto, cloud } = useStage();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const machineRef = useRef<HTMLParagraphElement>(null);
 
@@ -72,11 +73,48 @@ export default function BeyondChapter({ education, jee, codechef, community, fes
         if (machine) print(gsap, machine, { unit: "char" }).restart();
       },
     });
+    /**
+     * The field takes the shape of the data art while its record is read (F.5).
+     *
+     * The art is already drawn to scale in SVG; the particles are given the same
+     * points in world space, so what forms behind the record is the same reading
+     * rather than a decoration of it. Positions are unprojected from where the
+     * art actually sits on screen, which is why this is measured on enter rather
+     * than precomputed.
+     */
+    const morphInto = (art: SVGElement, on: boolean) => {
+      const c = cloud.current;
+      if (!c || c.stats.lost || reducedMotion()) return;
+      if (!on) {
+        gsap.to({ v: 1 }, { v: 0, duration: 0.45, ease: "power2.in", onUpdate() { c.setMorph(null, this.targets()[0].v); } });
+        return;
+      }
+      const dots = Array.from(art.querySelectorAll("rect, circle")).slice(0, 900);
+      if (dots.length === 0) return;
+      const points = new Float32Array(dots.length * 3);
+      dots.forEach((dot, i) => {
+        const b = dot.getBoundingClientRect();
+        const p = c.unproject(b.left + b.width / 2, b.top + b.height / 2, 220);
+        points[i * 3] = p[0];
+        points[i * 3 + 1] = p[1];
+        points[i * 3 + 2] = p[2];
+      });
+      c.setMorph(points, 0);
+      gsap.to({ v: 0 }, { v: 1, duration: 0.9, ease: "power2.out", onUpdate() { c.setMorph(null, this.targets()[0].v); } });
+    };
+
     for (const block of Array.from(section.querySelectorAll<HTMLElement>("[data-record]"))) {
       let done = false;
       ScrollTrigger.create({
         trigger: block,
         start: "top 75%",
+        // The field holds the shape while the record is the one being read, and
+        // lets it go on the way out in either direction.
+        onToggle: (self) => {
+          const art = block.querySelector<SVGElement>("[data-art]");
+          if (art) morphInto(art, self.isActive);
+        },
+        end: "bottom 25%",
         onEnter: () => {
           if (done) return;
           done = true;
