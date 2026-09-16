@@ -6,8 +6,11 @@ value below is read from `app/stage.css` and the stylesheets in
 `docs/design-paper-machine.md` as the record of the previous system. The
 complete record at `/classic` still renders under that previous system.
 
-Scope: desktop, designed and verified at 1440x900. The narrow layout has not
-been designed yet and is the next piece of work.
+Scope: verified at 1440x900 and at 390px. Nine chapters, in the order the graph
+runs them: the agent (`#top`), Open source (`#bug`), Measured (`#measured`),
+Work (`#work`), Built (`#built`), Research (`#research`), Credentials
+(`#credentials`, with `#proof` kept as an alias), Beyond (`#beyond`), Contact
+(`#contact`).
 
 ## 1. Visual Theme & Atmosphere
 
@@ -70,29 +73,38 @@ Measured contrast (WCAG, sRGB compositing):
 
 ## 3. Typography Rules
 
-Seven voices, one per kind of object, all self-hosted and subset to Latin
+Five voices plus one scoped exception, all self-hosted and subset to Latin
 (`app/fonts/`, licences in `app/fonts/LICENSES.md`). Each chapter declares its own
 scale; there is no shared type scale.
 
 | Voice | Face | Where |
 |---|---|---|
-| Spine | **Switzer** 300 to 600 | UI, body, labels, the Proof chapter |
-| Macro | **Basement Grotesque** 900 | Hero headline, "57", "Get in touch" |
-| Plate | **Cabinet Grotesk** 700 and 800 | "Work" and each role's nameplate |
-| Readout | **Nippo** 500 and 700 | Every figure in Measured |
+| Spine | **Switzer** 300 to 600 | UI, body, labels |
+| Signature | **Mona Sans** variable, normal and italic | The wordmark, the hero qualifier, the Contact title |
+| Plate | **Hubot Sans** variable (wght 200 to 900, wdth 75 to 125) | Every display figure and nameplate |
 | Paper | **Sentient** 400 to 700 | The Research chapter, the one place a serif is earned |
-| Code | **Commit Mono** 400 and 700 | The bug report's code and the merged patch |
-| Data | **Martian Mono** | Units, identifiers, counts, stamps, the reading meter |
+| Data | **Martian Mono** | Units, identifiers, counts, stamps, machine lines |
+| IBM Plex Mono | 400 and 500, **scoped** | Course names on the two IBM credential plates only |
 
-Bricolage Grotesque is retired from the stage and stays on `/classic`.
+Basement Grotesque, Cabinet Grotesk, Nippo and Commit Mono were retired in
+phase 4 and their files deleted. Hubot Sans carries every weight and width they
+covered, from one variable file.
+
+**Axis coordinates.** A display object names its coordinate rather than setting
+weight and width by hand: `signature` Mona 780/104 italic, `plate` 800/100,
+`plate-narrow` 760/82, `plate-wide` 700/118, `nameplate` 680/96,
+`nameplate-light` Mona 420/110, `monument` 820/90, `monument-wide` 700/120.
 
 - **Macro sizes.**
   - "Work" `clamp(5rem, 11vw, 11rem)` at 800 and "Get in touch" `clamp(6rem, 13vw, 13rem)` at 900.
   - "57" `clamp(9rem, 22vw, 20rem)` and "91.4%" `clamp(6rem, 12vw, 11rem)`.
   - Tracking never goes tighter than -0.04em. Leading is 0.78 to 0.86.
-- **Hero headline** `clamp(3.25rem, 5.6vw, 5.6rem)`, weight 900, -0.015em.
-  - Three lines at 1440 in a 7-column identity, then a light qualifier line at
+- **Hero headline** Hubot `clamp(2.75rem, 4.4vw, 4.6rem)`, weight 800, -0.02em.
+  - Two lines at 1440 in a 7-column identity, then an italic Mona qualifier at
     0.56em, weight 300.
+  - The role line under it is a plate: a 6px square in Boston University's
+    scarlet, the lab in full ink, a scarlet rule that draws in once, and one
+    sheen pass on arrival and on hover.
   - The role line carries the live readout of the answer on load.
 - **Body** 1rem to 1.125rem, leading 1.5 to 1.55, measure 38ch to 62ch.
 - **Data: Martian Mono** 0.8125rem to 0.9375rem, for code, identifiers, counts, stacks and the reading meter.
@@ -241,8 +253,70 @@ Bricolage Grotesque is retired from the stage and stays on `/classic`.
 - **Renderer.**
   - Raw WebGL2, one POINTS draw, render on demand, device pixel ratio capped at 1.5.
   - Curl dispersal, depth fog and field brightness are uniforms in the one shader.
-  - Zero draws at rest.
+  - The field is never a still picture: while it drifts it draws on every frame
+    the display offers. At rest it wanders at full amplitude, while the reader
+    scrolls it keeps a quarter of it, and a hidden tab draws nothing.
 - **Bands.** Feedback 120ms to 150ms, state 200ms, authored arrivals 500ms to 800ms.
+
+### 6.1 The eight verbs
+
+Every motion on the stage is one of eight, named for what the graph does, so a
+reader who watches the page learns the vocabulary the agent uses (`lib/verbs.ts`).
+
+| Verb | Alias | Duration | What moves |
+|---|---|---|---|
+| condense | retrieve | 700ms | A title gathers out of the field cluster its chapter was written from |
+| settle | persist | 900ms | A number rolls to its value, digits right to left |
+| pulse | observe | 240ms | A live value reports, with the time it was read |
+| stamp | verify | 420ms | A plate drops and seats, registration corners draw |
+| print | generate | per line, word or character | A document types itself: 18ms a line, 28 words a second, 90 characters a second |
+| dock | evaluate | 500ms | A card arrives from depth and shoves its seated neighbours 4px |
+| dissolve | evict | 450ms | Something leaves toward the cluster it belongs to |
+| flood | act | 1.1s | The ground changes, grown from the control that caused it |
+
+Each verb has a reduced-motion variant that lands on the finished state without
+the travel, and emits one `stage:verb` event, which is the only thing the audio
+engine listens to.
+
+### 6.2 Materials
+
+- **Grain.** A 256px blue-noise tile generated at build time by
+  `scripts/build-grain.ts` (void-and-cluster, fixed seed), on a fixed layer at
+  3.5%, one texel per device pixel on a 2x screen. Never `feTurbulence`.
+- **Foil.** The credential plates carry a 6px band of thin-film colour whose hue
+  travels with the pointer or the device tilt, multiplied by a generated height
+  tile of embossed security foil. Never behind text.
+- **Chrome.** The Research figure is filled with a matcap through
+  `background-clip: text`, sampled at a point that moves with the pointer. A
+  browser without `background-clip` keeps the figure in ink.
+
+### 6.3 Sound
+
+Off on every first visit, and the toggle is the only thing that creates or
+resumes the `AudioContext` (`lib/audio.ts`). `stamp`, `print` and `dock` are
+recorded hits, fetched only after the first opt-in, Opus with an AAC fallback,
+normalised to -12 dBFS; the other five voices are synthesized. `print` is rate
+limited to one strike per 90ms. A missing or undecodable file makes every play a
+no-op with nothing written to the console.
+
+### 6.4 The rail
+
+The right edge is the compiled agent graph, not a row of pips: `start`, `route`,
+`retrieve`, `answer`, `act`, `end`, with the conditional branch out of `route`
+drawn dashed. Each chapter's segment hangs under the node that reads it and is
+as tall as that chapter's share of the page's words. Nodes fill as they are
+reached, the current one takes the accent, and the status reads an estimate of
+the tokens read, then "Context full". Under 768px it is a 2px progress line
+under the bar and no graph.
+
+### 6.5 Narrow layout
+
+At 390px every chapter is one column and nothing is scaled down to fit: grids
+collapse to a single track (left at their desktop track count, every column
+measured zero and each child sized to its own content instead), data art scales
+to the column through its viewBox, machine lines wrap, and code blocks scroll
+inside themselves. Verified: nine chapters, no clipped content, document width
+exactly 390.
 
 ## 7. Anti-Patterns (Banned)
 

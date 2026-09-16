@@ -3,11 +3,11 @@
     "answer": "Role: AI Engineer, Graduate Researcher. May 2026 to present. Boston, MA.\nStack: Azure OpenAI GPT-4o, Azure AI Search, LangGraph, FastAPI, React, Cosmos DB Gremlin, Cohere\nMeasured: 14 tools on one LangGraph agent; BM25 + vector hybrid retrieval, Cohere reranked; LLM-as-a-Judge hallucination and retrieval scoring\n**He built a document intelligence assistant on Azure for an enterprise consulting client, owned\nfrom ingestion through deployment:** a LangGraph agent exposing 14 tools for document question\nanswering, cross-document comparison and template-driven generation, grounded by hybrid BM25 and\nvector retrieval with Cohere re-ranking, guarded by PII and entity redaction, and scored for\nhallucination rate by LLM-as-a-Judge evaluations.",
     "route": "answer",
     "timings": {
-      "route": 1,
-      "retrieve": 387,
-      "answer": 1345
+      "route": 2,
+      "retrieve": 292,
+      "answer": 1663
     },
-    "total": 1755,
+    "total": 1987,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "IMG Systems",
@@ -119,7 +119,7 @@
           "lexicalScore": 5.066,
           "lexicalRank": 28,
           "denseRank": 29,
-          "fused": 0.029379,
+          "fused": 0.029217,
           "selected": false
         },
         {
@@ -186,11 +186,11 @@
     "answer": "Measured: 91.4% combined transformer and GNN accuracy; 88.2% transformer alone; 13.5s detect and fix, against 25.4s for static analysis\nLinks: IEEE ICAICCIT 2024, first author (published) Deep Learning for Contextual Bug Detection and Automated Fixes https://doi.org/10.1109/ICAICCIT64383.2024.10912101; IGI Global 2024, co-author (published) Cyber-Physical Systems: Security and Optimization Strategies https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities\n**He published research on finding bugs automatically, then found one by hand in\na production SDK.** The IEEE paper is about contextual bug detection: a\ntransformer reads the code, a graph neural network reads the structure around it,\nand the combination reaches 91.4% accuracy where the transformer alone reaches\n88.2% and the graph network alone 85.7%. Detection and fix together run in 13.5\nseconds against 25.4 for static analysis.",
     "route": "answer",
     "timings": {
-      "route": 1,
-      "retrieve": 336,
-      "answer": 1781
+      "route": 2,
+      "retrieve": 234,
+      "answer": 1963
     },
-    "total": 2126,
+    "total": 2208,
     "sources": [
       "Publications",
       "What he is good at",
@@ -363,10 +363,10 @@
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 233,
-      "answer": 2112
+      "retrieve": 241,
+      "answer": 1715
     },
-    "total": 2350,
+    "total": 1960,
     "sources": [
       "How retrieval on this page works",
       "What he is good at"
