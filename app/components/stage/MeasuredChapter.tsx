@@ -23,6 +23,8 @@ export type EvalCase = {
 };
 
 export type MeasuredProps = {
+  /** The repository the measured files live in, for the source links. */
+  source?: string;
   measured: string;
   evals: {
     cases: number;
@@ -116,7 +118,7 @@ function layout(nodes: string[], edges: Edge[]) {
   return at;
 }
 
-export default function MeasuredChapter({ measured, evals, model, graph, defects }: MeasuredProps) {
+export default function MeasuredChapter({ measured, evals, model, graph, defects, source }: MeasuredProps) {
   const { flash } = useStage();
   const gridRef = useRef<HTMLDivElement>(null);
   const casesRef = useRef<HTMLDetailsElement>(null);
@@ -411,6 +413,12 @@ export default function MeasuredChapter({ measured, evals, model, graph, defects
               <p className={styles.note}>
                 chosen on {model.chosenOn}, {model.observations} observations
               </p>
+              {/* The file the race is read from, one press away. */}
+              {source && (
+                <a className={styles.sourceLink} href={`${source}/blob/main/content/models.json`} data-garment="prompt">
+                  cat content/models.json
+                </a>
+              )}
             </article>
           </div>
 

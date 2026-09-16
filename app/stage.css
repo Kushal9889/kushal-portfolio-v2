@@ -7,6 +7,9 @@
  */
 [data-stage] {
   --void: oklch(0.16 0.002 90);
+  /* LangChain's dark green, lifted in lightness so it reads on the void ground;
+     its hue and chroma are the brand's. */
+  --langchain: oklch(0.62 0.055 173);
   --void-raised: oklch(0.205 0.002 90);
   --sheet: oklch(0.975 0.004 90);
   --ink-on-void: oklch(0.96 0.003 90);

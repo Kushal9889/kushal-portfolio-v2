@@ -265,6 +265,7 @@ export default function Page() {
         headline={cut === -1 ? profile.tagline : profile.tagline.slice(0, cut + 1)}
         qualifier={cut === -1 ? "" : profile.tagline.slice(cut + 2)}
         current={profile.current}
+        identityHue={signatures.organisations["Boston University"]?.hue ?? undefined}
         available={profile.available}
         // Excludes the hero's own fixed demo question at the source, so the
         // list is identical before and after that answer resolves and never
@@ -299,6 +300,7 @@ export default function Page() {
       />
 
       <MeasuredChapter
+        source={profile.repo}
         measured={evals.measured}
         evals={{
           cases: evals.cases,

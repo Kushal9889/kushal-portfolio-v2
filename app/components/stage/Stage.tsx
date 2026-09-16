@@ -342,7 +342,10 @@ export default function Stage({
       if (!c) return;
       const still = s.reduced;
       c.setStreak(still ? 0 : Math.min(Math.abs(s.velocity) / 3000, 1));
-      c.setDrift(s.idle && s.visible && !still ? 1 : 0);
+      // The field always breathes while it is on screen. At rest it wanders at
+      // full amplitude; while the reader scrolls it keeps a quarter of it, so
+      // the ground under the type is alive without competing with reading.
+      c.setDrift(!s.visible || still ? 0 : s.idle ? 1 : 0.25);
       if (dive.current <= 0.01 && !still) {
         const p = s.tilt.active ? s.tilt : s.pointer;
         c.setPointer(p.x, p.y);
@@ -463,6 +466,7 @@ export default function Stage({
           ))}
         </div>
         <div ref={flash} className={styles.flash} aria-hidden="true" />
+        <div className={styles.grain} aria-hidden="true" />
 
         <header className={styles.bar} data-bar={barGround} data-clear={underBar === 0 || undefined}>
           <a className={styles.wordmark} href="#top">

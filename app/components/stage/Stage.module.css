@@ -404,3 +404,27 @@ canvas[data-frozen="true"] ~ .seam,
 canvas[data-lost="true"] ~ .seam {
   display: none;
 }
+
+/* Film grain: a blue-noise tile from scripts/build-grain.ts on a fixed layer.
+   One texel per device pixel on a 2x screen, so the grain stays fine. */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: url("/stage/grain.png") 0 0 / 256px repeat;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+@media (min-resolution: 2dppx) {
+  .grain {
+    background-size: 128px;
+  }
+}
+
+@media (forced-colors: active) {
+  .grain {
+    display: none;
+  }
+}

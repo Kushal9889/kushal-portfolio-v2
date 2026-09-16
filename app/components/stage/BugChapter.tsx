@@ -6,6 +6,7 @@ import { print, stamp as stampVerb, settle, reducedMotion } from "@/lib/verbs";
 import { daysSince } from "@/lib/numbers";
 import { readJson } from "@/lib/probe";
 import { AFTER, BEFORE } from "../diff-excerpt";
+import BrandMark from "../BrandMark";
 import { GitHubMark } from "../Mark";
 import { useStage } from "./StageContext";
 import { markFrameReady, parseFrame, scrollInstant, watchRefresh } from "./frame";
@@ -110,6 +111,14 @@ export default function BugChapter({
   offer: string;
   cached: { issue: CachedState; pr: CachedState };
 }) {
+  // The SDK this happened in is named in the lead. It is set with LangChain's
+  // own mark and colour, because a reader who knows the library recognises it
+  // before they read the sentence.
+  const brandMatch = lead.match(/LangChain(?:'s)?(?: [\w-]+)? SDK/);
+  const leadParts = brandMatch
+    ? { before: lead.slice(0, brandMatch.index), brand: brandMatch[0], after: lead.slice(brandMatch.index! + brandMatch[0].length) }
+    : { before: lead, brand: "", after: "" };
+
   const { flash } = useStage();
   const innerRef = useRef<HTMLDivElement>(null);
   const figureRef = useRef<HTMLAnchorElement>(null);
@@ -351,7 +360,12 @@ export default function BugChapter({
               retrieve: <span>{`${issueRef.owner}/${issueRef.repo}#${issueRef.number}`}</span>
             </p>
           )}
-          <p className={styles.lead}>{lead}</p>
+          <p className={styles.lead}>{leadParts.before}{leadParts.brand && (
+            <span className={styles.brand}>
+              <BrandMark name="langchain" />
+              {leadParts.brand}
+            </span>
+          )}{leadParts.after}</p>
 
           {timeline && (
             <figure className={styles.log}>

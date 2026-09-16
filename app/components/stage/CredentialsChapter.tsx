@@ -340,6 +340,7 @@ export default function CredentialsChapter({ plates, linksCheckedOn }: { plates:
                 key={p.id}
                 data-plate
                 data-kind={p.kind}
+                data-issuer={p.issuer}
                 data-dim={dim || undefined}
                 data-match={match || undefined}
                 data-border={p.identity?.border}
@@ -347,6 +348,7 @@ export default function CredentialsChapter({ plates, linksCheckedOn }: { plates:
                 style={{ "--identity": hue ?? "var(--ink)" } as React.CSSProperties}
                 aria-label={`${p.name}, ${p.issuer}, ${p.year}`}
               >
+                <span className={styles.foil} aria-hidden="true" />
                 {p.identity?.border === "stripe" && <span className={styles.stripe} aria-hidden="true" />}
                 {p.identity?.quarters && (
                   <span className={styles.quarters} aria-hidden="true">

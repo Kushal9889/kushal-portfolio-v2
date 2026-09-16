@@ -9,6 +9,7 @@ both licences below.
 | Switzer | 300, 400, 500, 600 | ITF Free Font License (Fontshare) | https://www.fontshare.com/fonts/switzer |
 | Mona Sans | variable 200 to 900, wdth 75 to 125, normal and italic | SIL Open Font License 1.1, text in `OFL-MonaSans.txt` | https://github.com/github/mona-sans, via @fontsource-variable/mona-sans 5.3.0 (Latin subset) |
 | Hubot Sans | variable 200 to 900, wdth 75 to 125 | SIL Open Font License 1.1, text in `OFL-HubotSans.txt` | https://github.com/github/hubot-sans, via @fontsource-variable/hubot-sans 5.3.0 (Latin subset) |
+| IBM Plex Mono | 400, 500 | SIL Open Font License 1.1, text in `OFL-IBMPlexMono.txt` | https://github.com/IBM/plex, via @fontsource/ibm-plex-mono (Latin subset); scoped to IBM credential plates |
 | Sentient | 400, 500, 700 | ITF Free Font License (Fontshare) | https://www.fontshare.com/fonts/sentient |
 
 The ITF Free Font License terms are published at

@@ -79,16 +79,25 @@ export default function HeroStage({
   headline,
   qualifier,
   current,
+  identityHue,
   available,
   followups = [],
 }: {
   headline: string;
   qualifier: string;
   current: string;
+  /** The institution's own colour, from content/signatures.json. */
+  identityHue?: string;
   available: string;
   /** Questions the eval suite asks and passes, offered as the next thing to ask. */
   followups?: string[];
 }) {
+  // "AI Engineer at Boston University's Questrom Computational Lab" splits once,
+  // at the first " at ", so the place can be set in full ink beside the role.
+  const atCut = current.indexOf(" at ");
+  const roleHead = atCut === -1 ? current : `${current.slice(0, atCut)} at `;
+  const rolePlace = atCut === -1 ? "" : current.slice(atCut + 4);
+
   const { cloud, field, cloudReady, dive, glow, openAsk } = useStage();
   const [why, setWhy] = useState(false);
   const [demo, setDemo] = useState<Demo | null>(null);
@@ -491,7 +500,14 @@ export default function HeroStage({
             </h1>
             <div ref={supportRef}>
               <p className={styles.role}>
-                {current}
+                {/* The one line a reader scanning for a name and a place needs.
+                    It is set as a plate: the institution's own scarlet rules it,
+                    a slow sheen crosses it, and the lab reads in full ink. */}
+                <span className={styles.rolePlate} data-identity={identityHue ? "on" : undefined} style={identityHue ? ({ "--identity": identityHue } as React.CSSProperties) : undefined}>
+                  <i aria-hidden="true" />
+                  {roleHead}
+                  {rolePlace && <b>{rolePlace}</b>}
+                </span>
                 <span className={styles.readout}>
                   {demo
                     ? `Answered in ${demo.total.toLocaleString("en-US")} ms, grounded in ${demo.sources.length} sections.`

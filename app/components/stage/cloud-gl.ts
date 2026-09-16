@@ -453,7 +453,6 @@ export function createCloud(
   let attractCluster = -1;
   let seam = 0;
   let drift = 0;
-  let driftTimer = 0;
   /** Far-plane arrival (F-003): 600ms from the first frame, skipped for captures. */
   const ARRIVE_MS = 600;
   let arriveStart = options.arrive === false ? -1 : 0;
@@ -628,13 +627,11 @@ export function createCloud(
       gl!.drawArrays(gl!.TRIANGLES, 0, 3);
     }
     stats.draws++;
-    if (drift > 0.0005 && !driftTimer) {
-      // Idle drift draws at about 30 frames a second, never continuously at 60.
-      driftTimer = window.setTimeout(() => {
-        driftTimer = 0;
-        invalidate();
-      }, 33);
-    }
+    // The field is never a still picture: while it drifts it draws on every
+    // frame the display offers, so the wander is smooth at any refresh rate
+    // rather than stepped at 30. The 50fps guard still measures the steady
+    // cost, and a hidden tab still stops (see invalidate).
+    if (drift > 0.0005) invalidate();
     frameListeners.forEach((cb) => cb());
   }
 
@@ -800,7 +797,6 @@ export function createCloud(
       resizeObserver.disconnect();
       canvas.removeEventListener("webglcontextlost", onLost);
       frameListeners.clear();
-      window.clearTimeout(driftTimer);
       buffers.forEach((b) => gl.deleteBuffer(b));
       gl.deleteVertexArray(vao);
       gl.deleteVertexArray(postVao);

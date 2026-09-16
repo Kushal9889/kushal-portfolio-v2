@@ -102,6 +102,18 @@ const plate = localFont({
   declarations: [{ prop: "font-stretch", value: "75% 125%" }],
 });
 
+// IBM's own open mono, scoped to the IBM credential plates only. Not preloaded:
+// two plates far down the page are its only readers.
+const ibm = localFont({
+  src: [
+    { path: "./fonts/IBMPlexMono-latin-400.woff2", weight: "400" },
+    { path: "./fonts/IBMPlexMono-latin-500.woff2", weight: "500" },
+  ],
+  variable: "--font-ibm",
+  display: "swap",
+  preload: false,
+});
+
 const { profile } = loadContent();
 
 export const metadata: Metadata = {
@@ -241,7 +253,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={[display, mono, spine, signature, plate, paper].map((f) => f.variable).join(" ")}
+      className={[display, mono, spine, signature, plate, paper, ibm].map((f) => f.variable).join(" ")}
     >
       <head>
         {/* The condensed view was a keystroke nobody finds. As a URL it is a
