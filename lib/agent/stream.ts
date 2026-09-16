@@ -240,9 +240,12 @@ export async function* runStream(
     if (!call) {
       // No provider, or the model declined. Both mean the same thing to a
       // reader: say what can be done rather than failing silently.
+      // Nouns first, and no "I can": an answer that opens in the first person
+      // about its own abilities reads as a model talking about itself, and the
+      // reasoning gate flags that shape for exactly that reason.
       result = {
         ok: false,
-        say: `I can open his LinkedIn, his GitHub, the source for this page, the LangChain issue and its merged fix, or either publication. I can also draft an email to him, or run one of this site's own eval cases.`,
+        say: `Open on request: his LinkedIn, his GitHub, the source for this page, the LangChain issue and its merged fix, either publication, a written draft email to him, or one of this site's own eval cases.`,
       };
     } else if (call.name === "open_evidence") {
       result = openEvidence(String(call.args.target ?? ""));

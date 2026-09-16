@@ -173,7 +173,10 @@ const act = timed("act", async (state) => {
   if (!call) {
     result = {
       ok: false,
-      say: `I can open his LinkedIn, his GitHub, the source for this page, the LangChain issue and its merged fix, or either publication. I can also draft an email to him, or run one of this site's own eval cases.`,
+      // Same wording as the streaming path, and for the same reason: an answer
+      // that opens "I can" about its own abilities is the shape the reasoning
+      // gate flags, and the eval suite is the caller that sees this one.
+      say: `Open on request: his LinkedIn, his GitHub, the source for this page, the LangChain issue and its merged fix, either publication, a written draft email to him, or one of this site's own eval cases.`,
     };
   } else if (call.name === "open_evidence") {
     result = openEvidence(String(call.args.target ?? ""));
