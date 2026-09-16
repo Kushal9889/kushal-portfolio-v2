@@ -10,6 +10,7 @@ import Commands, { type CommandLinks, type CommandsHandle } from "./Commands";
 import { directField, type Director } from "./director";
 import { startSensors, subscribe, wake } from "@/lib/sensorBus";
 import Glyph from "./Glyph";
+import { setSound, soundOn } from "@/lib/audio";
 import { markFrameReady, parseFrame, waitFor, watchRefresh } from "./frame";
 import "../../stage.css";
 import styles from "./Stage.module.css";
@@ -85,12 +86,19 @@ export default function Stage({
   const [mountCloud, setMountCloud] = useState(false);
   const [mountAgent, setMountAgent] = useState(false);
   const [fieldOff, setFieldOff] = useState(false);
+  // Sound is off on every first visit; a previous visit's choice is read once,
+  // after mount, so the server and the client render the same bar.
+  const [sound, setSoundState] = useState(false);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [active, setActive] = useState(0);
   // -1 until an observer has reported. Rendered as 0 on the server, the bar
   // shipped its clear-over-the-hero state into the HTML, so a page with no
   // script kept a transparent bar and let chapters scroll through the wordmark.
   const [underBar, setUnderBar] = useState(-1);
+
+  useEffect(() => {
+    if (soundOn()) setSoundState(true);
+  }, []);
 
   // The renderer arrives after first paint, never in front of the headline.
   useEffect(() => {
@@ -477,6 +485,22 @@ export default function Stage({
             <p ref={meterRef} className={styles.meter}>
               ≈ <span>0</span> tokens read
             </p>
+            {/* The first press creates and resumes the audio context inside the
+                press itself, and plays nothing; from then on each verb sounds. */}
+            <button
+              type="button"
+              className={styles.soundToggle}
+              data-garment="keycap"
+              aria-pressed={sound}
+              aria-label={sound ? "Sound, on" : "Sound, off"}
+              onClick={() => {
+                setSound(!sound);
+                setSoundState(!sound);
+              }}
+            >
+              <Glyph name={sound ? "SpeakerHigh:regular" : "SpeakerSlash:regular"} size={16} />
+              <span aria-hidden="true">{sound ? "on" : "off"}</span>
+            </button>
             <button
               type="button"
               className={styles.barButton}

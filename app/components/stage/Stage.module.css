@@ -428,3 +428,48 @@ canvas[data-lost="true"] ~ .seam {
     display: none;
   }
 }
+
+/* The sound toggle: a 36px keycap in the bar's right cluster. Its state word is
+   shown at narrow widths, where the icon alone is not enough. */
+.soundToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--hair-strong);
+  border-bottom-width: 2px;
+  border-radius: 2px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.soundToggle span {
+  display: none;
+  font: 400 0.6875rem/1 var(--font-mono);
+}
+
+.soundToggle[aria-pressed="true"] {
+  transform: translateY(1px);
+  border-bottom-width: 1px;
+  background: var(--paper-high);
+}
+
+.soundToggle:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
+
+@media (max-width: 767px) {
+  .soundToggle {
+    width: auto;
+    padding: 0 10px;
+  }
+
+  .soundToggle span {
+    display: inline;
+  }
+}
