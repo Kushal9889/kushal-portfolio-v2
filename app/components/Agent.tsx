@@ -553,9 +553,9 @@ export default function Agent({
   }
 
   /**
-   * The conversion step. LinkedIn removed URL-prefilled connection notes, so the
-   * line goes to the clipboard and the profile opens in a new tab. That also
-   * works for email, a referral thread, or anywhere else they would rather write.
+   * Copies the opening line and opens the profile in a new tab, because
+   * LinkedIn accepts no URL-prefilled connection note. The same line works for
+   * email or any other thread the reader would rather write in.
    */
   async function copyOpener(turn: Turn) {
     const line = `Saw your agent answer "${turn.question}" on your site. Wanted to ask about it.`;
@@ -918,6 +918,12 @@ export default function Agent({
 
                 {turn.result.sources.length > 0 && (
                   <p className={styles.sources}>
+                    <span className={styles.msgHead}>
+                      result
+                      <b>
+                        {turn.result.sources.length} {turn.result.sources.length === 1 ? "source" : "sources"}
+                      </b>
+                    </span>
                     <span className="label">grounded in</span>{" "}
                     {turn.result.sources.map((s, n) => (
                       <span
@@ -1012,6 +1018,10 @@ export default function Agent({
                     className={styles.evalResult}
                     data-outcome={turn.result.action.passed ? "pass" : "fail"}
                   >
+                    <span className={styles.msgHead}>
+                      check
+                      <b>{turn.result.action.passed ? "passed" : "failed"}</b>
+                    </span>
                     <span className={styles.evalCase}>{turn.result.action.question}</span>
                     <span className={styles.evalAsserts}>{turn.result.action.asserts}</span>
                   </p>
@@ -1240,7 +1250,7 @@ export default function Agent({
       )}
 
       {showConversion && (
-        <div className={styles.conversion}>
+        <div className={styles.reachRow}>
           <button className={styles.copy} data-copied={copied || undefined} onClick={() => copyOpener(last)}>
             {copied ? "Copied. Paste it anywhere." : "Copy an opening line"}
           </button>

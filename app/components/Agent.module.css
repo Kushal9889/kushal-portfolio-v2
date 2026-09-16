@@ -228,7 +228,7 @@
   min-width: 1px;
 }
 
-.conversion {
+.reachRow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1045,4 +1045,19 @@
 .msgHead i {
   font-style: normal;
   color: var(--warn);
+}
+
+/* An observation is a result with a header that says what was observed and how
+   much of it there was; the body below it is the observation itself. */
+.sources .msgHead,
+.evalResult .msgHead {
+  margin-bottom: 4px;
+}
+
+.evalResult[data-outcome="pass"] .msgHead b {
+  color: var(--live);
+}
+
+.evalResult[data-outcome="fail"] .msgHead b {
+  color: var(--fail);
 }

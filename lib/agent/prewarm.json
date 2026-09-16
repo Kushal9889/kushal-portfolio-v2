@@ -4,10 +4,10 @@
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 348,
-      "answer": 2149
+      "retrieve": 387,
+      "answer": 1345
     },
-    "total": 2518,
+    "total": 1755,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "IMG Systems",
@@ -186,11 +186,11 @@
     "answer": "Measured: 91.4% combined transformer and GNN accuracy; 88.2% transformer alone; 13.5s detect and fix, against 25.4s for static analysis\nLinks: IEEE ICAICCIT 2024, first author (published) Deep Learning for Contextual Bug Detection and Automated Fixes https://doi.org/10.1109/ICAICCIT64383.2024.10912101; IGI Global 2024, co-author (published) Cyber-Physical Systems: Security and Optimization Strategies https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities\n**He published research on finding bugs automatically, then found one by hand in\na production SDK.** The IEEE paper is about contextual bug detection: a\ntransformer reads the code, a graph neural network reads the structure around it,\nand the combination reaches 91.4% accuracy where the transformer alone reaches\n88.2% and the graph network alone 85.7%. Detection and fix together run in 13.5\nseconds against 25.4 for static analysis.",
     "route": "answer",
     "timings": {
-      "route": 2,
-      "retrieve": 298,
-      "answer": 2106
+      "route": 1,
+      "retrieve": 336,
+      "answer": 1781
     },
-    "total": 2415,
+    "total": 2126,
     "sources": [
       "Publications",
       "What he is good at",
@@ -295,7 +295,7 @@
           "lexicalScore": 5.066,
           "lexicalRank": 1,
           "denseRank": 4,
-          "fused": 0.031778,
+          "fused": 0.032018,
           "selected": true
         },
         {
@@ -363,10 +363,10 @@
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 334,
-      "answer": 1825
+      "retrieve": 233,
+      "answer": 2112
     },
-    "total": 2163,
+    "total": 2350,
     "sources": [
       "How retrieval on this page works",
       "What he is good at"
