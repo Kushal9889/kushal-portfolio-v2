@@ -1194,6 +1194,10 @@ export default function Agent({
                                   className={styles.provider}
                                   data-health={f.coolingOffFor > 0 ? "benched" : "ready"}
                                 >
+                                  {/* The square is allowed to be live here: this
+                                      is the failover state the server reported
+                                      for this request, not a claim about now. */}
+                                  <i aria-hidden="true" />
                                   {f.name}
                                   {f.coolingOffFor > 0
                                     ? ` · benched ${Math.ceil(f.coolingOffFor / 60)}m`
@@ -1229,7 +1233,13 @@ export default function Agent({
                     )}
 
                     {openTrace === i && openPolicy === i && turn.result.policy && (
-                      <pre className={styles.policy}>{turn.result.policy}</pre>
+                      <div className={styles.policyBlock}>
+                        <p className={styles.msgHead}>
+                          system
+                          <b>context elided</b>
+                        </p>
+                        <pre className={styles.policy}>{turn.result.policy}</pre>
+                      </div>
                     )}
                   </>
                 )}

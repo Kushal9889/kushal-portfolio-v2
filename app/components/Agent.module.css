@@ -1098,3 +1098,41 @@
     animation: none;
   }
 }
+
+/* The published system prompt is a record, so it is set as a system message:
+   a perforated top edge, its own scroll, and the header naming what was
+   elided from it. */
+.policyBlock {
+  position: relative;
+  margin-top: var(--s-2);
+  padding-top: 10px;
+}
+
+.policyBlock::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-top: 1px dotted var(--rule);
+}
+
+.policyBlock .policy {
+  max-height: 280px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+/* A provider chip carries its own state square: live when the provider answered
+   for this request, warn while it is cooling off. */
+.provider {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.provider i {
+  width: 5px;
+  height: 5px;
+  background: currentColor;
+}
