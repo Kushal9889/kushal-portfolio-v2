@@ -141,6 +141,14 @@ export default function WorkChapter({ roles, verifiedOn }: { roles: Role[]; veri
     let lastActive = -1;
     const sync = (p: number) => {
       let active = 0;
+      // How far the reader is through each role's own window, written straight
+      // to the row as a custom property so the rail fills without a re-render.
+      rows.forEach((row, i) => {
+        const [from, to] = ENTER[i] ?? [SETTLED, SETTLED + 0.05];
+        const span = (LIFT[i] ?? 1) - from;
+        row.style.setProperty("--read", String(Math.min(Math.max((p - from) / Math.max(span, 0.001), 0), 1)));
+        void to;
+      });
       landAt.forEach((at, i) => {
         if (p >= ENTER[i][0] + (at - ENTER[i][0]) * 0.5) active = i;
         if (p >= at - 0.03 && !played[i]) {

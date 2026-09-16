@@ -125,6 +125,33 @@
   font-size: 0.8125rem;
 }
 
+/* The row of the role on screen carries a rail that fills as its slab is read
+   through, so the index reports position rather than only naming it. */
+.index li {
+  position: relative;
+}
+
+.index li::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--ink);
+  transform: scaleX(var(--read, 0));
+  transform-origin: left center;
+  transition: transform 120ms linear;
+}
+
+.index li[data-active="true"] .companyName {
+  background-size: 100% 1px;
+}
+
+.index li[data-active="true"] .arrow {
+  opacity: 1;
+}
+
 /* ---- The rack ----------------------------------------------------------- */
 
 .rack {
