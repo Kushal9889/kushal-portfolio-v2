@@ -33,7 +33,10 @@ const PROVIDERS: Record<
     // retrieved text, so the model is summarising rather than reasoning. This is
     // a mixture-of-experts model with roughly 3B active parameters, which is what
     // keeps time-to-first-token low enough to sit in front of a visitor.
-    model: process.env.OPENROUTER_MODEL ?? "nvidia/nemotron-3-nano-30b-a3b:free",
+    // Checked against the provider's own model list on 2026-09-16: the previous
+    // default had moved behind the paid tier and answered 404, which made the
+    // whole failover chain one provider deep without saying so.
+    model: process.env.OPENROUTER_MODEL ?? "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     // Both, because OpenRouter routes to more than one upstream for this model
     // and they do not agree on how reasoning is suppressed. `exclude` is
     // OpenRouter's own field; `chat_template_kwargs` is what the NVIDIA-hosted
@@ -47,7 +50,10 @@ const PROVIDERS: Record<
     // change where an answer comes from, not how good it is: an earlier 8B
     // fallback answered correctly but dropped the headline metric, so a visitor
     // would have got a quietly worse site on the days the primary was capped.
-    model: process.env.NVIDIA_MODEL ?? "nvidia/nemotron-3-nano-30b-a3b",
+    // The previous default was retired by the provider and answered 410 Gone.
+    // An environment without NVIDIA_MODEL set therefore degraded every answer to
+    // the retrieved passage, which is the failure this default exists to avoid.
+    model: process.env.NVIDIA_MODEL ?? "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
     /*
      * Reasoning off, at the source.
      *
