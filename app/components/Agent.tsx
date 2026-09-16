@@ -1111,16 +1111,33 @@ export default function Agent({
 
                     {openTrace === i && (
                       <dl className={styles.trace}>
-                        {Object.entries(turn.result.timings).map(([node, ms]) => (
-                          <div key={node} className={styles.traceRow}>
-                            <dt>{node}</dt>
-                            <dd className="tabular">{ms}ms</dd>
-                            <dd
-                              className={styles.traceBar}
-                              style={{ ["--w" as string]: `${(ms / turn.result!.total) * 100}%` }}
-                            />
-                          </div>
-                        ))}
+                        <div className={styles.traceHead}>
+                          <span className={styles.msgHead}>
+                            trace
+                            <b>
+                              {Object.keys(turn.result.timings).length} nodes, {turn.result.total.toLocaleString("en-US")} ms
+                            </b>
+                          </span>
+                        </div>
+                        {(() => {
+                          // Which node actually cost the answer its time. Named
+                          // rather than left for the reader to compare bars.
+                          const entries = Object.entries(turn.result!.timings);
+                          const slowest = entries.reduce((a, b) => (b[1] > a[1] ? b : a), entries[0] ?? ["", 0])[0];
+                          return entries.map(([node, ms]) => (
+                            <div key={node} className={styles.traceRow} data-slowest={node === slowest || undefined}>
+                              <dt>
+                                {node}
+                                {node === slowest && entries.length > 1 && <em>slowest</em>}
+                              </dt>
+                              <dd className="tabular">{ms}ms</dd>
+                              <dd
+                                className={styles.traceBar}
+                                style={{ ["--w" as string]: `${(ms / turn.result!.total) * 100}%` }}
+                              />
+                            </div>
+                          ));
+                        })()}
                         {turn.result.usage && (
                           <div className={styles.traceRow}>
                             <dt>tokens</dt>

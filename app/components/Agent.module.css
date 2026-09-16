@@ -1061,3 +1061,40 @@
 .evalResult[data-outcome="fail"] .msgHead b {
   color: var(--fail);
 }
+
+/* The trace as an observation: a header naming what was traced, then one row
+   per node with the slowest one named rather than left to be compared. */
+.traceHead {
+  grid-column: 1 / -1;
+}
+
+.traceBar {
+  transform-origin: left center;
+  animation: traceBar 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.traceRow[data-slowest] .traceBar {
+  background: var(--ink);
+}
+
+.traceRow dt em {
+  margin-left: 8px;
+  font-style: normal;
+  font-size: 0.6875rem;
+  color: var(--ink-soft);
+}
+
+@keyframes traceBar {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .traceBar {
+    animation: none;
+  }
+}
