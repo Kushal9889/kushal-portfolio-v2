@@ -315,7 +315,7 @@ export async function invokeWithFailover(
   let lastError: unknown;
   for (const name of providers) {
     try {
-      const res = await withDeadline(build(name, false).invoke(messages), "answer");
+      const res = await withDeadline(build(name, false).invoke(messages), "answer", ANSWER_MS);
       const meta = (res.response_metadata?.tokenUsage ?? res.usage_metadata ?? null) as {
         promptTokens?: number;
         completionTokens?: number;
@@ -355,6 +355,17 @@ export async function invokeWithFailover(
 const FIRST_TOKEN_MS = Number(process.env.AGENT_FIRST_TOKEN_MS ?? 6_000);
 
 /**
+ * A complete answer is allowed longer than a stream is allowed to open.
+ *
+ * `stream()` settles when the connection is up, which is fast or not happening;
+ * `invoke()` settles only when the whole answer is written, so it has to clear
+ * the slowest answers this model actually gives. The eval suite measured p95
+ * 5,733ms on 2026-09-16, which the 6s stream bound sits directly on top of: a
+ * slower-than-p95 answer would have been killed and degraded for no reason.
+ */
+const ANSWER_MS = Number(process.env.AGENT_ANSWER_MS ?? 15_000);
+
+/**
  * A deadline on one provider, not only on the whole request.
  *
  * The request timeout alone is the wrong bound when there are two providers and
@@ -363,10 +374,10 @@ const FIRST_TOKEN_MS = Number(process.env.AGENT_FIRST_TOKEN_MS ?? 6_000);
  * seconds before the degraded answer the page could have served immediately.
  * Every path that calls a provider goes through here.
  */
-function withDeadline<T>(work: Promise<T>, what: string): Promise<T> {
+function withDeadline<T>(work: Promise<T>, what: string, ms = FIRST_TOKEN_MS): Promise<T> {
   return Promise.race([
     work,
-    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`${what} deadline`)), FIRST_TOKEN_MS)),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`${what} deadline`)), ms)),
   ]);
 }
 
@@ -609,7 +620,7 @@ export async function chooseTool(
   for (const name of providers) {
     try {
       const bound = build(name, false).bindTools(tools as never);
-      const res = await withDeadline(bound.invoke(messages), "tool call");
+      const res = await withDeadline(bound.invoke(messages), "tool call", ANSWER_MS);
       return {
         calls: (res.tool_calls ?? []).map((c) => ({ name: c.name, args: (c.args ?? {}) as Record<string, unknown> })),
         provider: name,

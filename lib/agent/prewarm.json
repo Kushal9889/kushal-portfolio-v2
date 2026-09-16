@@ -3,11 +3,11 @@
     "answer": "He built a document intelligence assistant on Azure for an enterprise consulting client, owned from ingestion through deployment.",
     "route": "answer",
     "timings": {
-      "route": 2,
-      "retrieve": 402,
-      "answer": 588
+      "route": 1,
+      "retrieve": 629,
+      "answer": 2219
     },
-    "total": 1019,
+    "total": 2867,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "IMG Systems",
@@ -186,14 +186,14 @@
     "provider": "nvidia"
   },
   "what broke in production and how did he find it?": {
-    "answer": "The LangChain defect in the deepagents SDK broke in production with a silent failure that reported success while discarding an error. He found it by tracing the system closely enough to see where it contradicted itself, which led him to the faulty code path that was then fixed by a maintainer within 57 hours.",
+    "answer": "The LangChain defect broke in production with a silent failure that reported success while discarding an error. He found it by tracing the system closely enough to see where it contradicted itself, identifying a code path that reported success while discarding an error.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 255,
-      "answer": 2476
+      "retrieve": 243,
+      "answer": 3182
     },
-    "total": 2739,
+    "total": 3431,
     "sources": [
       "Publications",
       "What he is good at",
@@ -202,7 +202,7 @@
     ],
     "usage": {
       "in": 2126,
-      "out": 66
+      "out": 52
     },
     "action": null,
     "trace": {
@@ -369,10 +369,10 @@
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 243,
-      "answer": 644
+      "retrieve": 237,
+      "answer": 711
     },
-    "total": 893,
+    "total": 953,
     "sources": [
       "How retrieval on this page works",
       "What he is good at"
