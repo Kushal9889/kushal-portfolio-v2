@@ -345,6 +345,9 @@ export async function invokeWithFailover(
  * half-finished sentence. Restarting is correct here because a partial answer
  * from one model cannot be continued coherently by another.
  */
+/** How long one provider may take to open a stream before the next one is tried. */
+const FIRST_TOKEN_MS = Number(process.env.AGENT_FIRST_TOKEN_MS ?? 6_000);
+
 export async function* streamWithFailover(
   messages: { role: string; content: string }[],
   onUsage?: (usage: { in: number; out: number }) => void,
@@ -356,7 +359,16 @@ export async function* streamWithFailover(
   let lastError: unknown;
   for (const name of providers) {
     try {
-      const stream = await build(name, true).stream(messages);
+      // A deadline on the connection, not only on the whole request. Measured
+      // with both providers refusing: the request timeout alone left the reader
+      // watching "writing the answer" for 40 seconds before the degraded answer
+      // it could have had immediately. Whichever is shorter wins.
+      const stream = await Promise.race([
+        build(name, true).stream(messages),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("first token deadline")), FIRST_TOKEN_MS),
+        ),
+      ]);
       // Reported once the provider has actually produced a stream rather than
       // when it was selected, so a provider that fails on connect is never
       // credited with an answer it did not give.

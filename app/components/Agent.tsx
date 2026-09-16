@@ -7,6 +7,9 @@ import type { ToolResult } from "@/lib/agent/tools";
 import { listen, speak, silence, speechSupported, synthesisSupported, warmNeural } from "@/lib/voice/speech";
 import { track, trackOnce } from "@/lib/analytics";
 import { mailtoLink } from "@/lib/reach";
+import { chapterFor, chapterName } from "@/lib/chapter-map";
+import { corners } from "@/lib/verbs";
+import Glyph from "./stage/Glyph";
 import styles from "./Agent.module.css";
 
 type Result = {
@@ -291,6 +294,27 @@ export default function Agent({
         }
       }, 700);
     }
+  }
+
+  /**
+   * Puts the reader in front of the evidence: closes the drawer, lands on the
+   * chapter's settled position, and draws registration corners on it, so the
+   * cited chapter is what they are looking at when they arrive.
+   */
+  function showMe(anchor: string) {
+    const el = document.getElementById(anchor);
+    document.querySelector<HTMLDialogElement>("dialog[open]")?.close();
+    if (!el) return;
+    // A chapter publishes where it has settled; a role inside a pinned rack
+    // does too. Without one, the absolute document position, because offsetTop
+    // inside a pin is measured from the pinned parent and lands near the top of
+    // the page instead.
+    const settle = Number(el.dataset.settle);
+    const top =
+      Number.isFinite(settle) && settle > 0 ? settle : el.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({ top, behavior: "instant" });
+    corners(el, true);
+    window.setTimeout(() => corners(el, false), 1600);
   }
 
   async function submit(question: string) {
@@ -817,14 +841,19 @@ export default function Agent({
             );
           return (
           <article key={i} className={styles.turn}>
-            <p className={styles.question}>{turn.question}</p>
+            {/* The exchange as typed messages: who spoke, what the graph did,
+                then the answer with the time it actually took. */}
+            <p className={styles.question}>
+              <span className={styles.msgHead}>you</span>
+              {turn.question}
+            </p>
 
             {!turn.result ? (
               // "running the graph" sat unchanged for the whole wait, which on
               // a slow provider is five seconds of a sentence that stops being
               // information after the first one. The events that drive this
               // already arrive separately, so the label follows them.
-              <p className={styles.thinking}>
+              <p className={styles.thinking} data-stage={stage}>
                 <span className="live-dot" data-state="running" />{" "}
                 <span className="live">
                   {fromLink && i === 0
@@ -840,7 +869,15 @@ export default function Agent({
               <>
                 {/* Answer first, complete on its own. Evidence and trace are
                     below it, so a reader who only wants the answer is done. */}
-                <p className={styles.answer}>
+                <p className={styles.answer} data-degraded={turn.result.degraded || undefined}>
+                  <span className={styles.msgHead}>
+                    {turn.result.route ?? "answer"}
+                    {turn.result.total > 0 && <b>{turn.result.total.toLocaleString("en-US")} ms</b>}
+                    {/* Said on the answer itself, not only in the trace: a
+                        reader who never opens the trace still knows which of
+                        the two kinds of answer they are reading. */}
+                    {turn.result.degraded && <i>no model reachable, showing the passage ranked first</i>}
+                  </span>
                   {turn.result.answer}
                   {/* The cursor is the only thing that told a reader the box was
                       thinking before the first token; once text started arriving
@@ -859,6 +896,26 @@ export default function Agent({
                     landing in sequence is the difference between the answer
                     looking generated and looking fetched. Safe to animate from
                     nothing because these nodes did not exist a moment ago. */}
+                {(() => {
+                  // The chapter the top source is rendered in, when one renders it.
+                  const top = turn.result.sources[0];
+                  const anchor = top ? chapterFor(top) : null;
+                  if (!anchor) return null;
+                  return (
+                    <a
+                      className={styles.showMe}
+                      href={`#${anchor}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        showMe(anchor);
+                      }}
+                    >
+                      Show me {chapterName(anchor)}
+                      <Glyph name="ArrowDownRight:regular" size={12} />
+                    </a>
+                  );
+                })()}
+
                 {turn.result.sources.length > 0 && (
                   <p className={styles.sources}>
                     <span className="label">grounded in</span>{" "}
