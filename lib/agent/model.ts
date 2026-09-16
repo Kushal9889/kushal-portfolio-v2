@@ -309,7 +309,7 @@ export async function invokeWithFailover(
   let lastError: unknown;
   for (const name of providers) {
     try {
-      const res = await build(name, false).invoke(messages);
+      const res = await withDeadline(build(name, false).invoke(messages), "answer");
       const meta = (res.response_metadata?.tokenUsage ?? res.usage_metadata ?? null) as {
         promptTokens?: number;
         completionTokens?: number;
@@ -345,8 +345,24 @@ export async function invokeWithFailover(
  * half-finished sentence. Restarting is correct here because a partial answer
  * from one model cannot be continued coherently by another.
  */
-/** How long one provider may take to open a stream before the next one is tried. */
+/** How long one provider may take to answer before the next one is tried. */
 const FIRST_TOKEN_MS = Number(process.env.AGENT_FIRST_TOKEN_MS ?? 6_000);
+
+/**
+ * A deadline on one provider, not only on the whole request.
+ *
+ * The request timeout alone is the wrong bound when there are two providers and
+ * both are refusing: each one burns its full timeout in turn while the reader
+ * watches a running dot. Measured with both free tiers exhausted, that was forty
+ * seconds before the degraded answer the page could have served immediately.
+ * Every path that calls a provider goes through here.
+ */
+function withDeadline<T>(work: Promise<T>, what: string): Promise<T> {
+  return Promise.race([
+    work,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`${what} deadline`)), FIRST_TOKEN_MS)),
+  ]);
+}
 
 export async function* streamWithFailover(
   messages: { role: string; content: string }[],
@@ -363,12 +379,7 @@ export async function* streamWithFailover(
       // with both providers refusing: the request timeout alone left the reader
       // watching "writing the answer" for 40 seconds before the degraded answer
       // it could have had immediately. Whichever is shorter wins.
-      const stream = await Promise.race([
-        build(name, true).stream(messages),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("first token deadline")), FIRST_TOKEN_MS),
-        ),
-      ]);
+      const stream = await withDeadline(build(name, true).stream(messages), "first token");
       // Reported once the provider has actually produced a stream rather than
       // when it was selected, so a provider that fails on connect is never
       // credited with an answer it did not give.
@@ -592,7 +603,7 @@ export async function chooseTool(
   for (const name of providers) {
     try {
       const bound = build(name, false).bindTools(tools as never);
-      const res = await bound.invoke(messages);
+      const res = await withDeadline(bound.invoke(messages), "tool call");
       return {
         calls: (res.tool_calls ?? []).map((c) => ({ name: c.name, args: (c.args ?? {}) as Record<string, unknown> })),
         provider: name,

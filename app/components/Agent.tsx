@@ -980,6 +980,13 @@ export default function Agent({
 
                 {latest && turn.result.action?.ok && turn.result.action.kind === "draft" && (
                   <div className={styles.draft}>
+                    {/* The draft as an envelope: its subject is the flap, the
+                        body the sheet inside. Both strings are the ones the
+                        mail client receives. */}
+                    <p className={styles.draftHead}>
+                      <span>Subject</span>
+                      {turn.result.action.subject}
+                    </p>
                     <a
                       className={styles.actionBtn}
                       href={turn.result.action.mailto}
@@ -1006,11 +1013,7 @@ export default function Agent({
                     >
                       {copied ? "Copied" : "Copy it instead"}
                     </button>
-                    <pre className={styles.draftText}>
-                      {turn.result.action.subject}
-                      {"\n\n"}
-                      {turn.result.action.body}
-                    </pre>
+                    <pre className={styles.draftText}>{turn.result.action.body}</pre>
                   </div>
                 )}
 

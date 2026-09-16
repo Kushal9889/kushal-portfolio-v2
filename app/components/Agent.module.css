@@ -1136,3 +1136,31 @@
   height: 5px;
   background: currentColor;
 }
+
+/* The draft the tool built, set as an envelope: the subject row is the flap,
+   closed by a shallow chevron, and the body is prose rather than code, because
+   what is in it is a message a person will send. */
+.draftHead {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  margin: var(--s-3) 0 0;
+  padding: 10px 14px 16px;
+  background: var(--paper-sunk);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), 50% 100%, 0 calc(100% - 8px));
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  color: var(--ink);
+}
+
+.draftHead span {
+  color: var(--ink-faint);
+}
+
+.draft .draftText {
+  margin-top: 0;
+  font-family: inherit;
+  font-size: var(--step--1);
+  line-height: 1.55;
+  color: var(--ink);
+}
