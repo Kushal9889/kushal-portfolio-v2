@@ -575,6 +575,7 @@ export default function Stage({
             <button
               type="button"
               className={styles.barButton}
+              data-bar-key="commands"
               onClick={openCommands}
               aria-keyshortcuts="Meta+K Control+K"
             >
@@ -584,7 +585,7 @@ export default function Stage({
                 ⌘K
               </kbd>
             </button>
-            <button type="button" className={styles.barButton} onClick={() => openAsk()} aria-keyshortcuts="/">
+            <button type="button" className={styles.barButton} data-bar-key="ask" onClick={() => openAsk()} aria-keyshortcuts="/">
               <Glyph name="MagnifyingGlass:regular" size={16} />
               Ask the agent
               <kbd className={styles.kbd} aria-hidden="true">

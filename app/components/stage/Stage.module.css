@@ -545,7 +545,55 @@ canvas[data-lost="true"] ~ .seam {
 
 /* The rail is a graph on a wide screen and a progress line under the bar on a
    narrow one, where 64px of right edge is a third of the reading column. */
+/*
+ * The bar on a phone. Measured at 375px: the right cluster ran to 791px, so the
+ * palette, the agent and the contact link were all off the screen and the sound
+ * toggle was cut in half. The palette goes first, because it opens a keyboard
+ * filter on a device with no keyboard; the rest keep their icons and drop their
+ * labels, which is what fits.
+ */
 @media (max-width: 767px) {
+  .bar {
+    gap: 8px;
+    padding-inline: 16px;
+  }
+
+  .barNav {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  /* The name gives way to the controls rather than running under them. */
+  .wordmark {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  /* The reading meter is dropped rather than squeezed: the rail's own progress
+     line under this bar already reports the same thing at this width. */
+  .meter {
+    display: none;
+  }
+
+  .barButton[data-bar-key="commands"],
+  .barButton .kbd {
+    display: none;
+  }
+
+  .barButton {
+    gap: 0;
+    padding: 0 10px;
+    font-size: 0;
+  }
+
+  .barButton svg {
+    font-size: 1rem;
+  }
+
   .ticks {
     top: 64px;
     right: 0;
