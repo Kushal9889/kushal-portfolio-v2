@@ -32,6 +32,8 @@ import evals from "@/content/evals.json";
 import { loadContent, section, loadCertifications, type Section } from "@/lib/content";
 import { TARGETS } from "@/lib/agent/tools";
 import styles from "./page.module.css";
+import FilmTransit from "./components/film/FilmTransit";
+import FilmMount from "./components/film/FilmMount";
 
 function Section({
   id,
@@ -252,18 +254,21 @@ export default function Page() {
         resumeHref="/kushal-gaddamwar-resume.pdf"
       />
       <PageMotion />
+      <FilmMount />
       {/* Navigation the page did not have. The labels are the section headings
           verbatim, not a second set of names for the same things: two vocabularies
           for one page is how a reader ends up unsure whether "Proof" and "What
           else checks out" are the same section. */}
       <SectionRail
         items={[
-          { id: "opensource", label: "A bug in LangChain" },
-          { id: "measured", label: "How this is measured" },
-          { id: "approach", label: "How he works" },
           { id: "work", label: "Work" },
+          { id: "opensource", label: "A bug in LangChain" },
           { id: "research", label: "Research" },
+          { id: "approach", label: "How he works" },
+          { id: "measured", label: "How this is measured" },
+          { id: "running", label: "Also running" },
           { id: "proof", label: "What else checks out" },
+          { id: "education", label: "Education" },
           { id: "contact", label: "Get in touch" },
         ]}
       />
@@ -287,6 +292,33 @@ export default function Page() {
       </Hero>
 
       <main id="main">
+        <FilmTransit id="T1" />
+
+        <Section id="work" title="Work" data-layout="banner" data-register="chapter">
+          {/* The measured values, running along the turn. Handed the same parsed
+              metrics the sections below render, so nothing here is a second copy
+              of a figure that could drift from the corpus. */}
+          <Ticker items={tickerItems} />
+          <WorkStack />
+          {/* Rail and content are two columns of one grid, not three
+              self-contained role cards, so every role's identity can share
+              one tall containing block and stack rather than take turns --
+              see .roleRail in page.module.css. */}
+          <div
+            className={styles.roles}
+            style={{ "--role-count": roles.length } as React.CSSProperties}
+          >
+            {/* No rail. Each rack's own header strip sticks, so the identity of
+                the role a reader is inside stays on screen without a second
+                column existing to hold a copy of it. */}
+            {roles.map(({ section: s, past }, i) => (
+              <RoleContent key={s.title} section={s} past={past} row={i + 1} />
+            ))}
+          </div>
+        </Section>
+
+        <FilmTransit id="T2" />
+
         <Section
           id="opensource"
           title="A bug in LangChain"
@@ -307,6 +339,56 @@ export default function Page() {
           <Artifacts items={os.artifacts} chain />
           <AskSeeds items={section("Open source, LangChain deepagents").asks} />
         </Section>
+
+        <FilmTransit id="T3" />
+
+        {/* Research took this section from BU Life AI.
+            The paper is first-author work with measured numbers and a DOI, and
+            it sat in a one-third column under Credentials while a side project
+            held a top-level heading. It also completes the thread section 01
+            opens: the paper argues context is needed to catch bugs static
+            analysis misses, and the LangChain defect was exactly that shape. */}
+        <Section id="research" title="Research" data-register="instrument">
+          <Metrics items={section("Publications").metrics} />
+          <Prose body={section("Publications").body} />
+          {/* Both papers as rows a reader can open, rather than as two links
+              inside a paragraph. The DOI resolves; the link checker proves it. */}
+          <Artifacts2 items={section("Publications").artifacts} />
+        </Section>
+
+
+        <FilmTransit id="T4" />
+
+        {/* What he is and what he is not, before the evidence. A reader who has
+            just watched the agent answer wants to know who they are talking to;
+            the scope limits are here rather than buried because stating them
+            early is what makes the rest of the page readable as fact. */}
+        <Section id="approach" title="How he works" data-layout="rule" data-register="instrument">
+          {/* The four terms the roles below are written in. They were in the
+              hero, where they competed with the title and the proof for the
+              same seconds and lost. Here they caption the section that explains
+              them. */}
+          <ul className={styles.focus}>
+            {profile.focus.split(/\s*·\s*/).filter(Boolean).map((f) => (
+              <li key={f}>{f}</li>
+            ))}
+          </ul>
+          {/* The shape of the thing. The page has claimed conditional routing
+              since it was built and the only evidence was a drawing in a
+              comment. */}
+          <Topology />
+          <OverlapGraph />
+          <Prose body={section("Who he is").body} />
+          <Prose body={section("What he is good at").body} />
+          {/* Condensed mode keeps only the first paragraph of a prose block,
+              which took two thirds of the scope limits with it. This is the one
+              section whose whole value is that it narrows the claim. */}
+          <div data-keep="all">
+            <Prose body={section("What he does not do").body} />
+          </div>
+        </Section>
+
+        <FilmTransit id="T5" />
 
         {/* The strongest signal in 2026 hiring is evidence that the thing was
             measured, not that it was built. It sits second because the bug above
@@ -341,97 +423,17 @@ export default function Page() {
           <Defects />
         </Section>
 
-        {/* What he is and what he is not, before the evidence. A reader who has
-            just watched the agent answer wants to know who they are talking to;
-            the scope limits are here rather than buried because stating them
-            early is what makes the rest of the page readable as fact. */}
-        <Section id="approach" title="How he works" data-layout="rule" data-register="instrument">
-          {/* The four terms the roles below are written in. They were in the
-              hero, where they competed with the title and the proof for the
-              same seconds and lost. Here they caption the section that explains
-              them. */}
-          <ul className={styles.focus}>
-            {profile.focus.split(/\s*·\s*/).filter(Boolean).map((f) => (
-              <li key={f}>{f}</li>
-            ))}
-          </ul>
-          {/* The shape of the thing. The page has claimed conditional routing
-              since it was built and the only evidence was a drawing in a
-              comment. */}
-          <Topology />
-          <OverlapGraph />
-          <Prose body={section("Who he is").body} />
-          <Prose body={section("What he is good at").body} />
-          {/* Condensed mode keeps only the first paragraph of a prose block,
-              which took two thirds of the scope limits with it. This is the one
-              section whose whole value is that it narrows the claim. */}
-          <div data-keep="all">
-            <Prose body={section("What he does not do").body} />
-          </div>
-        </Section>
+        <FilmTransit id="T6" />
 
-        <Section id="work" title="Work" data-layout="banner" data-register="chapter">
-          {/* The measured values, running along the turn. Handed the same parsed
-              metrics the sections below render, so nothing here is a second copy
-              of a figure that could drift from the corpus. */}
-          <Ticker items={tickerItems} />
-          <WorkStack />
-          {/* Rail and content are two columns of one grid, not three
-              self-contained role cards, so every role's identity can share
-              one tall containing block and stack rather than take turns --
-              see .roleRail in page.module.css. */}
-          <div
-            className={styles.roles}
-            style={{ "--role-count": roles.length } as React.CSSProperties}
-          >
-            {/* No rail. Each rack's own header strip sticks, so the identity of
-                the role a reader is inside stays on screen without a second
-                column existing to hold a copy of it. */}
-            {roles.map(({ section: s, past }, i) => (
-              <RoleContent key={s.title} section={s} past={past} row={i + 1} />
-            ))}
-          </div>
-        </Section>
-
-        {/* Research took this section from BU Life AI.
-            The paper is first-author work with measured numbers and a DOI, and
-            it sat in a one-third column under Credentials while a side project
-            held a top-level heading. It also completes the thread section 01
-            opens: the paper argues context is needed to catch bugs static
-            analysis misses, and the LangChain defect was exactly that shape. */}
-        <Section id="research" title="Research" data-register="instrument">
-          <Metrics items={section("Publications").metrics} />
-          <Prose body={section("Publications").body} />
-          {/* Both papers as rows a reader can open, rather than as two links
-              inside a paragraph. The DOI resolves; the link checker proves it. */}
-          <Artifacts2 items={section("Publications").artifacts} />
-        </Section>
-
-
-        {/* "Credentials" named one of the four things in here. The section also
-            holds a deployed project with a live reachability probe, a degree,
-            and a competition percentile, none of which is a credential. The id
-            stays `proof`: it is the parameter the agent's compose_intro tool
-            takes and the key ReachDock maps to a draft. */}
-        <Section
-          id="proof"
-          title="What else checks out"
-          data-tone="sunk"
-          data-layout="rule"
-          data-register="instrument"
-        >
-          <Certifications certifications={certs} />
-          {/* Demoted from its own section. Still live, still measured, and no
-              longer occupying a top-level heading it did not earn. */}
-          {/* Console, because the probe inside it runs when the page opens.
-              This was already a housing built by hand; it is the same object
-              every other enclosure is now, so the two cannot drift. */}
+        {/* The deployed project, in its own section so the film can hold the
+            memory beat behind it. Same panel, same probe, same corpus. */}
+        <Section id="running" title="Also running" data-register="instrument">
           <Panel
             className={styles.alsoBuilt}
             kind="instrument"
             surface="console"
             heading={3}
-            label="Also running"
+            label={section("BU Life AI").title}
             state="running"
             status="reachability"
           >
@@ -451,6 +453,28 @@ export default function Page() {
               ))}
             </ul>
           </Panel>
+        </Section>
+
+        <FilmTransit id="T7" />
+
+        {/* "Credentials" named one of the four things in here. The section also
+            holds a deployed project with a live reachability probe, a degree,
+            and a competition percentile, none of which is a credential. The id
+            stays `proof`: it is the parameter the agent's compose_intro tool
+            takes and the key ReachDock maps to a draft. */}
+        <Section
+          id="proof"
+          title="What else checks out"
+          data-tone="sunk"
+          data-layout="rule"
+          data-register="instrument"
+        >
+          <Certifications certifications={certs} />
+        </Section>
+
+        <FilmTransit id="T8" />
+
+        <Section id="education" title="Education" data-tone="sunk" data-layout="rule" data-register="instrument">
           <div className={styles.split}>
             <div>
               <h3 className={styles.subhead}>Education</h3>
@@ -464,6 +488,7 @@ export default function Page() {
           </div>
         </Section>
 
+        <FilmTransit id="T9" />
 
         <Section
           id="contact"

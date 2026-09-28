@@ -1,0 +1,15 @@
+{
+  "note": "Captions for the film's transit windows. Stage names only; any figure must come through a {slot} filled from content/ or a live request.",
+  "illustration": "How a request to a model is served. Illustration.",
+  "stages": {
+    "fabric": "Network fabric: the request crosses the data hall",
+    "retrieval": "Retrieval: lexical and dense ranks fused",
+    "descent": "From the app tier to a GPU server",
+    "prefill": "Prefill: the whole prompt in one pass",
+    "decode": "Decode: one token per step",
+    "kv": "KV cache: fixed-size blocks in HBM",
+    "baseboard": "Eight GPUs on one baseboard",
+    "rack": "Memory tiers: HBM, host DRAM, NVMe",
+    "hall": "The answer leaves the building"
+  }
+}

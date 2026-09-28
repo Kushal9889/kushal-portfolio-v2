@@ -2315,3 +2315,26 @@ body {
     transform: scaleX(1);
   }
 }
+
+/* ---- Film layer --------------------------------------------------------
+ * With the live film behind the page, every block that carries text keeps a
+ * ground of at least 90% so body copy never sits on raw film. The film shows
+ * through the remainder and plays at full exposure in the transit windows.
+ */
+html[data-film="live"] main > section,
+html[data-film="live"] body > header,
+html[data-film="live"] body > footer {
+  background: color-mix(in oklch, var(--paper) 90%, transparent);
+}
+
+html[data-film="live"] main > section[data-tone="sunk"] {
+  background: color-mix(in oklch, var(--paper-sunk) 90%, transparent);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  html[data-film="live"] main > section,
+  html[data-film="live"] body > header,
+  html[data-film="live"] body > footer {
+    background: var(--paper);
+  }
+}

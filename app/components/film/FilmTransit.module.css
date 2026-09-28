@@ -1,0 +1,42 @@
+.transit {
+  position: relative;
+  height: 60vh;
+  display: grid;
+  align-items: end;
+  padding: 0 clamp(1rem, 4vw, 3rem) 2rem;
+}
+
+.transit[data-tall] {
+  height: 90vh;
+}
+
+@media (max-width: 767px) {
+  .transit,
+  .transit[data-tall] {
+    height: 40vh;
+  }
+}
+
+.caption {
+  display: grid;
+  gap: 0.25rem;
+  max-width: 34ch;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.tag {
+  color: var(--ink-faint);
+}
+
+/* Without the live film the windows would be empty ground, so they collapse
+   to a hairline gap and the page reads as the classic document. */
+:global(html:not([data-film="live"])) .transit {
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+}
