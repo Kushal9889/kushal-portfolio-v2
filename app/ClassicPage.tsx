@@ -33,6 +33,7 @@ import { loadContent, section, loadCertifications, type Section } from "@/lib/co
 import { TARGETS } from "@/lib/agent/tools";
 import styles from "./page.module.css";
 import FilmTransit from "./components/film/FilmTransit";
+import FilmChip from "./components/film/FilmChip";
 import FilmMount from "./components/film/FilmMount";
 
 function Section({
@@ -255,6 +256,7 @@ export default function Page() {
       />
       <PageMotion />
       <FilmMount />
+      <FilmChip />
       {/* Navigation the page did not have. The labels are the section headings
           verbatim, not a second set of names for the same things: two vocabularies
           for one page is how a reader ends up unsure whether "Proof" and "What

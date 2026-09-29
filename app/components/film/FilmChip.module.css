@@ -1,0 +1,58 @@
+/* Whose request the orange light is (plan K2). A compartment in the centre of
+   the dock strip: the hero console fills the film lane in the first screen, so
+   the lane has no free place for it there, and the dock is always on screen,
+   always solid, and empty between its two ends (docs/film-deviations.md, D11). */
+.chip {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: calc(var(--z-furniture) + 1);
+  display: none;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 7px 12px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 var(--border-hair) var(--rule);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+:global(html[data-film="live"]) .chip[data-kind] {
+  display: flex;
+}
+
+/* The marker is the shape of the claim: filled for the visitor's own run,
+   hollow for a recording. Colour repeats it; it never carries it alone. */
+.marker {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  box-shadow: inset 0 0 0 1.5px var(--film-live);
+}
+
+.chip[data-marker="filled"] .marker {
+  background: var(--film-live);
+}
+
+.spoken {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Below the lane breakpoint the dock carries its full contact row. */
+@media (max-width: 1279px) {
+  :global(html[data-film="live"]) .chip[data-kind] {
+    display: none;
+  }
+}

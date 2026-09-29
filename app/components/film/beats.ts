@@ -28,4 +28,11 @@ export const PLACES = {
   board: [-0.0475, -0.012, -0.08] as [number, number, number],
   /** Overhead fibre tray height. */
   trayY: 2.05,
+  /**
+   * The orange packet at rest in the hero: in the aisle at chest height (1.3 m),
+   * where the hero rig puts it at (1332, 415) on a 1440 x 900 screen. It is
+   * born nearer the camera, at (1332, 557), and recedes to here (plan C5.2).
+   */
+  heroPacket: [-5.54, 0.25, 1.64] as [number, number, number],
+  birthPacket: [-3.26, 0.25, 1.585] as [number, number, number],
 };

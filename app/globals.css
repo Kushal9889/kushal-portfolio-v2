@@ -2336,6 +2336,14 @@ body {
  * `none`, which renders as hue 0, so every section read faintly warm against a
  * blue-black film. One opaque token has no hue to lose.
  */
+/* Film state hues (plan C2.1). One computed meaning each: --film-live is the
+   request the orange light is drawing, and nothing else is orange. On :root
+   rather than the live selector because the renderer reads it while starting,
+   before it marks the page live. */
+:root {
+  --film-live: #ff4f00;
+}
+
 html[data-film="live"] body > header,
 html[data-film="live"] body > footer,
 html[data-film="live"] main > section {

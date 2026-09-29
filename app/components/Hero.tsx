@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { TELEMETRY_EVENT, type TelemetryPing } from "./Agent";
+import { SENT_EVENT, TELEMETRY_EVENT, type SentDetail, type TelemetryPing } from "./Agent";
 import styles from "./Hero.module.css";
 
 const NODES = ["route", "retrieve", "answer"] as const;
@@ -88,6 +88,9 @@ export default function Hero({
 
     (async () => {
       try {
+        window.dispatchEvent(
+          new CustomEvent<SentDetail>(SENT_EVENT, { detail: { question: null, t0: performance.now(), recorded: true } }),
+        );
         const res = await fetch("/api/agent/demo", { signal: controller.signal });
         if (!res.ok) {
           setUnreachable(true);
@@ -101,13 +104,12 @@ export default function Hero({
           total: number;
           usage: { in: number; out: number } | null;
           provider: string | null;
+          ranAt?: number;
         } = await res.json();
         const measured = demo.timings;
         setSaid({ question: demo.question, answer: demo.answer, sources: demo.sources });
-
-        if (calm) {
-          setTrace(measured);
-          setDone(true);
+        // A recorded run, not the visitor's: the film labels it with its age.
+        const ping = () =>
           window.dispatchEvent(
             new CustomEvent<TelemetryPing>(TELEMETRY_EVENT, {
               detail: {
@@ -115,9 +117,20 @@ export default function Hero({
                 tokens: (demo.usage?.in ?? 0) + (demo.usage?.out ?? 0),
                 cost: 0,
                 provider: demo.provider,
+                tokensIn: demo.usage?.in,
+                tokensOut: demo.usage?.out,
+                timings: measured,
+                sources: demo.sources,
+                recorded: true,
+                ranAt: demo.ranAt,
               },
             }),
           );
+
+        if (calm) {
+          setTrace(measured);
+          setDone(true);
+          ping();
           return;
         }
 
@@ -139,16 +152,7 @@ export default function Hero({
         // The request the page made on load is a real request and belongs on
         // the strip. Without it a visitor who asks nothing sees an empty chart
         // under a panel claiming to be live.
-        window.dispatchEvent(
-          new CustomEvent<TelemetryPing>(TELEMETRY_EVENT, {
-            detail: {
-              ms: demo.total,
-              tokens: (demo.usage?.in ?? 0) + (demo.usage?.out ?? 0),
-              cost: 0,
-              provider: demo.provider,
-            },
-          }),
-        );
+        ping();
       } catch (err) {
         // Offline, blocked, or the route is not deployed. The structure above
         // still tells the story; it just does so without numbers. Stated rather

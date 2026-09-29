@@ -60,7 +60,10 @@ const H = { sx: 0.5, sy: 0.17 };
  * aisle's far end sits upper right (plan 7.3, beat 0). Eye at x 1.0, over the
  * aisle centre line.
  */
-export const START: Shot = shot([-5.29, 1.45, 4.57], 7.68, 35, 116, 0, H.sx, H.sy);
+// Yaw 25 degrees off the aisle puts its vanishing point at x 1332 of 1440 at
+// 35 mm (tan 25 / tan 28.8 of the half width); the plan's "az 116" is yaw 26,
+// which lands it at 1360 (docs/film-deviations.md, D10).
+export const START: Shot = shot([-5.29, 1.45, 4.57], 7.68, 35, 115, 0, H.sx, H.sy);
 
 /**
  * Plan section 7.2, the route ledger, row by row: lens, framing width W,
@@ -69,7 +72,7 @@ export const START: Shot = shot([-5.29, 1.45, 4.57], 7.68, 35, 116, 0, H.sx, H.s
  */
 export const ROUTE: Beat[] = [
   // 0. Hero: slow dolly-in of 1 m with a 10 degree drift.
-  { id: "hero", mode: "S", legs: [{ at: 1, shot: shot([-5.07, 1.4, 4.8], 7.1, 35, 121, 1, H.sx, H.sy) }] },
+  { id: "hero", mode: "S", legs: [{ at: 1, shot: shot([-5.07, 1.4, 4.8], 7.1, 35, 119, 1, H.sx, H.sy) }] },
   // 1. T1: forward under the tray, pan onto the app server.
   { id: "T1", mode: "T", vh: 1.8, stage: "fabric", legs: [{ at: 1, shot: shot(APP, 1.65, 35, 168, 5, T.sx, T.sy) }] },
   {

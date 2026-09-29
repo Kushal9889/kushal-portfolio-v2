@@ -56,6 +56,8 @@ type Demo = {
   trace: RetrievalTrace | null;
   /** What the same tokens cost at the serving model's published list price, in US dollars. Null when unlisted. */
   listPrice: number | null;
+  /** When this run finished, epoch ms. A cache hit returns the same value, so the age a reader is shown is the age of the run. */
+  ranAt: number;
 };
 
 let cached: { at: number; demo: Demo } | null = null;
@@ -79,6 +81,7 @@ export async function GET() {
       provider: provider ?? null,
       trace: trace ?? null,
       listPrice: usage && provider && modelOf(provider) ? listPrice(modelOf(provider)!, usage) : null,
+      ranAt: Date.now(),
     };
     // Not cached and not served. The hero renders its unreachable copy, which
     // is what actually happened, rather than a four-minute figure.

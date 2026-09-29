@@ -97,22 +97,10 @@ export const ASK_EVENT = "corpus:ask";
 /** The branch the router chose, so the topology figure can light its own path. */
 export const ROUTE_EVENT = "corpus:route";
 
-/**
- * One completed request, for the telemetry strip in the hero.
- *
- * Emitted per answer rather than polled, and never on a timer: the strip is
- * completely still between requests because nothing is happening between them.
- * A sparkline that moves on its own would be decoration dressed as measurement,
- * which is the one thing this page cannot afford to fake.
- */
-export const TELEMETRY_EVENT = "corpus:telemetry";
-
-export type TelemetryPing = {
-  ms: number;
-  tokens: number;
-  cost: number;
-  provider: string | null;
-};
+// The request's outbound and completed events live in lib/agent/events.ts so
+// code outside React (the film) can read the same contract.
+export { SENT_EVENT, TELEMETRY_EVENT, type SentDetail, type TelemetryPing } from "@/lib/agent/events";
+import { SENT_EVENT, TELEMETRY_EVENT, type SentDetail, type TelemetryPing } from "@/lib/agent/events";
 
 type Openable = { key: string; label: string; url: string; about: string };
 
@@ -363,6 +351,7 @@ export default function Agent({
     setStage("routing");
     setTurns((t) => [...t, { question, result: null }]);
     setPending(true);
+    window.dispatchEvent(new CustomEvent<SentDetail>(SENT_EVENT, { detail: { question, t0: performance.now() } }));
 
     // Streamed over Server-Sent Events. The answer is assembled here rather than
     // waiting on a settled response, so the first words appear roughly a second
@@ -492,6 +481,12 @@ export default function Agent({
               tokens: (data.usage?.in ?? 0) + (data.usage?.out ?? 0),
               cost: data.listPrice ?? 0,
               provider: data.provider ?? null,
+              tokensIn: data.usage?.in,
+              tokensOut: data.usage?.out,
+              timings: { ...timings },
+              sources,
+              warm: data.warm === true,
+              degraded: data.degraded === true,
             },
           }),
         );
