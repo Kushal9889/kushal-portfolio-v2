@@ -1,10 +1,25 @@
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import field from "@/lib/agent/field.json";
-import { KEYS } from "./beats";
-import { eyeOf, packetAt, poseAt, step } from "./camera";
-import { measure, uAt } from "./timeline";
+import { distanceOf, eyeOf, fovOf, step } from "./camera";
+import { CHANNELS, sample, spans, type Span } from "./plan";
+import { ROUTE } from "./shots";
 import { buildWorld } from "./world/greybox";
+
+/** Scroll ranges of every page element the route names, measured now. */
+function measure(): Span[] {
+  const boxes = ROUTE.filter((b) => b.id !== "hero").flatMap((b) => {
+    const el = document.getElementById(b.id) ?? document.querySelector<HTMLElement>(`[data-transit="${b.id}"]`);
+    if (!el) return [];
+    const r = el.getBoundingClientRect();
+    return [{ id: b.id, top: r.top + window.scrollY, height: r.height }];
+  });
+  return spans(boxes, window.innerHeight);
+}
+
+/** A cut dissolves to ground and back: out fast, in slower, like a film edit. */
+const CUT_OUT = 140;
+const CUT_IN = 260;
 
 type Triggers = typeof import("gsap/ScrollTrigger").ScrollTrigger;
 
@@ -58,22 +73,24 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
 
   const camera = new THREE.PerspectiveCamera(40, 1, 0.01, 100);
 
-  const pose = new Float64Array(7);
-  const vel = new Float64Array(7);
-  const goal = new Float64Array(7);
-  let points = measure();
+  const pose = new Float64Array(CHANNELS);
+  const vel = new Float64Array(CHANNELS);
+  const goal = new Float64Array(CHANNELS);
+  let list = measure();
   const debug = new URLSearchParams(location.search).get("film") === "debug";
+  // ?frame=film:<y> renders the goal for scroll position y, for stills.
   const framed = new URLSearchParams(location.search).get("frame")?.match(/^film:([\d.]+)$/);
-  let u = framed ? Number(framed[1]) : uAt(points, window.scrollY);
-  poseAt(u, pose);
+  const yOf = () => (framed ? Number(framed[1]) : window.scrollY);
+  let where = sample(list, yOf(), pose);
+  let cutAt = -1;
 
   let last = performance.now();
   let lastInput = last;
   let raf = 0;
   let stopped = false;
-  const eye = new THREE.Vector3();
+  const eye: [number, number, number] = [0, 0, 0];
   const frames: number[] = [];
-  const stats = { u, beat: KEYS[0].id, p95: 0, draws: 0, tris: 0 };
+  const stats = { y: 0, beat: where.beat, progress: 0, lens: 0, W: 0, moving: true, p95: 0, draws: 0, tris: 0 };
 
   function resize() {
     const w = host.clientWidth || window.innerWidth;
@@ -95,37 +112,65 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
       frames.length = 0;
     }
 
-    if (!framed) u = uAt(points, window.scrollY);
-    poseAt(u, goal);
-    // Ambient orbit while the reader holds still.
-    const orbit = Math.sin(now / 3183) * 1.5;
-    goal[4] += orbit;
+    const next = sample(list, yOf(), goal);
+    // Crossing a cut: dissolve out, jump the camera while the frame is ground,
+    // dissolve in. The spring never flies across the scale a cut removes.
+    if (next.run !== where.run && !framed) cutAt = now;
+    where = next;
+    if (cutAt >= 0) {
+      const t = now - cutAt;
+      if (t >= CUT_OUT && t - dt * 1000 < CUT_OUT) {
+        pose.set(goal);
+        vel.fill(0);
+      }
+      canvas.style.opacity = String(t < CUT_OUT ? 1 - t / CUT_OUT : Math.min(1, (t - CUT_OUT) / CUT_IN));
+      if (t >= CUT_OUT + CUT_IN) {
+        cutAt = -1;
+        canvas.style.opacity = "";
+      }
+    }
+    // The resting film breathes, and only while the reader is still: the
+    // amplitude is the time since the last input, so it encodes idleness.
+    // Arrived means at the scroll goal, breathing aside: framing within 1%,
+    // angles within 2 degrees, target within 1% of the distance.
+    stats.moving =
+      Math.abs(pose[3] - goal[3]) > 0.01 ||
+      Math.abs(pose[4] - goal[4]) > 2 ||
+      Math.abs(pose[5] - goal[5]) > 2 ||
+      Math.hypot(pose[0] - goal[0], pose[1] - goal[1], pose[2] - goal[2]) > 0.01 * distanceOf(goal);
+    const idle = Math.min(1, (now - lastInput) / 2000);
+    goal[4] += Math.sin(now / 3183) * 1.5 * idle;
     if (framed) pose.set(goal);
     else step(pose, vel, goal, dt);
 
-    const d = Math.exp(pose[3]);
-    const [ex, ey, ez] = eyeOf(pose);
-    eye.set(ex, ey, ez);
-    camera.position.copy(eye);
-    camera.fov = pose[6];
+    const d = distanceOf(pose);
+    eyeOf(pose, eye);
+    camera.position.set(eye[0], eye[1], eye[2]);
+    camera.fov = fovOf(pose);
     camera.near = Math.max(0.0004, d * 0.02);
     camera.far = Math.max(60, d * 600);
     camera.lookAt(pose[0], pose[1], pose[2]);
+    // Lens shift: the target lands on screen point (sx, sy) with verticals
+    // kept parallel, the way a shift lens frames architecture.
+    const vw = renderer.domElement.width;
+    const vh = renderer.domElement.height;
+    camera.setViewOffset(vw, vh, vw * (0.5 - pose[7]), vh * (0.5 - pose[8]), vw, vh);
     camera.updateProjectionMatrix();
     (scene.fog as THREE.FogExp2).density = 0.4 / d;
 
-    const [px, py, pz] = packetAt(u);
-    packet.position.set(px, py, pz);
+    packet.position.set(pose[0], pose[1], pose[2]);
     packet.scale.setScalar(d * 0.006);
 
-    // The cold plate lifts as the camera arrives at the module.
-    const lift = Math.min(1, Math.max(0, u - KEYS.findIndex((k) => k.id === "B4d")));
-    world.setLift(lift);
-    world.cull(eye);
+    // The cold plate lifts over the last act of the descent.
+    world.setLift(where.beat === "T3" ? Math.min(1, Math.max(0, (where.progress - 0.75) / 0.2)) : where.run > 2 ? 1 : 0);
+    world.cull(camera.position);
 
     renderer.render(scene, camera);
-    stats.u = u;
-    stats.beat = KEYS[Math.round(Math.min(Math.max(u, 0), KEYS.length - 1))].id;
+    stats.y = yOf();
+    stats.beat = where.beat;
+    stats.progress = where.progress;
+    stats.lens = Math.exp(pose[6]);
+    stats.W = Math.exp(pose[3]);
     stats.draws = renderer.info.render.calls;
     stats.tris = renderer.info.render.triangles;
 
@@ -148,7 +193,7 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
   window.addEventListener("resize", resize);
   const trigger = ScrollTrigger.create({ start: 0, end: "max", onUpdate: wake });
   const remeasure = () => {
-    points = measure();
+    list = measure();
     wake();
   };
   ScrollTrigger.addEventListener("refresh", remeasure);

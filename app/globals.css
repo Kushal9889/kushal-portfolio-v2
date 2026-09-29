@@ -2317,24 +2317,45 @@ body {
 }
 
 /* ---- Film layer --------------------------------------------------------
- * With the live film behind the page, every block that carries text keeps a
- * ground of at least 90% so body copy never sits on raw film. The film shows
- * through the remainder and plays at full exposure in the transit windows.
+ * The film's darkest pixel is --paper (engine.ts locks it), so any block that
+ * paints --paper meets the film with no seam. Text never sits on raw film:
+ *
+ * - Sections stop painting full-bleed grounds. From 80rem the reading column
+ *   of each section is one solid block, 62vw wide and left-aligned where the
+ *   text already starts, and the right-hand lane is film.
+ * - Below 80rem the whole section is solid; the film plays in the hero and the
+ *   transit windows only.
+ * - The hero's text is protected by the film itself (a scrim under its rects).
+ *
+ * Solid, not translucent: a half-transparent ground over the film was a
+ * color-mix in oklch, and mixing with `transparent` in oklch drops the hue to
+ * `none`, which renders as hue 0, so every section read faintly warm against a
+ * blue-black film. One opaque token has no hue to lose.
  */
-html[data-film="live"] main > section,
 html[data-film="live"] body > header,
-html[data-film="live"] body > footer {
-  background: color-mix(in oklch, var(--paper) 90%, transparent);
+html[data-film="live"] body > footer,
+html[data-film="live"] main > section {
+  background: transparent;
+  border-bottom: 0;
 }
 
-html[data-film="live"] main > section[data-tone="sunk"] {
-  background: color-mix(in oklch, var(--paper-sunk) 90%, transparent);
+html[data-film="live"] main > section > .wrap {
+  background: var(--paper);
+  padding-block: var(--s-6);
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  html[data-film="live"] main > section,
-  html[data-film="live"] body > header,
-  html[data-film="live"] body > footer {
+@media (min-width: 80rem) {
+  html[data-film="live"] main > section > .wrap,
+  html[data-film="live"] main > section[data-register="chapter"] > .wrap {
+    max-width: 62vw;
+    margin-left: max(0px, calc((100vw - 76rem) / 2));
+    margin-right: auto;
+    box-shadow: inset calc(-1 * var(--border-hair)) 0 0 var(--rule);
+  }
+}
+
+@media (max-width: 79.99rem) {
+  html[data-film="live"] main > section {
     background: var(--paper);
   }
 }

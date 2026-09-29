@@ -37,7 +37,7 @@ def main() -> int:
     ap.add_argument("--url", default="http://localhost:3002/classic?film=debug")
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--mobile", action="store_true")
-    ap.add_argument("--settle", type=float, default=2.2)
+    ap.add_argument("--settle", type=float, default=12)
     args = ap.parse_args()
     os.makedirs(OUT, exist_ok=True)
     w, h = (390, 844) if args.mobile else (1440, 900)
@@ -61,7 +61,14 @@ def main() -> int:
                 print(a, "missing")
                 continue
             page.evaluate("(y) => window.scrollTo({top: y, behavior: 'instant'})", y)
-            page.wait_for_timeout(int(args.settle * 1000))
+            page.wait_for_timeout(400)
+            # Wait for the camera spring to arrive (it is rate limited, so a long
+            # jump takes seconds), then let one more frame land.
+            try:
+                page.wait_for_function("window.__film && window.__film.moving === false", timeout=int(args.settle * 1000))
+            except Exception:
+                print(a, "camera still moving after", args.settle, "s")
+            page.wait_for_timeout(200)
             shot = cdp.send("Page.captureScreenshot", {"format": "jpeg", "quality": 72})
             name = f"{'m-' if args.mobile else ''}{ANCHORS.index(a) if a in ANCHORS else 99:02d}-{a}.jpg"
             with open(os.path.join(OUT, name), "wb") as f:

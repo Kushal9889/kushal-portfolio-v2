@@ -1,18 +1,13 @@
 .transit {
   position: relative;
-  height: 60vh;
+  height: calc(var(--transit-vh, 0.6) * 100vh);
   display: grid;
   align-items: end;
   padding: 0 clamp(1rem, 4vw, 3rem) 2rem;
 }
 
-.transit[data-tall] {
-  height: 90vh;
-}
-
 @media (max-width: 767px) {
-  .transit,
-  .transit[data-tall] {
+  .transit {
     height: 40vh;
   }
 }

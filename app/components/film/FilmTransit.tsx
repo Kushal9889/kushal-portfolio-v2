@@ -1,17 +1,20 @@
 import film from "@/content/film.json";
-import { TRANSITS } from "./beats";
+import { TRANSIT_VH } from "./plan";
+import { ROUTE } from "./shots";
 import styles from "./FilmTransit.module.css";
 
 /**
  * A window between two sections where the film plays at full exposure. Not a
  * section, so the section observers and the entrance batching never see it.
+ * Its height is what the route needs to cross it at a readable speed
+ * (plan.ts), so the page and the camera cannot disagree.
  */
 export default function FilmTransit({ id }: { id: string }) {
-  const t = TRANSITS.find((x) => x.id === id);
-  if (!t) return null;
-  const caption = film.stages[t.stage as keyof typeof film.stages];
+  const beat = ROUTE.find((b) => b.id === id);
+  if (!beat?.stage) return null;
+  const caption = film.stages[beat.stage as keyof typeof film.stages];
   return (
-    <div className={styles.transit} data-transit={id} data-tall={t.tall || undefined}>
+    <div className={styles.transit} data-transit={id} style={{ "--transit-vh": TRANSIT_VH[id] } as React.CSSProperties}>
       <p className={styles.caption}>
         <span>{caption}</span>
         <span className={styles.tag}>{film.illustration}</span>

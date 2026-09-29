@@ -62,7 +62,7 @@ export function buildWorld(field: { positions: number[]; clusters: number[] }): 
   disposables.push(floor.geometry);
 
   // Ceiling light strips over the aisle and over each row.
-  for (const z of [0, PLACES.aisleZ, 2.4]) {
+  for (const z of [0, PLACES.aisleZ, PLACES.northZ]) {
     root.add(box(40, 0.02, 0.05, stripMat, -8, 2.9, z));
   }
   // Overhead fibre trays above the aisle.
@@ -81,7 +81,7 @@ export function buildWorld(field: { positions: number[]; clusters: number[] }): 
   for (let i = 0; i < 22; i++) {
     const x = -0.6 * i;
     if (Math.abs(x - PLACES.appRack[0]) < 0.01) continue;
-    shells.push(m4.clone().setPosition(x, rackY, 2.4));
+    shells.push(m4.clone().setPosition(x, rackY, PLACES.northZ));
   }
   const rackShells = new THREE.InstancedMesh(rackGeo, rackMat, shells.length);
   shells.forEach((m, i) => rackShells.setMatrixAt(i, m));
@@ -115,12 +115,17 @@ export function buildWorld(field: { positions: number[]; clusters: number[] }): 
   // Closed 4U servers in every slot but the hero's, and a 1U switch on top.
   const heroSlotBottom = -0.06;
   const bezels: THREE.Mesh[] = [];
+  // The servers above the hero's are one group: the descent passes through
+  // their volume, so they are X-rayed away while the eye is inside the rack.
+  const upper = new THREE.Group();
   for (let y = PLACES.floorY + 0.05; y + 4 * U < 1.0; y += 4 * U) {
     if (Math.abs(y - heroSlotBottom) < 2 * U) continue;
-    hero.add(box(0.44, 4 * U - 0.004, 0.95, serverMat, 0, y + 2 * U, -0.025));
-    hero.add(box(0.012, 0.004, 0.002, ledMat, 0.2, y + 0.02, 0.453));
+    const g = y > heroSlotBottom ? upper : hero;
+    g.add(box(0.44, 4 * U - 0.004, 0.95, serverMat, 0, y + 2 * U, -0.025));
+    g.add(box(0.012, 0.004, 0.002, ledMat, 0.2, y + 0.02, 0.453));
   }
-  hero.add(box(0.44, U, 0.95, serverMat, 0, 1.08, -0.025));
+  upper.add(box(0.44, U, 0.95, serverMat, 0, 1.08, -0.025));
+  hero.add(upper);
 
   // The hero server: chassis floor and walls, no lid, and a front bezel the
   // camera passes through on its way in.
@@ -245,6 +250,7 @@ export function buildWorld(field: { positions: number[]; clusters: number[] }): 
   disposables.push(vGeo, vMat);
 
   const heroCentre = new THREE.Vector3(0, 0, 0);
+  const dimmAt = new THREE.Vector3(...PLACES.dimm);
   return {
     root,
     vectorSpace,
@@ -263,7 +269,8 @@ export function buildWorld(field: { positions: number[]; clusters: number[] }): 
         mb.opacity = inside ? 0 : Math.min(1, Math.max(0, (near - 0.5) / 0.3));
         b.visible = mb.opacity > 0.01;
       }
-      const dv = eye.distanceTo(new THREE.Vector3(...PLACES.dimm));
+      upper.visible = !(Math.abs(eye.x) < 0.32 && eye.z < 0.62 && eye.y > heroSlotBottom && eye.y < 1.2);
+      const dv = eye.distanceTo(dimmAt);
       vMat.opacity = Math.min(1, Math.max(0, (0.4 - dv) / 0.2));
       vectorSpace.visible = vMat.opacity > 0.01;
     },
