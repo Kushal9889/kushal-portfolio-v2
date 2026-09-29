@@ -167,14 +167,14 @@ export default function Hero({
   return (
     <header className={styles.hero}>
       <div className="wrap">
-        <div className={styles.top}>
+        <div className={styles.top} data-film-scrim>
           <span className={styles.name}>{name}</span>
           <span className={styles.place}>{location}</span>
         </div>
 
         {/* Split on the sentence boundary: the claim leads, the qualifier
             recedes. Falls back to the whole string if the shape ever changes. */}
-        <h1 className={styles.line}>
+        <h1 className={styles.line} data-film-scrim>
           {(() => {
             const cut = tagline.indexOf(". ");
             if (cut === -1) return tagline;
@@ -196,7 +196,7 @@ export default function Hero({
          * top to bottom. Identity reads down the left, the instrument runs on
          * the right, and both finish inside the first screen. */}
         <div className={styles.body}>
-          <div className={styles.identity}>
+          <div className={styles.identity} data-film-scrim>
 
         {/* Title and employer, which is the line a reader looks for first and
             the one the headline above cannot carry.

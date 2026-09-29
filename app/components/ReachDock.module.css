@@ -106,6 +106,13 @@
   }
 }
 
+/* Over the film the dock is cut from the same ground the film locks its black
+   to, so its top hairline is the only edge. --paper-sunk would sit a step
+   darker than the film and show as a band. */
+:global(html[data-film="live"]) .dock {
+  background: var(--paper);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .dock {
     transition: none;

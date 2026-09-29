@@ -15,7 +15,7 @@ export default function FilmTransit({ id }: { id: string }) {
   const caption = film.stages[beat.stage as keyof typeof film.stages];
   return (
     <div className={styles.transit} data-transit={id} style={{ "--transit-vh": TRANSIT_VH[id] } as React.CSSProperties}>
-      <p className={styles.caption}>
+      <p className={styles.caption} data-film-scrim>
         <span>{caption}</span>
         <span className={styles.tag}>{film.illustration}</span>
       </p>

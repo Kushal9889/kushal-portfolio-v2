@@ -4,6 +4,7 @@ import field from "@/lib/agent/field.json";
 import { distanceOf, eyeOf, fovOf, step } from "./camera";
 import { CHANNELS, sample, spans, type Span } from "./plan";
 import { ROUTE } from "./shots";
+import { createPost, SCRIM_MAX } from "./post";
 import { buildWorld } from "./world/greybox";
 
 /** Scroll ranges of every page element the route names, measured now. */
@@ -15,6 +16,19 @@ function measure(): Span[] {
     return [{ id: b.id, top: r.top + window.scrollY, height: r.height }];
   });
   return spans(boxes, window.innerHeight);
+}
+
+/**
+ * Document-space boxes of the text that sits straight on the film, tight to
+ * the text itself rather than to its block: left, top, right, bottom.
+ */
+function measureScrims() {
+  const range = document.createRange();
+  return [...document.querySelectorAll<HTMLElement>("[data-film-scrim]")].map((el) => {
+    range.selectNodeContents(el);
+    const r = range.getBoundingClientRect();
+    return [r.left, r.top + window.scrollY, r.right, r.bottom + window.scrollY];
+  });
 }
 
 /** A cut dissolves to ground and back: out fast, in slower, like a film edit. */
@@ -48,14 +62,16 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
   host.appendChild(canvas);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-  renderer.toneMapping = THREE.AgXToneMapping;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  // The scene renders linear light into post.target; post.ts tone maps it and
+  // adds the ground. Empty space and fog are therefore 0 here, not the ground.
+  renderer.setClearColor(0x000000, 1);
+  renderer.info.autoReset = false;
 
   const ground = cssColour(getComputedStyle(document.body).getPropertyValue("--paper").trim() || getComputedStyle(document.body).backgroundColor);
-  renderer.setClearColor(ground, 1);
+  const post = createPost(ground);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(ground, 0.02);
+  scene.fog = new THREE.FogExp2(0x000000, 0.02);
   const pmrem = new THREE.PMREMGenerator(renderer);
   const env = new RoomEnvironment();
   scene.environment = pmrem.fromScene(env, 0.04).texture;
@@ -77,7 +93,13 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
   const vel = new Float64Array(CHANNELS);
   const goal = new Float64Array(CHANNELS);
   let list = measure();
-  const debug = new URLSearchParams(location.search).get("film") === "debug";
+  const query = new URLSearchParams(location.search);
+  const debug = query.get("film") === "debug";
+  // ?lights=off renders nothing through the full pipeline, so the frame must
+  // come out as the page ground (scripts/film-black.py).
+  if (query.get("lights") === "off") world.root.visible = packet.visible = false;
+  let scrims = measureScrims();
+  const rects = new Float32Array(SCRIM_MAX * 4);
   // ?frame=film:<y> renders the goal for scroll position y, for stills.
   const framed = new URLSearchParams(location.search).get("frame")?.match(/^film:([\d.]+)$/);
   const yOf = () => (framed ? Number(framed[1]) : window.scrollY);
@@ -96,6 +118,8 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
     const w = host.clientWidth || window.innerWidth;
     const h = host.clientHeight || window.innerHeight;
     renderer.setSize(w, h, false);
+    const buffer = renderer.getDrawingBufferSize(new THREE.Vector2());
+    post.resize(buffer.x, buffer.y, renderer.getPixelRatio());
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
   }
@@ -165,7 +189,24 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
     world.setLift(where.beat === "T3" ? Math.min(1, Math.max(0, (where.progress - 0.75) / 0.2)) : where.run > 2 ? 1 : 0);
     world.cull(camera.position);
 
+    // Scrim rects that reach into the viewport, in viewport CSS px.
+    const sy = window.scrollY;
+    const vhCss = window.innerHeight;
+    let n = 0;
+    for (const [l, t, r, b] of scrims) {
+      if (n === SCRIM_MAX || b - sy < -24 || t - sy > vhCss + 24) continue;
+      rects[n * 4] = l;
+      rects[n * 4 + 1] = t - sy;
+      rects[n * 4 + 2] = r;
+      rects[n * 4 + 3] = b - sy;
+      n++;
+    }
+    post.setRects(rects, n);
+
+    renderer.info.reset();
+    renderer.setRenderTarget(post.target);
     renderer.render(scene, camera);
+    post.render(renderer);
     stats.y = yOf();
     stats.beat = where.beat;
     stats.progress = where.progress;
@@ -194,9 +235,13 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
   const trigger = ScrollTrigger.create({ start: 0, end: "max", onUpdate: wake });
   const remeasure = () => {
     list = measure();
+    scrims = measureScrims();
     wake();
   };
   ScrollTrigger.addEventListener("refresh", remeasure);
+  // The page grows when an answer arrives; the route and scrims follow it.
+  const grow = new ResizeObserver(remeasure);
+  grow.observe(document.body);
 
   if (debug) (window as unknown as { __film: typeof stats }).__film = stats;
   document.documentElement.dataset.film = "live";
@@ -207,12 +252,14 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
     cancelAnimationFrame(raf);
     trigger.kill();
     ScrollTrigger.removeEventListener("refresh", remeasure);
+    grow.disconnect();
     window.removeEventListener("resize", resize);
     delete document.documentElement.dataset.film;
     world.dispose();
     packet.geometry.dispose();
     packetMat.dispose();
     pmrem.dispose();
+    post.dispose();
     renderer.dispose();
     canvas.remove();
   };

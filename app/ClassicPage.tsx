@@ -529,7 +529,7 @@ export default function Page() {
         <p className={styles.wordmark} aria-hidden="true">
           {profile.name}
         </p>
-        <div className="wrap">
+        <div className="wrap" data-film-scrim>
           <Prose body={section("This site").body} className={styles.footerNote} />
           <p className="label">Last verified {profile.lastVerified}</p>
         </div>

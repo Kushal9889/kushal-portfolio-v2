@@ -1831,8 +1831,12 @@ main > section[data-register="chapter"] > .wrap h2 {
  * same way the console ground restates it, so no component has to know it is
  * sitting on a darker surface.
  */
-[data-tone="sunk"],
-[data-surface="sunk"] {
+/* Light only. Written when light was the default; left unscoped after dark
+   became the root theme, it put these light-ground inks on the dark sunk
+   ground at 1.95:1 in Education, Proof and Open source. The dark ramp already
+   gains contrast on a darker ground and needs no restatement. */
+:root[data-theme="light"] [data-tone="sunk"],
+:root[data-theme="light"] [data-surface="sunk"] {
   --ink-faint: oklch(0.455 0.007 250);
   --ink-soft: oklch(0.385 0.006 250);
 }
