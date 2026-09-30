@@ -24,7 +24,6 @@ import Defects from "./components/Defects";
 import WorkStack from "./components/WorkStack";
 import BrandMark from "./components/BrandMark";
 import SectionRail from "./components/SectionRail";
-import Ticker from "./components/Ticker";
 import EvalMatrix from "./components/EvalMatrix";
 import Panel from "./components/Panel";
 import Artifacts2 from "./components/Artifacts";
@@ -32,6 +31,10 @@ import evals from "@/content/evals.json";
 import { loadContent, section, loadCertifications, type Section } from "@/lib/content";
 import { TARGETS } from "@/lib/agent/tools";
 import styles from "./page.module.css";
+import FilmLine from "./components/film/FilmLine";
+import ServeSim from "./components/ServeSim";
+import Redact from "./components/Redact";
+import Vitals from "./components/Vitals";
 import FilmTransit from "./components/film/FilmTransit";
 import FilmChip from "./components/film/FilmChip";
 import FilmMount from "./components/film/FilmMount";
@@ -195,18 +198,6 @@ export default function Page() {
   const featured = certs.find((c) => c.featured);
 
   /*
-   * The strip that runs along the turn.
-   *
-   * Assembled from the same corpus objects every section renders rather than
-   * written out here, so a figure on the strip cannot say something the section
-   * it came from does not. Only the ones whose value leads with a number: a
-   * readout is a row of readings, and "BM25 + vector" is a description.
-   */
-  const tickerItems = loadContent()
-    .sections.flatMap((s) => s.metrics)
-    .filter((m) => /^[+-]?\d/.test(m.value));
-
-  /*
    * The agent's props, assembled here rather than inline.
    *
    * `openable` is the same registry `open_evidence` routes over, handed to
@@ -294,13 +285,10 @@ export default function Page() {
       </Hero>
 
       <main id="main">
+        <FilmLine which="hook" />
         <FilmTransit id="T1" />
 
         <Section id="work" title="Work" data-layout="banner" data-register="chapter">
-          {/* The measured values, running along the turn. Handed the same parsed
-              metrics the sections below render, so nothing here is a second copy
-              of a figure that could drift from the corpus. */}
-          <Ticker items={tickerItems} />
           <WorkStack />
           {/* Rail and content are two columns of one grid, not three
               self-contained role cards, so every role's identity can share
@@ -388,6 +376,7 @@ export default function Page() {
           <div data-keep="all">
             <Prose body={section("What he does not do").body} />
           </div>
+          <Redact />
         </Section>
 
         <FilmTransit id="T5" />
@@ -422,6 +411,7 @@ export default function Page() {
               is empty until somebody asks something. It is a measurement, and
               this is the section about measurement. */}
           <Telemetry />
+          <Vitals />
           <Defects />
         </Section>
 
@@ -455,6 +445,7 @@ export default function Page() {
               ))}
             </ul>
           </Panel>
+          <ServeSim />
         </Section>
 
         <FilmTransit id="T7" />
@@ -519,6 +510,7 @@ export default function Page() {
               evals,
             }}
           />
+          <FilmLine which="closing" />
         </Section>
       </main>
 

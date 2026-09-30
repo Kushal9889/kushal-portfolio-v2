@@ -102,7 +102,7 @@ export default function EvalMatrix() {
        * model summarising is not, which is the single most useful thing this
        * suite has to say and the one thing a ratio cannot. */}
       <p className={styles.headline}>
-        <b>{totalPasses} of {totalRuns} runs pass</b>, {cases.length} cases {runs} times each.
+        {cases.length} cases, {runs} runs each (the pass count is above, under How this is measured).
         Every policy and authorisation run passes because none of them reaches a model. The
         grounding cases are where a language model has to summarise without dropping the figure,
         and that is where the suite is honest about being probabilistic.

@@ -25,6 +25,8 @@ export type TelemetryPing = {
   /** The page's own load-time request: a fixed question, run at `ranAt` (epoch ms). */
   recorded?: boolean;
   ranAt?: number;
+  /** Characters in the answer. When a provider reports no token usage, the film estimates tokens from it (about 4 per token) and calls it an estimate. */
+  answerChars?: number;
 };
 
 /**

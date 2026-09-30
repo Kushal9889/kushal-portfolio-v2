@@ -59,7 +59,6 @@ const ROWS = [
 
 export default function Measured() {
   const groups = Object.entries(evals.groups ?? {});
-  const cases = evals.cases_detail ?? [];
   const bothRetrievers = evals.denseUsed ?? 0;
   const retrievals = evals.retrievals ?? 0;
 
@@ -101,26 +100,7 @@ export default function Measured() {
         </ul>
       )}
 
-      {/* Every assertion, written by the runner from the cases it executes.
-          Behind a disclosure because that many rows is a wall on a page that has
-          to be skimmable, and open in one click because the reader who wants
-          this is the one worth keeping. */}
-      {cases.length > 0 && (
-        <details className={styles.cases}>
-          <summary className={styles.summary}>
-            Read all {cases.length} assertions
-            <span className="caption"> written by the runner, not typed here</span>
-          </summary>
-          <ol className={styles.caseList}>
-            {cases.map((c) => (
-              <li key={c.name} className={styles.case} data-pass={c.pass}>
-                <span className={styles.caseQ}>{c.name}</span>
-                <span className={styles.caseA}>{c.asserts}</span>
-              </li>
-            ))}
-          </ol>
-        </details>
-      )}
+      {/* Every assertion lives in the eval matrix below, case by case (D52). */}
 
       {/* The limits of the thing above, stated by the thing above.
           A suite that only publishes its score is advertising; one that

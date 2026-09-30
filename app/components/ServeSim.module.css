@@ -1,0 +1,175 @@
+.lede {
+  margin: 0 0 var(--s-3);
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.controls {
+  display: grid;
+  gap: var(--s-2);
+  margin-block-end: var(--s-3);
+}
+
+.choice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice legend {
+  float: left;
+  width: 11rem;
+  padding: 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.choice label,
+.toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border: var(--border-hair) solid var(--rule);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 13px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.choice label[data-on] {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: var(--paper-raised);
+}
+
+.choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.choice label:has(input:focus-visible),
+.toggle:has(input:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.toggle {
+  gap: 8px;
+  justify-self: start;
+}
+
+/* Memory of every GPU as one bar: weights, then cache, then what is left. The
+   tick is where the activation reserve starts. */
+.bar {
+  position: relative;
+  display: flex;
+  height: 14px;
+  background: var(--paper-raised);
+  border: var(--border-hair) solid var(--rule);
+  overflow: hidden;
+}
+
+.weights,
+.kv {
+  flex: none;
+  height: 100%;
+  transition: width 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.weights {
+  background: var(--ink-faint);
+}
+
+.kv {
+  background: var(--live);
+}
+
+.bar[data-state="warn"] .kv {
+  background: var(--warn);
+}
+
+.bar[data-state="fail"] .kv {
+  background: var(--fail);
+}
+
+.reserve {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--ink);
+}
+
+/* The end of GPU memory, drawn only when the demand runs past it. */
+.limit {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: var(--ink);
+}
+
+.readout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-2) var(--s-3);
+  margin: var(--s-3) 0 0;
+}
+
+.readout dt {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.readout dd {
+  margin: 2px 0 0;
+  font-size: var(--step-1);
+  color: var(--ink);
+}
+
+.readout dd small {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.readout dd[data-state="fail"] {
+  color: var(--fail);
+}
+
+.source {
+  margin: var(--s-3) 0 0;
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .weights,
+  .kv {
+    transition: none;
+  }
+}
+
+@media (max-width: 40rem) {
+  .readout {
+    grid-template-columns: 1fr;
+  }
+
+  .choice legend {
+    float: none;
+    width: 100%;
+  }
+}

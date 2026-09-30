@@ -1,13 +1,13 @@
 {
   "what has he shipped on azure?": {
-    "answer": "He built a document intelligence assistant on Azure for an enterprise consulting client, owned from ingestion through deployment.",
+    "answer": "He built a document intelligence assistant on Azure for an enterprise consulting client, owned from ingestion through deployment: a LangGraph agent exposing 14 tools for document question answering, cross-document comparison and template-driven generation, grounded by hybrid BM25 and vector retrieval with Cohere re-ranking, guarded by PII and entity redaction, and scored for hallucination rate by LLM-as-a-Judge evaluations.",
     "route": "answer",
     "timings": {
-      "route": 1,
-      "retrieve": 629,
-      "answer": 2219
+      "route": 3,
+      "retrieve": 1035,
+      "answer": 1916
     },
-    "total": 2867,
+    "total": 3405,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "IMG Systems",
@@ -15,7 +15,7 @@
     ],
     "usage": {
       "in": 2067,
-      "out": 22
+      "out": 84
     },
     "action": null,
     "trace": {
@@ -122,7 +122,7 @@
           "lexicalScore": 5.066,
           "lexicalRank": 28,
           "denseRank": 29,
-          "fused": 0.029217,
+          "fused": 0.029379,
           "selected": false
         },
         {
@@ -186,14 +186,14 @@
     "provider": "nvidia"
   },
   "what broke in production and how did he find it?": {
-    "answer": "The LangChain defect broke in production with a silent failure that reported success while discarding an error. He found it by tracing the system closely enough to see where it contradicted itself, identifying a code path that reported success while discarding an error.",
+    "answer": "The LangChain defect broke in production with a silent failure that reported success while discarding an error. He found it by tracing the system closely enough to see where it contradicted itself, which led him to write up the code path precisely enough for a maintainer to ship the fix in 57 hours.",
     "route": "answer",
     "timings": {
-      "route": 1,
-      "retrieve": 243,
-      "answer": 3182
+      "route": 38,
+      "retrieve": 236,
+      "answer": 1819
     },
-    "total": 3431,
+    "total": 2201,
     "sources": [
       "Publications",
       "What he is good at",
@@ -202,7 +202,7 @@
     ],
     "usage": {
       "in": 2126,
-      "out": 52
+      "out": 64
     },
     "action": null,
     "trace": {
@@ -369,10 +369,10 @@
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 237,
-      "answer": 711
+      "retrieve": 263,
+      "answer": 2054
     },
-    "total": 953,
+    "total": 2680,
     "sources": [
       "How retrieval on this page works",
       "What he is good at"
