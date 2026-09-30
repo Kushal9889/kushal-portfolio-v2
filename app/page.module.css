@@ -584,10 +584,3 @@
   }
 }
 
-/* From 768px the role folds are opened by script and their toggle is not
-   needed; closed (no script), the toggle stays so nothing is unreachable. */
-@media (min-width: 768px) {
-  .roleContent [data-role-fold][open] > summary {
-    display: none;
-  }
-}

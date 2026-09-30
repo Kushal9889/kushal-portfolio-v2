@@ -4,10 +4,10 @@
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 344,
-      "answer": 2760
+      "retrieve": 247,
+      "answer": 3296
     },
-    "total": 3121,
+    "total": 3560,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "IMG Systems",
@@ -122,7 +122,7 @@
           "lexicalScore": 5.066,
           "lexicalRank": 28,
           "denseRank": 29,
-          "fused": 0.029379,
+          "fused": 0.029217,
           "selected": false
         },
         {
@@ -186,14 +186,14 @@
     "provider": "nvidia"
   },
   "what broke in production and how did he find it?": {
-    "answer": "The LangChain defect in production was a silent failure with no exception and no stack trace, which static analysis does not catch. He found it by tracing answer quality problems to retrieval rather than generation, reading the system closely enough to see where it contradicted itself.",
+    "answer": "The LangChain defect broke in production as a silent failure with no exception and no stack trace, and he found it by tracing answer quality problems to retrieval rather than generation, which is where they usually are and rarely where people look first.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 228,
-      "answer": 2205
+      "retrieve": 224,
+      "answer": 2372
     },
-    "total": 2441,
+    "total": 2604,
     "sources": [
       "Publications",
       "What he is good at",
@@ -202,7 +202,7 @@
     ],
     "usage": {
       "in": 2126,
-      "out": 54
+      "out": 49
     },
     "action": null,
     "trace": {
@@ -365,22 +365,19 @@
     "provider": "nvidia"
   },
   "how does he know the retrieval is actually working?": {
-    "answer": "He knows the retrieval is actually working by finding the place a system is wrong before it fails loudly.",
+    "answer": "**The agent answering questions here runs hybrid retrieval: BM25 over the corpus\nand dense cosine over precomputed embeddings, fused with reciprocal rank fusion\nat k=60.** Both retrievers rank every chunk, and a chunk's final score is the\nsum of `1 / (60 + rank)` from each. RRF is used rather than a weighted score\nblend because the two retrievers produce numbers on incomparable scales: BM25 is\nunbounded and corpus-dependent, cosine similarity is bounded to a narrow band\nnear the top, and any fixed weighting between them is a constant that has to be\nretuned every time the corpus changes. Ranks are comparable by construction.",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 147,
-      "answer": 1068
+      "retrieve": 136,
+      "answer": 1790
     },
-    "total": 1225,
+    "total": 1934,
     "sources": [
       "How retrieval on this page works",
       "What he is good at"
     ],
-    "usage": {
-      "in": 1422,
-      "out": 22
-    },
+    "usage": null,
     "action": null,
     "trace": {
       "k": 60,
@@ -539,6 +536,6 @@
         }
       ]
     },
-    "provider": "nvidia"
+    "provider": null
   }
 }

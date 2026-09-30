@@ -149,8 +149,8 @@ function RoleContent({
       >
         <Metrics items={s.metrics} />
         {/* Folded on a phone so the three roles read as titles and figures
-            first; WorkStack opens it from 768px up, where it was always open. */}
-        <details className="more" data-role-fold>
+            first; WorkStack opens every [data-phone-fold] from 768px up, where it was always open. */}
+        <details className="more" data-phone-fold>
           <summary>
             <span className="more-open">Stack and what he built</span>
             <span className="more-close">Show less</span>
@@ -337,8 +337,14 @@ export default function Page() {
           />
           <Metrics items={os.metrics} />
           <Prose body={section("Open source, LangChain deepagents").body} />
-          <Artifacts items={os.artifacts} chain />
-          <AskSeeds items={section("Open source, LangChain deepagents").asks} />
+          <details className="more" data-phone-fold>
+            <summary>
+              <span className="more-open">The issue, the pull request and questions to ask</span>
+              <span className="more-close">Show less</span>
+            </summary>
+            <Artifacts items={os.artifacts} chain />
+            <AskSeeds items={section("Open source, LangChain deepagents").asks} />
+          </details>
         </Section>
 
         <FilmTransit id="T3" />
@@ -388,7 +394,13 @@ export default function Page() {
           <Prose body={section("Publications").body} />
           {/* Both papers as rows a reader can open, rather than as two links
               inside a paragraph. The DOI resolves; the link checker proves it. */}
-          <Artifacts2 items={section("Publications").artifacts} />
+          <details className="more" data-phone-fold>
+            <summary>
+              <span className="more-open">Both papers</span>
+              <span className="more-close">Show less</span>
+            </summary>
+            <Artifacts2 items={section("Publications").artifacts} />
+          </details>
         </Section>
 
 
@@ -441,7 +453,13 @@ export default function Page() {
           <div data-keep="all">
             <Prose body={section("What he does not do").body} />
           </div>
-          <Redact />
+          <details className="more" data-phone-fold>
+            <summary>
+              <span className="more-open">Try the redaction demo</span>
+              <span className="more-close">Show less</span>
+            </summary>
+            <Redact />
+          </details>
         </Section>
 
         <FilmTransit id="T8" />

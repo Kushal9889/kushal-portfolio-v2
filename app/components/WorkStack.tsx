@@ -18,7 +18,7 @@ import { useEffect } from "react";
 export default function WorkStack() {
   useEffect(() => {
     const wide = window.matchMedia("(min-width: 768px)");
-    const folds = document.querySelectorAll<HTMLDetailsElement>("#work [data-role-fold]");
+    const folds = document.querySelectorAll<HTMLDetailsElement>("[data-phone-fold]");
     const sync = () => folds.forEach((d) => (d.open = wide.matches));
     sync();
     wide.addEventListener("change", sync);

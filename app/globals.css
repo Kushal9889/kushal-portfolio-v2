@@ -2455,3 +2455,11 @@ html[data-film="live"] [data-surface="console"] {
     background: var(--paper);
   }
 }
+
+/* Folds that exist for phones. From 768px WorkStack opens them and the toggle
+   is not needed; closed (no script), the toggle stays so nothing is lost. */
+@media (min-width: 768px) {
+  [data-phone-fold][open] > summary {
+    display: none;
+  }
+}
