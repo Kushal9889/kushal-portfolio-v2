@@ -73,7 +73,7 @@ RUNS = """() => {
     if (box.width <= 1 || box.height <= 1 || cs.clipPath === 'inset(50%)') continue;
     range.selectNodeContents(n);
     const r = range.getBoundingClientRect();
-    if (r.width < 2 || r.height < 2 || r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) continue;
+    if (r.width < 2 || r.height < 2 || r.top < 0 || r.bottom > innerHeight || r.right < 0 || r.left > innerWidth) continue;
     // Text under another element (the fixed dock, an open overlay) is not seen.
     const hit = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
     if (hit && !el.contains(hit) && !hit.contains(el)) continue;

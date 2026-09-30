@@ -10,6 +10,7 @@
   bottom: 0;
   z-index: var(--z-furniture);
   padding: var(--s-2) var(--s-4);
+  padding-bottom: calc(var(--s-2) + env(safe-area-inset-bottom, 0px));
   background: var(--paper-sunk);
   border-block-start: var(--border-hair) solid var(--rule);
   transition:

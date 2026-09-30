@@ -2569,3 +2569,15 @@ main a[class*="primary"]:hover {
     display: none;
   }
 }
+
+/* Small standalone links (a metric's SOURCE, the vCard) get a 44px tall hit
+   area on touch screens without moving the layout. Inline links inside a
+   sentence keep the sentence's line height (WCAG 2.5.8 inline exception). */
+@media (pointer: coarse) {
+  a[class*="source"],
+  a[href$=".vcf"] {
+    display: inline-block;
+    padding-block: 13px;
+    margin-block: -13px;
+  }
+}
