@@ -8,7 +8,7 @@
 /* On a phone the text is the page; the film sits behind it as atmosphere. */
 @media (max-width: 767px) {
   .layer {
-    opacity: 0.38;
+    opacity: 0.6;
   }
 }
 

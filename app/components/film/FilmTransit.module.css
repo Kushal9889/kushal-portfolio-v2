@@ -8,7 +8,7 @@
 
 @media (max-width: 767px) {
   .transit {
-    height: 40vh;
+    height: 50vh;
   }
 }
 
@@ -278,5 +278,13 @@
 
   .card[data-state="out"] {
     visibility: hidden;
+  }
+}
+
+/* On a phone the window is the film: the stage card and its size table
+   covered most of it and wrapped into one-word columns. */
+@media (max-width: 767px) {
+  .card {
+    display: none;
   }
 }

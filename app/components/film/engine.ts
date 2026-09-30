@@ -396,7 +396,7 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
 
   function frame(now: number) {
     raf = 0;
-    if (stopped || lost || covered || document.hidden) return;
+    if (stopped || lost || document.hidden) return;
     stats.frames++;
     const dt = Math.min(Math.max((now - last) / 1000, 0), 1 / 30);
     const began = performance.now();
@@ -463,7 +463,7 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
 
   function wake() {
     lastInput = performance.now();
-    if (!raf && !stopped && !lost && !covered) {
+    if (!raf && !stopped && !lost) {
       last = performance.now();
       raf = requestAnimationFrame(frame);
     }
@@ -491,20 +491,6 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
   canvas.addEventListener("webglcontextlost", onLost);
   canvas.addEventListener("webglcontextrestored", onRestored);
 
-  // Below the lane breakpoint the reading sections are solid edge to edge, so
-  // while neither the hero nor a transit window is on screen no film pixel is
-  // visible and the renderer parks instead of drawing it.
-  let covered = false;
-  const seen = new Set<Element>();
-  const windows = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (e.isIntersecting) seen.add(e.target);
-      else seen.delete(e.target);
-    }
-    covered = window.innerWidth < 896 && seen.size === 0;
-    if (!covered) wake();
-  });
-  document.querySelectorAll("body > header, [data-transit]").forEach((el) => windows.observe(el));
 
   resize();
   window.addEventListener("resize", resize);
@@ -541,7 +527,6 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
     trigger.kill();
     ScrollTrigger.removeEventListener("refresh", remeasure);
     grow.disconnect();
-    windows.disconnect();
     canvas.removeEventListener("webglcontextlost", onLost);
     canvas.removeEventListener("webglcontextrestored", onRestored);
     stopRequest();

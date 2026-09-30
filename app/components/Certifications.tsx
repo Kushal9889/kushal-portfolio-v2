@@ -15,13 +15,22 @@ import styles from "./Certifications.module.css";
  * progress are listed unlinked and unstyled as earned, which is more useful than
  * omitting them and more honest than implying they are done.
  */
-export default function Certifications({ certifications }: { certifications: Certification[] }) {
+export default function Certifications({
+  certifications,
+}: {
+  certifications: Certification[];
+}) {
   const featured = certifications.find((c) => c.featured);
   const rest = certifications.filter((c) => !c.featured);
   return (
     <div className={styles.wrap}>
       {featured && (
-        <a className={styles.featured} href={featured.url ?? "#"} target="_blank" rel="noreferrer">
+        <a
+          className={styles.featured}
+          href={featured.url ?? "#"}
+          target="_blank"
+          rel="noreferrer"
+        >
           {/* A seal, in the sense a seal has always been used: the mark left by
               whoever stands behind the document. This one credential has a
               proctored exam behind it and the rest are course completions, so
@@ -64,7 +73,9 @@ export default function Certifications({ certifications }: { certifications: Cer
                       className="issuer"
                       style={
                         ISSUER_HUE[c.issuer]
-                          ? ({ "--brand": ISSUER_HUE[c.issuer] } as React.CSSProperties)
+                          ? ({
+                              "--brand": ISSUER_HUE[c.issuer],
+                            } as React.CSSProperties)
                           : undefined
                       }
                     >
@@ -83,19 +94,30 @@ export default function Certifications({ certifications }: { certifications: Cer
               </div>
 
               {c.components && (
-                <ol className={styles.components}>
-                  {c.components.map((comp) => (
-                    <li key={comp.name} className={comp.url ? styles.done : styles.todo}>
-                      {comp.url ? (
-                        <a href={comp.url} target="_blank" rel="noreferrer">
-                          {comp.name}
-                        </a>
-                      ) : (
-                        comp.name
-                      )}
-                    </li>
-                  ))}
-                </ol>
+                <details className="more" data-phone-fold>
+                  <summary>
+                    <span className="more-open">
+                      All {c.components.length} courses
+                    </span>
+                    <span className="more-close">Show less</span>
+                  </summary>
+                  <ol className={styles.components}>
+                    {c.components.map((comp) => (
+                      <li
+                        key={comp.name}
+                        className={comp.url ? styles.done : styles.todo}
+                      >
+                        {comp.url ? (
+                          <a href={comp.url} target="_blank" rel="noreferrer">
+                            {comp.name}
+                          </a>
+                        ) : (
+                          comp.name
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </details>
               )}
             </li>
           );

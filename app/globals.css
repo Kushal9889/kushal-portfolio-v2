@@ -2332,9 +2332,8 @@ html {
  * - Sections stop painting full-bleed grounds. From 56rem the reading column
  *   of each section is one glass panel, at most 62vw wide and left-aligned where the
  *   text already starts, and the right-hand lane is film.
- * - Below 56rem the whole section is solid; the film plays in the hero and the
- *   transit windows only. (Was 80rem: at laptop and split-window widths that
- *   hid the film behind every section, D33. At 56rem, 62vw is still about 65
+ * - Below 56rem the panel spans the width as denser glass, so the film shows
+ *   behind every section on a phone too. (At 56rem, 62vw is still about 65
  *   characters of body text.)
  * - The hero's text is protected by the film itself (a scrim under its rects).
  *
@@ -2450,9 +2449,16 @@ html[data-film="live"] [data-surface="console"] {
   }
 }
 
+/* Below 56rem each section's reading panel spans the width as the same glass,
+   a little denser, so the film stays visible behind every section on a phone
+   and the text keeps its contrast. */
 @media (max-width: 55.99rem) {
-  html[data-film="live"] main > section {
-    background: var(--paper);
+  html[data-film="live"] main > section > .wrap {
+    --panel-alpha: 86%;
+  }
+
+  html[data-film="live"] main > section:nth-of-type(even) > .wrap {
+    --panel-alpha: 80%;
   }
 }
 
