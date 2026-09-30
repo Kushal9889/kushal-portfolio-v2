@@ -181,7 +181,7 @@
         0.299
       ],
       "fadeIn": false,
-      "gain": 0.917
+      "gain": 0.92
     },
     {
       "beat": "T3",
@@ -195,7 +195,7 @@
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.917
+      "gain": 0.92
     },
     {
       "beat": "T3",
@@ -223,7 +223,7 @@
         0.842
       ],
       "fadeIn": false,
-      "gain": 0.977
+      "gain": 0.979
     },
     {
       "beat": "T3",
@@ -237,7 +237,7 @@
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.963
+      "gain": 0.966
     },
     {
       "beat": "T3",
@@ -251,7 +251,7 @@
         0.697
       ],
       "fadeIn": false,
-      "gain": 0.961
+      "gain": 0.964
     },
     {
       "beat": "research",
@@ -265,7 +265,7 @@
         0.844
       ],
       "fadeIn": false,
-      "gain": 0.961
+      "gain": 0.964
     },
     {
       "beat": "research",
@@ -279,7 +279,7 @@
         0.716
       ],
       "fadeIn": false,
-      "gain": 0.995
+      "gain": 0.997
     },
     {
       "beat": "T4",
@@ -293,7 +293,7 @@
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.995
+      "gain": 0.997
     },
     {
       "beat": "T4",
@@ -307,74 +307,60 @@
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.879
+      "gain": 0.881
     },
     {
       "beat": "T4",
-      "file": "v4-kv8",
+      "file": "r1-memory",
       "span": [
         0.816,
         1.0
       ],
       "time": [
-        0.055,
-        0.161
+        0.0,
+        0.096
       ],
       "fadeIn": false,
-      "gain": 0.877
+      "gain": 0.973
     },
     {
       "beat": "approach",
-      "file": "v4-kv8",
+      "file": "r1-memory",
       "span": [
         0.0,
-        0.984
-      ],
-      "time": [
-        0.161,
-        0.994
-      ],
-      "fadeIn": false,
-      "gain": 0.877
-    },
-    {
-      "beat": "approach",
-      "file": "v4-kv10",
-      "span": [
-        0.873,
         1.0
       ],
       "time": [
-        0.586,
-        0.681
+        0.096,
+        0.865
       ],
       "fadeIn": false,
-      "gain": 1.196
+      "gain": 0.973
     },
     {
       "beat": "T5",
-      "file": "v4-kv10",
+      "file": "r1-memory",
       "span": [
         0.0,
-        0.812
+        0.165
       ],
       "time": [
-        0.681,
-        1.0
+        0.865,
+        0.939
       ],
       "fadeIn": false,
-      "gain": 1.196
+      "gain": 0.973
     },
     {
       "beat": "T5",
       "file": "gap-g2",
       "span": [
-        0.543,
+        0,
         1.0
       ],
       "time": [
         0,
-        0.074
+        0.297
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -384,98 +370,98 @@
       "file": "gap-g2",
       "span": [
         0.0,
-        1.0
+        0.867
       ],
       "time": [
-        0.074,
-        0.961
-      ],
-      "fadeIn": false,
-      "gain": 1.2
-    },
-    {
-      "beat": "T6",
-      "file": "gap-g2",
-      "span": [
-        0.0,
-        0.086
-      ],
-      "time": [
-        0.961,
+        0.297,
         0.995
       ],
       "fadeIn": false,
       "gain": 1.2
     },
     {
+      "beat": "measured",
+      "file": "v5-ring2",
+      "span": [
+        0.772,
+        1.0
+      ],
+      "time": [
+        0,
+        0.134
+      ],
+      "fadeIn": false,
+      "gain": 0.892
+    },
+    {
       "beat": "T6",
       "file": "v5-ring2",
       "span": [
-        0,
+        0.0,
         1.0
       ],
       "time": [
-        0,
-        0.45
+        0.134,
+        0.58
       ],
       "fadeIn": false,
-      "gain": 0.89
+      "gain": 0.892
     },
     {
       "beat": "running",
       "file": "v5-ring2",
       "span": [
         0.0,
-        0.86
+        0.721
       ],
       "time": [
-        0.45,
+        0.58,
         0.994
       ],
       "fadeIn": false,
-      "gain": 0.89
+      "gain": 0.892
     },
     {
       "beat": "running",
-      "file": "v6-tiers2",
+      "file": "r2-tiers",
       "span": [
-        0.693,
+        0.554,
         1.0
       ],
       "time": [
         0,
-        0.088
+        0.173
       ],
       "fadeIn": false,
-      "gain": 0.938
+      "gain": 0.91
     },
     {
       "beat": "T7",
-      "file": "v6-tiers2",
+      "file": "r2-tiers",
       "span": [
         0.0,
         1.0
       ],
       "time": [
-        0.088,
-        0.58
+        0.173,
+        0.619
       ],
       "fadeIn": false,
-      "gain": 0.938
+      "gain": 0.91
     },
     {
       "beat": "proof",
-      "file": "v6-tiers2",
+      "file": "r2-tiers",
       "span": [
         0.0,
         1.0
       ],
       "time": [
-        0.58,
+        0.619,
         0.998
       ],
       "fadeIn": false,
-      "gain": 0.938
+      "gain": 0.91
     },
     {
       "beat": "proof",
@@ -489,7 +475,7 @@
         0.152
       ],
       "fadeIn": false,
-      "gain": 0.85
+      "gain": 0.853
     },
     {
       "beat": "T8",
@@ -503,7 +489,7 @@
         0.998
       ],
       "fadeIn": false,
-      "gain": 0.85
+      "gain": 0.853
     },
     {
       "beat": "T8",
@@ -517,7 +503,7 @@
         0.562
       ],
       "fadeIn": false,
-      "gain": 1.054
+      "gain": 1.057
     },
     {
       "beat": "education",
@@ -531,7 +517,7 @@
         0.998
       ],
       "fadeIn": false,
-      "gain": 1.054
+      "gain": 1.057
     },
     {
       "beat": "education",
@@ -545,7 +531,7 @@
         0.366
       ],
       "fadeIn": false,
-      "gain": 1.114
+      "gain": 1.117
     },
     {
       "beat": "T9",
@@ -559,7 +545,7 @@
         0.978
       ],
       "fadeIn": false,
-      "gain": 1.114
+      "gain": 1.117
     },
     {
       "beat": "T9",
@@ -573,7 +559,7 @@
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.967
+      "gain": 0.969
     },
     {
       "beat": "T9",
@@ -587,7 +573,7 @@
         0.327
       ],
       "fadeIn": false,
-      "gain": 1.0
+      "gain": 1.003
     },
     {
       "beat": "contact",
@@ -601,7 +587,7 @@
         1.0
       ],
       "fadeIn": false,
-      "gain": 1.0
+      "gain": 1.003
     }
   ]
 }

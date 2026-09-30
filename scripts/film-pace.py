@@ -32,8 +32,9 @@ RUNS = [
     # V9 enters at 30 percent (it opens by backing out of the aisle). The tray
     # and B3 open this run so neither run passes 6.5 seconds of footage a screen.
     (["T3", "research", "T4"], [("v7-tray2", 0, 1), ("bridge-b3", 0, 1), ("v8-door", 0, 1), ("gap-g6", 0, 1), ("v9-board", 0.3, 1), ("gap-g7", 0, 1), ("v3-prefill", 0, 1)]),
-    # Two KV takes chained, then the wall becomes the GPU tray (G2, reversed from Kushal's take).
-    (["approach", "T5", "measured", "T6", "running", "T7", "proof"], [("v4-kv8", 0, 1), ("v4-kv10", 0.66, 1), ("gap-g2", 0, 1), ("v5-ring2", 0, 1), ("v6-tiers2", 0, 1)]),
+    # R1 flies from the board into the memory tower and lands on the cell wall G2 opens on;
+    # R2 carries the eight GPUs into the memory tiers V10 opens on (D54).
+    (["approach", "T5", "measured", "T6", "running", "T7", "proof"], [("r1-memory", 0, 1), ("gap-g2", 0, 1), ("v5-ring2", 0, 1), ("r2-tiers", 0, 1)]),
     (["T8"], [("v10-exit", 0, 1)]),
     # V11 (from its second third) out to the cooling tower; G3 back down to the
     # engineer; the Flow take pulls back from V2a's last frame to the team.
