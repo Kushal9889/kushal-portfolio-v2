@@ -22,7 +22,7 @@ from playwright.sync_api import sync_playwright
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 CLIPS = os.path.join(ROOT, "content", "film-clips.json")
-WEIGHT = {"transit": 1.4, "section": 0.7, "hero": 1.0}
+WEIGHT = {"transit": 1.0, "section": 0.8, "hero": 1.0}
 RUNS = [
     # Bridges (D51) are generated between the exact exit and entry frames of the
     # clips either side, so a join that changed rooms is one camera move.
