@@ -3,8 +3,8 @@
 import { useMotion } from "@/lib/motion";
 import styles from "./Film.module.css";
 
-/** Devices that get stills instead of the live film. */
-function canRun() {
+/** Devices that get stills instead of the live film; "gpu" when only the graphics check failed. */
+function canRun(): boolean | "gpu" {
   // ?film=off is the page without the film, the baseline scripts/film-perf.py measures against.
   const mode = new URLSearchParams(location.search).get("film");
   if (mode === "off") return false;
@@ -14,7 +14,7 @@ function canRun() {
   if (nav.connection?.saveData) return false;
   if ((nav.deviceMemory ?? 8) <= 4 && (navigator.hardwareConcurrency ?? 8) <= 4) return false;
   const probe = document.createElement("canvas").getContext("webgl2", { failIfMajorPerformanceCaveat: true });
-  if (!probe) return false;
+  if (!probe) return "gpu";
   probe.getExtension("WEBGL_lose_context")?.loseContext();
   return true;
 }
@@ -27,7 +27,17 @@ function canRun() {
  */
 export default function Film() {
   const ref = useMotion<HTMLDivElement>(({ ScrollTrigger }, root) => {
-    if (!canRun()) return;
+    const ok = canRun();
+    if (ok === "gpu") {
+      // Degrade, but say so: a browser with graphics acceleration off (or a
+      // blocklisted GPU) would otherwise show the plain page with no reason.
+      const note = document.createElement("p");
+      note.className = styles.off;
+      note.textContent = "The background film is off: this browser has graphics acceleration turned off.";
+      document.body.append(note);
+      return () => note.remove();
+    }
+    if (!ok) return;
     let stop: (() => void) | undefined;
     let live = true;
     import("./engine").then((m) => {
