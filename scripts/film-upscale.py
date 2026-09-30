@@ -104,14 +104,16 @@ def main():
     ap.add_argument("src")
     ap.add_argument("dst")
     ap.add_argument("--time-one", action="store_true")
+    ap.add_argument("--hd", action="store_true", help="540p in, Gemini mark cropped, 1080p out (the size the site ships)")
     a = ap.parse_args()
-    w, h = 1280, 720
+    w, h = (960, 540) if a.hd else (1280, 720)
+    ow, oh = (1920, 1080) if a.hd else (3840, 2160)
     net, dev = load()
     reader = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-i", a.src, "-vf", f"scale={w}:{h}", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE)
     writer = None
     if not a.time_one:
         writer = subprocess.Popen(
-            ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", "3840x2160", "-r", "24", "-i", "-",
+            ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{ow}x{oh}", "-r", "24", "-i", "-",
              "-c:v", "libx264", "-preset", "fast", "-crf", "12", "-pix_fmt", "yuv420p", a.dst], stdin=subprocess.PIPE)
     n, t0 = 0, time.time()
     with torch.no_grad():
@@ -122,7 +124,9 @@ def main():
             x = torch.from_numpy(np.frombuffer(buf, np.uint8).reshape(h, w, 3).copy()).permute(2, 0, 1)[None].to(dev)
             x = x.half() / 255 if dev.type == "mps" else x.float() / 255
             y = net(x)
-            y = F.interpolate(y.float(), size=(2160, 3840), mode="bicubic", align_corners=False)
+            if a.hd:
+                y = y[:, :, round(y.shape[2] * 0.03):round(y.shape[2] * 0.95), round(y.shape[3] * 0.04):round(y.shape[3] * 0.96)]
+            y = F.interpolate(y.float(), size=(oh, ow), mode="bicubic", align_corners=False)
             out = (y.clamp(0, 1)[0].permute(1, 2, 0) * 255).round().byte().cpu().numpy()
             n += 1
             if a.time_one and n == 3:

@@ -2405,7 +2405,7 @@ html[data-film="live"] main > section > .wrap {
 }
 
 html[data-film="live"] main > section:nth-of-type(even) > .wrap {
-  --panel-alpha: 70%;
+  --panel-alpha: 74%;
 }
 
 /* No glass for readers who ask for less transparency or more contrast. */

@@ -10,7 +10,7 @@
       ],
       "time": [
         0.0,
-        0.775
+        0.868
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -20,10 +20,10 @@
       "file": "v1-now-hall",
       "span": [
         0.0,
-        0.116
+        0.061
       ],
       "time": [
-        0.775,
+        0.868,
         0.998
       ],
       "fadeIn": false,
@@ -34,11 +34,25 @@
       "file": "bridge-b1",
       "span": [
         0,
-        0.428
+        0.4
       ],
       "time": [
         0,
-        0.808
+        0.931
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "T1",
+      "file": "gap-g4",
+      "span": [
+        0.26,
+        0.79
+      ],
+      "time": [
+        0.092,
+        0.99
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -47,197 +61,253 @@
       "beat": "T1",
       "file": "hall-fabric",
       "span": [
-        0.288,
-        0.89
+        0.65,
+        1.0
       ],
       "time": [
         0,
+        0.477
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "work",
+      "file": "hall-fabric",
+      "span": [
+        0.0,
+        0.251
+      ],
+      "time": [
+        0.477,
         0.946
       ],
       "fadeIn": false,
       "gain": 1.2
     },
     {
-      "beat": "T1",
+      "beat": "work",
       "file": "bridge-b2",
       "span": [
-        0.75,
-        1.0
+        0.115,
+        0.647
       ],
       "time": [
-        0.029,
-        0.511
+        0.061,
+        0.992
       ],
       "fadeIn": false,
       "gain": 1.2
     },
     {
       "beat": "work",
-      "file": "bridge-b2",
+      "file": "gap-g1",
       "span": [
-        0.0,
-        0.267
-      ],
-      "time": [
         0.511,
-        0.933
-      ],
-      "fadeIn": false,
-      "gain": 1.2
-    },
-    {
-      "beat": "work",
-      "file": "fabric-corpus",
-      "span": [
-        0.131,
         1.0
       ],
       "time": [
         0,
-        1.0
+        0.495
       ],
       "fadeIn": false,
       "gain": 1.2
-    },
-    {
-      "beat": "work",
-      "file": "v7-tray2",
-      "span": [
-        0.864,
-        1.0
-      ],
-      "time": [
-        0.115,
-        0.278
-      ],
-      "fadeIn": false,
-      "gain": 0.949
     },
     {
       "beat": "T2",
-      "file": "v7-tray2",
+      "file": "gap-g1",
       "span": [
         0.0,
-        1.0
+        0.611
       ],
       "time": [
-        0.278,
-        0.838
+        0.495,
+        0.992
       ],
       "fadeIn": false,
-      "gain": 0.949
+      "gain": 1.2
     },
     {
-      "beat": "opensource",
-      "file": "v7-tray2",
+      "beat": "T2",
+      "file": "fabric-corpus",
       "span": [
-        0.0,
-        0.149
-      ],
-      "time": [
-        0.838,
-        0.998
-      ],
-      "fadeIn": false,
-      "gain": 0.949
-    },
-    {
-      "beat": "opensource",
-      "file": "bridge-b3",
-      "span": [
-        0.027,
+        0.319,
         1.0
       ],
       "time": [
         0,
-        0.909
+        0.391
       ],
       "fadeIn": false,
-      "gain": 0.85
+      "gain": 1.2
     },
     {
       "beat": "opensource",
-      "file": "v8-door",
+      "file": "fabric-corpus",
+      "span": [
+        0.0,
+        0.392
+      ],
+      "time": [
+        0.391,
+        1.0
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "opensource",
+      "file": "gap-g5",
+      "span": [
+        0.27,
+        1.0
+      ],
+      "time": [
+        0,
+        0.998
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "opensource",
+      "file": "v7-tray2",
       "span": [
         0.878,
         1.0
       ],
       "time": [
-        0.149,
-        0.223
+        0.05,
+        0.299
       ],
       "fadeIn": false,
-      "gain": 1.01
+      "gain": 0.917
+    },
+    {
+      "beat": "T3",
+      "file": "v7-tray2",
+      "span": [
+        0.0,
+        0.193
+      ],
+      "time": [
+        0.299,
+        1.0
+      ],
+      "fadeIn": false,
+      "gain": 0.917
+    },
+    {
+      "beat": "T3",
+      "file": "bridge-b3",
+      "span": [
+        0.124,
+        0.443
+      ],
+      "time": [
+        0,
+        0.905
+      ],
+      "fadeIn": false,
+      "gain": 0.85
     },
     {
       "beat": "T3",
       "file": "v8-door",
       "span": [
-        0.0,
-        0.511
+        0.374,
+        0.613
       ],
       "time": [
-        0.223,
-        0.775
+        0,
+        0.842
       ],
       "fadeIn": false,
-      "gain": 1.01
+      "gain": 0.977
+    },
+    {
+      "beat": "T3",
+      "file": "gap-g6",
+      "span": [
+        0.544,
+        0.941
+      ],
+      "time": [
+        0,
+        1.0
+      ],
+      "fadeIn": false,
+      "gain": 0.963
     },
     {
       "beat": "T3",
       "file": "v9-board",
       "span": [
-        0.442,
+        0.872,
         1.0
       ],
       "time": [
-        0.398,
+        0.236,
+        0.697
+      ],
+      "fadeIn": false,
+      "gain": 0.961
+    },
+    {
+      "beat": "research",
+      "file": "v9-board",
+      "span": [
+        0.0,
+        0.175
+      ],
+      "time": [
+        0.697,
+        0.844
+      ],
+      "fadeIn": false,
+      "gain": 0.961
+    },
+    {
+      "beat": "research",
+      "file": "gap-g7",
+      "span": [
+        0,
+        1.0
+      ],
+      "time": [
+        0.006,
+        0.716
+      ],
+      "fadeIn": false,
+      "gain": 0.994
+    },
+    {
+      "beat": "T4",
+      "file": "gap-g7",
+      "span": [
+        0.0,
+        0.263
+      ],
+      "time": [
+        0.716,
         1.0
       ],
       "fadeIn": false,
       "gain": 0.994
     },
     {
-      "beat": "T3",
-      "file": "v3-prefill",
-      "span": [
-        0.931,
-        1.0
-      ],
-      "time": [
-        0.0,
-        0.091
-      ],
-      "fadeIn": false,
-      "gain": 0.909
-    },
-    {
-      "beat": "research",
-      "file": "v3-prefill",
-      "span": [
-        0.0,
-        1.0
-      ],
-      "time": [
-        0.091,
-        0.382
-      ],
-      "fadeIn": false,
-      "gain": 0.909
-    },
-    {
       "beat": "T4",
       "file": "v3-prefill",
       "span": [
-        0.0,
+        0.079,
         1.0
       ],
       "time": [
-        0.382,
+        0,
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.909
+      "gain": 0.879
     },
     {
       "beat": "T4",
@@ -248,77 +318,91 @@
       ],
       "time": [
         0.055,
-        0.112
+        0.167
       ],
       "fadeIn": false,
-      "gain": 0.907
+      "gain": 0.877
     },
     {
       "beat": "approach",
       "file": "v4-kv8",
       "span": [
         0.0,
-        1.0
+        0.929
       ],
       "time": [
-        0.112,
-        0.564
-      ],
-      "fadeIn": false,
-      "gain": 0.907
-    },
-    {
-      "beat": "T5",
-      "file": "v4-kv8",
-      "span": [
-        0.0,
-        1.0
-      ],
-      "time": [
-        0.564,
-        0.826
-      ],
-      "fadeIn": false,
-      "gain": 0.907
-    },
-    {
-      "beat": "measured",
-      "file": "v4-kv8",
-      "span": [
-        0.0,
-        0.284
-      ],
-      "time": [
-        0.826,
+        0.167,
         0.994
       ],
       "fadeIn": false,
-      "gain": 0.907
+      "gain": 0.877
+    },
+    {
+      "beat": "approach",
+      "file": "v4-kv10",
+      "span": [
+        0.818,
+        1.0
+      ],
+      "time": [
+        0.363,
+        0.509
+      ],
+      "fadeIn": false,
+      "gain": 1.195
+    },
+    {
+      "beat": "T5",
+      "file": "v4-kv10",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.509,
+        0.925
+      ],
+      "fadeIn": false,
+      "gain": 1.195
     },
     {
       "beat": "measured",
       "file": "v4-kv10",
       "span": [
-        0.189,
+        0.0,
+        0.08
+      ],
+      "time": [
+        0.925,
+        1.0
+      ],
+      "fadeIn": false,
+      "gain": 1.195
+    },
+    {
+      "beat": "measured",
+      "file": "gap-g2",
+      "span": [
+        0,
         1.0
       ],
       "time": [
-        0.407,
-        0.791
+        0,
+        0.865
       ],
       "fadeIn": false,
       "gain": 1.2
     },
     {
       "beat": "T6",
-      "file": "v4-kv10",
+      "file": "gap-g2",
       "span": [
         0.0,
-        1.0
+        0.312
       ],
       "time": [
-        0.791,
-        1.0
+        0.865,
+        0.995
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -327,61 +411,75 @@
       "beat": "T6",
       "file": "v5-ring2",
       "span": [
-        0.731,
+        0.043,
         1.0
       ],
       "time": [
-        0.0,
-        0.068
+        0,
+        0.358
       ],
       "fadeIn": false,
-      "gain": 0.92
+      "gain": 0.89
     },
     {
       "beat": "running",
       "file": "v5-ring2",
       "span": [
         0.0,
-        1.0
+        0.949
       ],
       "time": [
-        0.068,
-        0.406
-      ],
-      "fadeIn": false,
-      "gain": 0.92
-    },
-    {
-      "beat": "T7",
-      "file": "v5-ring2",
-      "span": [
-        0.0,
-        1.0
-      ],
-      "time": [
-        0.406,
-        0.724
-      ],
-      "fadeIn": false,
-      "gain": 0.92
-    },
-    {
-      "beat": "proof",
-      "file": "v5-ring2",
-      "span": [
-        0.0,
-        1.0
-      ],
-      "time": [
-        0.724,
+        0.358,
         0.994
       ],
       "fadeIn": false,
-      "gain": 0.92
+      "gain": 0.89
+    },
+    {
+      "beat": "running",
+      "file": "v6-tiers2",
+      "span": [
+        0.782,
+        1.0
+      ],
+      "time": [
+        0,
+        0.035
+      ],
+      "fadeIn": false,
+      "gain": 0.938
+    },
+    {
+      "beat": "T7",
+      "file": "v6-tiers2",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.035,
+        0.556
+      ],
+      "fadeIn": false,
+      "gain": 0.938
     },
     {
       "beat": "proof",
       "file": "v6-tiers2",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.556,
+        0.998
+      ],
+      "fadeIn": false,
+      "gain": 0.938
+    },
+    {
+      "beat": "proof",
+      "file": "v10-exit",
       "span": [
         0.746,
         1.0
@@ -391,11 +489,11 @@
         0.152
       ],
       "fadeIn": false,
-      "gain": 0.97
+      "gain": 0.85
     },
     {
       "beat": "T8",
-      "file": "v6-tiers2",
+      "file": "v10-exit",
       "span": [
         0.0,
         1.0
@@ -405,119 +503,105 @@
         0.998
       ],
       "fadeIn": false,
-      "gain": 0.97
+      "gain": 0.85
     },
     {
       "beat": "T8",
-      "file": "v10-exit",
+      "file": "v11-cooling",
       "span": [
         0.848,
         1.0
       ],
       "time": [
-        0.0,
-        0.294
+        0.156,
+        0.387
       ],
       "fadeIn": false,
-      "gain": 0.88
+      "gain": 1.054
     },
     {
       "beat": "education",
-      "file": "v10-exit",
+      "file": "v11-cooling",
       "span": [
         0.0,
-        1.0
+        0.78
       ],
       "time": [
-        0.294,
+        0.387,
         0.998
       ],
       "fadeIn": false,
-      "gain": 0.88
+      "gain": 1.054
     },
     {
       "beat": "education",
-      "file": "v11-cooling",
+      "file": "gap-g3",
       "span": [
-        0.705,
+        0.485,
         1.0
       ],
       "time": [
-        0.004,
-        0.179
+        0,
+        0.261
       ],
       "fadeIn": false,
-      "gain": 1.09
+      "gain": 1.114
     },
     {
       "beat": "T9",
-      "file": "v11-cooling",
+      "file": "gap-g3",
       "span": [
         0.0,
-        1.0
+        0.575
       ],
       "time": [
-        0.179,
-        0.953
+        0.261,
+        0.978
       ],
       "fadeIn": false,
-      "gain": 1.09
+      "gain": 1.114
     },
     {
       "beat": "T9",
       "file": "v2a-future-alone",
       "span": [
-        0.816,
+        0.391,
+        0.771
+      ],
+      "time": [
+        0.404,
+        1.0
+      ],
+      "fadeIn": false,
+      "gain": 0.967
+    },
+    {
+      "beat": "T9",
+      "file": "v2b-flow",
+      "span": [
+        0.587,
         1.0
       ],
       "time": [
-        0.305,
-        0.676
+        0,
+        0.289
       ],
       "fadeIn": false,
       "gain": 1.0
     },
     {
       "beat": "contact",
-      "file": "v2a-future-alone",
+      "file": "v2b-flow",
       "span": [
         0.0,
-        0.224
+        1.0
       ],
       "time": [
-        0.676,
-        0.998
+        0.289,
+        1.0
       ],
       "fadeIn": false,
       "gain": 1.0
-    },
-    {
-      "beat": "contact",
-      "file": "v2b-retake",
-      "span": [
-        0,
-        0.41
-      ],
-      "time": [
-        0,
-        0.992
-      ],
-      "fadeIn": false,
-      "gain": 0.974
-    },
-    {
-      "beat": "contact",
-      "file": "v2b-future-team",
-      "span": [
-        0.152,
-        1.0
-      ],
-      "time": [
-        0.027,
-        1.0
-      ],
-      "fadeIn": false,
-      "gain": 1.158
     }
   ]
 }
