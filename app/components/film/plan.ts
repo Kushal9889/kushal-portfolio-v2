@@ -1,4 +1,3 @@
-import { segment } from "../stage/path";
 import { ROUTE, START, distance, type Beat, type Shot, type Vec3 } from "./shots";
 
 /**
@@ -128,6 +127,46 @@ const PACKED = COMPILED.runs.map((run) => {
   return { target: run.map((s) => s.target), scalar };
 });
 
+/**
+ * Centripetal Catmull-Rom through the run's targets (the same curve as
+ * stage/path.ts segment), written into `out` without allocating: it runs every
+ * frame, and the film may add no garbage (plan C6.2).
+ */
+function knot(ax: number, ay: number, az: number, bx: number, by: number, bz: number) {
+  return Math.sqrt(Math.hypot(bx - ax, by - ay, bz - az)) || 1e-4;
+}
+function segmentInto(points: Vec3[], i: number, u: number, out: State) {
+  const n = points.length;
+  const p1 = points[i];
+  const p2 = points[Math.min(i + 1, n - 1)];
+  const q0 = i > 0 ? points[i - 1] : null;
+  const q3 = i + 2 < n ? points[i + 2] : null;
+  for (let k = 0; k < 3; k++) {
+    // Phantom ends mirror the first and last segments.
+    P0[k] = q0 ? q0[k] : 2 * p1[k] - p2[k];
+    P3[k] = q3 ? q3[k] : 2 * p2[k] - p1[k];
+  }
+  const t0 = 0;
+  const t1 = t0 + knot(P0[0], P0[1], P0[2], p1[0], p1[1], p1[2]);
+  const t2 = t1 + knot(p1[0], p1[1], p1[2], p2[0], p2[1], p2[2]);
+  const t3 = t2 + knot(p2[0], p2[1], p2[2], P3[0], P3[1], P3[2]);
+  const t = t1 + (t2 - t1) * Math.min(Math.max(u, 0), 1);
+  const w01 = weight(t, t0, t1), w12 = weight(t, t1, t2), w23 = weight(t, t2, t3), w02 = weight(t, t0, t2), w13 = weight(t, t1, t3);
+  for (let k = 0; k < 3; k++) {
+    const a1 = P0[k] + (p1[k] - P0[k]) * w01;
+    const a2 = p1[k] + (p2[k] - p1[k]) * w12;
+    const a3 = p2[k] + (P3[k] - p2[k]) * w23;
+    const b1 = a1 + (a2 - a1) * w02;
+    const b2 = a2 + (a3 - a2) * w13;
+    out[k] = b1 + (b2 - b1) * w12;
+  }
+}
+function weight(t: number, ta: number, tb: number) {
+  return tb === ta ? 0 : (t - ta) / (tb - ta);
+}
+const P0 = [0, 0, 0];
+const P3 = [0, 0, 0];
+
 /** State at float point index x along run r. */
 function runState(r: number, x: number, out: State) {
   const p = PACKED[r];
@@ -139,8 +178,7 @@ function runState(r: number, x: number, out: State) {
   const c = Math.min(Math.max(x, 0), n - 1);
   const i = Math.min(Math.floor(c), n - 2);
   const f = c - i;
-  const t = segment(p.target, i, f);
-  out[0] = t[0]; out[1] = t[1]; out[2] = t[2];
+  segmentInto(p.target, i, f, out);
   for (let k = 0; k < 6; k++) out[3 + k] = p.scalar[k](i, f);
   return out;
 }
@@ -225,12 +263,22 @@ const TABLES = new Map<string, Table>();
   }
 }
 
-/** Camera goal for a scroll position. Returns which beat and run it is in. */
-export function sample(list: Span[], y: number, out: State): Sample {
-  let k = list.findIndex((s) => y < s.y1);
-  if (k < 0) k = list.length - 1;
+const BEAT = new Map(ROUTE.map((b) => [b.id, b]));
+
+/**
+ * Camera goal for a scroll position, and which beat and run it is in. Pass
+ * `into` to reuse a result object, as the per-frame caller does.
+ */
+export function sample(list: Span[], y: number, out: State, into?: Sample): Sample {
+  let k = list.length - 1;
+  for (let i = 0; i < list.length; i++) {
+    if (y < list[i].y1) {
+      k = i;
+      break;
+    }
+  }
   const span = list[k];
-  const beat = ROUTE.find((b) => b.id === span.id)!;
+  const beat = BEAT.get(span.id)!;
   const p = Math.min(Math.max((y - span.y0) / Math.max(1, span.y1 - span.y0), 0), 1);
   const e = envelope(p, !!beat.land);
   const pieces = COMPILED.pieces.get(beat.id)!;
@@ -260,7 +308,11 @@ export function sample(list: Span[], y: number, out: State): Sample {
   }
   const piece = pieces[pi];
   runState(piece.run, piece.j + t, out);
-  return { beat: beat.id, run: piece.run, progress: e };
+  const r = into ?? { beat: "", run: 0, progress: 0 };
+  r.beat = beat.id;
+  r.run = piece.run;
+  r.progress = e;
+  return r;
 }
 
 /** Distance, field of view and eye for a state. */
@@ -309,3 +361,15 @@ export const TRANSIT_VH: Record<string, number> = Object.fromEntries(
 );
 
 export const shotDistance = distance;
+
+/**
+ * Where piece k of a beat begins, as a share of the beat's progress (the
+ * envelope value `sample` returns). Part animations key off it: T3's third
+ * piece is Act 3, which starts at the grid cut.
+ */
+export function pieceStart(beatId: string, k: number) {
+  const table = TABLES.get(beatId);
+  if (!table || table.total <= 0) return 0;
+  for (let i = 0; i < table.piece.length; i++) if (table.piece[i] === k) return table.c[i] / table.total;
+  return 1;
+}

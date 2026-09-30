@@ -11,5 +11,187 @@
     "baseboard": "Eight GPUs on one baseboard",
     "rack": "Memory tiers: HBM, host DRAM, NVMe",
     "hall": "The answer leaves the building"
+  },
+  "scale": [
+    {
+      "id": "rack",
+      "label": "Rack",
+      "atom": "O2.cabinet",
+      "text": "About 2.1 m tall, a little taller than a door",
+      "kind": "typical",
+      "source": "eia310"
+    },
+    {
+      "id": "gpuServer",
+      "label": "GPU server",
+      "atom": "O6.chassis",
+      "text": "About 18 cm tall and 90 cm deep",
+      "kind": "typical",
+      "source": "serverChassis"
+    },
+    {
+      "id": "fibre",
+      "label": "Fibre",
+      "atom": "O1.fibreStrand",
+      "text": "About 3 mm thick, like a phone charger cable",
+      "kind": "typical",
+      "source": "tray"
+    },
+    {
+      "id": "dimm",
+      "label": "Memory stick",
+      "atom": "O5.pcb",
+      "text": "About 13 cm long, a little shorter than a pen",
+      "kind": "typical",
+      "source": "jedecDimm"
+    },
+    {
+      "id": "coldPlate",
+      "label": "Cold plate",
+      "atom": "O9.flange",
+      "text": "About 7.6 x 6.8 cm, a little smaller than a palm",
+      "kind": "typical",
+      "source": "coldPlate"
+    },
+    {
+      "id": "qd",
+      "label": "Coupling",
+      "atom": "O10.body",
+      "text": "About 16 mm across, the width of a fingertip",
+      "kind": "typical",
+      "source": "quickDisconnect"
+    },
+    {
+      "id": "die",
+      "label": "GPU chip",
+      "atom": "O11.die",
+      "text": "Die about 26 x 33 mm, a little larger than a postage stamp",
+      "kind": "typical",
+      "source": "gpuDie"
+    },
+    {
+      "id": "tower",
+      "label": "Memory tower",
+      "atom": "O11.hbm",
+      "text": "About 11 x 10 mm, the size of a fingernail",
+      "kind": "typical",
+      "source": "jedecHbm"
+    },
+    {
+      "id": "sm",
+      "label": "Compute block",
+      "atom": "O13.sm",
+      "text": "About 2 mm across, smaller than a grain of rice",
+      "kind": "typical",
+      "source": "gpuDie"
+    },
+    {
+      "id": "via",
+      "label": "Via",
+      "atom": "O12.tsv",
+      "text": "About 5 to 10 thousandths of a millimetre across, a tenth of a hair",
+      "kind": "typical",
+      "source": "jedecHbm"
+    }
+  ],
+  "cards": {
+    "T1": {
+      "title": "Network fabric",
+      "line": "It travels along glass threads that carry light, and a switch sends it to the right computer.",
+      "scale": [
+        "fibre",
+        "rack"
+      ]
+    },
+    "T2": {
+      "title": "Retrieval",
+      "line": "Your question finds the closest note cards, in blue.",
+      "scale": [
+        "dimm"
+      ],
+      "live": [
+        "sources"
+      ]
+    },
+    "T3": {
+      "title": "To the GPU server",
+      "line": "That message goes to a machine built for heavy maths, cooled by water.",
+      "acts": [
+        {
+          "title": "The follow",
+          "line": "The message climbs out of the server and rides the cable tray."
+        },
+        {
+          "title": "The drop",
+          "line": "It drops into a machine built for heavy maths."
+        },
+        {
+          "title": "The descent",
+          "line": "Inside, water carries the heat away from every chip."
+        }
+      ],
+      "scale": [
+        "gpuServer",
+        "coldPlate",
+        "qd"
+      ]
+    },
+    "T4": {
+      "title": "Prefill",
+      "line": "Then it keeps notes about your message in a tall memory tower.",
+      "scale": [
+        "die",
+        "tower"
+      ],
+      "live": [
+        "tokensIn"
+      ]
+    },
+    "T5": {
+      "title": "Decode",
+      "line": "Each new word is saved as a note in the tower.",
+      "scale": [
+        "via"
+      ],
+      "live": [
+        "tokensOut"
+      ]
+    },
+    "T6": {
+      "title": "KV cache",
+      "line": "The notes are stored in same-size blocks, like pages.",
+      "live": [
+        "blocks"
+      ]
+    },
+    "T7": {
+      "title": "Eight GPUs",
+      "line": "Eight chips share the work and add up their answers.",
+      "scale": [
+        "sm"
+      ]
+    },
+    "T8": {
+      "title": "Memory tiers",
+      "line": "A fast shelf, a big shelf, a huge slow one.",
+      "scale": [
+        "rack"
+      ]
+    },
+    "T9": {
+      "title": "The way out",
+      "line": "The answer travels back out of the building."
+    }
+  },
+  "live": {
+    "sources": "Notes matched",
+    "tokensIn": "Word pieces in",
+    "tokensOut": "Word pieces out",
+    "blocks": "Note blocks"
+  },
+  "arc": {
+    "note": "Kushal writes both lines himself. Empty renders nothing.",
+    "hook": "",
+    "closing": ""
   }
 }

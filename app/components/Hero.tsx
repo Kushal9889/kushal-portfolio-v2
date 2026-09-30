@@ -123,6 +123,7 @@ export default function Hero({
                 sources: demo.sources,
                 recorded: true,
                 ranAt: demo.ranAt,
+                answerChars: demo.answer.length,
               },
             }),
           );

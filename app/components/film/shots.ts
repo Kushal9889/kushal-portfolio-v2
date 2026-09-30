@@ -44,9 +44,10 @@ const BOARD = PLACES.board;
 /** Front face of the open app server, in the row opposite the GPUs. */
 const APP: Vec3 = [-3, PLACES.appServerY + 0.02, 2.5];
 const DIE: Vec3 = [0, 0, 0];
-/** Front edge of the cut memory stack. */
-const HBM_EDGE: Vec3 = [0.014, 0, 0];
-const KV_SIDE: Vec3 = [-0.022, 0, 0];
+/** Centre of the cut memory stack's section face, halfway up the raised stack (package.ts, D26). */
+const HBM_EDGE: Vec3 = [0.019, 0.005, 0.011];
+/** The cut stack's upper layers, where the KV blocks sit (package.ts, D26). */
+const KV_SIDE: Vec3 = [0.019, 0.007, 0.011];
 
 // Screen anchors (plan C4.2): reading sections put the subject in the
 // right-hand lane, transit windows right of centre, the hero on the horizon
@@ -97,19 +98,24 @@ export const ROUTE: Beat[] = [
       // bays cut to the 2 x 4 modules at the same place in frame, 50 to 85 mm.
       { at: 0.69, shot: shot([0, 0.05, 0.62], 1.075, 50, 300, 8, T.sx, T.sy), cut: { kind: "grid", next: shot([0, 0, 0.05], 0.497, 85, 4, 22, T.sx, T.sy) } },
       // Act 3, the descent: onto the package, landing on the sp3 frame.
-      { at: 1, shot: shot(DIE, 0.2995, 100, 18, 42, T.sx, T.sy) },
+      // Tuned against the sp3 target inside the plan's set-piece tolerance
+      // (W x0.887, -2 az, -4 el, +0.03 anchor; scripts/film-pose.py, D23).
+      { at: 1, shot: shot(DIE, 0.2656, 100, 16, 38, 0.65, 0.49) },
     ],
   },
   // 6. Research: slow push-in.
-  { id: "research", mode: "S", legs: [{ at: 1, shot: shot(DIE, 0.22, 100, 22, 46, S.sx, S.sy) }] },
+  { id: "research", mode: "S", legs: [{ at: 1, shot: shot(DIE, 0.2, 100, 20, 44, S.sx, S.sy) }] },
   // 7. T4: push and lens tighten to the cut memory tower (sp4).
-  { id: "T4", mode: "T", vh: 1.5, land: true, stage: "prefill", legs: [{ at: 1, shot: shot(HBM_EDGE, 0.055, 135, 40, 34, T.sx, T.sy) }] },
+  { id: "T4", mode: "T", vh: 1.5, land: true, stage: "prefill", legs: [{ at: 1, shot: shot(HBM_EDGE, 0.062, 135, 40, 34, T.sx, T.sy) }] },
   // 8. Approach: low-angle settle.
-  { id: "approach", mode: "S", legs: [{ at: 1, shot: shot(HBM_EDGE, 0.038, 135, 50, 26, S.sx, S.sy) }] },
+  { id: "approach", mode: "S", legs: [{ at: 1, shot: shot(HBM_EDGE, 0.0428, 135, 54, 30, 0.84, 0.45) }] },
   // 9. T5: lateral slide from the die to the tower top.
   { id: "T5", mode: "T", vh: 1.0, stage: "decode", legs: [{ at: 1, shot: shot(HBM_EDGE, 0.03, 135, 30, 28, T.sx, T.sy) }] },
   // 10. Measured: slow orbit and pull.
-  { id: "measured", mode: "S", legs: [{ at: 1, shot: shot(HBM_EDGE, 0.036, 135, 8, 32, S.sx, S.sy) }] },
+  // Pulls to W 0.044, not the ledger's 0.036: the section measures 3.0 vh at
+  // 1920 and 3.9 at 1280, and no amount of turning alone clears the travel floor
+  // at 1280 while staying under the cap at 1920; the pull carries it (D15).
+  { id: "measured", mode: "S", legs: [{ at: 1, shot: shot(HBM_EDGE, 0.044, 135, 8, 32, S.sx, S.sy) }] },
   // 11. T6: push to the cut face.
   { id: "T6", mode: "T", vh: 1.2, stage: "kv", legs: [{ at: 1, shot: shot(KV_SIDE, 0.028, 135, -10, 24, T.sx, T.sy) }] },
   // 12. Running: low lateral track along the bump row.
@@ -134,12 +140,13 @@ export const ROUTE: Beat[] = [
     legs: [
       // 17. Pull-back at 60 mm, then P2r: the closing door's hex holes cut to
       // the hall's wall of doors at the same pixel density, 60 to 35 mm.
-      { at: 0.33, shot: shot([0, 0.05, 0], 1.9, 60, 14, 39, T.sx, T.sy), cut: { kind: "lattice", next: shot([-4, 0.5, 1.2], 5.5, 35, 80, 6, T.sx, T.sy) } },
-      { at: 1, shot: shot([-9, 0.5, 1.5], 11.5, 35, 92, 3, T.sx, T.sy) },
+      { at: 0.33, shot: shot([0, 0.05, 0], 1.9, 60, 14, 39, T.sx, T.sy), cut: { kind: "lattice", next: shot([-4, 0.3, 1.5], 5.5, 35, 80, 6, T.sx, T.sy) } },
+      { at: 1, shot: shot([-9, 0.3, 1.5], 11.5, 35, 92, 3, T.sx, T.sy) },
     ],
   },
-  // 18. Contact: slow dolly-out, the bookend.
-  { id: "contact", mode: "S", legs: [{ at: 1, shot: shot([-12, 0.6, 1.9], 15.4, 35, 100, 2, S.sx, S.sy) }] },
+  // 18. Contact: slow dolly-out, the bookend. T9 and Contact aim at y 0.3 (1.35 m above the floor), eye inside
+  // the aisle below the 2.1 m racks so the answer's beads riding the tray stay in frame (D30).
+  { id: "contact", mode: "S", legs: [{ at: 1, shot: shot([-12, 0.3, 1.6], 15.4, 35, 100, 2, S.sx, S.sy) }] },
 ];
 
 /** Camera distance for a shot. */

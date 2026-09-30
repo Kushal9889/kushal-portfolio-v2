@@ -409,6 +409,14 @@
   background: var(--paper-sunk);
 }
 
+/* With the film lane open, the recessed ground stays on the panel only; a
+   full-bleed one would paint over the film beside it (D35). */
+@media (min-width: 56rem) {
+  :global(html[data-film="live"]) .section[data-tone="sunk"] {
+    background: transparent;
+  }
+}
+
 /* The closing section is set up a step. Peak-end: the last thing read carries
    disproportionate weight in what a reader remembers. */
 /* The closing heading no longer needs its own size.

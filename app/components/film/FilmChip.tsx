@@ -33,7 +33,7 @@ export default function FilmChip() {
       <span aria-hidden="true">
         {age === null ? chip?.text : <data value={age}>{chip?.text}</data>}
       </span>
-      <span className={styles.spoken} role="status" aria-live="polite">
+      <span className={styles.spoken} role="status" aria-live="polite" aria-atomic="true">
         {chip?.spoken ?? ""}
       </span>
     </p>

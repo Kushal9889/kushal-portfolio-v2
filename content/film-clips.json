@@ -1,0 +1,523 @@
+{
+  "note": "Written by scripts/film-pace.py (D40): clips spread over each run of beats by weighted scroll distance. Edit RUNS there, not this file.",
+  "clips": [
+    {
+      "beat": "hero",
+      "file": "v1-now-hall",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.0,
+        0.684
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "T1",
+      "file": "v1-now-hall",
+      "span": [
+        0.0,
+        0.133
+      ],
+      "time": [
+        0.684,
+        0.998
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "T1",
+      "file": "bridge-b1",
+      "span": [
+        0,
+        0.385
+      ],
+      "time": [
+        0,
+        0.808
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "T1",
+      "file": "hall-fabric",
+      "span": [
+        0.245,
+        0.759
+      ],
+      "time": [
+        0,
+        0.946
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "T1",
+      "file": "bridge-b2",
+      "span": [
+        0.619,
+        1.0
+      ],
+      "time": [
+        0,
+        0.871
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "work",
+      "file": "bridge-b2",
+      "span": [
+        0.0,
+        0.051
+      ],
+      "time": [
+        0.871,
+        0.933
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "work",
+      "file": "fabric-corpus",
+      "span": [
+        0,
+        1.0
+      ],
+      "time": [
+        0,
+        1.0
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "work",
+      "file": "v7-tray2",
+      "span": [
+        0.864,
+        1.0
+      ],
+      "time": [
+        0.061,
+        0.278
+      ],
+      "fadeIn": false,
+      "gain": 0.949
+    },
+    {
+      "beat": "T2",
+      "file": "v7-tray2",
+      "span": [
+        0.0,
+        0.969
+      ],
+      "time": [
+        0.278,
+        0.998
+      ],
+      "fadeIn": false,
+      "gain": 0.949
+    },
+    {
+      "beat": "T2",
+      "file": "bridge-b3",
+      "span": [
+        0.677,
+        1.0
+      ],
+      "time": [
+        0,
+        0.023
+      ],
+      "fadeIn": false,
+      "gain": 0.85
+    },
+    {
+      "beat": "opensource",
+      "file": "bridge-b3",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.023,
+        0.909
+      ],
+      "fadeIn": false,
+      "gain": 0.85
+    },
+    {
+      "beat": "opensource",
+      "file": "v8-door",
+      "span": [
+        0.878,
+        1.0
+      ],
+      "time": [
+        0.149,
+        0.223
+      ],
+      "fadeIn": false,
+      "gain": 1.01
+    },
+    {
+      "beat": "T3",
+      "file": "v8-door",
+      "span": [
+        0.0,
+        0.511
+      ],
+      "time": [
+        0.223,
+        0.775
+      ],
+      "fadeIn": false,
+      "gain": 1.01
+    },
+    {
+      "beat": "T3",
+      "file": "v9-board",
+      "span": [
+        0.442,
+        1.0
+      ],
+      "time": [
+        0.398,
+        1.0
+      ],
+      "fadeIn": false,
+      "gain": 0.994
+    },
+    {
+      "beat": "T3",
+      "file": "v3-prefill",
+      "span": [
+        0.931,
+        1.0
+      ],
+      "time": [
+        0.0,
+        0.066
+      ],
+      "fadeIn": false,
+      "gain": 0.909
+    },
+    {
+      "beat": "research",
+      "file": "v3-prefill",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.066,
+        0.279
+      ],
+      "fadeIn": false,
+      "gain": 0.909
+    },
+    {
+      "beat": "T4",
+      "file": "v3-prefill",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.279,
+        1.0
+      ],
+      "fadeIn": false,
+      "gain": 0.909
+    },
+    {
+      "beat": "T4",
+      "file": "v4-kv8",
+      "span": [
+        0.816,
+        1.0
+      ],
+      "time": [
+        0.008,
+        0.055
+      ],
+      "fadeIn": false,
+      "gain": 0.907
+    },
+    {
+      "beat": "approach",
+      "file": "v4-kv8",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.055,
+        0.481
+      ],
+      "fadeIn": false,
+      "gain": 0.907
+    },
+    {
+      "beat": "T5",
+      "file": "v4-kv8",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.481,
+        0.833
+      ],
+      "fadeIn": false,
+      "gain": 0.907
+    },
+    {
+      "beat": "measured",
+      "file": "v4-kv8",
+      "span": [
+        0.0,
+        0.325
+      ],
+      "time": [
+        0.833,
+        0.994
+      ],
+      "fadeIn": false,
+      "gain": 0.907
+    },
+    {
+      "beat": "measured",
+      "file": "v4-kv10",
+      "span": [
+        0.23,
+        1.0
+      ],
+      "time": [
+        0.414,
+        0.719
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "T6",
+      "file": "v4-kv10",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.719,
+        1.0
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "T6",
+      "file": "v5-ring2",
+      "span": [
+        0.731,
+        1.0
+      ],
+      "time": [
+        0.0,
+        0.057
+      ],
+      "fadeIn": false,
+      "gain": 0.92
+    },
+    {
+      "beat": "running",
+      "file": "v5-ring2",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.057,
+        0.341
+      ],
+      "fadeIn": false,
+      "gain": 0.92
+    },
+    {
+      "beat": "T7",
+      "file": "v5-ring2",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.341,
+        0.767
+      ],
+      "fadeIn": false,
+      "gain": 0.92
+    },
+    {
+      "beat": "proof",
+      "file": "v5-ring2",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.767,
+        0.994
+      ],
+      "fadeIn": false,
+      "gain": 0.92
+    },
+    {
+      "beat": "proof",
+      "file": "v6-tiers2",
+      "span": [
+        0.746,
+        1.0
+      ],
+      "time": [
+        0.0,
+        0.152
+      ],
+      "fadeIn": false,
+      "gain": 0.97
+    },
+    {
+      "beat": "T8",
+      "file": "v6-tiers2",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.152,
+        0.998
+      ],
+      "fadeIn": false,
+      "gain": 0.97
+    },
+    {
+      "beat": "T8",
+      "file": "v10-exit",
+      "span": [
+        0.848,
+        1.0
+      ],
+      "time": [
+        0.0,
+        0.294
+      ],
+      "fadeIn": false,
+      "gain": 0.88
+    },
+    {
+      "beat": "education",
+      "file": "v10-exit",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.294,
+        0.998
+      ],
+      "fadeIn": false,
+      "gain": 0.88
+    },
+    {
+      "beat": "education",
+      "file": "v11-cooling",
+      "span": [
+        0.705,
+        1.0
+      ],
+      "time": [
+        0.004,
+        0.179
+      ],
+      "fadeIn": false,
+      "gain": 1.09
+    },
+    {
+      "beat": "T9",
+      "file": "v11-cooling",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.179,
+        0.953
+      ],
+      "fadeIn": false,
+      "gain": 1.09
+    },
+    {
+      "beat": "T9",
+      "file": "v2a-future-alone",
+      "span": [
+        0.816,
+        1.0
+      ],
+      "time": [
+        0.305,
+        0.676
+      ],
+      "fadeIn": false,
+      "gain": 1.0
+    },
+    {
+      "beat": "contact",
+      "file": "v2a-future-alone",
+      "span": [
+        0.0,
+        0.224
+      ],
+      "time": [
+        0.676,
+        0.998
+      ],
+      "fadeIn": false,
+      "gain": 1.0
+    },
+    {
+      "beat": "contact",
+      "file": "v2b-retake",
+      "span": [
+        0,
+        0.41
+      ],
+      "time": [
+        0,
+        0.992
+      ],
+      "fadeIn": false,
+      "gain": 0.974
+    },
+    {
+      "beat": "contact",
+      "file": "v2b-future-team",
+      "span": [
+        0.152,
+        1.0
+      ],
+      "time": [
+        0.027,
+        1.0
+      ],
+      "fadeIn": false,
+      "gain": 1.158
+    }
+  ]
+}

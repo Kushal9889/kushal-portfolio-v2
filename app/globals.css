@@ -2264,6 +2264,11 @@ body {
   padding-block-end: 4rem;
 }
 
+/* Focus and anchors never land under the fixed dock (WCAG 2.4.11). */
+html {
+  scroll-padding-bottom: 4rem;
+}
+
 @media print {
   body {
     padding-block-end: 0;
@@ -2324,24 +2329,33 @@ body {
  * The film's darkest pixel is --paper (engine.ts locks it), so any block that
  * paints --paper meets the film with no seam. Text never sits on raw film:
  *
- * - Sections stop painting full-bleed grounds. From 80rem the reading column
- *   of each section is one solid block, 62vw wide and left-aligned where the
+ * - Sections stop painting full-bleed grounds. From 56rem the reading column
+ *   of each section is one glass panel, at most 62vw wide and left-aligned where the
  *   text already starts, and the right-hand lane is film.
- * - Below 80rem the whole section is solid; the film plays in the hero and the
- *   transit windows only.
+ * - Below 56rem the whole section is solid; the film plays in the hero and the
+ *   transit windows only. (Was 80rem: at laptop and split-window widths that
+ *   hid the film behind every section, D33. At 56rem, 62vw is still about 65
+ *   characters of body text.)
  * - The hero's text is protected by the film itself (a scrim under its rects).
  *
- * Solid, not translucent: a half-transparent ground over the film was a
- * color-mix in oklch, and mixing with `transparent` in oklch drops the hue to
- * `none`, which renders as hue 0, so every section read faintly warm against a
- * blue-black film. One opaque token has no hue to lose.
+ * Glass, not solid (D40): each panel is a tint of --paper mixed in oklab
+ * over a blurred copy of the film. Mixing with `transparent` in oklch drops the
+ * hue to `none` (hue 0, faintly warm against the blue-black film), so the mix
+ * stays in oklab.
  */
 /* Film state hues (plan C2.1). One computed meaning each: --film-live is the
    request the orange light is drawing, and nothing else is orange. On :root
    rather than the live selector because the renderer reads it while starting,
    before it marks the page live. */
 :root {
+  --film-black: #0d1013;
+  --film-raised: #171a1e;
   --film-live: #ff4f00;
+  --film-retrieve: #679ff1;
+  --film-memory: #49b8b8;
+  --film-supply: #4077a3;
+  --film-return: #a45953;
+  --film-light: #f2f3f5;
 }
 
 html[data-film="live"] body > header,
@@ -2351,22 +2365,92 @@ html[data-film="live"] main > section {
   border-bottom: 0;
 }
 
+/* Each reading panel is an instrument bay (plan C5.1): a 6 px raised lid with
+   a hairline under it, and 8 px corner brackets, all drawn as backgrounds so no
+   element is added. The four section heads keep their own shapes; a uniform
+   header strip across them would flatten the rail, banner, rule and bank into
+   one (docs/film-deviations.md, D17). */
 html[data-film="live"] main > section > .wrap {
-  background: var(--paper);
+  --bracket: var(--ink-faint);
+  background:
+    linear-gradient(var(--bracket) 0 0) left top / 8px 1px no-repeat,
+    linear-gradient(var(--bracket) 0 0) left top / 1px 8px no-repeat,
+    linear-gradient(var(--bracket) 0 0) right top / 8px 1px no-repeat,
+    linear-gradient(var(--bracket) 0 0) right top / 1px 8px no-repeat,
+    linear-gradient(var(--bracket) 0 0) left bottom / 8px 1px no-repeat,
+    linear-gradient(var(--bracket) 0 0) left bottom / 1px 8px no-repeat,
+    linear-gradient(var(--bracket) 0 0) right bottom / 8px 1px no-repeat,
+    linear-gradient(var(--bracket) 0 0) right bottom / 1px 8px no-repeat,
+    linear-gradient(var(--rule) 0 0) 0 6px / 100% 1px no-repeat,
+    linear-gradient(var(--paper-raised) 0 0) top / 100% 6px no-repeat,
+    var(--panel-tint);
   padding-block: var(--s-6);
 }
 
-@media (min-width: 80rem) {
+/* Panel grounds are photographs (plan section 16, U1 and U2): brushed bay
+   metal under every panel, the operator desk under each console. Each sits
+   under a paper tint so text keeps the contrast measured on the flat ground
+   (scripts/film-contrast.py). The test bench (U3) is the measurements' plate
+   behind the panel instead. */
+html[data-film="live"] main > section > .wrap {
+  /* Frosted glass over the film (D40): the footage stays visible through
+     every panel, blurred so its detail never competes with the text. Panels
+     alternate dense and clear, so the page breathes between reading and
+     watching. Mixed in oklab, never oklch (see above). */
+  --panel-alpha: 83%;
+  --panel-tint: linear-gradient(color-mix(in oklab, var(--paper) var(--panel-alpha), transparent) 0 0);
+  --panel-feather: 0 0 0 transparent;
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+}
+
+html[data-film="live"] main > section:nth-of-type(even) > .wrap {
+  --panel-alpha: 70%;
+}
+
+/* No glass for readers who ask for less transparency or more contrast. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  html[data-film="live"] main > section > .wrap {
+    --panel-alpha: 100%;
+  }
+}
+
+/* The console is the one raised instrument in the hero. Its grounds keep their
+   lightness and take the film's hue (258), so console, panels and film read as
+   one blue-black family (plan C2.2 item 4). */
+html[data-film="live"] [data-surface="console"] {
+  --paper: oklch(0.192 0.004 258);
+  --paper-raised: oklch(0.238 0.005 258);
+  --paper-sunk: oklch(0.155 0.003 258);
+  --rule: oklch(0.352 0.005 258);
+  background:
+    linear-gradient(color-mix(in oklab, var(--paper) 93%, transparent) 0 0),
+    url("/film/ui/console.webp") center / cover no-repeat,
+    var(--paper);
+}
+
+/* A reader who asks for more contrast gets every panel line in full ink
+   (plan C6.4). */
+@media (prefers-contrast: more) {
+  html[data-film="live"] main > section > .wrap,
+  html[data-film="live"] body > header,
+  html[data-film="live"] body > footer {
+    --ink-soft: var(--ink);
+    --ink-faint: var(--ink);
+  }
+}
+
+@media (min-width: 56rem) {
   html[data-film="live"] main > section > .wrap,
   html[data-film="live"] main > section[data-register="chapter"] > .wrap {
     max-width: 62vw;
     margin-left: max(0px, calc((100vw - 76rem) / 2));
     margin-right: auto;
-    box-shadow: inset calc(-1 * var(--border-hair)) 0 0 var(--rule);
+    box-shadow: inset calc(-1 * var(--border-hair)) 0 0 var(--rule), var(--panel-feather);
   }
 }
 
-@media (max-width: 79.99rem) {
+@media (max-width: 55.99rem) {
   html[data-film="live"] main > section {
     background: var(--paper);
   }

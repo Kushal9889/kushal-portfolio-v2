@@ -487,6 +487,7 @@ export default function Agent({
               sources,
               warm: data.warm === true,
               degraded: data.degraded === true,
+              answerChars: answer.length,
             },
           }),
         );

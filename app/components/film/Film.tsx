@@ -5,7 +5,11 @@ import styles from "./Film.module.css";
 
 /** Devices that get stills instead of the live film. */
 function canRun() {
-  if (window.innerWidth < 768) return false;
+  // ?film=off is the page without the film, the baseline scripts/film-perf.py measures against.
+  const mode = new URLSearchParams(location.search).get("film");
+  if (mode === "off") return false;
+  // ?film=debug runs at any width, so a narrow preview window still shows the film.
+  if (window.innerWidth < 768 && mode !== "debug") return false;
   const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
   if (nav.connection?.saveData) return false;
   if ((nav.deviceMemory ?? 8) <= 4 && (navigator.hardwareConcurrency ?? 8) <= 4) return false;

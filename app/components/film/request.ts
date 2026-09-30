@@ -28,6 +28,14 @@ export type RequestState = {
   sentAt: number;
   /** The visitor's question, or null for the load-time one. */
   question: string | null;
+  /** Tokens in plus out of the latest settled answer (the KV block count reads it), or 0. */
+  tokens?: number;
+  /** The same answer's split and how many notes it drew on, when the stream reported them. */
+  tokensIn?: number;
+  tokensOut?: number;
+  sources?: number;
+  /** Characters in that answer, for a token estimate when usage is missing. */
+  answerChars?: number;
 };
 
 /** A request that never answers stops claiming to run: the stream gives up at 20 s. */
@@ -38,7 +46,7 @@ type Event = { type: "sent"; detail: SentDetail } | { type: "done"; detail: Tele
 export function reduce(state: RequestState, previous: Provenance, e: Event): { state: RequestState; previous: Provenance } {
   if (e.type === "sent") {
     return {
-      state: { provenance: { kind: "running", recorded: !!e.detail.recorded }, sentAt: e.detail.t0, question: e.detail.question },
+      state: { provenance: { kind: "running", recorded: !!e.detail.recorded }, sentAt: e.detail.t0, question: e.detail.question, tokens: state.tokens, tokensIn: state.tokensIn, tokensOut: state.tokensOut, sources: state.sources, answerChars: state.answerChars },
       previous: state.provenance.kind === "running" ? previous : state.provenance,
     };
   }
@@ -58,7 +66,8 @@ export function reduce(state: RequestState, previous: Provenance, e: Event): { s
       : d.degraded
         ? { kind: "notes" }
         : { kind: "yours" };
-  return { state: { ...state, provenance }, previous };
+  const tokens = (d.tokensIn ?? 0) + (d.tokensOut ?? 0) || d.tokens || 0;
+  return { state: { ...state, provenance, tokens, tokensIn: d.tokensIn, tokensOut: d.tokensOut, sources: d.sources?.length, answerChars: d.answerChars }, previous };
 }
 
 let state: RequestState = { provenance: { kind: "none" }, sentAt: -1, question: null };
