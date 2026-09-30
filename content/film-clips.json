@@ -3,14 +3,28 @@
   "clips": [
     {
       "beat": "hero",
-      "file": "v1-now-hall",
+      "file": "o1-wake",
       "span": [
         0.0,
+        0.876
+      ],
+      "time": [
+        0.2,
+        1.0
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "hero",
+      "file": "v1-now-hall",
+      "span": [
+        0.533,
         1.0
       ],
       "time": [
-        0.0,
-        0.868
+        0,
+        0.113
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -20,10 +34,10 @@
       "file": "v1-now-hall",
       "span": [
         0.0,
-        0.061
+        0.396
       ],
       "time": [
-        0.868,
+        0.113,
         0.998
       ],
       "fadeIn": false,
@@ -33,12 +47,12 @@
       "beat": "T1",
       "file": "bridge-b1",
       "span": [
-        0,
-        0.4
+        0.256,
+        0.678
       ],
       "time": [
         0,
-        0.931
+        0.842
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -47,11 +61,11 @@
       "beat": "T1",
       "file": "gap-g4",
       "span": [
-        0.26,
-        0.79
+        0.538,
+        0.91
       ],
       "time": [
-        0.092,
+        0.326,
         0.99
       ],
       "fadeIn": false,
@@ -61,12 +75,12 @@
       "beat": "T1",
       "file": "hall-fabric",
       "span": [
-        0.65,
+        0.77,
         1.0
       ],
       "time": [
         0,
-        0.477
+        0.214
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -76,10 +90,10 @@
       "file": "hall-fabric",
       "span": [
         0.0,
-        0.251
+        0.372
       ],
       "time": [
-        0.477,
+        0.214,
         0.946
       ],
       "fadeIn": false,
@@ -89,11 +103,11 @@
       "beat": "work",
       "file": "bridge-b2",
       "span": [
-        0.115,
-        0.647
+        0.236,
+        0.748
       ],
       "time": [
-        0.061,
+        0.049,
         0.992
       ],
       "fadeIn": false,
@@ -103,12 +117,12 @@
       "beat": "work",
       "file": "gap-g1",
       "span": [
-        0.511,
+        0.612,
         1.0
       ],
       "time": [
         0,
-        0.495
+        0.371
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -118,10 +132,10 @@
       "file": "gap-g1",
       "span": [
         0.0,
-        0.611
+        0.725
       ],
       "time": [
-        0.495,
+        0.371,
         0.992
       ],
       "fadeIn": false,
@@ -131,12 +145,12 @@
       "beat": "T2",
       "file": "fabric-corpus",
       "span": [
-        0.319,
+        0.433,
         1.0
       ],
       "time": [
         0,
-        0.391
+        0.31
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -146,10 +160,10 @@
       "file": "fabric-corpus",
       "span": [
         0.0,
-        0.392
+        0.422
       ],
       "time": [
-        0.391,
+        0.31,
         1.0
       ],
       "fadeIn": false,
@@ -159,7 +173,7 @@
       "beat": "opensource",
       "file": "gap-g5",
       "span": [
-        0.27,
+        0.3,
         1.0
       ],
       "time": [
@@ -181,7 +195,7 @@
         0.299
       ],
       "fadeIn": false,
-      "gain": 0.92
+      "gain": 0.917
     },
     {
       "beat": "T3",
@@ -195,7 +209,7 @@
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.92
+      "gain": 0.917
     },
     {
       "beat": "T3",
@@ -223,7 +237,7 @@
         0.842
       ],
       "fadeIn": false,
-      "gain": 0.979
+      "gain": 0.977
     },
     {
       "beat": "T3",
@@ -237,7 +251,7 @@
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.966
+      "gain": 0.963
     },
     {
       "beat": "T3",
@@ -251,7 +265,7 @@
         0.697
       ],
       "fadeIn": false,
-      "gain": 0.964
+      "gain": 0.961
     },
     {
       "beat": "research",
@@ -265,7 +279,7 @@
         0.844
       ],
       "fadeIn": false,
-      "gain": 0.964
+      "gain": 0.961
     },
     {
       "beat": "research",
@@ -279,7 +293,7 @@
         0.716
       ],
       "fadeIn": false,
-      "gain": 0.997
+      "gain": 0.995
     },
     {
       "beat": "T4",
@@ -293,7 +307,7 @@
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.997
+      "gain": 0.995
     },
     {
       "beat": "T4",
@@ -307,7 +321,7 @@
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.881
+      "gain": 0.879
     },
     {
       "beat": "T4",
@@ -321,7 +335,7 @@
         0.096
       ],
       "fadeIn": false,
-      "gain": 0.973
+      "gain": 0.97
     },
     {
       "beat": "approach",
@@ -335,7 +349,7 @@
         0.865
       ],
       "fadeIn": false,
-      "gain": 0.973
+      "gain": 0.97
     },
     {
       "beat": "T5",
@@ -349,7 +363,7 @@
         0.939
       ],
       "fadeIn": false,
-      "gain": 0.973
+      "gain": 0.97
     },
     {
       "beat": "T5",
@@ -391,7 +405,7 @@
         0.134
       ],
       "fadeIn": false,
-      "gain": 0.892
+      "gain": 0.89
     },
     {
       "beat": "T6",
@@ -405,7 +419,7 @@
         0.58
       ],
       "fadeIn": false,
-      "gain": 0.892
+      "gain": 0.89
     },
     {
       "beat": "running",
@@ -419,7 +433,7 @@
         0.994
       ],
       "fadeIn": false,
-      "gain": 0.892
+      "gain": 0.89
     },
     {
       "beat": "running",
@@ -433,7 +447,7 @@
         0.173
       ],
       "fadeIn": false,
-      "gain": 0.91
+      "gain": 0.908
     },
     {
       "beat": "T7",
@@ -447,7 +461,7 @@
         0.619
       ],
       "fadeIn": false,
-      "gain": 0.91
+      "gain": 0.908
     },
     {
       "beat": "proof",
@@ -461,7 +475,7 @@
         0.998
       ],
       "fadeIn": false,
-      "gain": 0.91
+      "gain": 0.908
     },
     {
       "beat": "proof",
@@ -475,7 +489,7 @@
         0.152
       ],
       "fadeIn": false,
-      "gain": 0.853
+      "gain": 0.85
     },
     {
       "beat": "T8",
@@ -489,7 +503,7 @@
         0.998
       ],
       "fadeIn": false,
-      "gain": 0.853
+      "gain": 0.85
     },
     {
       "beat": "T8",
@@ -499,95 +513,123 @@
         1.0
       ],
       "time": [
-        0.343,
-        0.562
+        0.403,
+        0.7
       ],
       "fadeIn": false,
-      "gain": 1.057
+      "gain": 1.054
     },
     {
       "beat": "education",
       "file": "v11-cooling",
       "span": [
         0.0,
-        0.588
+        0.296
       ],
       "time": [
-        0.562,
+        0.7,
         0.998
       ],
       "fadeIn": false,
-      "gain": 1.057
+      "gain": 1.054
     },
     {
       "beat": "education",
       "file": "gap-g3",
       "span": [
-        0.293,
+        0.001,
+        0.94
+      ],
+      "time": [
+        0.228,
+        0.98
+      ],
+      "fadeIn": false,
+      "gain": 1.114
+    },
+    {
+      "beat": "education",
+      "file": "v2a-future-alone",
+      "span": [
+        0.645,
         1.0
       ],
       "time": [
-        0,
-        0.366
+        0.454,
+        0.809
       ],
       "fadeIn": false,
-      "gain": 1.117
-    },
-    {
-      "beat": "T9",
-      "file": "gap-g3",
-      "span": [
-        0.0,
-        0.518
-      ],
-      "time": [
-        0.366,
-        0.978
-      ],
-      "fadeIn": false,
-      "gain": 1.117
+      "gain": 0.967
     },
     {
       "beat": "T9",
       "file": "v2a-future-alone",
       "span": [
-        0.334,
-        0.726
+        0.0,
+        0.095
       ],
       "time": [
-        0.421,
+        0.809,
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.969
+      "gain": 0.967
+    },
+    {
+      "beat": "T9",
+      "file": "e1-call",
+      "span": [
+        0,
+        0.454
+      ],
+      "time": [
+        0,
+        0.728
+      ],
+      "fadeIn": false,
+      "gain": 0.929
     },
     {
       "beat": "T9",
       "file": "v2b-flow",
       "span": [
-        0.542,
+        0.27,
         1.0
       ],
       "time": [
         0,
-        0.327
+        0.878
       ],
       "fadeIn": false,
-      "gain": 1.003
+      "gain": 1.0
     },
     {
       "beat": "contact",
       "file": "v2b-flow",
       "span": [
         0.0,
+        0.126
+      ],
+      "time": [
+        0.878,
+        0.993
+      ],
+      "fadeIn": false,
+      "gain": 1.0
+    },
+    {
+      "beat": "contact",
+      "file": "e2-campus",
+      "span": [
+        0,
         1.0
       ],
       "time": [
-        0.327,
+        0,
         1.0
       ],
       "fadeIn": false,
-      "gain": 1.003
+      "gain": 1.05
     }
   ]
 }

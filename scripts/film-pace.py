@@ -27,7 +27,7 @@ RUNS = [
     # Four long runs (D53): every gap now has a generated bridge between the
     # exact exit and entry frames, and each run spans enough sections that the
     # footage moves at an even rate while each stage card sits over its own shot.
-    (["hero", "T1", "work", "T2", "opensource"], [("v1-now-hall", 0, 1), ("bridge-b1", 0, 1), ("gap-g4", 0.33, 1), ("hall-fabric", 0, 1),
+    (["hero", "T1", "work", "T2", "opensource"], [("o1-wake", 0.2, 1), ("v1-now-hall", 0, 1), ("bridge-b1", 0, 1), ("gap-g4", 0.5, 1), ("hall-fabric", 0, 1),
         ("bridge-b2", 0, 1), ("gap-g1", 0, 1), ("fabric-corpus", 0, 1), ("gap-g5", 0, 1)]),
     # V9 enters at 30 percent (it opens by backing out of the aisle). The tray
     # and B3 open this run so neither run passes 6.5 seconds of footage a screen.
@@ -38,7 +38,7 @@ RUNS = [
     (["T8"], [("v10-exit", 0, 1)]),
     # V11 (from its second third) out to the cooling tower; G3 back down to the
     # engineer; the Flow take pulls back from V2a's last frame to the team.
-    (["education", "T9", "contact"], [("v11-cooling", 0.5, 1), ("gap-g3", 0.02, 1), ("v2a-future-alone", 0.6, 1), ("v2b-flow", 0, 1)]),
+    (["education", "T9", "contact"], [("v11-cooling", 0.7, 1), ("gap-g3", 0.25, 1), ("v2a-future-alone", 0.75, 1), ("e1-call", 0, 0.75), ("v2b-flow", 0, 1), ("e2-campus", 0, 1)]),
 ]
 # A clip after a hard beat change fades in; one continuing a chain does not.
 FADE_IN = set()  # every join is a dissolve now (D43)
