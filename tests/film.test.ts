@@ -74,3 +74,37 @@ test("a failed load-time request draws no orange at all", () => {
   assert.equal(p.kind, "none");
   assert.equal(chipOf(p), null);
 });
+
+// ---- Step 5: the world as data (plan C1.9, C2.1, K3) ----------------------
+import { readFileSync } from "node:fs";
+
+import { existsSync } from "node:fs";
+import clipMap from "../content/film-clips.json";
+
+type Row = { beat: string; file: string; span: number[]; time: number[] };
+const rows = clipMap.clips as Row[];
+
+test("every point of every beat shows a clip, so the film never drops to black (D36 to D38)", async () => {
+  const { ROUTE } = await import("../app/components/film/shots");
+  const gaps: string[] = [];
+  for (const { id } of ROUTE as { id: string }[])
+    for (let k = 0; k <= 20; k++) if (!rows.some((r) => r.beat === id && r.span[0] <= k / 20 && k / 20 <= r.span[1])) gaps.push(`${id}@${k / 20}`);
+  assert.deepEqual(gaps, []);
+});
+
+test("every clip the map names is a shipped file", () => {
+  for (const f of new Set(rows.map((r) => r.file))) assert.ok(existsSync(`public/film/clips/${f}.mp4`), `${f}.mp4 missing`);
+});
+
+test("down the page, no clip ever plays backwards (D44)", async () => {
+  const { ROUTE } = await import("../app/components/film/shots");
+  const order = (ROUTE as { id: string }[]).map((b) => b.id);
+  const sorted = [...rows].sort((a, b) => order.indexOf(a.beat) - order.indexOf(b.beat) || a.span[0] - b.span[0]);
+  const last = new Map<string, number>();
+  for (const r of sorted) {
+    assert.ok(r.time[1] >= r.time[0], `${r.file} runs backwards inside ${r.beat}`);
+    const before = last.get(r.file);
+    assert.ok(before === undefined || r.time[0] >= before - 1e-3, `${r.file} jumps back to ${r.time[0]} in ${r.beat} after reaching ${before}`);
+    last.set(r.file, r.time[1]);
+  }
+});

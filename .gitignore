@@ -28,3 +28,4 @@ NOTES.private.md
 # notes someone kept while building it.
 CLAUDE.md
 HANDOFF.md
+__pycache__/

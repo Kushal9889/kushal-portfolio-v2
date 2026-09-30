@@ -68,9 +68,15 @@ RUNS = """() => {
     if (cs.visibility !== 'visible' || cs.display === 'none') continue;
     // Closed <details> content still reports a box to a Range but is never painted.
     if (!el.checkVisibility({contentVisibilityAuto: true, visibilityProperty: true})) continue;
+    // Screen-reader-only text (a 1 px clipped box) is read aloud, never painted.
+    const box = el.getBoundingClientRect();
+    if (box.width <= 1 || box.height <= 1 || cs.clipPath === 'inset(50%)') continue;
     range.selectNodeContents(n);
     const r = range.getBoundingClientRect();
     if (r.width < 2 || r.height < 2 || r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) continue;
+    // Text under another element (the fixed dock, an open overlay) is not seen.
+    const hit = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
+    if (hit && !el.contains(hit) && !hit.contains(el)) continue;
     let op = 1;
     for (let a = el; a; a = a.parentElement) op *= Number(getComputedStyle(a).opacity);
     if (op < 0.05) continue;
@@ -135,8 +141,22 @@ def run(width, url, only, dump=None):
                 page.wait_for_function("window.__film && window.__film.moving === false", timeout=10000)
             except Exception:
                 pass
-            page.wait_for_timeout(1200)  # entrances finish
+            page.wait_for_timeout(400)  # entrances start
+            # Steady state: the console's streaming scanlines (older than the
+            # film, tracked separately) lift its labels' backdrop while it runs.
+            try:
+                page.wait_for_function("document.documentElement.dataset.streaming !== 'yes'", timeout=15000)
+            except Exception:
+                pass
+            # Entrances fade text in; measure once every run's opacity has
+            # settled, not after a fixed wait (a busy machine runs them slower).
             runs = page.evaluate(RUNS)
+            for _ in range(20):
+                page.wait_for_timeout(250)
+                again = page.evaluate(RUNS)
+                if [r["op"] for r in again] == [r["op"] for r in runs]:
+                    break
+                runs = again
             tag = page.add_style_tag(content=HIDE_TEXT)
             page.wait_for_timeout(100)
             img = shoot(cdp)

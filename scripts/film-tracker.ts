@@ -30,7 +30,7 @@ for (const line of text.split("\n")) {
   groups.set(heading, g);
 }
 
-let total = { done: 0, open: 0, partial: 0, deferred: 0 };
+const total = { done: 0, open: 0, partial: 0, deferred: 0 };
 let next = "";
 for (const [name, g] of groups) {
   total.done += g.done;

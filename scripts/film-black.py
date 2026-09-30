@@ -10,7 +10,9 @@ meets the film with a visible step.
 2. Seams. Still lights off, with the content visible: 40 points along the
    outer edges of every block that paints a ground over the film (section
    panels, the dock). The ground 6 px inside the edge and 6 px outside it
-   must differ by at most 2 in OKLab (x100). Hairlines sit in the 6 px gap.
+   must differ by at most 2 in OKLab (x100). Hairlines sit in the 6 px gap;
+   the panel lid (6 px raised band and its hairline) is skipped by sampling 12 px
+   inside a top edge.
 
 Exits 1 on any failure. Needs the dev server on :3002.
 """
@@ -62,7 +64,7 @@ EDGES = """() => {
       const y = Math.round(top + (bottom - top) * f);
       const x = Math.round(r.left + r.width * f);
       if (r.right < innerWidth - 8) add(el, 'right', [Math.round(r.right) - 6, y], [Math.round(r.right) + 6, y]);
-      add(el, 'top', [x, Math.round(r.top) + 6], [x, Math.round(r.top) - 6]);
+      add(el, 'top', [x, Math.round(r.top) + 12], [x, Math.round(r.top) - 6]);
       add(el, 'bottom', [x, Math.round(r.bottom) - 6], [x, Math.round(r.bottom) + 6]);
     }
   }
@@ -137,8 +139,10 @@ def run(width, url):
         seams.sort(reverse=True)
         print(f"lights off: worst pixel {worst_off} code values from ground over {len(STOPS)} stops (limit 1)")
         print(f"seams: {len(seams)} measured, worst dE_ok {seams[0][0]:.2f} at {seams[0][1]} {seams[0][2]} {seams[0][3]} (limit 2)" if seams else "seams: none found")
-        if len(seams) < 40:
-            fails.append(f"only {len(seams)} seams found, need 40")
+        # Reading panels are glass since D40 and meant to differ from the film;
+        # the seam check covers the solid blocks left (the dock).
+        if len(seams) < 8:
+            fails.append(f"only {len(seams)} seams found, need 8")
         for de, stop, name, at in seams:
             if de > 2:
                 fails.append(f"seam dE {de:.2f} at {stop} {name} {at}")
