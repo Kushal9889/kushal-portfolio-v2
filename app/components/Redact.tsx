@@ -34,9 +34,9 @@ export default function Redact() {
       <p className={styles.label} id={`${id}-out`}>
         What the model receives
       </p>
-      <p className={styles.output} aria-labelledby={`${id}-out`} aria-live="polite">
+      <output className={styles.output} htmlFor={`${id}-in`} aria-labelledby={`${id}-out`} aria-live="polite">
         {parts.map((p, i) => (i % 2 ? <mark key={i}>{p}</mark> : p))}
-      </p>
+      </output>
       <p className={styles.counts}>
         {Object.entries(out.count).map(([kind, n]) => (
           <span key={kind}>

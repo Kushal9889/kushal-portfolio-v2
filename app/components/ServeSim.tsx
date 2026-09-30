@@ -54,7 +54,7 @@ export default function ServeSim() {
   return (
     <Panel label="Serve it yourself" kind="instrument" surface="console" heading={3} state={r.fits ? "running" : "degraded"} status={r.fits ? "fits" : "out of memory"}>
       <p className={styles.lede}>
-        Where inference time and money go. Change the load and watch the KV cache take the GPU.
+        Where GPU memory and decode speed go. Change the load and watch the KV cache take the GPU.
       </p>
       <div className={styles.controls}>
         {choice("Model", modelId, spec.models.map((m) => m.id), setModel, (v) => spec.models.find((m) => m.id === v)!.label)}

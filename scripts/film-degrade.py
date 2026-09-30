@@ -6,7 +6,7 @@
    lose data-film (plain ground, chip hidden), the loop must stop, and no error
    may reach the console. Restoring the context brings the film back and frames
    resume.
-2. Covered at 1024: with the reader inside a reading section and no hero or
+2. Covered at 800 (below the 896 film lane, D33): with the reader inside a reading section and no hero or
    transit window on screen, the renderer draws no frames.
 
 Exits 1 on any failure.
@@ -71,14 +71,14 @@ def main():
             fails.append(f"console errors: {real[:3]}")
         page.close()
 
-        page = browser.new_page(viewport={"width": 1024, "height": 800}, color_scheme="dark")
+        page = browser.new_page(viewport={"width": 800, "height": 800}, color_scheme="dark")
         page.goto(URL)
         page.mouse.move(10, 10)
         page.wait_for_function(LIVE, timeout=30000)
         # Find a scroll position where no hero or transit pixel is on screen.
         y = page.evaluate(FIND_COVERED)
         if y is None:
-            print("covered at 1024: no scroll position hides every film window; nothing to park")
+            print("covered at 800: no scroll position hides every film window; nothing to park")
         else:
             page.evaluate("(y) => scrollTo(0, y)", y)
             page.wait_for_timeout(800)
@@ -94,7 +94,7 @@ def main():
                 page.wait_for_timeout(800)
             page.mouse.move(400, 400)
             n = frames(page)
-            print(f"covered at 1024 (y {y}): frames in 1.2 s:", n)
+            print(f"covered at 800 (y {y}): frames in 1.2 s:", n)
             if n > 0:
                 fails.append(f"{n} frames drawn while no film pixel was visible")
         browser.close()

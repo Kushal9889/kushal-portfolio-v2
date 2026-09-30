@@ -24,28 +24,19 @@ ROOT = os.path.dirname(HERE)
 CLIPS = os.path.join(ROOT, "content", "film-clips.json")
 WEIGHT = {"transit": 1.0, "section": 0.8, "hero": 1.0}
 RUNS = [
-    # Bridges (D51) are generated between the exact exit and entry frames of the
-    # clips either side, so a join that changed rooms is one camera move.
-    (["hero", "T1", "work"], [("v1-now-hall", 0, 1), ("bridge-b1", 0, 1), ("hall-fabric", 0, 1), ("bridge-b2", 0, 1), ("fabric-corpus", 0, 1)]),
-    (["T2", "opensource"], [("v7-tray2", 0, 1), ("bridge-b3", 0, 1)]),
-    # V9 opens by backing out into the aisle, which V8 has just left; entering
-    # at 30 percent lands on the rack sliding open, where V8 ends.
-    (["T3"], [("v8-door", 0, 1), ("v9-board", 0.3, 1)]),
-    (["research", "T4"], [("v3-prefill", 0, 1)]),
-    # Two KV takes chained: the 8 s one opens on the memory tower V3 ends on
-    # and ends on the slot wall; the 10 s one picks up on that wall, filling.
-    (["approach", "T5", "measured", "T6"], [("v4-kv8", 0, 1), ("v4-kv10", 0.45, 1)]),
-    (["running", "T7", "proof"], [("v5-ring2", 0, 1)]),
+    # Four long runs (D53): every gap now has a generated bridge between the
+    # exact exit and entry frames, and each run spans enough sections that the
+    # footage moves at an even rate while each stage card sits over its own shot.
+    (["hero", "T1", "work", "T2", "opensource"], [("v1-now-hall", 0, 1), ("bridge-b1", 0, 1), ("gap-g4", 0.33, 1), ("hall-fabric", 0, 1),
+        ("bridge-b2", 0, 1), ("gap-g1", 0, 1), ("fabric-corpus", 0, 1), ("gap-g5", 0, 1), ("v7-tray2", 0, 1), ("bridge-b3", 0, 1)]),
+    # V9 enters at 30 percent (it opens by backing out of the aisle).
+    (["T3", "research", "T4"], [("v8-door", 0, 1), ("gap-g6", 0, 1), ("v9-board", 0.3, 1), ("gap-g7", 0, 1), ("v3-prefill", 0, 1)]),
+    # Two KV takes chained, then the wall becomes the GPU tray (G2, reversed from Kushal's take).
+    (["approach", "T5", "measured", "T6", "running", "T7", "proof"], [("v4-kv8", 0, 1), ("v4-kv10", 0.45, 1), ("gap-g2", 0, 1), ("v5-ring2", 0, 1)]),
     (["T8"], [("v6-tiers2", 0, 1)]),
-    # V10 (D48): generated from V6's last frame, ends in the exit aisle V11
-    # opens on. V12 left the cut: the lone engineer at a wall is V2a's shot.
-    (["education"], [("v10-exit", 0, 1)]),
-    (["T9"], [("v11-cooling", 0, 1)]),
-    # The ending keeps the team reveal whole and enters the lone shot late,
-    # so the last screen does not race.
-    # The retake starts on V2a's last frame; its first 2 s pull back before the
-    # engineer turns to camera (faces are never shown), then the wide team shot.
-    (["contact"], [("v2a-future-alone", 0.6, 1), ("v2b-retake", 0, 1), ("v2b-future-team", 0.3, 1)]),
+    # V10 from V6's last frame; V11 out to the cooling tower; G3 back down to the
+    # engineer; the Flow take pulls back from V2a's last frame to the team.
+    (["education", "T9", "contact"], [("v10-exit", 0, 1), ("v11-cooling", 0, 1), ("gap-g3", 0, 1), ("v2a-future-alone", 0.6, 1), ("v2b-flow", 0, 1)]),
 ]
 # A clip after a hard beat change fades in; one continuing a chain does not.
 FADE_IN = set()  # every join is a dissolve now (D43)

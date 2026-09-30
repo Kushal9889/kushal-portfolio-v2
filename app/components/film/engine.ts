@@ -185,6 +185,7 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
   let shown: Live | null = null;
   let lastScrollY = window.scrollY;
   let clipSpeed = 0;
+  let lastMoved = 0;
   // A held picture keeps the exposure of the row it was shown under.
   const gains = new Map<Live, number>();
   const gainOf = (l: Live | null) => (l ? gains.get(l) ?? 1 : 1);
@@ -217,7 +218,9 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
       const end = tw[1] * (d - 0.05);
       const room = (tw[1] - tw[0]) * (d - 0.05);
       if (l.drawn < clipFrame - 1 || window.scrollY < lastScrollY) l.living = scrollT;
-      else if (!calm && clipSpeed < 0.02) l.living = Math.min(end, scrollT + room * 0.4, l.living + dt * 0.35);
+      // Stops 5 s after the last scroll (WCAG 2.2.2: motion that starts by
+      // itself must stop within five seconds or be pausable).
+      else if (!calm && clipSpeed < 0.02 && performance.now() - lastMoved < 5000) l.living = Math.min(end, scrollT + room * 0.4, l.living + dt * 0.35);
       l.living = Math.max(l.living, scrollT);
       const target = l.living;
       if (l.drawn < clipFrame - 1) {
@@ -283,6 +286,7 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
     // pointer eases by time like the clip clock.
     const k = 1 - Math.exp(-dt / 0.12);
     const v = dt > 0 ? Math.abs(window.scrollY - lastScrollY) / window.innerHeight / dt : 0;
+    if (v > 0.001) lastMoved = performance.now();
     lastScrollY = window.scrollY;
     clipSpeed += (Math.min(1, v / 2.5) - clipSpeed) * k;
     post.setGains(gainOf(base), lb ? (b!.gain ?? 1) : 1);

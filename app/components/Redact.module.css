@@ -37,6 +37,7 @@
 }
 
 .output {
+  display: block;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
