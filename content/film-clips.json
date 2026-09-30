@@ -6,7 +6,7 @@
       "file": "o1-wake",
       "span": [
         0.0,
-        0.885
+        0.837
       ],
       "time": [
         0.2,
@@ -19,12 +19,12 @@
       "beat": "hero",
       "file": "v1-now-hall",
       "span": [
-        0.538,
+        0.494,
         1.0
       ],
       "time": [
         0,
-        0.104
+        0.156
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -34,10 +34,10 @@
       "file": "v1-now-hall",
       "span": [
         0.0,
-        0.4
+        0.36
       ],
       "time": [
-        0.104,
+        0.156,
         0.998
       ],
       "fadeIn": false,
@@ -47,8 +47,8 @@
       "beat": "T1",
       "file": "bridge-b1",
       "span": [
-        0.26,
-        0.681
+        0.22,
+        0.63
       ],
       "time": [
         0,
@@ -61,11 +61,11 @@
       "beat": "T1",
       "file": "gap-g4",
       "span": [
-        0.541,
-        0.913
+        0.49,
+        0.851
       ],
       "time": [
-        0.326,
+        0.314,
         0.99
       ],
       "fadeIn": false,
@@ -75,12 +75,12 @@
       "beat": "T1",
       "file": "hall-fabric",
       "span": [
-        0.773,
+        0.711,
         1.0
       ],
       "time": [
         0,
-        0.207
+        0.372
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -90,11 +90,25 @@
       "file": "hall-fabric",
       "span": [
         0.0,
-        0.375
+        0.157
       ],
       "time": [
-        0.207,
-        0.946
+        0.372,
+        0.699
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "work",
+      "file": "w1-work-racks",
+      "span": [
+        0.023,
+        0.485
+      ],
+      "time": [
+        0.091,
+        0.998
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -103,11 +117,11 @@
       "beat": "work",
       "file": "bridge-b2",
       "span": [
-        0.239,
-        0.75
+        0.351,
+        0.839
       ],
       "time": [
-        0.048,
+        0.037,
         0.992
       ],
       "fadeIn": false,
@@ -117,12 +131,12 @@
       "beat": "work",
       "file": "gap-g1",
       "span": [
-        0.614,
+        0.705,
         1.0
       ],
       "time": [
         0,
-        0.368
+        0.252
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -132,10 +146,10 @@
       "file": "gap-g1",
       "span": [
         0.0,
-        0.727
+        0.825
       ],
       "time": [
-        0.368,
+        0.252,
         0.992
       ],
       "fadeIn": false,
@@ -145,12 +159,12 @@
       "beat": "T2",
       "file": "fabric-corpus",
       "span": [
-        0.435,
+        0.533,
         1.0
       ],
       "time": [
         0,
-        0.308
+        0.231
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -160,10 +174,10 @@
       "file": "fabric-corpus",
       "span": [
         0.0,
-        0.423
+        0.449
       ],
       "time": [
-        0.308,
+        0.231,
         1.0
       ],
       "fadeIn": false,
@@ -173,7 +187,7 @@
       "beat": "opensource",
       "file": "gap-g5",
       "span": [
-        0.301,
+        0.327,
         1.0
       ],
       "time": [
@@ -191,32 +205,32 @@
         1.0
       ],
       "time": [
-        0.05,
+        0.03,
         0.299
       ],
       "fadeIn": false,
-      "gain": 0.917
+      "gain": 0.873
     },
     {
       "beat": "T3",
       "file": "v7-tray2",
       "span": [
         0.0,
-        0.193
+        0.179
       ],
       "time": [
         0.299,
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.917
+      "gain": 0.873
     },
     {
       "beat": "T3",
       "file": "bridge-b3",
       "span": [
-        0.124,
-        0.443
+        0.11,
+        0.411
       ],
       "time": [
         0,
@@ -229,91 +243,91 @@
       "beat": "T3",
       "file": "v8-door",
       "span": [
-        0.374,
-        0.613
+        0.342,
+        0.569
       ],
       "time": [
         0,
         0.842
       ],
       "fadeIn": false,
-      "gain": 0.977
+      "gain": 0.93
     },
     {
       "beat": "T3",
       "file": "gap-g6",
       "span": [
-        0.544,
-        0.941
+        0.5,
+        0.874
       ],
       "time": [
         0,
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.963
+      "gain": 0.917
     },
     {
       "beat": "T3",
       "file": "v9-board",
       "span": [
-        0.872,
-        1.0
+        0.805,
+        0.966
       ],
       "time": [
-        0.236,
-        0.697
-      ],
-      "fadeIn": false,
-      "gain": 0.961
-    },
-    {
-      "beat": "research",
-      "file": "v9-board",
-      "span": [
-        0.0,
-        0.175
-      ],
-      "time": [
-        0.697,
+        0.215,
         0.844
       ],
       "fadeIn": false,
-      "gain": 0.961
+      "gain": 0.915
+    },
+    {
+      "beat": "T3",
+      "file": "gap-g7",
+      "span": [
+        0.897,
+        1.0
+      ],
+      "time": [
+        0,
+        0.272
+      ],
+      "fadeIn": false,
+      "gain": 0.947
     },
     {
       "beat": "research",
       "file": "gap-g7",
       "span": [
-        0,
+        0.0,
         1.0
       ],
       "time": [
-        0.006,
-        0.716
+        0.272,
+        0.633
       ],
       "fadeIn": false,
-      "gain": 0.995
+      "gain": 0.947
     },
     {
       "beat": "T4",
       "file": "gap-g7",
       "span": [
         0.0,
-        0.263
+        0.316
       ],
       "time": [
-        0.716,
+        0.633,
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.995
+      "gain": 0.947
     },
     {
       "beat": "T4",
       "file": "v3-prefill",
       "span": [
-        0.079,
+        0.132,
         1.0
       ],
       "time": [
@@ -321,7 +335,7 @@
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.879
+      "gain": 0.85
     },
     {
       "beat": "T4",
@@ -332,10 +346,10 @@
       ],
       "time": [
         0.0,
-        0.138
+        0.129
       ],
       "fadeIn": false,
-      "gain": 0.97
+      "gain": 0.924
     },
     {
       "beat": "approach",
@@ -345,39 +359,39 @@
         1.0
       ],
       "time": [
-        0.138,
-        0.78
+        0.129,
+        0.545
       ],
       "fadeIn": false,
-      "gain": 0.97
+      "gain": 0.924
     },
     {
       "beat": "T5",
       "file": "r1-memory",
       "span": [
         0.0,
-        0.248
+        0.656
       ],
       "time": [
-        0.78,
+        0.545,
         0.939
       ],
       "fadeIn": false,
-      "gain": 0.97
+      "gain": 0.924
     },
     {
       "beat": "T5",
       "file": "gap-g2",
       "span": [
-        0,
+        0.387,
         1.0
       ],
       "time": [
         0,
-        0.386
+        0.165
       ],
       "fadeIn": false,
-      "gain": 1.2
+      "gain": 1.151
     },
     {
       "beat": "measured",
@@ -387,39 +401,39 @@
         1.0
       ],
       "time": [
-        0.386,
-        0.881
+        0.165,
+        0.572
       ],
       "fadeIn": false,
-      "gain": 1.2
+      "gain": 1.151
     },
     {
       "beat": "T6",
       "file": "gap-g2",
       "span": [
         0.0,
-        0.222
+        0.887
       ],
       "time": [
-        0.881,
-        0.995
+        0.572,
+        0.998
       ],
       "fadeIn": false,
-      "gain": 1.2
+      "gain": 1.151
     },
     {
       "beat": "T6",
       "file": "v5-ring2",
       "span": [
-        0,
+        0.618,
         1.0
       ],
       "time": [
         0,
-        0.5
+        0.068
       ],
       "fadeIn": false,
-      "gain": 0.89
+      "gain": 0.85
     },
     {
       "beat": "running",
@@ -429,39 +443,39 @@
         1.0
       ],
       "time": [
-        0.5,
-        0.791
+        0.068,
+        0.799
       ],
       "fadeIn": false,
-      "gain": 0.89
+      "gain": 0.85
     },
     {
       "beat": "T7",
       "file": "v5-ring2",
       "span": [
         0.0,
-        0.316
+        0.325
       ],
       "time": [
-        0.791,
+        0.799,
         0.994
       ],
       "fadeIn": false,
-      "gain": 0.89
+      "gain": 0.85
     },
     {
       "beat": "T7",
       "file": "r2-tiers",
       "span": [
-        0.047,
+        0.056,
         1.0
       ],
       "time": [
         0,
-        0.452
+        0.418
       ],
       "fadeIn": false,
-      "gain": 0.908
+      "gain": 0.864
     },
     {
       "beat": "proof",
@@ -471,17 +485,17 @@
         1.0
       ],
       "time": [
-        0.452,
+        0.418,
         0.998
       ],
       "fadeIn": false,
-      "gain": 0.908
+      "gain": 0.864
     },
     {
       "beat": "proof",
       "file": "v10-exit",
       "span": [
-        0.746,
+        0.777,
         1.0
       ],
       "time": [
@@ -513,109 +527,123 @@
         1.0
       ],
       "time": [
-        0.403,
-        0.7
+        0.55,
+        0.858
       ],
       "fadeIn": false,
-      "gain": 1.054
+      "gain": 1.003
     },
     {
       "beat": "education",
       "file": "v11-cooling",
       "span": [
         0.0,
-        0.296
+        0.134
       ],
       "time": [
-        0.7,
+        0.858,
         0.998
       ],
       "fadeIn": false,
-      "gain": 1.054
+      "gain": 1.003
+    },
+    {
+      "beat": "education",
+      "file": "ed1-campus-river",
+      "span": [
+        0,
+        0.429
+      ],
+      "time": [
+        0.34,
+        0.952
+      ],
+      "fadeIn": false,
+      "gain": 1.158
     },
     {
       "beat": "education",
       "file": "gap-g3",
       "span": [
-        0.001,
-        0.94
-      ],
-      "time": [
-        0.228,
-        0.98
-      ],
-      "fadeIn": false,
-      "gain": 1.114
-    },
-    {
-      "beat": "education",
-      "file": "v2a-future-alone",
-      "span": [
-        0.645,
+        0.134,
         1.0
       ],
       "time": [
-        0.454,
-        0.809
+        0.214,
+        0.933
       ],
       "fadeIn": false,
-      "gain": 0.967
+      "gain": 1.06
+    },
+    {
+      "beat": "T9",
+      "file": "gap-g3",
+      "span": [
+        0.0,
+        0.027
+      ],
+      "time": [
+        0.933,
+        0.978
+      ],
+      "fadeIn": false,
+      "gain": 1.06
     },
     {
       "beat": "T9",
       "file": "v2a-future-alone",
       "span": [
-        0.0,
-        0.095
+        0,
+        0.148
       ],
       "time": [
-        0.809,
+        0.367,
         1.0
       ],
       "fadeIn": false,
-      "gain": 0.967
+      "gain": 0.92
     },
     {
       "beat": "T9",
       "file": "e1-call",
       "span": [
         0,
-        0.454
+        0.494
       ],
       "time": [
         0,
         0.728
       ],
       "fadeIn": false,
-      "gain": 0.929
+      "gain": 0.884
     },
     {
       "beat": "T9",
       "file": "v2b-flow",
       "span": [
-        0.27,
+        0.31,
         1.0
       ],
       "time": [
         0,
-        0.878
+        0.844
       ],
       "fadeIn": false,
-      "gain": 1.0
+      "gain": 0.952
     },
     {
       "beat": "contact",
       "file": "v2b-flow",
       "span": [
         0.0,
-        0.126
+        0.157
       ],
       "time": [
-        0.878,
+        0.844,
         0.993
       ],
       "fadeIn": false,
-      "gain": 1.0
+      "gain": 0.952
     },
     {
       "beat": "contact",
@@ -629,7 +657,7 @@
         1.0
       ],
       "fadeIn": false,
-      "gain": 1.05
+      "gain": 1.0
     }
   ]
 }

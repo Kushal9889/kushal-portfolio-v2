@@ -2556,3 +2556,10 @@ main a[class*="primary"]:hover {
     }
   }
 }
+
+/* Sections a phone reader can skip. Desktop keeps them. */
+@media (max-width: 767px) {
+  section[data-phone="hide"] {
+    display: none;
+  }
+}

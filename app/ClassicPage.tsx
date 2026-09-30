@@ -74,6 +74,8 @@ function Section({
    * and a second Section component would fail it.
    */
   "data-register"?: "chapter" | "instrument";
+  /** Hidden below 768px: sections a phone reader can skip. */
+  "data-phone"?: "hide";
 }) {
   return (
     <section id={id} data-beat={beat ?? id} className={styles.section} {...tone}>
@@ -269,10 +271,10 @@ export default function Page() {
           { id: "opensource", label: "A bug in LangChain" },
           { id: "running", label: "Also running" },
           { id: "research", label: "Research" },
-          { id: "education", label: "Education" },
           { id: "proof", label: "What else checks out" },
           { id: "approach", label: "How he works" },
           { id: "measured", label: "How this is measured" },
+          { id: "education", label: "Education" },
           { id: "contact", label: "Get in touch" },
         ]}
       />
@@ -406,22 +408,6 @@ export default function Page() {
 
         <FilmTransit id="T5" />
 
-        <Section id="education" beat="measured" title="Education" data-tone="sunk" data-layout="rule" data-register="instrument">
-          <div className={styles.split}>
-            <div>
-              <h3 className={styles.subhead}>Education</h3>
-              <Prose body={section("Education").body} />
-            </div>
-            <div>
-              <h3 className={styles.subhead}>Before this</h3>
-              <Metrics items={section("Achievements").metrics} />
-              <Prose body={section("Achievements").body} />
-            </div>
-          </div>
-        </Section>
-
-        <FilmTransit id="T6" />
-
         {/* "Credentials" named one of the four things in here. The section also
             holds a deployed project with a live reachability probe, a degree,
             and a competition percentile, none of which is a credential. The id
@@ -429,7 +415,7 @@ export default function Page() {
             takes and the key ReachDock maps to a draft. */}
         <Section
           id="proof"
-          beat="running"
+          beat="measured"
           title="What else checks out"
           data-tone="sunk"
           data-layout="rule"
@@ -438,13 +424,13 @@ export default function Page() {
           <Certifications certifications={certs} />
         </Section>
 
-        <FilmTransit id="T7" />
+        <FilmTransit id="T6" />
 
         {/* What he is and what he is not, before the evidence. A reader who has
             just watched the agent answer wants to know who they are talking to;
             the scope limits are here rather than buried because stating them
             early is what makes the rest of the page readable as fact. */}
-        <Section id="approach" beat="proof" title="How he works" data-layout="rule" data-register="instrument">
+        <Section id="approach" beat="running" data-phone="hide" title="How he works" data-layout="rule" data-register="instrument">
           <Prose body={section("Who he is").body} />
           <Prose body={section("What he is good at").body} />
           {/* Condensed mode keeps only the first paragraph of a prose block,
@@ -462,12 +448,12 @@ export default function Page() {
           </details>
         </Section>
 
-        <FilmTransit id="T8" />
+        <FilmTransit id="T7" />
 
         {/* The strongest signal in 2026 hiring is evidence that the thing was
             measured, not that it was built. It sits second because the bug above
             proves he finds failures and this proves he checks for them. */}
-        <Section id="measured" beat="education" scrim title="How this is measured" data-layout="bank" data-register="instrument">
+        <Section id="measured" beat="proof" scrim data-phone="hide" title="How this is measured" data-layout="bank" data-register="instrument">
           <Measured />
           {/*
            * Order is the layout here. This grid auto-places into two columns in
@@ -501,6 +487,22 @@ export default function Page() {
             <Vitals />
             <Defects />
           </details>
+        </Section>
+
+        <FilmTransit id="T8" />
+
+        <Section id="education" title="Education" data-tone="sunk" data-layout="rule" data-register="instrument">
+          <div className={styles.split}>
+            <div>
+              <h3 className={styles.subhead}>Education</h3>
+              <Prose body={section("Education").body} />
+            </div>
+            <div>
+              <h3 className={styles.subhead}>Before this</h3>
+              <Metrics items={section("Achievements").metrics} />
+              <Prose body={section("Achievements").body} />
+            </div>
+          </div>
         </Section>
 
         <FilmTransit id="T9" />

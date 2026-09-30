@@ -1,13 +1,13 @@
 {
   "what has he shipped on azure?": {
-    "answer": "He shipped a document intelligence assistant on Azure for an enterprise consulting client. It exposed 14 tools for document question answering, cross-document comparison, and template-driven generation, and used hybrid BM25 and vector retrieval with Cohere re-ranking, PII and entity redaction, and LLM-as-a-Judge evaluations.",
+    "answer": "He built a document intelligence assistant on Azure for an enterprise consulting client, owned from ingestion through deployment: a LangGraph agent exposing 14 tools for document question answering, cross-document comparison and template-driven generation, grounded by hybrid BM25 and vector retrieval with Cohere re-ranking, guarded by PII and entity redaction, and scored for hallucination rate by LLM-as-a-Judge evaluations.",
     "route": "answer",
     "timings": {
-      "route": 2,
-      "retrieve": 375,
-      "answer": 3336
+      "route": 1,
+      "retrieve": 407,
+      "answer": 2253
     },
-    "total": 3737,
+    "total": 2688,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "IMG Systems",
@@ -15,7 +15,7 @@
     ],
     "usage": {
       "in": 2067,
-      "out": 68
+      "out": 84
     },
     "action": null,
     "trace": {
@@ -122,7 +122,7 @@
           "lexicalScore": 5.066,
           "lexicalRank": 28,
           "denseRank": 29,
-          "fused": 0.029217,
+          "fused": 0.029379,
           "selected": false
         },
         {
@@ -186,24 +186,21 @@
     "provider": "nvidia"
   },
   "what broke in production and how did he find it?": {
-    "answer": "The LangChain defect in the deepagents SDK broke in production with a silent failure that reported success while discarding an error. He found it by reading the system closely enough to see where it contradicted itself, tracing the issue to a code path that reported success while discarding an error.",
+    "answer": "Measured: 91.4% combined transformer and GNN accuracy; 88.2% transformer alone; 13.5s detect and fix, against 25.4s for static analysis\nLinks: IEEE ICAICCIT 2024, first author (published) Deep Learning for Contextual Bug Detection and Automated Fixes https://doi.org/10.1109/ICAICCIT64383.2024.10912101; IGI Global 2024, co-author (published) Cyber-Physical Systems: Security and Optimization Strategies https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities\n**He published research on finding bugs automatically, then found one by hand in\na production SDK.** The IEEE paper is about contextual bug detection: a\ntransformer reads the code, a graph neural network reads the structure around it,\nand the combination reaches 91.4% accuracy where the transformer alone reaches\n88.2% and the graph network alone 85.7%. Detection and fix together run in 13.5\nseconds against 25.4 for static analysis.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 233,
-      "answer": 1522
+      "retrieve": 234,
+      "answer": 16526
     },
-    "total": 1762,
+    "total": 16771,
     "sources": [
       "Publications",
       "What he is good at",
       "Who he is",
       "How retrieval on this page works"
     ],
-    "usage": {
-      "in": 2126,
-      "out": 60
-    },
+    "usage": null,
     "action": null,
     "trace": {
       "k": 60,
@@ -362,25 +359,22 @@
         }
       ]
     },
-    "provider": "nvidia"
+    "provider": null
   },
   "how does he know the retrieval is actually working?": {
-    "answer": "He knows the retrieval is actually working by finding the place a system is wrong before it fails loudly.",
+    "answer": "**The agent answering questions here runs hybrid retrieval: BM25 over the corpus\nand dense cosine over precomputed embeddings, fused with reciprocal rank fusion\nat k=60.** Both retrievers rank every chunk, and a chunk's final score is the\nsum of `1 / (60 + rank)` from each. RRF is used rather than a weighted score\nblend because the two retrievers produce numbers on incomparable scales: BM25 is\nunbounded and corpus-dependent, cosine similarity is bounded to a narrow band\nnear the top, and any fixed weighting between them is a constant that has to be\nretuned every time the corpus changes. Ranks are comparable by construction.",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 232,
-      "answer": 295
+      "retrieve": 341,
+      "answer": 1919
     },
-    "total": 534,
+    "total": 2269,
     "sources": [
       "How retrieval on this page works",
       "What he is good at"
     ],
-    "usage": {
-      "in": 1422,
-      "out": 22
-    },
+    "usage": null,
     "action": null,
     "trace": {
       "k": 60,
@@ -539,6 +533,6 @@
         }
       ]
     },
-    "provider": "nvidia"
+    "provider": null
   }
 }

@@ -10,7 +10,8 @@ import clipList from "@/content/film-clips.json";
 function measure(): Span[] {
   const boxes = ROUTE.filter((b) => b.id !== "hero").flatMap((b) => {
     const el = document.querySelector<HTMLElement>(`[data-beat="${b.id}"]`) ?? document.getElementById(b.id) ?? document.querySelector<HTMLElement>(`[data-transit="${b.id}"]`);
-    if (!el) return [];
+    // A section hidden at this width (data-phone="hide") has no box to map.
+    if (!el || el.getClientRects().length === 0) return [];
     const r = el.getBoundingClientRect();
     return [{ id: b.id, top: r.top + window.scrollY, height: r.height }];
   });
