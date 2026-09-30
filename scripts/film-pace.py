@@ -79,7 +79,7 @@ def measure_heights():
         h = page.evaluate("""() => {
           const o = { hero: document.querySelector('body > header').getBoundingClientRect().height / innerHeight };
           document.querySelectorAll('[data-transit]').forEach(e => o[e.dataset.transit] = e.getBoundingClientRect().height / innerHeight);
-          document.querySelectorAll('main > section[id]').forEach(e => o[e.id] = e.getBoundingClientRect().height / innerHeight);
+          document.querySelectorAll('main > section[data-beat]').forEach(e => o[e.dataset.beat] = e.getBoundingClientRect().height / innerHeight);
           return o;
         }""")
         b.close()

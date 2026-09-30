@@ -562,3 +562,32 @@
 .footer {
   overflow-x: clip;
 }
+
+/* One line in place of the session card: the published latency from the eval run. */
+.latency {
+  margin: 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: var(--track-caps);
+  color: var(--ink-faint);
+}
+
+/* Work racks sit on the film in the lane layout, so their fill lets it through
+   instead of a near-black slab. Below the lane breakpoint the section is solid
+   and the film is not visible behind it. */
+@media (min-width: 896px) {
+  .roleContent [data-kind="rack"] {
+    background: color-mix(in oklch, var(--paper) 52%, transparent);
+  }
+  .roleContent [data-kind="rack"] > :first-child {
+    background: color-mix(in oklch, var(--paper-high) 72%, transparent);
+  }
+}
+
+/* From 768px the role folds are opened by script and their toggle is not
+   needed; closed (no script), the toggle stays so nothing is unreachable. */
+@media (min-width: 768px) {
+  .roleContent [data-role-fold][open] > summary {
+    display: none;
+  }
+}

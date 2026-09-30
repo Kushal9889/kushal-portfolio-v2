@@ -31,7 +31,7 @@ STOPS = ["hero", "T1", "work", "T3", "measured", "contact"]
 
 LOCATE = """(a) => {
   if (a === 'hero') return 0;
-  const el = document.getElementById(a) || document.querySelector(`[data-transit="${a}"]`);
+  const el = document.querySelector(`[data-beat="${a}"]`) || document.getElementById(a) || document.querySelector(`[data-transit="${a}"]`);
   const r = el.getBoundingClientRect();
   return Math.max(0, r.top + scrollY - innerHeight / 3);
 }"""

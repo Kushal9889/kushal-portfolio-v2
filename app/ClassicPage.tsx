@@ -11,14 +11,11 @@ import LiveStatus from "./components/LiveStatus";
 import Metrics from "./components/Metrics";
 import Artifacts from "./components/Artifacts";
 import Measured from "./components/Measured";
-import Telemetry from "./components/Telemetry";
 import Reach from "./components/Reach";
 import ReachDock from "./components/ReachDock";
 import SectionLink from "./components/SectionLink";
 import PageMotion from "./components/PageMotion";
 import AskSeeds from "./components/AskSeeds";
-import Topology from "./components/Topology";
-import OverlapGraph from "./components/OverlapGraph";
 import ModelChoice from "./components/ModelChoice";
 import Defects from "./components/Defects";
 import WorkStack from "./components/WorkStack";
@@ -32,7 +29,6 @@ import { loadContent, section, loadCertifications, type Section } from "@/lib/co
 import { TARGETS } from "@/lib/agent/tools";
 import styles from "./page.module.css";
 import FilmLine from "./components/film/FilmLine";
-import ServeSim from "./components/ServeSim";
 import Redact from "./components/Redact";
 import Vitals from "./components/Vitals";
 import FilmTransit from "./components/film/FilmTransit";
@@ -43,11 +39,18 @@ function Section({
   id,
   title,
   children,
+  beat,
+  scrim,
   ...tone
 }: {
   id: string;
   title: string;
   children: React.ReactNode;
+  /** The film beat this slot plays. Beats keep the story's order while the
+   *  sections move, so a section can sit in any slot. Defaults to its id. */
+  beat?: string;
+  /** Darken the film under this section's text, for slots whose shot is bright. */
+  scrim?: boolean;
   /** Per-section treatment. Five identical sections read as one document. */
   "data-tone"?: "sunk";
   "data-weight"?: "closing";
@@ -73,13 +76,13 @@ function Section({
   "data-register"?: "chapter" | "instrument";
 }) {
   return (
-    <section id={id} className={styles.section} {...tone}>
+    <section id={id} data-beat={beat ?? id} className={styles.section} {...tone}>
       {/* Two columns above 62rem: the heading holds a rail on the left and
           everything else runs beside it. Stacked, seven section headings cost
           most of a screen on their own and the page used half its width. The
           children stay direct descendants of the wrap so the scroll batching
           still sees them individually. */}
-      <div className={`wrap ${styles.grid}`}>
+      <div className={`wrap ${styles.grid}`} data-film-scrim={scrim || undefined}>
         <div className={styles.head}>
           {/* The heading carries the section on its own. The ordinal that used
               to sit above it named a position rather than a subject, and cost
@@ -145,28 +148,36 @@ function RoleContent({
         status={`${s.roleParts.dates}${s.roleParts.location ? ` \u00b7 ${s.roleParts.location}` : ""}`}
       >
         <Metrics items={s.metrics} />
-        {s.asks.length > 0 && <AskSeeds items={s.asks} />}
-        {s.stack.length > 0 && (
-          <ul className={styles.stack}>
-            {s.stack.map((t) => (
-              <li key={t}>
-                <BrandMark name={t} />
-                {t}
-              </li>
-            ))}
-          </ul>
-        )}
-        {past ? (
-          <details className="more">
-            <summary>
-              <span className="more-open">Read what he built</span>
-              <span className="more-close">Show less</span>
-            </summary>
-            {body}
-          </details>
-        ) : (
-          body
-        )}
+        {/* Folded on a phone so the three roles read as titles and figures
+            first; WorkStack opens it from 768px up, where it was always open. */}
+        <details className="more" data-role-fold>
+          <summary>
+            <span className="more-open">Stack and what he built</span>
+            <span className="more-close">Show less</span>
+          </summary>
+          {s.asks.length > 0 && <AskSeeds items={s.asks} />}
+          {s.stack.length > 0 && (
+            <ul className={styles.stack}>
+              {s.stack.map((t) => (
+                <li key={t}>
+                  <BrandMark name={t} />
+                  {t}
+                </li>
+              ))}
+            </ul>
+          )}
+          {past ? (
+            <details className="more">
+              <summary>
+                <span className="more-open">Read what he built</span>
+                <span className="more-close">Show less</span>
+              </summary>
+              {body}
+            </details>
+          ) : (
+            body
+          )}
+        </details>
       </Panel>
     </article>
   );
@@ -256,12 +267,12 @@ export default function Page() {
         items={[
           { id: "work", label: "Work" },
           { id: "opensource", label: "A bug in LangChain" },
+          { id: "running", label: "Also running" },
           { id: "research", label: "Research" },
+          { id: "education", label: "Education" },
+          { id: "proof", label: "What else checks out" },
           { id: "approach", label: "How he works" },
           { id: "measured", label: "How this is measured" },
-          { id: "running", label: "Also running" },
-          { id: "proof", label: "What else checks out" },
-          { id: "education", label: "Education" },
           { id: "contact", label: "Get in touch" },
         ]}
       />
@@ -332,13 +343,47 @@ export default function Page() {
 
         <FilmTransit id="T3" />
 
+        {/* The deployed project, in its own section so the film can hold the
+            memory beat behind it. Same panel, same probe, same corpus. */}
+        <Section id="running" beat="research" title="Also running" data-register="instrument">
+          <Panel
+            className={styles.alsoBuilt}
+            kind="instrument"
+            surface="console"
+            heading={3}
+            label={section("BU Life AI").title}
+            state="running"
+            status="reachability"
+          >
+            <Metrics items={section("BU Life AI").metrics} />
+            <details className="more">
+              <summary>
+                <span className="more-open">Stack and live status</span>
+                <span className="more-close">Show less</span>
+              </summary>
+              <LiveStatus url="https://bulife-ai.netlify.app/" label="bulife-ai.netlify.app" />
+              <Prose body={section("BU Life AI").body} />
+              <ul className={styles.stack}>
+                {section("BU Life AI").stack.map((t) => (
+                  <li key={t}>
+                    <BrandMark name={t} />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </Panel>
+        </Section>
+
+        <FilmTransit id="T4" />
+
         {/* Research took this section from BU Life AI.
             The paper is first-author work with measured numbers and a DOI, and
             it sat in a one-third column under Credentials while a side project
             held a top-level heading. It also completes the thread section 01
             opens: the paper argues context is needed to catch bugs static
             analysis misses, and the LangChain defect was exactly that shape. */}
-        <Section id="research" title="Research" data-register="instrument">
+        <Section id="research" beat="approach" scrim title="Research" data-register="instrument">
           <Metrics items={section("Publications").metrics} />
           <Prose body={section("Publications").body} />
           {/* Both papers as rows a reader can open, rather than as two links
@@ -347,27 +392,47 @@ export default function Page() {
         </Section>
 
 
-        <FilmTransit id="T4" />
+        <FilmTransit id="T5" />
+
+        <Section id="education" beat="measured" title="Education" data-tone="sunk" data-layout="rule" data-register="instrument">
+          <div className={styles.split}>
+            <div>
+              <h3 className={styles.subhead}>Education</h3>
+              <Prose body={section("Education").body} />
+            </div>
+            <div>
+              <h3 className={styles.subhead}>Before this</h3>
+              <Metrics items={section("Achievements").metrics} />
+              <Prose body={section("Achievements").body} />
+            </div>
+          </div>
+        </Section>
+
+        <FilmTransit id="T6" />
+
+        {/* "Credentials" named one of the four things in here. The section also
+            holds a deployed project with a live reachability probe, a degree,
+            and a competition percentile, none of which is a credential. The id
+            stays `proof`: it is the parameter the agent's compose_intro tool
+            takes and the key ReachDock maps to a draft. */}
+        <Section
+          id="proof"
+          beat="running"
+          title="What else checks out"
+          data-tone="sunk"
+          data-layout="rule"
+          data-register="instrument"
+        >
+          <Certifications certifications={certs} />
+        </Section>
+
+        <FilmTransit id="T7" />
 
         {/* What he is and what he is not, before the evidence. A reader who has
             just watched the agent answer wants to know who they are talking to;
             the scope limits are here rather than buried because stating them
             early is what makes the rest of the page readable as fact. */}
-        <Section id="approach" title="How he works" data-layout="rule" data-register="instrument">
-          {/* The four terms the roles below are written in. They were in the
-              hero, where they competed with the title and the proof for the
-              same seconds and lost. Here they caption the section that explains
-              them. */}
-          <ul className={styles.focus}>
-            {profile.focus.split(/\s*·\s*/).filter(Boolean).map((f) => (
-              <li key={f}>{f}</li>
-            ))}
-          </ul>
-          {/* The shape of the thing. The page has claimed conditional routing
-              since it was built and the only evidence was a drawing in a
-              comment. */}
-          <Topology />
-          <OverlapGraph />
+        <Section id="approach" beat="proof" title="How he works" data-layout="rule" data-register="instrument">
           <Prose body={section("Who he is").body} />
           <Prose body={section("What he is good at").body} />
           {/* Condensed mode keeps only the first paragraph of a prose block,
@@ -379,12 +444,12 @@ export default function Page() {
           <Redact />
         </Section>
 
-        <FilmTransit id="T5" />
+        <FilmTransit id="T8" />
 
         {/* The strongest signal in 2026 hiring is evidence that the thing was
             measured, not that it was built. It sits second because the bug above
             proves he finds failures and this proves he checks for them. */}
-        <Section id="measured" title="How this is measured" data-layout="bank" data-register="instrument">
+        <Section id="measured" beat="education" scrim title="How this is measured" data-layout="bank" data-register="instrument">
           <Measured />
           {/*
            * Order is the layout here. This grid auto-places into two columns in
@@ -398,87 +463,26 @@ export default function Page() {
            * paired. It also reads better: the panels are the section's argument
            * and the chart and the defect list are its footnotes.
            */}
-          {/* The suite as sixteen objects rather than one ratio. Six of them are
-              attempts to break the agent, which the score cannot say. */}
-          <EvalMatrix />
-          {/* Which model answers, and the measurement that says the choice was
-              not a guess. Beside the eval matrix because both are published
-              results from a build-time run rather than something happening now. */}
-          <ModelChoice />
-          {/* Every request this page has served since it opened, plotted against
-              the median from the eval run. It was the last block inside the hero
-              console, where it spent 126px of the first screen on a chart that
-              is empty until somebody asks something. It is a measurement, and
-              this is the section about measurement. */}
-          <Telemetry />
-          <Vitals />
-          <Defects />
-        </Section>
-
-        <FilmTransit id="T6" />
-
-        {/* The deployed project, in its own section so the film can hold the
-            memory beat behind it. Same panel, same probe, same corpus. */}
-        <Section id="running" title="Also running" data-register="instrument">
-          <Panel
-            className={styles.alsoBuilt}
-            kind="instrument"
-            surface="console"
-            heading={3}
-            label={section("BU Life AI").title}
-            state="running"
-            status="reachability"
-          >
-            <LiveStatus url="https://bulife-ai.netlify.app/" label="bulife-ai.netlify.app" />
-            {/* Its three metrics and eight-item stack were parsed out of the
-                body by the corpus loader and rendered nowhere, so the section
-                shipped as prose with the numbers stripped out of it. Demoted is
-                not the same as gutted. */}
-            <Metrics items={section("BU Life AI").metrics} />
-            <Prose body={section("BU Life AI").body} />
-            <ul className={styles.stack}>
-              {section("BU Life AI").stack.map((t) => (
-                <li key={t}>
-                  <BrandMark name={t} />
-                  {t}
-                </li>
-              ))}
-            </ul>
-          </Panel>
-          <ServeSim />
-        </Section>
-
-        <FilmTransit id="T7" />
-
-        {/* "Credentials" named one of the four things in here. The section also
-            holds a deployed project with a live reachability probe, a degree,
-            and a competition percentile, none of which is a credential. The id
-            stays `proof`: it is the parameter the agent's compose_intro tool
-            takes and the key ReachDock maps to a draft. */}
-        <Section
-          id="proof"
-          title="What else checks out"
-          data-tone="sunk"
-          data-layout="rule"
-          data-register="instrument"
-        >
-          <Certifications certifications={certs} />
-        </Section>
-
-        <FilmTransit id="T8" />
-
-        <Section id="education" title="Education" data-tone="sunk" data-layout="rule" data-register="instrument">
-          <div className={styles.split}>
-            <div>
-              <h3 className={styles.subhead}>Education</h3>
-              <Prose body={section("Education").body} />
-            </div>
-            <div>
-              <h3 className={styles.subhead}>Before this</h3>
-              <Metrics items={section("Achievements").metrics} />
-              <Prose body={section("Achievements").body} />
-            </div>
-          </div>
+          {/* The published results sit behind one fold: the headline above is
+              the claim, these are the evidence for it. */}
+          <p className={styles.latency}>
+              Median answer {(evals.p50 / 1000).toFixed(1)} s, 95th percentile {(evals.p95 / 1000).toFixed(1)} s, from the {evals.measured} eval run.
+            </p>
+          <details className="more">
+            <summary>
+              <span className="more-open">See the evidence: eval cases, model comparison, page vitals, defects</span>
+              <span className="more-close">Show less</span>
+            </summary>
+            {/* The suite as sixteen objects rather than one ratio. Six of them are
+                attempts to break the agent, which the score cannot say. */}
+            <EvalMatrix />
+            {/* Which model answers, and the measurement that says the choice was
+                not a guess. Beside the eval matrix because both are published
+                results from a build-time run rather than something happening now. */}
+            <ModelChoice />
+            <Vitals />
+            <Defects />
+          </details>
         </Section>
 
         <FilmTransit id="T9" />
@@ -524,7 +528,6 @@ export default function Page() {
           {profile.name}
         </p>
         <div className="wrap" data-film-scrim>
-          <Prose body={section("This site").body} className={styles.footerNote} />
           <p className="label">Last verified {profile.lastVerified}</p>
         </div>
       </footer>

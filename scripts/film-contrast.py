@@ -32,7 +32,7 @@ ANCHORS = ["hero", "T1", "work", "T2", "opensource", "T3", "research", "T4", "ap
 LOCATE = """(a) => {
   if (a === 'hero') return 0;
   if (a === 'end') return document.documentElement.scrollHeight - innerHeight;
-  const el = document.getElementById(a) || document.querySelector(`[data-transit="${a}"]`);
+  const el = document.querySelector(`[data-beat="${a}"]`) || document.getElementById(a) || document.querySelector(`[data-transit="${a}"]`);
   if (!el) return null;
   const r = el.getBoundingClientRect();
   const top = r.top + scrollY;

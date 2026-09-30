@@ -9,7 +9,7 @@ import clipList from "@/content/film-clips.json";
 /** Scroll ranges of every page element the route names, measured now. */
 function measure(): Span[] {
   const boxes = ROUTE.filter((b) => b.id !== "hero").flatMap((b) => {
-    const el = document.getElementById(b.id) ?? document.querySelector<HTMLElement>(`[data-transit="${b.id}"]`);
+    const el = document.querySelector<HTMLElement>(`[data-beat="${b.id}"]`) ?? document.getElementById(b.id) ?? document.querySelector<HTMLElement>(`[data-transit="${b.id}"]`);
     if (!el) return [];
     const r = el.getBoundingClientRect();
     return [{ id: b.id, top: r.top + window.scrollY, height: r.height }];
@@ -146,7 +146,8 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
     let l = liveClips.get(file);
     if (!l) {
       const video = document.createElement("video");
-      video.src = `/film/clips/${file}.mp4`;
+      // Phones get the 540p, 30 fps set (about 67 MB against 430 MB).
+      video.src = `/film/clips/${window.innerWidth < 768 ? "m/" : ""}${file}.mp4`;
       video.muted = true;
       video.playsInline = true;
       video.preload = "auto";

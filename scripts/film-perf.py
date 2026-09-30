@@ -54,7 +54,7 @@ SWEEP = """async ({speed, seconds}) => {
 LOCATE = """(a) => {
   if (a === 'hero') return 0;
   if (a === 'end') return document.documentElement.scrollHeight - innerHeight;
-  const el = document.getElementById(a) || document.querySelector(`[data-transit="${a}"]`);
+  const el = document.querySelector(`[data-beat="${a}"]`) || document.getElementById(a) || document.querySelector(`[data-transit="${a}"]`);
   const r = el.getBoundingClientRect();
   const top = r.top + scrollY;
   return el.dataset.transit ? top + r.height / 2 - innerHeight / 2 : top - innerHeight / 3;

@@ -105,8 +105,11 @@ export default function Measured() {
       {/* The limits of the thing above, stated by the thing above.
           A suite that only publishes its score is advertising; one that
           publishes what it cannot see is evidence. */}
-      <div className={styles.limits}>
-        <h3 className={styles.limitHead}>What these {evals.cases} cases cannot catch</h3>
+      <details className={`more ${styles.limits}`}>
+        <summary>
+          <span className="more-open">What these {evals.cases} cases cannot catch</span>
+          <span className="more-close">Show less</span>
+        </summary>
         <ul className={styles.limitList}>
           <li>
             Assertions are substring and route checks. Nothing here grades whether an answer reads
@@ -131,7 +134,7 @@ export default function Measured() {
             </li>
           )}
         </ul>
-      </div>
+      </details>
 
       <p className={styles.foot}>
         Measured <time dateTime={evals.measured}>{evals.measured}</time> by{" "}

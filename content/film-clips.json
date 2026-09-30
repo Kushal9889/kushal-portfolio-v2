@@ -6,7 +6,7 @@
       "file": "o1-wake",
       "span": [
         0.0,
-        0.876
+        0.885
       ],
       "time": [
         0.2,
@@ -19,12 +19,12 @@
       "beat": "hero",
       "file": "v1-now-hall",
       "span": [
-        0.533,
+        0.538,
         1.0
       ],
       "time": [
         0,
-        0.113
+        0.104
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -34,10 +34,10 @@
       "file": "v1-now-hall",
       "span": [
         0.0,
-        0.396
+        0.4
       ],
       "time": [
-        0.113,
+        0.104,
         0.998
       ],
       "fadeIn": false,
@@ -47,8 +47,8 @@
       "beat": "T1",
       "file": "bridge-b1",
       "span": [
-        0.256,
-        0.678
+        0.26,
+        0.681
       ],
       "time": [
         0,
@@ -61,8 +61,8 @@
       "beat": "T1",
       "file": "gap-g4",
       "span": [
-        0.538,
-        0.91
+        0.541,
+        0.913
       ],
       "time": [
         0.326,
@@ -75,12 +75,12 @@
       "beat": "T1",
       "file": "hall-fabric",
       "span": [
-        0.77,
+        0.773,
         1.0
       ],
       "time": [
         0,
-        0.214
+        0.207
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -90,10 +90,10 @@
       "file": "hall-fabric",
       "span": [
         0.0,
-        0.372
+        0.375
       ],
       "time": [
-        0.214,
+        0.207,
         0.946
       ],
       "fadeIn": false,
@@ -103,11 +103,11 @@
       "beat": "work",
       "file": "bridge-b2",
       "span": [
-        0.236,
-        0.748
+        0.239,
+        0.75
       ],
       "time": [
-        0.049,
+        0.048,
         0.992
       ],
       "fadeIn": false,
@@ -117,12 +117,12 @@
       "beat": "work",
       "file": "gap-g1",
       "span": [
-        0.612,
+        0.614,
         1.0
       ],
       "time": [
         0,
-        0.371
+        0.368
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -132,10 +132,10 @@
       "file": "gap-g1",
       "span": [
         0.0,
-        0.725
+        0.727
       ],
       "time": [
-        0.371,
+        0.368,
         0.992
       ],
       "fadeIn": false,
@@ -145,12 +145,12 @@
       "beat": "T2",
       "file": "fabric-corpus",
       "span": [
-        0.433,
+        0.435,
         1.0
       ],
       "time": [
         0,
-        0.31
+        0.308
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -160,10 +160,10 @@
       "file": "fabric-corpus",
       "span": [
         0.0,
-        0.422
+        0.423
       ],
       "time": [
-        0.31,
+        0.308,
         1.0
       ],
       "fadeIn": false,
@@ -173,7 +173,7 @@
       "beat": "opensource",
       "file": "gap-g5",
       "span": [
-        0.3,
+        0.301,
         1.0
       ],
       "time": [
@@ -332,7 +332,7 @@
       ],
       "time": [
         0.0,
-        0.096
+        0.138
       ],
       "fadeIn": false,
       "gain": 0.97
@@ -345,8 +345,8 @@
         1.0
       ],
       "time": [
-        0.096,
-        0.865
+        0.138,
+        0.78
       ],
       "fadeIn": false,
       "gain": 0.97
@@ -356,10 +356,10 @@
       "file": "r1-memory",
       "span": [
         0.0,
-        0.165
+        0.248
       ],
       "time": [
-        0.865,
+        0.78,
         0.939
       ],
       "fadeIn": false,
@@ -374,7 +374,7 @@
       ],
       "time": [
         0,
-        0.297
+        0.386
       ],
       "fadeIn": false,
       "gain": 1.2
@@ -384,39 +384,39 @@
       "file": "gap-g2",
       "span": [
         0.0,
-        0.867
+        1.0
       ],
       "time": [
-        0.297,
+        0.386,
+        0.881
+      ],
+      "fadeIn": false,
+      "gain": 1.2
+    },
+    {
+      "beat": "T6",
+      "file": "gap-g2",
+      "span": [
+        0.0,
+        0.222
+      ],
+      "time": [
+        0.881,
         0.995
       ],
       "fadeIn": false,
       "gain": 1.2
     },
     {
-      "beat": "measured",
+      "beat": "T6",
       "file": "v5-ring2",
       "span": [
-        0.772,
+        0,
         1.0
       ],
       "time": [
         0,
-        0.134
-      ],
-      "fadeIn": false,
-      "gain": 0.89
-    },
-    {
-      "beat": "T6",
-      "file": "v5-ring2",
-      "span": [
-        0.0,
-        1.0
-      ],
-      "time": [
-        0.134,
-        0.58
+        0.5
       ],
       "fadeIn": false,
       "gain": 0.89
@@ -426,39 +426,39 @@
       "file": "v5-ring2",
       "span": [
         0.0,
-        0.721
+        1.0
       ],
       "time": [
-        0.58,
+        0.5,
+        0.791
+      ],
+      "fadeIn": false,
+      "gain": 0.89
+    },
+    {
+      "beat": "T7",
+      "file": "v5-ring2",
+      "span": [
+        0.0,
+        0.316
+      ],
+      "time": [
+        0.791,
         0.994
       ],
       "fadeIn": false,
       "gain": 0.89
     },
     {
-      "beat": "running",
+      "beat": "T7",
       "file": "r2-tiers",
       "span": [
-        0.554,
+        0.047,
         1.0
       ],
       "time": [
         0,
-        0.173
-      ],
-      "fadeIn": false,
-      "gain": 0.908
-    },
-    {
-      "beat": "T7",
-      "file": "r2-tiers",
-      "span": [
-        0.0,
-        1.0
-      ],
-      "time": [
-        0.173,
-        0.619
+        0.452
       ],
       "fadeIn": false,
       "gain": 0.908
@@ -471,7 +471,7 @@
         1.0
       ],
       "time": [
-        0.619,
+        0.452,
         0.998
       ],
       "fadeIn": false,

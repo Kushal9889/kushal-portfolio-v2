@@ -8,10 +8,10 @@ function canRun(): boolean | "gpu" {
   // ?film=off is the page without the film, the baseline scripts/film-perf.py measures against.
   const mode = new URLSearchParams(location.search).get("film");
   if (mode === "off") return false;
-  // ?film=debug runs at any width, so a narrow preview window still shows the film.
-  if (window.innerWidth < 768 && mode !== "debug") return false;
-  const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
+  const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean; effectiveType?: string } };
   if (nav.connection?.saveData) return false;
+  // Phones load the small clip set, but not over a 2G or 3G link.
+  if (window.innerWidth < 768 && /^(slow-2g|2g|3g)$/.test(nav.connection?.effectiveType ?? "")) return false;
   if ((nav.deviceMemory ?? 8) <= 4 && (navigator.hardwareConcurrency ?? 8) <= 4) return false;
   const probe = document.createElement("canvas").getContext("webgl2", { failIfMajorPerformanceCaveat: true });
   if (!probe) return "gpu";
