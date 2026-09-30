@@ -210,3 +210,11 @@ a.source:hover {
 .cell[data-scaled] {
   position: relative;
 }
+
+/* Two columns on a phone leave an odd last figure alone beside a gap; it takes
+   the full row instead. */
+@media (max-width: 40rem) {
+  .grid > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}

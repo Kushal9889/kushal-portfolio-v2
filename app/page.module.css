@@ -129,12 +129,13 @@
 }
 
 /* Technologies as a scannable row rather than a sentence. Set in mono so they
-   read as names of things, with a rule between rather than a comma. */
+   read as names of things, each in its own hairline chip so a wrapped row
+   keeps one pattern instead of a rule that only some entries carry. */
 .stack {
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s-2) var(--s-4);
+  gap: var(--s-2);
   margin: 0 0 1.5rem;
   padding: 0;
   font-family: var(--font-mono), monospace;
@@ -150,6 +151,13 @@
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
+  padding: 2px var(--s-2);
+  border: var(--border-hair) solid var(--rule);
+  transition: border-color var(--t-fast) var(--ease-out);
+}
+
+.stack li:hover {
+  border-color: var(--ink-faint);
 }
 
 .stack li svg {
@@ -160,10 +168,6 @@
   opacity: 0.85;
 }
 
-.stack li + li {
-  border-left: var(--border-hair) solid var(--rule);
-  padding-left: var(--s-4);
-}
 
 
 .split {

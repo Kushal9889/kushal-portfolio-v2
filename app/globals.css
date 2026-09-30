@@ -2516,3 +2516,43 @@ main a[class*="primary"]:hover {
     transform: none;
   }
 }
+
+/* Every disclosure opens the same way: the content grows to its height and
+   fades in, so a fold reads as one motion wherever it sits. Browsers without
+   ::details-content open it instantly, as before. */
+@supports selector(::details-content) {
+  .more {
+    interpolate-size: allow-keywords;
+  }
+
+  .more::details-content {
+    block-size: 0;
+    opacity: 0;
+    overflow: clip;
+    transition:
+      block-size var(--t-base) var(--ease-out),
+      opacity var(--t-base) var(--ease-out),
+      content-visibility var(--t-base) allow-discrete;
+  }
+
+  .more[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .more::details-content {
+      transition: none;
+    }
+  }
+}
+
+@media print {
+  @supports selector(::details-content) {
+    .more::details-content {
+      block-size: auto;
+      opacity: 1;
+      content-visibility: visible;
+    }
+  }
+}
