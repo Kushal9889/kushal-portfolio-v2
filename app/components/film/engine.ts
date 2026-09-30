@@ -121,6 +121,13 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
   // ?lights=off renders nothing through the full pipeline, so the frame must
   // come out as the page ground (scripts/film-black.py).
   const lightsOff = query.get("lights") === "off";
+  // ?hud=1 prints what the film shows, every frame, so a reader can quote an
+  // exact frame back ("T6 42% · v4-kv10 8.06s f483") for debugging.
+  const hud = query.get("hud") === "1" ? document.createElement("div") : null;
+  if (hud) {
+    Object.assign(hud.style, { position: "fixed", left: "8px", bottom: "56px", zIndex: "2147483647", padding: "6px 8px", font: "12px/1.4 ui-monospace, monospace", color: "var(--ink)", background: "var(--paper)", border: "1px solid var(--rule)", pointerEvents: "none", whiteSpace: "pre" });
+    document.body.appendChild(hud);
+  }
 
   // ---- Clips --------------------------------------------------------------
   // Every section is video. Each clip is an MP4 seeked by scroll; its time
@@ -437,6 +444,14 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
       lastAct = act;
       document.documentElement.dataset.filmAct = String(act);
     }
+    if (hud) {
+      const top = document.documentElement.scrollHeight - window.innerHeight;
+      const f60 = (t: number) => `f${Math.round(t * 60)}`;
+      hud.textContent =
+        `${where.beat} ${Math.round(where.progress * 100)}% · y ${Math.round(sy)} (${((sy / Math.max(1, top)) * 100).toFixed(1)}% of page)\n` +
+        `shown ${stats.shown || "-"} ${stats.shownTime.toFixed(2)}s ${f60(stats.shownTime)}` +
+        (stats.mixClip ? `\nmix → ${stats.mixClip} ${Math.round(stats.mix * 100)}%` : "");
+    }
     if (now - lastInput < PARK_AFTER) raf = requestAnimationFrame(frame);
   }
 
@@ -528,6 +543,7 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers) {
     window.removeEventListener("pointermove", onPointer);
     window.removeEventListener("resize", resize);
     overlay.remove();
+    hud?.remove();
     for (const l of liveClips.values()) {
       l.tex.dispose();
       l.video.removeAttribute("src");
