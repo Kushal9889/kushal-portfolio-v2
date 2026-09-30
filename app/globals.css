@@ -2463,3 +2463,56 @@ html[data-film="live"] [data-surface="console"] {
     display: none;
   }
 }
+
+/* A coloured brand mark sits on the text line at the size of the text. */
+.brand-mark {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+  flex: none;
+}
+
+/* Every plain text link reads as one: the same colour and 2px rule the prose
+   links carry, so a certificate, a DOI and a pull request are spotted the same
+   way. Row links keep their own styling. */
+:where(main, footer) a:not([class]),
+:where(main, footer) a[class*="source"],
+:where(main, footer) a[class*="repo"] {
+  color: var(--mark);
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--mark-rule);
+  text-underline-offset: 0.18em;
+  transition:
+    text-decoration-color var(--t-fast) var(--ease-out),
+    text-underline-offset var(--t-fast) var(--ease-out);
+}
+
+:where(main, footer) a:not([class]):hover,
+:where(main, footer) a[class*="source"]:hover,
+:where(main, footer) a[class*="repo"]:hover {
+  text-decoration-color: var(--mark);
+  text-underline-offset: 0.28em;
+}
+
+/* Row links (papers, issues, contact routes) answer the pointer the same way:
+   the row steps right by a hair, which says "this opens" without a new colour. */
+main a[class*="link"],
+main a[class*="item"],
+main a[class*="primary"] {
+  transition: transform var(--t-fast) var(--ease-out);
+}
+
+main a[class*="link"]:hover,
+main a[class*="item"]:hover,
+main a[class*="primary"]:hover {
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main a[class*="link"]:hover,
+  main a[class*="item"]:hover,
+  main a[class*="primary"]:hover {
+    transform: none;
+  }
+}

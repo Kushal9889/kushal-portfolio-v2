@@ -65,8 +65,9 @@
     "@types/react-dom": "^19",
     "@types/three": "^0.186.0",
     "culori": "^4.0.2",
+    "devicon": "^2.17.0",
     "opentype.js": "^2.0.0",
-    "simple-icons": "^16.29.0",
+    "simple-icons": "^16.33.0",
     "tsx": "^4.19.2",
     "typescript": "^5",
     "wawoff2": "^2.0.1"

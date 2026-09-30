@@ -1,13 +1,13 @@
 {
   "what has he shipped on azure?": {
-    "answer": "He built a document intelligence assistant on Azure for an enterprise consulting client, owned from ingestion through deployment: a LangGraph agent exposing 14 tools for document question answering, cross-document comparison and template-driven generation, grounded by hybrid BM25 and vector retrieval with Cohere re-ranking, guarded by PII and entity redaction, and scored for hallucination rate by LLM-as-a-Judge evaluations.",
+    "answer": "He shipped a document intelligence assistant on Azure for an enterprise consulting client. It exposed 14 tools for document question answering, cross-document comparison, and template-driven generation, and used hybrid BM25 and vector retrieval with Cohere re-ranking, PII and entity redaction, and LLM-as-a-Judge evaluations.",
     "route": "answer",
     "timings": {
-      "route": 1,
-      "retrieve": 247,
-      "answer": 3296
+      "route": 2,
+      "retrieve": 375,
+      "answer": 3336
     },
-    "total": 3560,
+    "total": 3737,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "IMG Systems",
@@ -15,7 +15,7 @@
     ],
     "usage": {
       "in": 2067,
-      "out": 84
+      "out": 68
     },
     "action": null,
     "trace": {
@@ -186,14 +186,14 @@
     "provider": "nvidia"
   },
   "what broke in production and how did he find it?": {
-    "answer": "The LangChain defect broke in production as a silent failure with no exception and no stack trace, and he found it by tracing answer quality problems to retrieval rather than generation, which is where they usually are and rarely where people look first.",
+    "answer": "The LangChain defect in the deepagents SDK broke in production with a silent failure that reported success while discarding an error. He found it by reading the system closely enough to see where it contradicted itself, tracing the issue to a code path that reported success while discarding an error.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 224,
-      "answer": 2372
+      "retrieve": 233,
+      "answer": 1522
     },
-    "total": 2604,
+    "total": 1762,
     "sources": [
       "Publications",
       "What he is good at",
@@ -202,7 +202,7 @@
     ],
     "usage": {
       "in": 2126,
-      "out": 49
+      "out": 60
     },
     "action": null,
     "trace": {
@@ -365,19 +365,22 @@
     "provider": "nvidia"
   },
   "how does he know the retrieval is actually working?": {
-    "answer": "**The agent answering questions here runs hybrid retrieval: BM25 over the corpus\nand dense cosine over precomputed embeddings, fused with reciprocal rank fusion\nat k=60.** Both retrievers rank every chunk, and a chunk's final score is the\nsum of `1 / (60 + rank)` from each. RRF is used rather than a weighted score\nblend because the two retrievers produce numbers on incomparable scales: BM25 is\nunbounded and corpus-dependent, cosine similarity is bounded to a narrow band\nnear the top, and any fixed weighting between them is a constant that has to be\nretuned every time the corpus changes. Ranks are comparable by construction.",
+    "answer": "He knows the retrieval is actually working by finding the place a system is wrong before it fails loudly.",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 136,
-      "answer": 1790
+      "retrieve": 232,
+      "answer": 295
     },
-    "total": 1934,
+    "total": 534,
     "sources": [
       "How retrieval on this page works",
       "What he is good at"
     ],
-    "usage": null,
+    "usage": {
+      "in": 1422,
+      "out": 22
+    },
     "action": null,
     "trace": {
       "k": 60,
@@ -536,6 +539,6 @@
         }
       ]
     },
-    "provider": null
+    "provider": "nvidia"
   }
 }
