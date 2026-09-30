@@ -5,13 +5,6 @@
   pointer-events: none;
 }
 
-/* On a phone the text is the page; the film sits behind it as atmosphere. */
-@media (max-width: 767px) {
-  .layer {
-    opacity: 0.6;
-  }
-}
-
 .layer canvas {
   display: block;
   width: 100%;
