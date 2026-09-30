@@ -33,11 +33,11 @@ RUNS = [
     # and B3 open this run so neither run passes 6.5 seconds of footage a screen.
     (["T3", "research", "T4"], [("v7-tray2", 0, 1), ("bridge-b3", 0, 1), ("v8-door", 0, 1), ("gap-g6", 0, 1), ("v9-board", 0.3, 1), ("gap-g7", 0, 1), ("v3-prefill", 0, 1)]),
     # Two KV takes chained, then the wall becomes the GPU tray (G2, reversed from Kushal's take).
-    (["approach", "T5", "measured", "T6", "running", "T7", "proof"], [("v4-kv8", 0, 1), ("v4-kv10", 0.45, 1), ("gap-g2", 0, 1), ("v5-ring2", 0, 1), ("v6-tiers2", 0, 1)]),
+    (["approach", "T5", "measured", "T6", "running", "T7", "proof"], [("v4-kv8", 0, 1), ("v4-kv10", 0.66, 1), ("gap-g2", 0, 1), ("v5-ring2", 0, 1), ("v6-tiers2", 0, 1)]),
     (["T8"], [("v10-exit", 0, 1)]),
     # V11 (from its second third) out to the cooling tower; G3 back down to the
     # engineer; the Flow take pulls back from V2a's last frame to the team.
-    (["education", "T9", "contact"], [("v11-cooling", 0.35, 1), ("gap-g3", 0, 1), ("v2a-future-alone", 0.6, 1), ("v2b-flow", 0, 1)]),
+    (["education", "T9", "contact"], [("v11-cooling", 0.5, 1), ("gap-g3", 0.02, 1), ("v2a-future-alone", 0.6, 1), ("v2b-flow", 0, 1)]),
 ]
 # A clip after a hard beat change fades in; one continuing a chain does not.
 FADE_IN = set()  # every join is a dissolve now (D43)
