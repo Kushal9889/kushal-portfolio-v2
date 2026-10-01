@@ -1,7 +1,7 @@
 ---
 name: Kushal Gaddamwar
 role: AI Engineer
-current: AI Engineer at Boston University's Questrom Computational Lab
+current: AI Engineer and Lead Backend Engineer at Boston University's Questrom Computational Lab
 tagline: I engineer the systems around LLMs. Not the prompts inside them.
 location: Boston, MA
 email: kushal7887pd@gmail.com
@@ -18,15 +18,20 @@ lastVerified: 2026-10-01
 
 ## Who he is
 
-**Kushal Gaddamwar builds agentic AI systems that run in production.** He is an AI Engineer and the
-Lead Backend Engineer at Boston University's Questrom Computational Lab, a Graduate Teaching
-Assistant for MET CS 664 Artificial Intelligence, and an M.S. Computer Science candidate at BU,
-graduating December 2026. He holds the NVIDIA-Certified Professional: Agentic AI and the Claude
-Certified Developer - Foundations credentials.
+**Kushal Gaddamwar builds AI agents, then makes them answer to the same rules as the engineers
+around them.** At Boston University's Questrom Computational Lab he is the AI Engineer behind a
+14-tool LangGraph agent for Sikich, and the Lead Backend Engineer whose harness holds Claude Code
+agents to the gates human code has to pass. He also teaches as a Graduate Teaching Assistant for
+MET CS 664 Artificial Intelligence, and finishes his M.S. in Computer Science at BU in December
+2026. NVIDIA certifies him in agentic AI; Anthropic certifies him as a Claude developer.
+
+His working habit is reading a system until it contradicts itself. That is how a silent bug in
+LangChain's deepagents SDK got fixed in 57 hours. It is also why this page links a number to its
+source wherever the source is public.
 
 The work he does is context engineering: deciding what a model sees on every inference call.
 Retrieval, memory, tool surface, evaluation. Most of the difficulty in agentic systems is not the
-prompt, it is everything around the prompt.
+prompt. It is everything around the prompt.
 
 He is not a researcher and not an ML training engineer. He has never trained a model and does not
 claim to. He builds systems that stay correct under load.
