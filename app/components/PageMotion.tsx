@@ -270,13 +270,10 @@ export default function PageMotion() {
         start: "top 92%",
         onEnter: () => {
           if (!first(el)) return;
-          // The spinning wheels stay soft until they land, so no passing
-          // digit reads as a figure the corpus does not hold.
-          gsap.fromTo(
-            el,
-            { filter: "blur(3px)", opacity: 0.45 },
-            { filter: "blur(0px)", opacity: 1, duration: 1.1, ease: "power4.in", clearProps: "filter,opacity" },
-          );
+          // The spinning wheels stay dim until they land, so no passing digit
+          // reads as a figure the corpus does not hold. Opacity, not a blur
+          // filter: a filter repaints every frame and cost the film frames.
+          gsap.fromTo(el, { opacity: 0.3 }, { opacity: 1, duration: 1.1, ease: "power4.in", clearProps: "opacity" });
           tracks.forEach((track, i) => {
             const target = Number(track.dataset.target);
             gsap.fromTo(
