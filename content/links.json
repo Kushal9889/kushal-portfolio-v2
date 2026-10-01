@@ -44,6 +44,24 @@
       "checkedOn": "2026-10-01"
     },
     {
+      "url": "https://github.com/vllm-project/vllm/pull/56846",
+      "status": 200,
+      "ok": true,
+      "checkedOn": "2026-10-01"
+    },
+    {
+      "url": "https://github.com/modelcontextprotocol/python-sdk/issues/3490",
+      "status": 200,
+      "ok": true,
+      "checkedOn": "2026-10-01"
+    },
+    {
+      "url": "https://www.credly.com/badges/54ca4478-339e-496c-a4c4-2ae6c4c339ca/public_url",
+      "status": 200,
+      "ok": true,
+      "checkedOn": "2026-10-01"
+    },
+    {
       "url": "https://www.credly.com/badges/c8f105aa-1815-40cc-85a1-e5a2ef20c920/public_url",
       "status": 200,
       "ok": true,
@@ -86,6 +104,12 @@
       "checkedOn": "2026-10-01"
     },
     {
+      "url": "https://github.com/Kushal9889/kushal-portfolio-v2/blob/40117ea/content/evals.json",
+      "status": 200,
+      "ok": true,
+      "checkedOn": "2026-10-01"
+    },
+    {
       "url": "https://www.coursera.org/account/accomplishments/verify/YDOJ7MYNJPRF",
       "status": 200,
       "ok": true,
@@ -99,18 +123,6 @@
     },
     {
       "url": "https://www.coursera.org/account/accomplishments/verify/9S7Z4CGK7EB5",
-      "status": 200,
-      "ok": true,
-      "checkedOn": "2026-10-01"
-    },
-    {
-      "url": "https://coursera.org/share/dc887287cfbcb8c94629abb2cfc4911c",
-      "status": 200,
-      "ok": true,
-      "checkedOn": "2026-10-01"
-    },
-    {
-      "url": "https://coursera.org/share/3785b0dcc447f90047993d6bb6ff7b4a",
       "status": 200,
       "ok": true,
       "checkedOn": "2026-10-01"

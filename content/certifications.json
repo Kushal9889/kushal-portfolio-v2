@@ -13,6 +13,16 @@
       "why": "Proctored professional exam from the vendor whose inference stack the field runs on."
     },
     {
+      "id": "anthropic-claude-certified-developer",
+      "name": "Claude Certified Developer - Foundations",
+      "short": "CCD-F",
+      "issuer": "Anthropic",
+      "year": 2026,
+      "url": "https://www.credly.com/badges/54ca4478-339e-496c-a4c4-2ae6c4c339ca/public_url",
+      "kind": "exam",
+      "featured": false
+    },
+    {
       "id": "aws-cloud-technical-essentials",
       "name": "AWS Cloud Technical Essentials",
       "issuer": "Amazon Web Services",

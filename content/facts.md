@@ -1,6 +1,6 @@
 ---
 name: Kushal Gaddamwar
-role: Agentic AI Engineer
+role: AI Engineer
 current: AI Engineer at Boston University's Questrom Computational Lab
 tagline: I engineer the systems around LLMs. Not the prompts inside them.
 location: Boston, MA
@@ -13,14 +13,16 @@ site: https://kushal-portfolio-223.netlify.app
 available: January 2027, earlier for the right team
 focus: Agentic orchestration · RAG retrieval · Evals and observability · Production deploys
 proof: He found a silent error-swallowing bug in LangChain's SDK. A maintainer merged the fix in 57 hours.
-lastVerified: 2026-08-09
+lastVerified: 2026-10-01
 ---
 
 ## Who he is
 
-**Kushal Gaddamwar builds agentic AI systems that run in production.** He is an AI Engineer at Boston
-University's Questrom Computational Lab and an M.S. Computer Science candidate at BU, graduating
-December 2026.
+**Kushal Gaddamwar builds agentic AI systems that run in production.** He is an AI Engineer and the
+Lead Backend Engineer at Boston University's Questrom Computational Lab, a Graduate Teaching
+Assistant for MET CS 664 Artificial Intelligence, and an M.S. Computer Science candidate at BU,
+graduating December 2026. He holds the NVIDIA-Certified Professional: Agentic AI and the Claude
+Certified Developer - Foundations credentials.
 
 The work he does is context engineering: deciding what a model sees on every inference call.
 Retrieval, memory, tool surface, evaluation. Most of the difficulty in agentic systems is not the
@@ -50,6 +52,28 @@ Data science and statistical modeling.
 Pure backend work with no AI layer. He can do it, having done it at IMG Systems and Growaza, but it
 is not what he is optimising his career for.
 
+## Boston University, Questrom Computational Lab, backend
+
+Role: Lead Backend Engineer. August 2026 to present. Boston, MA.
+
+@metric Claude Code | agents held to the same gates as human engineers | resume
+@metric Django REST + PostgreSQL | backend he leads | resume
+@metric build once | one Docker image promoted across Azure environments | resume
+
+**He architected the agentic SDLC harness that holds Claude Code agents to the same gates as human
+engineers in a regulated client codebase:** least-privilege permissions, context-routing hooks, and
+CodeRabbit review linked to Linear through the Model Context Protocol, shipped as a plugin.
+
+He leads the Django REST Framework and PostgreSQL backend: data-layer role-based access control,
+revocable JWT, audit logs, and an idempotent recurrence engine that turns the legacy system's silent
+missed jobs into dispatch alerts.
+
+He hardened delivery: CI fails on API-contract drift from the React frontend, a build-once Docker
+image promotes across Azure environments, and a re-runnable migration streams Blob records into
+PostgreSQL at constant memory.
+
+Stack: Claude Code, Model Context Protocol, Django REST Framework, PostgreSQL, Docker, Azure, React.
+
 ## Boston University, Questrom Computational Lab
 
 Role: AI Engineer, Graduate Researcher. May 2026 to present. Boston, MA.
@@ -60,11 +84,14 @@ Role: AI Engineer, Graduate Researcher. May 2026 to present. Boston, MA.
 
 @ask When is multi-agent orchestration worth the coordination cost? | Boston University, Questrom Computational Lab
 
-**He built a document intelligence assistant on Azure for an enterprise consulting client, owned
-from ingestion through deployment:** a LangGraph agent exposing 14 tools for document question
+**He built a document intelligence assistant on Azure for the enterprise consulting client Sikich,
+owned from ingestion through deployment:** a LangGraph agent exposing 14 tools for document question
 answering, cross-document comparison and template-driven generation, grounded by hybrid BM25 and
 vector retrieval with Cohere re-ranking, guarded by PII and entity redaction, and scored for
 hallucination rate by LLM-as-a-Judge evaluations.
+
+He ran the customer-facing side too: requirements, demos, and weekly knowledge transfer to the
+client. In production he fixed a deduplication race and a Docker fault.
 
 The constraint: consultants needed answers grounded in a large private document corpus, where a
 wrong answer delivered confidently is worse than no answer.
@@ -124,7 +151,7 @@ Stack: Python, Apache Tika, Pydantic, JSON Schema, PostgreSQL, Redis, Docker, Gi
 
 ## Growaza
 
-Role: Associate Software Engineer Intern. January 2024 to July 2024. India.
+Role: Associate Software Engineer Intern. January 2024 to July 2024. Remote.
 
 @metric -30% | API response time | resume
 @metric +22% | engagement, 1,000+ daily users
@@ -197,6 +224,8 @@ request body.
 
 @artifact Issue he filed | closed | langchain-ai/deepagents#4846 | https://github.com/langchain-ai/deepagents/issues/4846
 @artifact Fix a maintainer wrote | merged | langchain-ai/deepagents#4925 | https://github.com/langchain-ai/deepagents/pull/4925
+@artifact Pull request he opened | open | vllm-project/vllm#56846 | https://github.com/vllm-project/vllm/pull/56846
+@artifact Issue he filed | open | modelcontextprotocol/python-sdk#3490 | https://github.com/modelcontextprotocol/python-sdk/issues/3490
 
 `CompositeBackend.ls("/")` and `als("/")` aggregated results at the root and discarded errors from
 the default backend, returning a successful-looking listing containing only virtual route
@@ -212,11 +241,19 @@ Filed 19 July 2026 at 15:20 UTC. Mason Daugherty, a LangChain maintainer, wrote 
 22 July at 00:45 UTC, 57 hours later, in 29 added lines across 2 files with nothing deleted. The pull
 request body reads: Credit to @Kushal9889 for reporting the issue and providing the reproduction.
 
+Two more are open and under review. In vLLM he opened pull request #56846, which makes the pythonic
+tool-call parsers agree across streaming modes. On the Model Context Protocol
+Python SDK he filed issue #3490: a rejected `connect_to_server` in `ClientSessionGroup` leaves its
+transport running, because the session is established before its components are validated.
+
 **Fifty-seven hours from a stranger's bug report to a merged fix in a LangChain SDK.** He offered in
 the issue to write the patch himself. The maintainer wrote it instead, which is the ordinary outcome
 when the report is good enough that fixing it takes twenty minutes.
 
 ## Certifications
+
+Claude Certified Developer - Foundations, Anthropic, earned 2026. Verifiable on Credly.
+https://www.credly.com/badges/54ca4478-339e-496c-a4c4-2ae6c4c339ca/public_url
 
 NVIDIA-Certified Professional: Agentic AI, known as NCP-AAI, earned 2026. This is the one that
 matters: a proctored professional exam from the vendor whose inference stack the field runs on,
@@ -240,8 +277,9 @@ building agents with the Model Context Protocol, and a capstone project.
 
 ## Education
 
-Boston University, M.S. Computer Science. September 2025 to December 2026 expected. Boston, MA.
-Coursework: Generative AI, Web Mining and Graph Analytics, Software Engineering, AI Systems.
+Boston University, M.S. Computer Science, GPA 3.5 of 4.0. September 2025 to December 2026 expected.
+Boston, MA. Graduate Teaching Assistant for MET CS 664 Artificial Intelligence, about 40 graduate
+students, September 2026 to present. Coursework: Generative AI, Web Mining and Graph Analytics, Software Engineering, AI Systems.
 
 IIIT Design and Manufacturing Jabalpur, B.Tech Computer Science and Engineering. October 2020 to
 June 2024. India.
@@ -280,7 +318,7 @@ Languages: Python, SQL, TypeScript, JavaScript, C++. Data structures and algorit
 Agentic AI: multi-agent orchestration, ReAct, tool calling, function calling, structured outputs,
 context engineering, prompt engineering, Model Context Protocol, natural language processing.
 
-Frameworks: LangChain, LangGraph, LangSmith, LlamaIndex, NVIDIA NIM, OpenAI API, Azure OpenAI.
+Frameworks: Claude Code, LangChain, LangGraph, LangSmith, LlamaIndex, NVIDIA NIM, OpenAI API, Azure OpenAI.
 
 Retrieval: RAG, agentic RAG, hybrid search, BM25, reranking, embeddings, semantic search, chunking
 strategies, pgvector, ChromaDB, Azure AI Search, NV-Embed.
@@ -288,7 +326,7 @@ strategies, pgvector, ChromaDB, Azure AI Search, NV-Embed.
 Evaluation and reliability: LLM evaluation, LLM-as-a-Judge, guardrails, grounding, hallucination
 reduction, PII redaction, LLM observability, tracing.
 
-Backend and MLOps: FastAPI, RESTful APIs, microservices, async Python, Pydantic, Docker, Kubernetes,
+Backend and MLOps: FastAPI, Django REST Framework, RESTful APIs, microservices, async Python, Pydantic, Docker, Kubernetes,
 GitHub Actions, CI/CD, model deployment, low-latency inference, Server-Sent Events.
 
 On Kubernetes specifically: he has used it and is not proficient in it. It is listed because it is
@@ -303,11 +341,11 @@ Frontend: React, Redux, Next.js.
 
 ## Achievements
 
-@metric 99.1 percentile | JEE Mains 2020, of 1.2 million candidates | resume
+@metric Top 1% | JEE Mains 2020, 99.1 percentile | resume
 @metric 70+ | members in the coding community he co-founded
 @metric GSoC and Kickstart top 200 | where his mentees landed
 
-JEE Mains 2020: 99.1 percentile of 1.2 million candidates, top 0.9 percent nationally.
+JEE Mains 2020: 99.1 percentile, top 0.9 percent nationally.
 
 CodeChef global rank 64, February 2022 Long Challenge. Third place, Code Rumble 2023.
 
@@ -395,6 +433,13 @@ a resume keyword has gone missing from this file. A token linter fails on a
 colour written outside the stylesheet. An audit runs 107 structural
 checks. The evaluation suite runs 25, five times each. None of it makes the work better; all
 of it stops the page describing work that is not there.
+
+**The figures on his resume come from one published run, and it is still in the repository.**
+On 22 August 2026 the evaluation suite ran 16 cases five times each, 80 runs, 69 passing; the
+retrieval scored precision@1 0.857 and MRR 0.929 over 35 scored retrievals; the median answer took
+1,155 milliseconds. The file that run wrote is
+[content/evals.json at commit 40117ea](https://github.com/Kushal9889/kushal-portfolio-v2/blob/40117ea/content/evals.json).
+Later runs replaced it as the suite grew; the page shows the latest.
 
 The page you are reading is the work sample. The agent answering questions runs a LangGraph graph
 with four nodes, hybrid BM25 and dense retrieval over this file and his engineering notes, a policy

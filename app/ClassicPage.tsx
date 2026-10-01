@@ -143,7 +143,7 @@ function RoleContent({
         label={
           <>
             {s.roleParts.title}
-            <span className={styles.company}>{s.title}</span>
+            <span className={styles.company}>{s.title.replace(/, backend$/, "")}</span>
           </>
         }
         state={past ? "done" : "running"}
@@ -235,12 +235,14 @@ export default function Page() {
   // Parsed once and handed to the racks, rather than each one reading the
   // corpus a second time.
   const questrom = section("Boston University, Questrom Computational Lab");
+  const backend = section("Boston University, Questrom Computational Lab, backend");
   const img = section("IMG Systems");
   const growaza = section("Growaza");
   // Newest first. `past` is the de-emphasis flag the rail and the content
   // column both read, so the order and the weighting live in one place.
   const roles = [
     { section: questrom, past: false },
+    { section: backend, past: false },
     { section: img, past: true },
     { section: growaza, past: true },
   ];
