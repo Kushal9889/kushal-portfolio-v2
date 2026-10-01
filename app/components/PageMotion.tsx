@@ -209,6 +209,9 @@ export default function PageMotion() {
      * us, so what settles is character-for-character what `verify:facts` checked.
      */
     const ODO_CYCLES = 2;
+    // Each cell is taller than the glyph, so a settled window never shows a
+    // sliver of the digits above and below it (display numerals ink past 1em).
+    const CELL = 1.3;
 
     const figures = Array.from(document.querySelectorAll<HTMLElement>("main dt.tabular")).filter(
       (el) => /^[+-]?\d/.test(el.textContent?.trim() ?? ""),
@@ -232,14 +235,14 @@ export default function PageMotion() {
         const window_ = document.createElement("span");
         window_.setAttribute("aria-hidden", "true");
         window_.style.cssText =
-          "display:inline-block;overflow:hidden;height:1em;line-height:1;vertical-align:bottom";
+          `display:inline-block;overflow:hidden;height:${CELL}em;line-height:${CELL};vertical-align:bottom;margin-block:${(1 - CELL) / 2}em`;
 
         const track = document.createElement("span");
         track.style.cssText = "display:block;will-change:transform";
         for (let cycle = 0; cycle <= ODO_CYCLES; cycle++) {
           for (let d = 0; d <= 9; d++) {
             const cell = document.createElement("span");
-            cell.style.cssText = "display:block;height:1em;line-height:1";
+            cell.style.cssText = `display:block;height:${CELL}em;line-height:${CELL}`;
             cell.textContent = String(d);
             track.appendChild(cell);
           }
@@ -259,7 +262,7 @@ export default function PageMotion() {
       // bundle costs the spin and never the number.
       for (const track of tracks) {
         const target = Number(track.dataset.target);
-        track.style.transform = `translateY(${-(ODO_CYCLES * 10 + target)}em)`;
+        track.style.transform = `translateY(${-(ODO_CYCLES * 10 + target) * CELL}em)`;
       }
 
       ScrollTrigger.create({
@@ -267,6 +270,13 @@ export default function PageMotion() {
         start: "top 92%",
         onEnter: () => {
           if (!first(el)) return;
+          // The spinning wheels stay soft until they land, so no passing
+          // digit reads as a figure the corpus does not hold.
+          gsap.fromTo(
+            el,
+            { filter: "blur(3px)", opacity: 0.45 },
+            { filter: "blur(0px)", opacity: 1, duration: 1.1, ease: "power4.in", clearProps: "filter,opacity" },
+          );
           tracks.forEach((track, i) => {
             const target = Number(track.dataset.target);
             gsap.fromTo(
@@ -275,7 +285,7 @@ export default function PageMotion() {
               // positive scrolls the window above the track and shows blank.
               { y: 0 },
               {
-                y: `${-(ODO_CYCLES * 10 + target)}em`,
+                y: `${-(ODO_CYCLES * 10 + target) * CELL}em`,
                 duration: 1.1,
                 // Lower-order digits settle last, the way a mechanical counter
                 // carries: the rightmost wheel is the one still turning.

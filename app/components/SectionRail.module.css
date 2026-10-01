@@ -127,6 +127,8 @@
   .list li:nth-child(5) .tick { animation-delay: 260ms; }
   .list li:nth-child(6) .tick { animation-delay: 310ms; }
   .list li:nth-child(7) .tick { animation-delay: 360ms; }
+  .list li:nth-child(8) .tick { animation-delay: 410ms; }
+  .list li:nth-child(9) .tick { animation-delay: 460ms; }
 }
 
 @keyframes rail-arrive {
