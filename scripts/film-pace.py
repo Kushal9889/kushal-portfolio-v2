@@ -27,7 +27,7 @@ RUNS = [
     # Four long runs (D53): every gap now has a generated bridge between the
     # exact exit and entry frames, and each run spans enough sections that the
     # footage moves at an even rate while each stage card sits over its own shot.
-    (["hero", "T1", "work", "T2", "opensource"], [("o1-wake", 0.2, 1), ("v1-now-hall", 0, 1), ("bridge-b1", 0, 1), ("gap-g4", 0.5, 1), ("hall-fabric", 0, 1),
+    (["hero", "T1", "work", "T2", "opensource"], [("o1-wake", 0.2, 1), ("v1-now-hall", 0, 1), ("bridge-b1", 0, 1), ("gap-g4", 0.72, 1), ("hall-fabric", 0, 1),
         ("w1-work-racks", 0.35, 1), ("bridge-b2", 0, 1), ("gap-g1", 0, 1), ("fabric-corpus", 0, 1), ("gap-g5", 0, 1)]),
     # V9 enters at 30 percent (it opens by backing out of the aisle). The tray
     # and B3 open this run so neither run passes 6.5 seconds of footage a screen.

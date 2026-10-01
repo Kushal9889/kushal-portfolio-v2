@@ -1,13 +1,13 @@
 {
   "what has he shipped on azure?": {
-    "answer": "He built a document intelligence assistant on Azure for an enterprise consulting client, owned from ingestion through deployment.",
+    "answer": "He shipped a document intelligence assistant on Azure for an enterprise consulting client.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 375,
-      "answer": 677
+      "retrieve": 388,
+      "answer": 710
     },
-    "total": 1081,
+    "total": 1128,
     "sources": [
       "Boston University, Questrom Computational Lab",
       "IMG Systems",
@@ -15,7 +15,7 @@
     ],
     "usage": {
       "in": 2067,
-      "out": 22
+      "out": 16
     },
     "action": null,
     "trace": {
@@ -122,7 +122,7 @@
           "lexicalScore": 5.066,
           "lexicalRank": 28,
           "denseRank": 29,
-          "fused": 0.029217,
+          "fused": 0.029379,
           "selected": false
         },
         {
@@ -186,14 +186,14 @@
     "provider": "nvidia"
   },
   "what broke in production and how did he find it?": {
-    "answer": "The LangChain defect in the deepagents SDK broke in production with a silent failure that reported success while discarding an error. He found it by tracing the system closely enough to see where it contradicted itself, which led him to the problematic code path.",
+    "answer": "The LangChain defect in the deepagents SDK broke in production with a silent failure that reported success while discarding an error. He found it by tracing the system closely enough to see where it contradicted itself, which led him to a code path that revealed the issue.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 238,
-      "answer": 647
+      "retrieve": 237,
+      "answer": 1349
     },
-    "total": 893,
+    "total": 1597,
     "sources": [
       "Publications",
       "What he is good at",
@@ -202,7 +202,7 @@
     ],
     "usage": {
       "in": 2126,
-      "out": 53
+      "out": 56
     },
     "action": null,
     "trace": {
@@ -369,10 +369,10 @@
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 237,
-      "answer": 1694
+      "retrieve": 233,
+      "answer": 1763
     },
-    "total": 1937,
+    "total": 2012,
     "sources": [
       "How retrieval on this page works",
       "What he is good at"
