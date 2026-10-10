@@ -8,6 +8,11 @@ earlier clip, or a clip's shown time runs backwards while the page scrolls down.
 Exit code 1 when anything runs backwards.
 """
 
+import os as _os
+
+# FILM_ORIGIN points every gate at another server, e.g. the production build on :3003.
+ORIGIN = _os.environ.get("FILM_ORIGIN", "http://localhost:3002")
+
 import argparse
 import json
 import sys
@@ -34,9 +39,9 @@ def main():
     ap.add_argument("--seconds", type=float, default=40)
     a = ap.parse_args()
     with sync_playwright() as p:
-        b = p.chromium.launch(args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
+        b = p.chromium.launch(channel="chrome", args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
         page = b.new_page(viewport={"width": 1440, "height": 900}, color_scheme="dark")
-        page.goto("http://localhost:3002/classic?film=debug")
+        page.goto(ORIGIN + "/classic?film=debug")
         page.wait_for_function("document.documentElement.dataset.film === 'live'", timeout=60000)
         page.wait_for_timeout(4000)
         log = page.evaluate(LOG, a.seconds * 1000)

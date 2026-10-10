@@ -2,12 +2,21 @@
 
     python3 scripts/film-gates.py            fast: 1440 wide, about 1.5 minutes
     python3 scripts/film-gates.py full       920 to 1920 wide, then perf alone
+    python3 scripts/film-gates.py std        every batch standard (handoff section 3):
+                                             types, unit tests, check, contrast at 390,
+                                             1440 and 1920 and with folds open, black,
+                                             layout, then the probe alone
 
 Each gate is its own process against the one dev server on :3002, so a slow
 gate no longer holds the others. The page is compiled once before the fan-out.
 The probe and perf run last and alone: it times frames, and a busy machine skews it.
 Exits 1 if any gate fails. Logs land in .playwright-mcp/film/gates/.
 """
+
+import os as _os
+
+# FILM_ORIGIN points every gate at another server, e.g. the production build on :3003.
+ORIGIN = _os.environ.get("FILM_ORIGIN", "http://localhost:3002")
 
 import os
 import subprocess
@@ -19,8 +28,8 @@ from concurrent.futures import ThreadPoolExecutor
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 LOGS = os.path.join(ROOT, "..", ".playwright-mcp", "film", "gates")
-URL = "http://localhost:3002/classic?film=debug"
-PARALLEL = 5
+URL = ORIGIN + "/classic?film=debug"
+PARALLEL = 5 if os.cpu_count() is None else max(5, min(8, os.cpu_count() - 2))
 ANCHORS = ["hero", "T1", "work", "T2", "opensource", "T3", "research", "T4", "approach", "T5",
            "measured", "T6", "running", "T7", "proof", "T8", "education", "T9", "contact", "end"]
 
@@ -30,12 +39,18 @@ def py(script, *args):
 
 
 def plan(profile):
-    widths = [1440] if profile == "fast" else [920, 1280, 1440, 1920]
+    widths = {"fast": [1440], "std": [390, 1440, 1920]}.get(profile, [920, 1280, 1440, 1920])
     # (name, command, then) where `then` runs after `command` passes, in the same slot.
     # Contrast is the long pole (about 60 s a width), so its 20 stops run as two halves.
     halves = [ANCHORS[:10], ANCHORS[10:]]
     jobs = [(f"contrast {w} {k + 1}/2", py("film-contrast.py", "--width", w, "--only", *h), None) for w in widths for k, h in enumerate(halves)]
-    jobs += [(f"black {w}", py("film-black.py", "--width", w), None) for w in widths]
+    if profile == "std":
+        # Folds open: the state a reader reaches by tapping, phone and desktop.
+        jobs += [(f"contrast open {w} {k + 1}/2", py("film-contrast.py", "--width", w, "--open", "--only", *h), None) for w in (390, 1440) for k, h in enumerate(halves)]
+        jobs += [("layout", py("film-layout.py"), None), ("types", ["npx", "tsc", "--noEmit"], None),
+                 ("still contrast", py("film-still-contrast.py"), None),
+                 ("unit", ["npm", "run", "-s", "test:unit"], None), ("check", ["sh", "-c", 'n=$(npm run -s check 2>&1 | grep -c FAIL); echo "$n FAIL lines, baseline 13"; [ "$n" -le 13 ]'], None)]
+    jobs += [(f"black {w}", py("film-black.py", "--width", w), None) for w in ([390, 920, 1440] if profile == "std" else widths)]
     if profile == "full":
         jobs += [("degrade", py("film-degrade.py"), None), ("birth", py("film-birth.py"), None)]
     # film-compare.py scored the 3D world, which is no longer drawn (D36); the
@@ -60,7 +75,9 @@ def main():
     profile = sys.argv[1] if len(sys.argv) > 1 else "fast"
     os.makedirs(LOGS, exist_ok=True)
     t0 = time.time()
-    urllib.request.urlopen(URL, timeout=120).read()  # compile the route once
+    base = URL.split("?")[0]
+    for warm in (URL, base + "?film=debug", base + "?film=debug&lights=off"):
+        urllib.request.urlopen(warm, timeout=180).read()  # compile every route variant the jobs load
     jobs, alone = plan(profile)
     with ThreadPoolExecutor(PARALLEL) as pool:
         results = list(pool.map(run, jobs))

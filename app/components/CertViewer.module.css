@@ -1,0 +1,112 @@
+/* The viewer: the certificate comes in from the left like a document handed
+   across a desk and settles with a small overshoot; Close hops in from the
+   right a beat later. One spring family for both. Reduced motion: a fade. */
+.open {
+  all: unset;
+  display: grid;
+  gap: inherit;
+  cursor: zoom-in;
+  color: inherit;
+}
+
+.open:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 4px;
+}
+
+.dialog {
+  max-width: min(92vw, 42rem);
+  padding: var(--s-4);
+  border: var(--border-hair) solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  overflow: visible;
+}
+
+.dialog::backdrop {
+  background: color-mix(in oklch, var(--paper) 78%, transparent);
+}
+
+.plate {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--ink);
+}
+
+.close,
+.verify {
+  position: absolute;
+  bottom: calc(100% + var(--s-2));
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font: 500 var(--step--1) var(--font-mono), monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.close {
+  right: 0;
+}
+
+.verify {
+  left: 0;
+}
+
+.close:focus-visible,
+.verify:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
+
+/* A spring written as a CSS easing: overshoots about 12 percent, settles. */
+@media (prefers-reduced-motion: no-preference) {
+  .dialog[open] {
+    animation: plate-in 0.7s linear(0, 0.4 12%, 0.9 28%, 1.12 42%, 0.97 60%, 1.02 78%, 1) both;
+  }
+
+  .dialog[open] .close {
+    animation: hop-in 0.55s 0.25s linear(0, 0.5 18%, 1.2 45%, 0.95 70%, 1) both;
+  }
+
+  .dialog[open] .verify {
+    animation: plate-in 0.6s 0.2s linear(0, 0.4 12%, 0.9 28%, 1.12 42%, 0.97 60%, 1.02 78%, 1) both;
+  }
+
+  .dialog[open]::backdrop {
+    animation: veil-in 0.3s ease-out both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog[open] {
+    animation: veil-in 0.2s ease-out both;
+  }
+}
+
+@keyframes plate-in {
+  from {
+    opacity: 0;
+    transform: translateX(-60vw) rotate(-5deg);
+  }
+}
+
+@keyframes hop-in {
+  from {
+    opacity: 0;
+    transform: translate(40vw, -2rem);
+  }
+}
+
+@keyframes veil-in {
+  from {
+    opacity: 0;
+  }
+}

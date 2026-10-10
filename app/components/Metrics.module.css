@@ -1,6 +1,6 @@
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
   gap: var(--s-5) var(--s-6);
   margin: 0 0 var(--s-6);
   padding-bottom: var(--s-5);
@@ -56,7 +56,7 @@
   font-size: var(--step--2);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   vertical-align: 0.35em;
 }
 
@@ -65,7 +65,10 @@ a.source {
      element carries the hit area out to 24px without moving the glyph or the
      baseline it is aligned to. */
   position: relative;
-  border-bottom: var(--border-hair) solid var(--rule);
+  /* Strict rule (2026-10-02): a figure's witness is a link, and a link that
+     vouches for a claim wears the claim colour, 2px like every link here. */
+  color: var(--mark);
+  border-bottom: 2px solid var(--mark);
   transition: color var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out);
 }
 
@@ -106,6 +109,11 @@ a.source:hover {
  * remove. Add a cell, wrap to a second row, and the old version drew a rule
  * down the left of the wrapped cell too. */
 [data-surface="console"] .grid {
+  /* Wrapping flex, not auto-fit columns: the last row grows to the full width,
+     so three readings in two columns end as 2 + 1 across rather than 2 + a hole
+     (the 1 px gap shows the parent through the hole as a dead cell). */
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--border-hair);
   background: var(--rule);
   border: var(--border-hair) solid var(--rule);
@@ -114,6 +122,8 @@ a.source:hover {
 }
 
 [data-surface="console"] .cell {
+  flex: 1 1 9.5rem;
+  min-width: 0;
   background: var(--paper);
   padding: var(--s-3) var(--s-4);
 }
@@ -217,4 +227,39 @@ a.source:hover {
   .grid > :last-child:nth-child(odd) {
     grid-column: 1 / -1;
   }
+}
+
+/* Phone: the figure and its label only. The scale rule under each reading is
+   detail for the desktop reader. */
+@media (max-width: 767px) {
+  .grid {
+    margin-bottom: var(--s-3);
+    padding-bottom: var(--s-2);
+  }
+
+  .cell::before,
+  .cell::after,
+  .scaleMark {
+    display: none;
+  }
+}
+
+/* A phrase figure names a product, so it takes that product's hue when the
+   box sets one; a number stays in ink, because a measurement is not a brand. */
+.value:not([data-numeric]) {
+  color: var(--figure-tint, var(--ink));
+}
+
+/* Measurements wear the accent. Kushal's brief (2026-10: "numbers can suit a
+   different thing" than the product colours) and the tone test in
+   scripts/ui-highlights.py: a figure that is a number is coloured, in one tone
+   across every box, so the eye finds the measurements before the prose. */
+.value[data-numeric] {
+  color: var(--signal);
+}
+
+/* A reading never breaks inside itself: the odometer builds one inline box
+   per digit, which gave the browser a break point between "91." and "4%". */
+.value[data-numeric] {
+  white-space: nowrap;
 }

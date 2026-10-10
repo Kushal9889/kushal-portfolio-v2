@@ -12,11 +12,12 @@ repo: https://github.com/Kushal9889/kushal-portfolio-v2
 site: https://kushal-portfolio-223.netlify.app
 available: January 2027, earlier for the right team
 focus: Agentic orchestration · RAG retrieval · Evals and observability · Production deploys
-proof: He found a silent error-swallowing bug in LangChain's SDK. A maintainer merged the fix in 57 hours.
-lastVerified: 2026-10-01
+proof: He found a silent error-swallowing bug in LangChain's Python SDK. A maintainer merged the fix in 57 hours.
+lastVerified: 2026-10-02
 ---
 
 ## Who he is
+@source resume
 
 **Kushal Gaddamwar builds AI agents, then makes them answer to the same rules as the engineers
 around them.** At Boston University's Questrom Computational Lab he is the AI Engineer behind a
@@ -33,10 +34,12 @@ The work he does is context engineering: deciding what a model sees on every inf
 Retrieval, memory, tool surface, evaluation. Most of the difficulty in agentic systems is not the
 prompt. It is everything around the prompt.
 
-He is not a researcher and not an ML training engineer. He has never trained a model and does not
-claim to. He builds systems that stay correct under load.
+He is not a researcher and not an ML training engineer. He has not trained models in production or
+research. His training work is coursework: the assignments in Advanced Machine Learning and Neural
+Networks at Boston University. He builds systems that stay correct under load.
 
 ## What he is good at
+@source resume
 
 **Finding the place a system is wrong before it fails loudly.**
 
@@ -47,31 +50,40 @@ enough that a maintainer shipped the fix in 57 hours.
 
 Both are the same skill: reading a system closely enough to see where it contradicts itself.
 
+**Pure backend work with no AI layer.** As Lead Backend Engineer at Questrom he owns a Django REST
+and PostgreSQL backend where no model is in the loop: data-layer access control, revocable JWT,
+audit logs, and an idempotent recurrence engine. He did the same kind of work at IMG Systems and
+Growaza.
+
 ## What he does not do
 
-Model training. He has no PyTorch or TensorFlow training experience and does not present himself as
-an ML engineer.
+Model training in production or research. He has no PyTorch or TensorFlow project there. His
+training work is the coursework assignments in Advanced Machine Learning and Neural Networks at
+Boston University, and he does not present himself as an ML engineer.
 
 Data science and statistical modeling.
 
-Pure backend work with no AI layer. He can do it, having done it at IMG Systems and Growaza, but it
-is not what he is optimising his career for.
-
 ## Boston University, Questrom Computational Lab, backend
+@source resume
 
 Role: Lead Backend Engineer. August 2026 to present. Boston, MA.
 
-@metric Claude Code | agents held to the same gates as human engineers | resume
-@metric Django REST + PostgreSQL | backend he leads | resume
-@metric build once | one Docker image promoted across Azure environments | resume
+@metric Lead | the whole backend for the EST field-service platform | resume
+@metric Recurring visits | scheduled across sites and clients; a missed job becomes a dispatch alert | resume
+@metric Build once | one Docker image promoted across Azure environments | resume
+@metric Constant memory | a re-runnable migration streams Blob records into PostgreSQL | resume
 
-**He architected the agentic SDLC harness that holds Claude Code agents to the same gates as human
+**He leads the entire backend for EST's field-service platform, and the part he architected that
+matters most is scheduling:** technicians make recurring visits to many sites for many clients, so
+the system has to decide who goes where and when, every time. His idempotent recurrence engine
+generates those visits, and turns the legacy system's silent missed jobs into dispatch alerts.
+
+**He also architected the agentic SDLC harness that holds Claude Code agents to the same gates as human
 engineers in a regulated client codebase:** least-privilege permissions, context-routing hooks, and
 CodeRabbit review linked to Linear through the Model Context Protocol, shipped as a plugin.
 
-He leads the Django REST Framework and PostgreSQL backend: data-layer role-based access control,
-revocable JWT, audit logs, and an idempotent recurrence engine that turns the legacy system's silent
-missed jobs into dispatch alerts.
+The backend is Django REST Framework and PostgreSQL: data-layer role-based access control, revocable
+JWT, and audit logs.
 
 He hardened delivery: CI fails on API-contract drift from the React frontend, a build-once Docker
 image promotes across Azure environments, and a re-runnable migration streams Blob records into
@@ -80,16 +92,18 @@ PostgreSQL at constant memory.
 Stack: Claude Code, Model Context Protocol, Django REST Framework, PostgreSQL, Docker, Azure, React.
 
 ## Boston University, Questrom Computational Lab
+@source resume
 
 Role: AI Engineer, Graduate Researcher. May 2026 to present. Boston, MA.
 
-@metric 14 | tools on one LangGraph agent
-@metric BM25 + vector | hybrid retrieval, Cohere reranked
-@metric LLM-as-a-Judge | hallucination and retrieval scoring
+@metric 14 | tools on one LangGraph agent | resume
+@metric BM25 + vector | hybrid retrieval, Cohere reranked | resume
+@metric LLM-as-a-Judge | hallucination and retrieval scoring | resume
+@metric Found in prod | a deduplication race and a Docker fault, both fixed | resume
 
 @ask When is multi-agent orchestration worth the coordination cost? | Boston University, Questrom Computational Lab
 
-**He built a document intelligence assistant on Azure for the enterprise consulting client Sikich,
+**He built a document intelligence assistant on Azure for Sikich, an enterprise consulting firm,
 owned from ingestion through deployment:** a LangGraph agent exposing 14 tools for document question
 answering, cross-document comparison and template-driven generation, grounded by hybrid BM25 and
 vector retrieval with Cohere re-ranking, guarded by PII and entity redaction, and scored for
@@ -117,13 +131,14 @@ embeddings compress meaning and lose surface form, so they miss exact terms, and
 corpus the exact terms are client names, project codes, and document titles. The cost was worth it.
 
 ## IMG Systems
+@source resume
 
 Role: Software Engineering Intern. August 2024 to April 2025. Remote.
 
 @metric +20% | extraction accuracy | resume
 @metric 95% | schema accuracy, up from 75-78% | resume
-@metric 5,000+ | profiles parsed per month
-@metric -25% | REST API latency
+@metric 5,000+ | profiles parsed per month | resume
+@metric -25% | REST API latency | resume
 
 @ask What did he over-engineer at IMG, and how did he find out? | IMG Systems
 
@@ -155,14 +170,15 @@ turned silent data loss into a visible signal.
 Stack: Python, Apache Tika, Pydantic, JSON Schema, PostgreSQL, Redis, Docker, GitHub Actions, Node.js.
 
 ## Growaza
+@source resume
 
 Role: Associate Software Engineer Intern. January 2024 to July 2024. Remote.
 
 @metric -30% | API response time | resume
-@metric +22% | engagement, 1,000+ daily users
-@metric 2,000+ | SKUs tracked live
+@metric +22% | engagement, 1,000+ daily users | resume
+@metric 2,000+ | SKUs tracked live | resume
 
-**He cut API response time 30 percent using in-memory caching and asynchronous request handling,**
+**He cut API response time 30 percent using Redis caching and asynchronous request handling,**
 lifting engagement 22 percent for more than 1,000 daily active users on an e-commerce platform.
 
 He launched a MySQL inventory dashboard tracking more than 2,000 SKUs, and secured REST endpoints
@@ -175,6 +191,7 @@ resume line said "led".
 Stack: React, Redux, MySQL, Redis, Node.js, JWT, RBAC, AWS EC2 and S3.
 
 ## BU Life AI
+@source https://github.com/Kushal9889/BU-Life-AI
 
 **A live multi-agent campus assistant for Boston University students, running since January
 2026:** a LangGraph supervisor classifies intent and routes to one of three specialised ReAct
@@ -182,9 +199,9 @@ agents for places, resources and events, each on its own thread so concurrent us
 state, retrieving over NVIDIA NV-Embed 1024-dimension vectors in pgvector fused with BM25, which
 cut redundant LLM calls 70 percent.
 
-@metric -70% | redundant LLM calls
-@metric 3 | specialised agents, isolated state
-@metric 1024-dim | NV-Embed over pgvector
+@metric -70% | redundant LLM calls | https://github.com/Kushal9889/BU-Life-AI
+@metric 3 | specialised agents, isolated state | https://github.com/Kushal9889/BU-Life-AI
+@metric 1024-dim | NV-Embed over pgvector | https://github.com/Kushal9889/BU-Life-AI
 
 Live: [bulife-ai.netlify.app](https://bulife-ai.netlify.app/)
 Source: [github.com/Kushal9889/BU-Life-AI](https://github.com/Kushal9889/BU-Life-AI)
@@ -216,6 +233,7 @@ Neon connection limits are second. The fix is a paid tier with persistent worker
 pooling. He has not needed it yet and has not pretended otherwise.
 
 ## Open source, LangChain deepagents
+@source https://github.com/langchain-ai/deepagents/issues/4846
 
 **He found and root-caused a silent error-swallowing bug in LangChain's deepagents SDK, and a
 maintainer merged the fix 57 hours after he reported it,** crediting his reproduction in the pull
@@ -281,15 +299,19 @@ AI agents, agentic AI with LangChain and LangGraph, agentic AI with CrewAI, Auto
 building agents with the Model Context Protocol, and a capstone project.
 
 ## Education
+@source resume
+@metric 3.5 | GPA out of 4.0, M.S. in Computer Science at Boston University | resume
+@metric ~40 | graduate students in MET CS 664, where he is Teaching Assistant | resume
 
 Boston University, M.S. Computer Science, GPA 3.5 of 4.0. September 2025 to December 2026 expected.
 Boston, MA. Graduate Teaching Assistant for MET CS 664 Artificial Intelligence, about 40 graduate
-students, September 2026 to present. Coursework: Generative AI, Web Mining and Graph Analytics, Software Engineering, AI Systems.
+students, September 2026 to present. Coursework: Generative AI, Web Mining and Graph Analytics, Software Engineering, AI Systems, Advanced Machine Learning and Neural Networks.
 
 IIIT Design and Manufacturing Jabalpur, B.Tech Computer Science and Engineering. October 2020 to
 June 2024. India.
 
 ## Publications
+@source https://doi.org/10.1109/ICAICCIT64383.2024.10912101
 
 @metric 91.4% | combined transformer and GNN accuracy | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
 @metric 88.2% | transformer alone | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
@@ -305,7 +327,7 @@ and the combination reaches 91.4% accuracy where the transformer alone reaches
 88.2% and the graph network alone 85.7%. Detection and fix together run in 13.5
 seconds against 25.4 for static analysis.
 
-The LangChain defect in section 01 is the same problem outside the lab. It was a
+The LangChain defect in the open source section is the same problem outside the lab. It was a
 silent failure with no exception and no stack trace, which is precisely the class
 static analysis does not catch and the class the paper argues context is needed
 for. First author, pages 624 to 629.
@@ -317,6 +339,8 @@ IGI Global 2024, co-author. Cyber-Physical Systems: Security and Optimization St
 [Read the chapter and code](https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities)
 
 ## Skills
+
+Stack: LangGraph, Claude Code, Model Context Protocol, RAG, LangChain, FastAPI, pgvector, NVIDIA NIM
 
 Languages: Python, SQL, TypeScript, JavaScript, C++. Data structures and algorithms.
 
@@ -346,24 +370,37 @@ Frontend: React, Redux, Next.js.
 
 ## Achievements
 
-@metric Top 1% | JEE Mains 2020, 99.1 percentile | resume
-@metric 70+ | members in the coding community he co-founded
-@metric GSoC and Kickstart top 200 | where his mentees landed
+@metric 99.1 | percentile in JEE Mains 2020, top 1 percent of candidates | resume
+@metric 70+ | members in the coding community he co-founded | resume
+@metric 200 | Google Kickstart top 200, where his mentees landed | resume
+@metric 64 | CodeChef global rank, February 2022 Long Challenge | resume
+@metric $12K | raised for Tarang Fest 2023, which he led | resume
 
 JEE Mains 2020: 99.1 percentile, top 0.9 percent nationally.
 
 CodeChef global rank 64, February 2022 Long Challenge. Third place, Code Rumble 2023.
 
 Co-founded BITBYTE, a 70-plus member coding community at IIIT-DM Jabalpur. Mentees reached Google
-Kickstart top 200, Google Summer of Code, and three internships.
+Kickstart top 200 and three internships.
 
 Advisory Committee Head, Tarang Fest 2023. Coordinated programming across 13 colleges and 250-plus
 students, raised $12,000 from more than 25 sponsors.
 
+## Proof wall
+The public record behind the claims on this page, shown as badges: what he shipped upstream, what he published, and how he ranked. Each one links to where it can be checked.
+@badge Shipped | deepagents #4925 | Fix merged in LangChain deepagents, written by a maintainer from his report | https://github.com/langchain-ai/deepagents/pull/4925 | LangChain
+@badge Shipped | vLLM #56846 | Pull request to vLLM, open | https://github.com/vllm-project/vllm/pull/56846 | vLLM
+@badge Shipped | MCP #3490 | Issue he filed in the Model Context Protocol Python SDK, open | https://github.com/modelcontextprotocol/python-sdk/issues/3490 | Model Context Protocol
+@badge Published | IEEE 2024 | First author, IEEE ICAICCIT 2024 | https://doi.org/10.1109/ICAICCIT64383.2024.10912101 | IEEE
+@badge Published | IGI 2024 | Co-author, IGI Global 2024 | https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities
+@badge Ranked | JEE top 1% | JEE Main 2020, 99.1 percentile | resume
+@badge Ranked | CodeChef 64 | CodeChef global rank 64, February 2022 | resume | CodeChef
+@badge Ranked | BITBYTE 70+ | Co-founded the BITBYTE coding community, 70+ members | resume
+
 ## Availability
 
-Full-time from January 2027, or earlier for the right team. Open to remote, hybrid, and on-site
-across the United States. Based in Boston.
+Available full-time from January 2027, earlier for the right team. Remote, hybrid or on-site anywhere
+in the United States. Based in Boston.
 
 Target roles: Agentic AI Engineer, Applied AI Engineer, LLM Engineer, AI Platform Engineer, Context
 Engineer.
@@ -376,9 +413,12 @@ available. That is roughly three years of work authorisation before H-1B sponsor
 This is answered only when asked. It is not raised otherwise.
 
 ## This site
+@source https://github.com/Kushal9889/kushal-portfolio-v2
 
 Two decisions on this page are worth asking about, and both went the opposite way
 to the default.
+
+The agent on this page answers from his personal Obsidian knowledge base, the notes he keeps about his own work.
 
 **The graph runs without a checkpointer.** LangGraph persists state after every
 node by default, which is right for a long-running stateful agent and wrong here.
@@ -406,7 +446,7 @@ it has not been taken because the traffic does not justify it yet.
 
 **The evaluation suite has no LLM judge, deliberately.** He built LLM-as-a-Judge
 evaluation at the Questrom lab, where a large private corpus made grading by
-model the only tractable option. Here the suite is 25 cases with known
+model the only tractable option. Here the suite is 26 cases with known
 correct behaviour, so assertions are substring and route checks. A judge would
 add cost, latency, and a second thing to trust, to grade questions whose right
 answer is already written down. The technique is not better than the check; it is
@@ -421,7 +461,7 @@ next one serves. When all four are gone, the retrieved paragraph is served
 unsummarised.
 
 **There is a vector database, and it is deliberately not in the answer path.**
-Neon Postgres with pgvector holds all 53 passages under a real HNSW index on
+Neon Postgres with pgvector holds all 82 passages under a real HNSW index on
 `vector_cosine_ops`, rebuilt on every deploy. No question a visitor asks touches
 it. Retrieval serves from an index bundled with the function, because that is
 what the measurement says: scored on the same question in the same request, the
@@ -436,7 +476,7 @@ A facts gate fails the build when the page renders a section the corpus lacks,
 when a metric carries no source, when the availability date has passed, or when
 a resume keyword has gone missing from this file. A token linter fails on a
 colour written outside the stylesheet. An audit runs 107 structural
-checks. The evaluation suite runs 25, five times each. None of it makes the work better; all
+checks. The evaluation suite runs 26 cases, three times each. None of it makes the work better; all
 of it stops the page describing work that is not there.
 
 **The figures on his resume come from one published run, and it is still in the repository.**

@@ -492,6 +492,32 @@
     inset 0 0 0 var(--border-hair) var(--console-ring, transparent),
     var(--bezel);
   overflow: hidden;
+  position: relative;
+  isolation: isolate;
+}
+
+/* The racks behind the console: the loop the answer is served from. Quiet enough
+   that the text on top keeps AAA; gone under reduced motion. */
+.loop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-slow, 0.6s) var(--ease-out);
+}
+
+.loop[data-on] {
+  opacity: 0.3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loop {
+    display: none;
+  }
 }
 
 /* The header strip. Every instrument on this page gets one: what it is on the
@@ -699,7 +725,7 @@
   color: var(--ink-soft);
   padding: 0.2em 0.55em;
   border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-sm);
 }
 
 /* The console fills before it answers.
@@ -743,7 +769,7 @@
   width: 4.5rem;
   font-size: var(--step--2);
   height: calc(1.9em + 2 * var(--border-hair));
-  border-radius: var(--r-pill);
+  border-radius: var(--r-sm);
   border: var(--border-hair) solid var(--rule);
 }
 
@@ -769,4 +795,320 @@
   50% {
     opacity: 0.42;
   }
+}
+
+/* The tools, for the phone reader only: one wrapped run of marked chips under
+   the role line. The desktop reader gets them in every role's stack. */
+.skills {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    margin: var(--s-3) 0 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: var(--step--1);
+    color: var(--ink);
+  }
+
+  .skills li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    padding: 2px var(--s-2);
+    border: var(--border-hair) solid color-mix(in oklab, var(--ink) 30%, transparent);
+  }
+}
+
+/* The answer types over a transparent copy of itself, so the box is its final
+   size from the first frame and nothing below it moves while the words arrive. */
+.typed {
+  display: grid;
+}
+
+.ghost,
+.type {
+  grid-area: 1 / 1;
+}
+
+.ghost {
+  opacity: 0;
+}
+
+/* The certified row: the two official badges, as the vendors issue them, each a
+   link to its public verification page. */
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.badge {
+  display: block;
+  line-height: 0;
+  border: var(--border-hair) solid var(--rule);
+  transition: border-color var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out);
+}
+
+.badge img {
+  display: block;
+  width: 56px;
+  height: 56px;
+  /* The artwork is a wide plate with the badge in its middle; the square crop
+     keeps the badge and drops the margin. */
+  object-fit: cover;
+  object-position: center;
+}
+
+.badge:hover,
+.badge:focus-visible {
+  border-color: var(--ink-soft);
+  transform: translateY(-1px);
+}
+
+.badge:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+/* The label sits level with the badges, not on their last baseline. */
+.fact:has(.badges) {
+  align-items: center;
+}
+
+/* Desktop: the hero ends above the dock (the 4rem gutter, globals.css).
+ *
+ * Measured 2026-10-07: the console ran 718px from y 229 at every width, so at
+ * 1440x900 its last 109px sat under the dock (209px at 1280x800) and the
+ * suggested questions were cut. The hero is now bounded to the viewport and
+ * the console's lower block (the input, the toolkit and the suggestions)
+ * scrolls inside its own frame: nothing is clipped, and a focused control is
+ * never hidden by the dock (WCAG 2.4.11/2.4.12). The graph and the answer
+ * above it keep their full height. */
+@media (min-width: 62rem) {
+  .hero {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100svh - 4rem);
+  }
+
+  .hero > :global(.wrap) {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .body {
+    flex: 1 1 auto;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .body > .console {
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    /* Never so short that the input itself scrolls away. */
+    min-height: 26rem;
+  }
+
+  .console .agentSlot {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+}
+
+/* Phone: the qualifier is its own line. Wrapped inline at 390, "Not" ended
+   line 3 alone and split the italic phrase from the rest of it; as a block it
+   reads as the answer to the claim above, balanced across its own lines. */
+@media (max-width: 767px) {
+  .line :global(.quiet) {
+    display: block;
+    text-wrap: balance;
+  }
+}
+
+/* ---- Agent console: instrument behaviour (2026-10-08) --------------------
+ * Motion thesis (impeccable animate.md): the focal moment is a request being
+ * served; feedback is the graph lighting node by node; continuity is the
+ * lock-in when a node finishes. Budget: transform and opacity on a 1px line
+ * and an 11px ring, no blur, no glow, nothing running at rest. Framing ticks
+ * and the beam come from the brutalist telemetry archetype (rules 2.2 and 6). */
+.tick {
+  position: absolute;
+  z-index: 1;
+  width: 9px;
+  height: 9px;
+  border: 0 solid var(--signal);
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.tick[data-c="tl"] {
+  inset-block-start: 7px;
+  inset-inline-start: 7px;
+  border-block-start-width: var(--border-hair);
+  border-inline-start-width: var(--border-hair);
+}
+
+.tick[data-c="tr"] {
+  inset-block-start: 7px;
+  inset-inline-end: 7px;
+  border-block-start-width: var(--border-hair);
+  border-inline-end-width: var(--border-hair);
+}
+
+.tick[data-c="bl"] {
+  inset-block-end: 7px;
+  inset-inline-start: 7px;
+  border-block-end-width: var(--border-hair);
+  border-inline-start-width: var(--border-hair);
+}
+
+.tick[data-c="br"] {
+  inset-block-end: 7px;
+  inset-inline-end: 7px;
+  border-block-end-width: var(--border-hair);
+  border-inline-end-width: var(--border-hair);
+}
+
+/* The beam: one 1px line crossing the top edge. It runs for as long as a
+   request is in flight (the page's own on load, or the visitor's question) and
+   once when a request lands. At rest it is gone. */
+.console::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 2;
+  width: 34%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--signal) 50%, transparent);
+  opacity: 0;
+  transform: translateX(-100%);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .console:has(.consoleState[data-state="done"])::after {
+    animation: beam 1.4s var(--ease-out) 1 both;
+  }
+
+  .console:has(.consoleState[data-state="running"])::after,
+  .console:has([class*="thinking"])::after,
+  .console:has([data-live])::after {
+    animation: beam 1.6s var(--ease-out) infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .console:has(.consoleState[data-state="running"])::after,
+  .console:has([class*="thinking"])::after,
+  .console:has([data-live])::after {
+    width: 100%;
+    opacity: 0.45;
+    transform: none;
+  }
+}
+
+@keyframes beam {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  12%,
+  88% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(300%);
+  }
+}
+
+/* A packet travels the rail into the node that is running. */
+.railLine {
+  position: relative;
+  overflow: hidden;
+}
+
+.railLine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: var(--live);
+  opacity: 0;
+  transform: translateX(-100%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cell[data-state="running"] .railLine::after {
+    animation: packet 0.9s var(--ease-out) infinite;
+  }
+}
+
+@keyframes packet {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(230%);
+  }
+}
+
+/* Lock-in: a ring leaves the node once, the moment it finishes. Feedback,
+   not decoration, so it plays once and stays quiet after. */
+.graph .dot {
+  position: relative;
+}
+
+.graph .dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: var(--border-hair) solid var(--live);
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cell[data-state="done"] .dot::after {
+    animation: lock 0.7s var(--ease-out) 1 both;
+  }
+}
+
+@keyframes lock {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  30% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+/* The answer pane is a fixed height, so say when more text waits below. */
+.saidA[data-more] {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 1.5rem), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 1.5rem), transparent);
 }

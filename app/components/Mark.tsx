@@ -21,7 +21,6 @@ import { brandIcon } from "@/lib/brand-icons";
 type Props = { size?: number; className?: string };
 
 const GITHUB = "#181717";
-const LINKEDIN = "#0A66C2";
 const NVIDIA = "#76B900";
 
 /**
@@ -81,7 +80,7 @@ export function LinkedInMark({ size = 16, className }: Props) {
       viewBox="0 0 16 16"
       width={size}
       height={size}
-      fill={LINKEDIN}
+      fill="currentColor"
       aria-hidden="true"
       className={className}
     >

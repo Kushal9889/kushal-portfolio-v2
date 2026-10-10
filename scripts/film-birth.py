@@ -13,6 +13,11 @@
 Exits 1 on any failure.
 """
 
+import os as _os
+
+# FILM_ORIGIN points every gate at another server, e.g. the production build on :3003.
+ORIGIN = _os.environ.get("FILM_ORIGIN", "http://localhost:3002")
+
 import base64
 import os
 import sys
@@ -25,9 +30,9 @@ OUT = os.path.join(os.path.dirname(__file__), "..", "..", ".playwright-mcp", "fi
 def main():
     fails = []
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True, args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist", "--enable-unsafe-swiftshader"])
+        browser = p.chromium.launch(channel="chrome", headless=True, args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist", "--enable-unsafe-swiftshader"])
         page = browser.new_page(viewport={"width": 1440, "height": 900}, color_scheme="dark")
-        page.goto("http://localhost:3002/classic?film=debug")
+        page.goto(ORIGIN + "/classic?film=debug")
         page.mouse.move(10, 10)
         page.wait_for_function("document.documentElement.dataset.film === 'live' && window.__film", timeout=30000)
         cdp = page.context.new_cdp_session(page)

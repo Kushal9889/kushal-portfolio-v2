@@ -8,6 +8,11 @@ that is not where the scroll puts it.
 Exit code 1 when any seam is flagged.
 """
 
+import os as _os
+
+# FILM_ORIGIN points every gate at another server, e.g. the production build on :3003.
+ORIGIN = _os.environ.get("FILM_ORIGIN", "http://localhost:3002")
+
 import argparse
 import base64
 import io
@@ -27,12 +32,14 @@ def main():
     ap.add_argument("--settle", type=int, default=220, help="ms after each step, the clip clock's settle time")
     ap.add_argument("--sheet")
     ap.add_argument("--json")
+    ap.add_argument("--width", type=int, default=1440)
+    ap.add_argument("--height", type=int, default=900)
     a = ap.parse_args()
     rows, frames = [], []
     with sync_playwright() as p:
-        b = p.chromium.launch(args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
-        page = b.new_page(viewport={"width": 1440, "height": 900}, color_scheme="dark")
-        page.goto("http://localhost:3002/classic?film=debug")
+        b = p.chromium.launch(channel="chrome", args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
+        page = b.new_page(viewport={"width": a.width, "height": a.height}, color_scheme="dark")
+        page.goto(ORIGIN + "/classic?film=debug")
         page.wait_for_function("document.documentElement.dataset.film === 'live'", timeout=60000)
         page.add_style_tag(content=HIDE)
         page.wait_for_timeout(3000)
@@ -44,9 +51,9 @@ def main():
             y = page.evaluate("scrollY")  # screenshot clips are in page coordinates
             # First frame after the step: what a fast scroll shows before any easing.
             page.evaluate("() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))")
-            first = cdp.send("Page.captureScreenshot", {"format": "jpeg", "quality": 60, "clip": {"x": 0, "y": y, "width": 1440, "height": 900, "scale": 0.1}})
+            first = cdp.send("Page.captureScreenshot", {"format": "jpeg", "quality": 60, "clip": {"x": 0, "y": y, "width": a.width, "height": a.height, "scale": 0.1}})
             page.wait_for_timeout(a.settle)
-            shot = cdp.send("Page.captureScreenshot", {"format": "jpeg", "quality": 60, "clip": {"x": 0, "y": y, "width": 1440, "height": 900, "scale": 0.1}})
+            shot = cdp.send("Page.captureScreenshot", {"format": "jpeg", "quality": 60, "clip": {"x": 0, "y": y, "width": a.width, "height": a.height, "scale": 0.1}})
             im = np.asarray(Image.open(io.BytesIO(base64.b64decode(shot["data"]))).convert("RGB"), dtype=float)
             im0 = np.asarray(Image.open(io.BytesIO(base64.b64decode(first["data"]))).convert("RGB"), dtype=float)
             s = page.evaluate(STATE)

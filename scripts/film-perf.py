@@ -18,6 +18,11 @@ one mesh per box (docs/film-deviations.md, D18); it is enforced from the hall
 world (step 8) on with --enforce-draws. Exits 1 on any enforced failure.
 """
 
+import os as _os
+
+# FILM_ORIGIN points every gate at another server, e.g. the production build on :3003.
+ORIGIN = _os.environ.get("FILM_ORIGIN", "http://localhost:3002")
+
 import argparse
 import json
 import os
@@ -121,8 +126,8 @@ def main():
     args = ap.parse_args()
     fails, warns = [], []
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True, args=ARGS)
-        page = open_page(browser, "http://localhost:3002/classic?film=debug")
+        browser = p.chromium.launch(channel="chrome", headless=True, args=ARGS)
+        page = open_page(browser, ORIGIN + "/classic?film=debug")
         page.wait_for_function("document.documentElement.dataset.film === 'live' && window.__film", timeout=30000)
         page.wait_for_timeout(2000)
 
@@ -173,7 +178,7 @@ def main():
             fails.append(f"film code allocates {per_frame:.0f} bytes per frame")
         on = minor_gcs(page, 300, 60)
         page.close()
-        off_page = open_page(browser, "http://localhost:3002/classic?film=off")
+        off_page = open_page(browser, ORIGIN + "/classic?film=off")
         off_page.wait_for_timeout(5000)
         off = minor_gcs(off_page, 300, 60)
         off_page.close()
@@ -182,7 +187,7 @@ def main():
             (fails if args.enforce_draws else warns).append(f"the film adds {on - off} minor GCs per 60 s (three.js per-draw uploads; D21)")
 
         # 4. Hidden tab.
-        page = open_page(browser, "http://localhost:3002/classic?film=debug")
+        page = open_page(browser, ORIGIN + "/classic?film=debug")
         page.wait_for_function("document.documentElement.dataset.film === 'live' && window.__film", timeout=30000)
         page.wait_for_timeout(1000)
         page.evaluate("Object.defineProperty(document, 'hidden', {configurable: true, get: () => true}); Object.defineProperty(document, 'visibilityState', {configurable: true, get: () => 'hidden'}); document.dispatchEvent(new Event('visibilitychange'))")

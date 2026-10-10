@@ -10,6 +10,11 @@ Needs the dev server on :3002. Edit RUNS when a clip arrives: (beats, clips),
 each clip (file, start, end) as fractions of its length.
 """
 
+import os as _os
+
+# FILM_ORIGIN points every gate at another server, e.g. the production build on :3003.
+ORIGIN = _os.environ.get("FILM_ORIGIN", "http://localhost:3002")
+
 import json
 import os
 import subprocess
@@ -28,7 +33,7 @@ RUNS = [
     # exact exit and entry frames, and each run spans enough sections that the
     # footage moves at an even rate while each stage card sits over its own shot.
     (["hero", "T1", "work", "T2", "opensource"], [("o1-wake", 0.2, 1), ("v1-now-hall", 0, 1), ("bridge-b1", 0, 1), ("gap-g4", 0.72, 1), ("hall-fabric", 0, 1),
-        ("w1-work-racks", 0.35, 1), ("bridge-b2", 0, 1), ("gap-g1", 0, 1), ("fabric-corpus", 0, 1), ("gap-g5", 0, 1)]),
+        ("w1-work-racks", 0, 1), ("bridge-b2", 0, 1), ("gap-g1", 0, 1), ("fabric-corpus", 0, 1), ("gap-g5", 0, 1)]),
     # V9 enters at 30 percent (it opens by backing out of the aisle). The tray
     # and B3 open this run so neither run passes 6.5 seconds of footage a screen.
     (["T3", "research", "T4"], [("v7-tray2", 0, 1), ("bridge-b3", 0, 1), ("v8-door", 0, 1), ("gap-g6", 0, 1), ("v9-board", 0.3, 1), ("gap-g7", 0, 1), ("v3-prefill", 0, 1)]),
@@ -72,9 +77,9 @@ def heights():
 
 def measure_heights():
     with sync_playwright() as p:
-        b = p.chromium.launch(args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
+        b = p.chromium.launch(channel="chrome", args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
         page = b.new_page(viewport={"width": 1440, "height": 900}, color_scheme="dark")
-        page.goto("http://localhost:3002/classic?film=debug")
+        page.goto(ORIGIN + "/classic?film=debug")
         page.wait_for_function("document.documentElement.dataset.film === 'live'", timeout=60000)
         h = page.evaluate("""() => {
           const o = { hero: document.querySelector('body > header').getBoundingClientRect().height / innerHeight };

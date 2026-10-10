@@ -214,6 +214,7 @@ async function main() {
   }
   console.log(`build-index: ${sentenceIndex.length} sentences across ${parents.length} sections`);
 
+  let breakBelow = BREAK_BELOW;
   const sentenceVectors = await embedAll(
     sentenceIndex.map((s) => s.text),
     "passage",
@@ -244,9 +245,13 @@ async function main() {
     }
     sims.sort((x, y) => x - y);
     const at = (q: number) => sims[Math.floor(sims.length * q)]?.toFixed(3) ?? "-";
+    // The break point is this corpus's own p25 under the model that embedded
+    // it. A pinned 0.47 was the p25 of an older model; under the current one it
+    // sat above the median and split almost every sentence pair.
+    if (sims.length) breakBelow = sims[Math.floor(sims.length * 0.25)];
     console.log(
       `build-index: adjacent-sentence similarity  p10 ${at(0.1)}  p25 ${at(0.25)} ` +
-        `p50 ${at(0.5)}  p90 ${at(0.9)}   (breaking below ${BREAK_BELOW})`,
+        `p50 ${at(0.5)}  p90 ${at(0.9)}   (breaking below ${breakBelow.toFixed(3)})`,
     );
   }
 
@@ -258,7 +263,7 @@ async function main() {
     const count = sentences(p.body).length;
     const vectors = sentenceVectors ? sentenceVectors.slice(cursor, cursor + count) : undefined;
     cursor += count;
-    passages.push(...chunkSection(p.title, p.body, vectors));
+    passages.push(...chunkSection(p.title, p.body, vectors, breakBelow));
   }
 
   const sizes = passages.map((p) => p.tokens).sort((a, b) => a - b);

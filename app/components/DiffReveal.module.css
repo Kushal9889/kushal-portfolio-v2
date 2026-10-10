@@ -10,6 +10,10 @@
   background: var(--paper-sunk);
 }
 
+:global(html[data-film="live"]) .sticky {
+  background: color-mix(in oklab, var(--paper-sunk) 55%, transparent);
+}
+
 /* This panel paints its own recessed ground, so on the light theme it owes the
    same ink compensation the [data-tone="sunk"] scope gives section 06: without
    it the credit line measured Lc 70.8 against a 75 floor. Light only. These
@@ -235,4 +239,27 @@
   .sticky[data-step="3"] .bad {
     --strike: 1;
   }
+}
+
+/* Phone: code keeps its lines (a wrapped identifier reads as a typo), set
+   one step smaller, and scrolls sideways; the right edge fades so the cut
+   reads as more to the right, not as a broken line. */
+@media (max-width: 767px) {
+  .code,
+  .code * {
+    font-size: var(--step--2);
+  }
+
+  .code {
+    overflow-x: auto;
+    mask-image: linear-gradient(to right, var(--ink) 82%, transparent);
+    -webkit-mask-image: linear-gradient(to right, var(--ink) 82%, transparent);
+    padding-right: var(--s-6);
+  }
+}
+
+/* Same box grammar as every other evidence box: the product hue (LangChain)
+   down the left edge. */
+.sticky {
+  border-left: 1px solid var(--brand-langchain);
 }

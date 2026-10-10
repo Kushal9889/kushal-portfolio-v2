@@ -12,6 +12,9 @@ export type Metric = { value: string; label: string; source?: string };
  * hero can only carry three. These sit at the close of the section that answers
  * them, so the prompt appears exactly where the curiosity does.
  */
+/** One tile of the evidence wall: a short label, what it is for a screen reader,
+ *  and where a reader can check it (a URL, or the resume PDF). */
+export type Badge = { group: string; label: string; name: string; href: string; mark?: string };
 export type Ask = { question: string; source: string };
 
 /** A failure this codebase shipped, and the thing that now stops it returning. */
@@ -50,6 +53,11 @@ export type Section = {
    *  2026-08-20, which is exactly the duplication hard rule 1 exists to stop:
    *  editing a date in the corpus left the heading showing the old one. */
   roleParts: { title: string; dates: string; location: string };
+  /** Where this section's bold claims point: a URL, or `resume` (the PDF). Every
+   *  bold claim on the page is a link, so a section with bold text needs one. */
+  claim?: string;
+  /** Tiles for the evidence wall, from `@badge` lines. */
+  badges: Badge[];
 };
 
 export type Profile = Record<string, string>;
@@ -124,6 +132,8 @@ function splitSections(body: string, source: string): Section[] {
       const defects: Defect[] = [];
       let stack: string[] = [];
       let role = "";
+      let claim: string | undefined;
+      const badges: Badge[] = [];
 
       // Line-oriented directives are pulled out before the prose is assembled.
       // Stack and Role wrap in the source, so a continuation line is any line
@@ -180,6 +190,27 @@ function splitSections(body: string, source: string): Section[] {
           continue;
         }
 
+        // `@badge group | label | name | url or resume | optional brand mark`.
+        const badge = line.match(/^@badge\s+(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(\S+)(?:\s*\|\s*(.+?))?\s*$/);
+        if (badge) {
+          badges.push({
+            group: badge[1],
+            label: badge[2],
+            name: badge[3],
+            href: badge[4] === "resume" ? "/kushal-gaddamwar-resume.pdf" : badge[4],
+            ...(badge[5] ? { mark: badge[5] } : {}),
+          });
+          continue;
+        }
+
+        // `@source url` or `@source resume`: the witness for every bold claim in
+        // this section (strict rule, 2026-10-02).
+        const witness = line.match(/^@source\s+(\S+)\s*$/);
+        if (witness) {
+          claim = witness[1] === "resume" ? "/kushal-gaddamwar-resume.pdf" : witness[1];
+          continue;
+        }
+
         const directive = line.match(/^(Stack|Role):\s*(.+)$/);
         if (directive) {
           let value = directive[2];
@@ -214,6 +245,8 @@ function splitSections(body: string, source: string): Section[] {
         defects,
         role,
         roleParts: splitRole(role),
+        ...(claim ? { claim } : {}),
+        badges,
       };
     })
     .filter((s) => s.body.length > 0);
@@ -263,6 +296,11 @@ export type Certification = {
   url: string | null;
   kind: string;
   featured: boolean;
+  /** Shown as one of the two certificate cards, with its badge image. */
+  pinned?: boolean;
+  image?: string;
+  /** The plate colour behind the artwork when it is drawn as a 3D medallion. */
+  plate?: string;
   why?: string;
   components?: { name: string; url: string | null }[];
 };

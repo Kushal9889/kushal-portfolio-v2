@@ -12,11 +12,16 @@
 Exits 1 on any failure.
 """
 
+import os as _os
+
+# FILM_ORIGIN points every gate at another server, e.g. the production build on :3003.
+ORIGIN = _os.environ.get("FILM_ORIGIN", "http://localhost:3002")
+
 import sys
 
 from playwright.sync_api import sync_playwright
 
-URL = "http://localhost:3002/classic?film=debug"
+URL = ORIGIN + "/classic?film=debug"
 LIVE = "document.documentElement.dataset.film === 'live' && window.__film"
 
 
@@ -37,7 +42,7 @@ FIND_COVERED = """() => {
 def main():
     fails = []
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True, args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist", "--enable-unsafe-swiftshader"])
+        browser = p.chromium.launch(channel="chrome", headless=True, args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist", "--enable-unsafe-swiftshader"])
 
         page = browser.new_page(viewport={"width": 1440, "height": 900}, color_scheme="dark")
         errors = []

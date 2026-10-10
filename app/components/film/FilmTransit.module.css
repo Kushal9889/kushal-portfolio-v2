@@ -1,5 +1,9 @@
 .transit {
   position: relative;
+  /* The window is film ground, not a control. Pinned section content can sit
+     over it while the page scrolls, and a transparent box that takes pointer
+     events would swallow every click on that content. Only the card is live. */
+  pointer-events: none;
   height: calc(var(--transit-vh, 0.6) * 100vh);
   display: grid;
   align-items: end;
@@ -8,7 +12,7 @@
 
 @media (max-width: 767px) {
   .transit {
-    height: 50vh;
+    height: 38vh;
   }
 }
 
@@ -24,6 +28,7 @@
    of its window, x 48 to 619 at 1440. Compartments are divided by hairlines;
    the header strip is the raised film tone. Opaque, so no scrim sits under it. */
 .card {
+  pointer-events: auto;
   position: sticky;
   bottom: 80px;
   width: min(571px, 100%);
@@ -201,13 +206,19 @@
   color: var(--ink-faint);
 }
 
-/* Arrival (plan C5.7): brackets scale 180 ms, edges draw clockwise 320 ms,
-   content rises 12 px over 240 ms; 740 ms in all. Leaving runs 0.6x. */
+/* Arrival (plan C5.7): shell and brackets fade in, edges draw clockwise,
+   content rises 12 px from 60 ms; about 300 ms in all. */
 /* Opacity too: an act sets its own visibility, which would show through a
    card that was never scrolled into (a jump to an anchor). */
 .card[data-state="idle"] {
   visibility: hidden;
   opacity: 0;
+}
+
+/* The opaque shell arrives with its words: shown alone it read as an empty
+   black slab for the 420 ms the content used to wait (6 percent of a scroll). */
+.card[data-state="in"] {
+  animation: shell 180ms ease-out both;
 }
 
 .card[data-state="in"]::before {
@@ -219,7 +230,7 @@
 }
 
 .card[data-state="in"] > * {
-  animation: rise 200ms cubic-bezier(0.16, 1, 0.3, 1) 220ms both;
+  animation: rise 200ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both;
 }
 
 .card[data-state="out"] {
@@ -248,6 +259,12 @@
   }
   100% {
     background-size: 100% 1px, 1px 100%, 100% 1px, 1px 100%;
+  }
+}
+
+@keyframes shell {
+  from {
+    opacity: 0;
   }
 }
 

@@ -123,9 +123,16 @@
   padding-block: 0;
 }
 
+/* The employer line under the role title: the mono register, like a channel
+   tag on an instrument, so title and employer never compete. */
 .company {
-  font-size: var(--step-0);
-  color: var(--ink);
+  flex-basis: 100%;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
 }
 
 /* Technologies as a scannable row rather than a sentence. Set in mono so they
@@ -459,7 +466,10 @@
  */
 .alsoBuilt {
   margin-top: var(--s-6);
-  padding: var(--s-5);
+  /* No padding of its own: the shell is the same as every other panel (work
+     racks, measured), so the header strip meets the frame and the content sits
+     one inset in. A padded shell put the strip 24 px inside the frame and the
+     figures 49 px, three edges where the other panels have two. */
 }
 
 /* The section index, now a permalink. It has to stay quiet: a reader is not
@@ -546,7 +556,11 @@
      one level louder and drawn rather than read. */
   font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   margin: var(--s-8) 0 0;
-  font-size: clamp(3rem, 18vw, 15rem);
+  /* Same gutter as .wrap: at 9.6vw with no inset the K's stem ran into the
+     viewport edge and the footer's clip cut it on phones. */
+  padding-inline: clamp(1.25rem, 5vw, 4rem);
+  /* Sized so the whole name fits inside the gutters: a cut name reads as a bug. */
+  font-size: clamp(2rem, 8.4vw, 13rem);
   font-weight: 700;
   line-height: 0.78;
   letter-spacing: -0.05em;
@@ -559,8 +573,19 @@
    * was effectively invisible: the same failure mode as a low-opacity border on
    * a dark surface, which is the thing this scheme replaced everywhere else. It
    * is still a watermark rather than a headline, it just exists now. */
-  -webkit-text-stroke: 2px color-mix(in oklch, var(--ink) 24%, transparent);
+  -webkit-text-stroke: 2px color-mix(in oklch, var(--ink) 36%, transparent);
+  /* Over the film the name sits on the veil (data-film-scrim), so the stroke
+     can be read at 64 percent without turning into a headline. */
   user-select: none;
+}
+
+/* The subtitle outline the footer inherits (globals.css) draws its dark edge
+   around every glyph; on transparent, stroked letters that edge filled them in,
+   so the watermark read as black type sunk into the dark film. Over the film
+   the stroke is the whole mark, so it carries no outline. */
+html[data-film="live"] .wordmark {
+  text-shadow: none;
+  -webkit-text-stroke-color: color-mix(in oklch, var(--ink) 64%, transparent);
 }
 
 .footer {
@@ -588,3 +613,206 @@
   }
 }
 
+
+/* A role is a pair: the figures that identify it, then the proof. Side by side
+   where there is room, stacked on a phone. */
+.rolePair {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.roleFigures,
+.roleProof {
+  min-width: 0;
+}
+
+@media (min-width: 62rem) {
+  .rolePair {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: var(--s-6);
+    align-items: start;
+  }
+
+  /* The figures stay beside the proof while it is read, below the sticky
+     role strip, instead of leaving an empty column under them. */
+  .rolePair .roleFigures {
+    position: sticky;
+    top: calc(var(--role-stack-base, 0px) + 6rem);
+  }
+
+  :global(html[data-film="live"]) .rolePair .roleFigures {
+    top: calc(var(--role-stack-base, 0px) + var(--s-6));
+  }
+}
+
+/* The figures recede as their role leaves instead of hanging on the screen
+   after the text has gone: they shrink back and fade over the first part of
+   the exit. The text and the paragraph stay with the reader. Scroll-driven, so
+   it follows the thumb or the wheel exactly; skipped without support and under
+   reduced motion, where they simply scroll away. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .roleFigures {
+      transform-origin: 50% 0;
+      animation: figures-recede linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 75%;
+    }
+  }
+}
+
+@keyframes figures-recede {
+  to {
+    opacity: 0;
+    transform: translateY(-1.25rem) scale(0.94);
+  }
+}
+
+/* On a phone each box leads with one figure; the rest of the readings stay
+   on the desktop, where there is time to read them. */
+@media (max-width: 767px) {
+  .roleFigures dl > *:nth-child(n + 2) {
+    display: none;
+  }
+}
+
+/* Phone, shown face to face: the same sections, packed. Section frames, the
+   macro heading and the gaps between role boxes shrink so a whole role reads
+   in one screen; nothing is cut that the desktop reader relies on. */
+@media (max-width: 767px) {
+  .section,
+  .section[data-register="chapter"],
+  .section[data-register="instrument"] {
+    padding-block: var(--s-6) var(--s-7);
+  }
+
+  .head,
+  .section[data-register="chapter"] .head {
+    margin-bottom: var(--s-4);
+  }
+
+  .section[data-register="chapter"] .title {
+    font-size: var(--step-3);
+  }
+
+  .roles {
+    gap: var(--s-4);
+  }
+
+  .rolePair {
+    gap: var(--s-2);
+  }
+}
+
+.panelStack {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.panelStack > * {
+  margin-top: 0;
+}
+
+/* ---- Role racks: frame, tone, colour (2026-10-01) ------------------------
+ * One rack per role, told apart by colour rather than by fill: a 1px rule
+ * down the left edge (the craft floor allows a coloured side edge at 1px, no wider) in the product hue the role is built on (Azure, Django,
+ * Docker, AWS), the same hue its phrase figures take. The rest of the frame
+ * is a hairline; the ground is the film. */
+.roleContent [data-kind="rack"] {
+  border-left: 1px solid var(--role-tint);
+}
+
+.roleContent [data-kind="rack"] > :first-child {
+  border-bottom: var(--border-hair) solid color-mix(in oklab, var(--role-tint) 45%, transparent);
+}
+
+/* The status line reads in the role's hue too, so dates belong to the role. */
+.roleContent [data-kind="rack"] > :first-child [class*="status"] {
+  color: var(--role-tint);
+}
+
+/* Phone: the role's first paragraph shows three lines, then the fold opens
+   the rest, and opening it releases the clamp too. */
+@media (max-width: 767px) {
+  .roleLead {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+  }
+
+  .roleProof:has(details[open]) .roleLead {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: none;
+  }
+}
+
+/* Phone: a role's stack is its first five tools, marks first, on one or two
+   lines; the desktop reader gets the whole list. */
+@media (max-width: 767px) {
+  .roleProof .stack {
+    margin-bottom: var(--s-3);
+  }
+
+  .roleProof .stack li:nth-child(n + 6) {
+    display: none;
+  }
+}
+
+/* One chip, everywhere a tool is named: mono at label size, full ink, a
+   hairline frame that takes the box's hue when pointed at. */
+.stack,
+.stack li {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--1);
+  color: var(--ink);
+}
+
+.stack li {
+  border-color: color-mix(in oklab, var(--ink) 28%, transparent);
+}
+
+.stack li:hover {
+  border-color: var(--role-tint, var(--box-hue, var(--ink-soft)));
+}
+
+/* The education record: every figure shows, on a phone too (the role boxes
+   keep one). Compartments as everywhere on the console surface, two columns on
+   a phone and three from a tablet up; the last cell of a row that would end
+   short takes the remaining width, so no compartment is left empty. */
+.eduFigures dl {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.eduFigures dl > div:last-child:nth-child(odd) {
+  grid-column: span 2;
+}
+
+@media (min-width: 48rem) {
+  .eduFigures dl {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .eduFigures dl > div:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  .eduFigures dl > div:last-child:nth-child(3n + 1) {
+    grid-column: span 3;
+  }
+
+  .eduFigures dl > div:last-child:nth-child(3n + 2) {
+    grid-column: span 2;
+  }
+
+  /* Two readings fill the row on their own. */
+  .eduFigures dl:has(> :nth-child(2):last-child) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .eduFigures dl:has(> :nth-child(2):last-child) > div:last-child {
+    grid-column: auto;
+  }
+}

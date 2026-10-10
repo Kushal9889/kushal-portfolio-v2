@@ -67,6 +67,17 @@ type Case = {
  * layer answered on its own. That is the strongest thing the suite proves and
  * a pass/fail ratio cannot say it.
  */
+/**
+ * Questions typed wrong on purpose: the suite checks that retrieval survives a
+ * misspelt company or word (lib/agent/evals.ts). Shown as a typo on the page
+ * they read as carelessness, so the detail and the label say so.
+ */
+const MISSPELT: Record<string, string> = {
+  "Tell me about Growza": "Growaza",
+  "What did he do at IMG Sytems?": "IMG Systems",
+  "What certifcations does he have?": "certifications",
+};
+
 function reachedModel(c: Case) {
   return !/routes to (deflect|authorisation)/.test(c.asserts);
 }
@@ -92,7 +103,7 @@ export default function EvalMatrix() {
      * the fusion figure, which change on the page in front of you. */
     <Panel
       label="eval suite"
-      surface="paper"
+      surface="console"
       state={partial ? "degraded" : "done"}
       status={`${evals.passed}/${evals.cases} · ${evals.measured}`}
     >
@@ -133,7 +144,7 @@ export default function EvalMatrix() {
                       data-open={open === c.name || undefined}
                       style={{ "--i": i } as React.CSSProperties}
                       aria-expanded={open === c.name}
-                      aria-label={`${c.name}. Asserts ${c.asserts}. Passed ${Math.round(
+                      aria-label={`${c.name}.${MISSPELT[c.name] ? ` Misspelt on purpose for ${MISSPELT[c.name]}.` : ""} Asserts ${c.asserts}. Passed ${Math.round(
                         (c.passRate ?? (c.pass ? 1 : 0)) * runs,
                       )} of ${runs} runs.${reachedModel(c) ? "" : " No model was called."}`}
                       onClick={() => {
@@ -182,6 +193,9 @@ export default function EvalMatrix() {
         {open ? (
           <>
             <p className={styles.detailQ}>{open}</p>
+            {MISSPELT[open] && (
+              <p className={styles.detailA}>Misspelt on purpose: the answer must still find {MISSPELT[open]}.</p>
+            )}
             <p className={styles.detailA}>{cases.find((c) => c.name === open)?.asserts}</p>
             {(() => {
               const c = cases.find((x) => x.name === open);

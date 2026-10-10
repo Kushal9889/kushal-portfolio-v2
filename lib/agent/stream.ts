@@ -1,4 +1,4 @@
-import { streamWithFailover, listPrice, failoverState, chooseTool } from "./model";
+import { streamWithFailover, listPrice, failoverState, chooseTool, BUDGET_MS } from "./model";
 import {
   toolSchemas,
   openEvidence,
@@ -8,7 +8,7 @@ import {
   type ToolResult,
 } from "./tools";
 import type { RetrievalTrace } from "./retrieve";
-import { retrieve } from "./retrieve";
+import { retrieve, sourceTitles } from "./retrieve";
 import {
   classify,
   systemPrompt,
@@ -17,11 +17,14 @@ import {
   handoffAnswer,
   AUTHORISATION_ANSWER,
   POLICY_PREVIEW,
+  NOT_IN_PROFILE,
+  PARTIAL_NOTE,
 } from "./policy";
 import { analyze } from "./query";
 import { offersFor } from "./followups";
 import type { Offer } from "./offers";
 import { loadContent } from "../content";
+import { ground, cite, type Grounding, type Citation } from "./ground";
 import prewarm from "./prewarm.json";
 
 /** Named once so the tool prompt says who it is acting for. */
@@ -82,6 +85,10 @@ export type StreamEvent =
       degraded?: boolean;
       /** The system prompt, context elided. Shown on request in the trace. */
       policy?: string;
+      /** Figures and names in the answer read back against its context (ground.ts). */
+      grounding?: Grounding;
+      /** The section each answer sentence came from, or null (ground.ts cite). */
+      citations?: Citation[];
     }
   | { type: "error"; message: string };
 
@@ -149,9 +156,9 @@ function retrievalQuery(question: string, history: Exchange[]) {
   // The question is classified and expanded before the previous turn is
   // prepended, so a follow-up to an identity or work question keeps the
   // vocabulary that made the first one retrievable.
-  const { intent, query, weight, asked, floor } = analyze(question);
+  const { intent, query, asked, floor } = analyze(question);
   const previous = history.at(-1)?.question;
-  return { intent, weight, asked, floor, query: previous ? `${previous} ${query}` : query };
+  return { intent, asked, floor, query: previous ? `${previous} ${query}` : query };
 }
 
 export async function* runStream(
@@ -159,6 +166,7 @@ export async function* runStream(
   history: Exchange[] = [],
 ): AsyncGenerator<StreamEvent> {
   const started = Date.now();
+  const deadline = started + BUDGET_MS;
 
   // Openers were answered at build time. Serving them from the bundle costs a
   // map lookup instead of an embedding call plus a model round trip, which is
@@ -201,6 +209,12 @@ export async function* runStream(
       failover: failoverState(),
       warm: true,
       policy: POLICY_PREVIEW,
+      // Checked against the whole sections the cache names: the passages the
+      // build-time run saw are a subset, so this can only pass more, never less.
+      ...(() => {
+        const used = loadContent().sections.filter((s) => warm.sources.includes(s.title));
+        return { grounding: ground(warm.answer, question, ...used.map((s) => s.body)), citations: cite(warm.answer, used) };
+      })(),
     };
     return;
   }
@@ -232,6 +246,7 @@ export async function* runStream(
         { role: "user", content: question },
       ],
       toolSchemas(question),
+      deadline,
     );
 
     const call = chosen?.calls[0];
@@ -298,18 +313,24 @@ export async function* runStream(
   }
 
   const retrieveStart = Date.now();
-  const { intent, query, weight, asked, floor } = retrievalQuery(question, history);
-  const { chunks, trace } = await retrieve(query, 4, weight, floor);
+  const { intent, query, asked, floor } = retrievalQuery(question, history);
+  const { chunks, trace, best } = await retrieve(query, { floor, deadline });
   yield {
     type: "sources",
-    titles: chunks.map((c) => c.title),
+    titles: sourceTitles(chunks),
     ms: Date.now() - retrieveStart,
     // The full fusion, every chunk, so the page can draw what actually
     // happened rather than an illustration of it.
     trace,
   };
 
-  const context = chunks.map((c) => `## ${c.title}\n${c.body}`).join("\n\n");
+  // Unknown band: fixed text, no model call. Partial: one instruction more.
+  if (trace.band === "unknown") {
+    yield { type: "token", text: NOT_IN_PROFILE };
+    yield { type: "done", total: Date.now() - started, usage: null, policy: POLICY_PREVIEW };
+    return;
+  }
+  const context = chunks.map((c) => `## ${c.title}\n${c.body}`).join("\n\n") + (trace.band === "partial" ? PARTIAL_NOTE : "");
 
   try {
     /**
@@ -351,6 +372,7 @@ export async function* runStream(
       (provider, model) => {
         served = { provider, model };
       },
+      deadline,
     )) {
       buffer += token;
 
@@ -402,6 +424,9 @@ export async function* runStream(
       listPrice: usage && settled ? listPrice(settled.model, usage) : null,
       failover: failoverState(),
       policy: POLICY_PREVIEW,
+      // The model's text only: the handoff close is fixed copy, not a claim.
+      grounding: ground(cleaned, context, question),
+      citations: cite(cleaned, chunks),
     };
   } catch {
     /**
@@ -419,12 +444,24 @@ export async function* runStream(
      * top chunk unsummarised gives the reader the grounded material and says
      * plainly that it is unsummarised, which is worth more than an apology.
      */
-    const grounded = chunks[0]?.body.split("\n\n").find((p) => p.trim().length > 0);
+    // The passage that matched, not the section's opening lines (those are the
+    // Role/Stack card, which answered nothing that was asked).
+    const grounded = best ?? chunks[0]?.body.split("\n\n").find((p) => p.trim().length > 0);
+
+    // The section's measured results, as one sentence: the card that lists them
+    // is skipped above because it reads as a form, but the figures are the
+    // part of it a reader asked about most often. Only figures the passage does
+    // not already state.
+    const home = grounded && (chunks.find((c) => c.body.includes(grounded.slice(0, 80))) ?? chunks[0]);
+    const extra = (home ? loadContent().sections.find((s) => s.title === home.title)?.metrics ?? [] : [])
+      .filter((m) => /^[+~$-]?\d/.test(m.value) && grounded && !grounded.includes(m.value))
+      .slice(0, 3);
+    const measured = extra.length ? ` Measured there: ${extra.map((m) => `${m.value} ${m.label}`).join("; ")}.` : "";
 
     if (grounded) {
       yield {
         type: "token",
-        text: `${grounded.replace(/\*\*/g, "")}\n\nThat is the source text, unsummarised: every model provider is rate-limited right now. Retrieval still ran, and the sources above are the ones it chose.`,
+        text: `${grounded.replace(/\*\*/g, "")}${measured}\n\nThat is the source text, unsummarised: every model provider is rate-limited right now. Retrieval still ran, and the sources above are the ones it chose.`,
       };
       yield { type: "offers", offers: offersFor(chunks) };
       yield {

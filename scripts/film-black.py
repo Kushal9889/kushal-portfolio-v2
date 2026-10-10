@@ -17,6 +17,11 @@ meets the film with a visible step.
 Exits 1 on any failure. Needs the dev server on :3002.
 """
 
+import os as _os
+
+# FILM_ORIGIN points every gate at another server, e.g. the production build on :3003.
+ORIGIN = _os.environ.get("FILM_ORIGIN", "http://localhost:3002")
+
 import argparse
 import base64
 import io
@@ -27,6 +32,9 @@ from PIL import Image
 from playwright.sync_api import sync_playwright
 
 HIDE = "body * { visibility: hidden !important; } [data-film-layer], [data-film-layer] * { visibility: visible !important; }"
+# Seams compare fills, not letters: the seam frame is shot with every glyph
+# transparent, so a patch beside an edge reads the ground or the block itself.
+HIDE_TEXT = "* { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; text-decoration-color: transparent !important; }"
 STOPS = ["hero", "T1", "work", "T3", "measured", "contact"]
 
 LOCATE = """(a) => {
@@ -46,19 +54,42 @@ EDGES = """() => {
     const el = document.elementFromPoint(x, y);
     if (!el) return true;
     if (el.matches('main, main > section, body, html, body > header, [data-transit]')) return true;
-    return getComputedStyle(el).backgroundColor === 'rgba(0, 0, 0, 0)' && !el.textContent.trim() && !el.children.length;
+    // An image (a certificate plate) is content, not the ground.
+    if (el.closest('img, picture, video, canvas, svg')) return false;
+    // Glyphs are transparent in the seam frame, so an unpainted text element
+    // shows the ground behind it.
+    for (let a = el; a && a !== document.body; a = a.parentElement) {
+      const cs = getComputedStyle(a);
+      if (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || cs.backgroundImage !== 'none' || cs.backdropFilter !== 'none') return false;
+      // A hairline (a panel's edge rule) is drawn content, not the ground.
+      const r = a.getBoundingClientRect();
+      if ((Math.abs(x - r.left) < 4 && cs.borderLeftWidth !== '0px') || (Math.abs(x - r.right) < 4 && cs.borderRightWidth !== '0px')) return false;
+    }
+    return true;
   };
   const add = (block, name, inside, outside) => {
     if (inside[1] < 2 || inside[1] > innerHeight - 2 || outside[1] < 2 || outside[1] > innerHeight - 2) return;
-    if (document.elementFromPoint(...inside) !== block) return;
-    if (!bare(...outside)) return;
+    // Inside means on the block or on one of its unpainted children (the
+    // dock's links fill most of its face).
+    const hit = document.elementFromPoint(...inside);
+    if (!hit || !block.contains(hit)) return;
+    if (hit !== block && getComputedStyle(hit).backgroundColor !== 'rgba(0, 0, 0, 0)') return;
+    // A child's own divider line is drawn, not a seam.
+    if (hit !== block) {
+      const hr = hit.getBoundingClientRect(), hs = getComputedStyle(hit);
+      if ((Math.abs(inside[0] - hr.left) < 4 && hs.borderLeftWidth !== '0px') || (Math.abs(inside[0] - hr.right) < 4 && hs.borderRightWidth !== '0px')) return;
+    }
+    // The whole sampled patch must be ground, not only its centre.
+    for (const [dx, dy] of [[0, 0], [-3, 0], [3, 0], [0, -3], [0, 3]]) if (!bare(outside[0] + dx, outside[1] + dy)) return;
     out.push({name, inside, outside});
   };
   const blocks = [...document.querySelectorAll('main > section > .wrap, [class*="ReachDock"][class*="dock"]')];
+  let solid = 0;
   for (const el of blocks) {
     const r = el.getBoundingClientRect();
     if (r.bottom < 0 || r.top > innerHeight) continue;
     if (getComputedStyle(el).backgroundColor === 'rgba(0, 0, 0, 0)') continue;
+    solid++;
     const top = Math.max(r.top, 8), bottom = Math.min(r.bottom, innerHeight - 8);
     for (let f = 0.05; f < 1; f += 0.1) {
       const y = Math.round(top + (bottom - top) * f);
@@ -68,7 +99,7 @@ EDGES = """() => {
       add(el, 'bottom', [x, Math.round(r.bottom) - 6], [x, Math.round(r.bottom) + 6]);
     }
   }
-  return out;
+  return {out, solid};
 }"""
 
 
@@ -99,12 +130,14 @@ def shoot(cdp):
 def run(width, url):
     fails = []
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True, args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist", "--enable-unsafe-swiftshader"])
+        browser = p.chromium.launch(channel="chrome", headless=True, args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist", "--enable-unsafe-swiftshader"])
         page = browser.new_page(viewport={"width": width, "height": 900}, color_scheme="dark", device_scale_factor=1)
-        page.goto(url)
+        # The film's own readiness (data-film=live) is waited for below; the load
+        # event also waits on every clip preload, which stalls under parallel gates.
+        page.goto(url, wait_until="domcontentloaded", timeout=90000)
         page.wait_for_timeout(2500)
         page.mouse.move(10, 10)
-        page.wait_for_function("document.documentElement.dataset.film === 'live'", timeout=20000)
+        page.wait_for_function("document.documentElement.dataset.film === 'live'", timeout=60000)
         ground = page.evaluate("""() => { const c = document.createElement('canvas').getContext('2d');
           c.fillStyle = getComputedStyle(document.body).getPropertyValue('--paper'); c.fillRect(0,0,1,1);
           return [...c.getImageData(0,0,1,1).data].slice(0,3); }""")
@@ -113,6 +146,7 @@ def run(width, url):
 
         worst_off = 0
         seams = []
+        solid_seen = 0
         for stop in STOPS:
             y = page.evaluate(LOCATE, stop)
             page.evaluate("(y) => scrollTo({top: y, behavior: 'instant'})", y)
@@ -127,10 +161,14 @@ def run(width, url):
             worst_off = max(worst_off, off[0])
             if off[0] > 1:
                 fails.append(f"lights-off at {stop}: {off[1]} px at rgb{off[2]}, {off[0]} code values from ground")
-            # 2. Seams, content visible.
+            # 2. Seams, content visible, glyphs hidden.
+            tag = page.add_style_tag(content=HIDE_TEXT)
             page.wait_for_timeout(250)
             img = shoot(cdp)
-            for e in page.evaluate(EDGES):
+            tag.evaluate("t => t.remove()")
+            edges = page.evaluate(EDGES)
+            solid_seen += edges["solid"]
+            for e in edges["out"]:
                 a = srgb_to_oklab(patch(img, *e["inside"]))
                 b = srgb_to_oklab(patch(img, *e["outside"]))
                 de = 100 * math.dist(a, b)
@@ -139,10 +177,13 @@ def run(width, url):
         seams.sort(reverse=True)
         print(f"lights off: worst pixel {worst_off} code values from ground over {len(STOPS)} stops (limit 1)")
         print(f"seams: {len(seams)} measured, worst dE_ok {seams[0][0]:.2f} at {seams[0][1]} {seams[0][2]} {seams[0][3]} (limit 2)" if seams else "seams: none found")
-        # Reading panels are glass since D40 and meant to differ from the film;
-        # the seam check covers the solid blocks left (the dock).
-        if len(seams) < 8:
-            fails.append(f"only {len(seams)} seams found, need 8")
+        # Reading panels are glass since D40 and clear since B2 (2026-10-01), so
+        # at most widths no solid block is left to meet the film; the seam
+        # check covers whatever solid blocks remain (the phone dock). With
+        # solid blocks on screen it must measure some seams, or the edge probe
+        # has stopped finding them; with none there is nothing to measure.
+        if solid_seen and len(seams) < 4:
+            fails.append(f"{solid_seen} solid blocks on screen but only {len(seams)} seams measured, need 4")
         for de, stop, name, at in seams:
             if de > 2:
                 fails.append(f"seam dE {de:.2f} at {stop} {name} {at}")
@@ -152,7 +193,7 @@ def run(width, url):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--url", default="http://localhost:3002/classic?film=debug&lights=off")
+    ap.add_argument("--url", default=ORIGIN + "/classic?film=debug&lights=off")
     ap.add_argument("--width", type=int, nargs="*", default=[1440])
     args = ap.parse_args()
     fails = []

@@ -308,6 +308,7 @@ function build(name: ProviderName, streaming: boolean) {
  */
 export async function invokeWithFailover(
   messages: { role: string; content: string }[],
+  deadline = Infinity,
 ): Promise<{ text: string; provider: ProviderName; usage: { in: number; out: number } | null }> {
   const providers = availableProviders();
   if (providers.length === 0) throw new Error("no provider configured");
@@ -315,7 +316,7 @@ export async function invokeWithFailover(
   let lastError: unknown;
   for (const name of providers) {
     try {
-      const res = await withDeadline(build(name, false).invoke(messages), "answer", ANSWER_MS);
+      const res = await withDeadline(() => build(name, false).invoke(messages), "answer", left(deadline, ANSWER_MS, FALLBACK_MS));
       const meta = (res.response_metadata?.tokenUsage ?? res.usage_metadata ?? null) as {
         promptTokens?: number;
         completionTokens?: number;
@@ -366,6 +367,35 @@ const FIRST_TOKEN_MS = Number(process.env.AGENT_FIRST_TOKEN_MS ?? 6_000);
 const ANSWER_MS = Number(process.env.AGENT_ANSWER_MS ?? 15_000);
 
 /**
+ * The per-question budget (Kushal, 2026-10-10): 8 s from the question to an
+ * answer or the passage fallback, whatever the provider does. Each NVIDIA call
+ * gets min(its own cap, time left), so a hanging provider costs at most the
+ * budget. Measured before: embed 4 s + rerank 3 s + answer 12 s = 19.0 s.
+ */
+export const BUDGET_MS = Number(process.env.AGENT_BUDGET_MS ?? 8_000);
+/** Time a call may take: its cap, cut to what the question has left minus a reserve. */
+export function left(deadline: number, cap: number, reserve = 0): number {
+  return Math.max(0, Math.min(cap, deadline - Date.now() - reserve));
+}
+/** Kept back for the fallback answer once the model has had its turn. */
+const FALLBACK_MS = 500;
+
+/**
+ * Fault injection for the degraded-path test (scripts/agent-scenarios.ts --fault).
+ *
+ * AGENT_FAULT=outage|429|timeout makes every NVIDIA call fail the way that
+ * failure arrives in production: a refused connection and a rate limit fail at
+ * once, a timeout fails only after the call's own timeout. It runs before the
+ * request is sent, so the test spends no quota. Unset in every deployment.
+ */
+function faulted(ms: number): Promise<never> | null {
+  const fault = process.env.AGENT_FAULT;
+  if (!fault) return null;
+  const message = fault === "429" ? "429 Too Many Requests (AGENT_FAULT)" : fault === "timeout" ? "timeout (AGENT_FAULT)" : "fetch failed (AGENT_FAULT)";
+  return new Promise((_, reject) => setTimeout(() => reject(new Error(message)), fault === "timeout" ? ms : 0));
+}
+
+/**
  * A deadline on one provider, not only on the whole request.
  *
  * The request timeout alone is the wrong bound when there are two providers and
@@ -374,9 +404,9 @@ const ANSWER_MS = Number(process.env.AGENT_ANSWER_MS ?? 15_000);
  * seconds before the degraded answer the page could have served immediately.
  * Every path that calls a provider goes through here.
  */
-function withDeadline<T>(work: Promise<T>, what: string, ms = FIRST_TOKEN_MS): Promise<T> {
+function withDeadline<T>(work: () => Promise<T>, what: string, ms = FIRST_TOKEN_MS): Promise<T> {
   return Promise.race([
-    work,
+    faulted(ms) ?? work(),
     new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`${what} deadline`)), ms)),
   ]);
 }
@@ -385,6 +415,7 @@ export async function* streamWithFailover(
   messages: { role: string; content: string }[],
   onUsage?: (usage: { in: number; out: number }) => void,
   onProvider?: (provider: ProviderName, model: string) => void,
+  deadline = Infinity,
 ): AsyncGenerator<string> {
   const providers = availableProviders();
   if (providers.length === 0) throw new Error("no provider configured");
@@ -396,7 +427,7 @@ export async function* streamWithFailover(
       // with both providers refusing: the request timeout alone left the reader
       // watching "writing the answer" for 40 seconds before the degraded answer
       // it could have had immediately. Whichever is shorter wins.
-      const stream = await withDeadline(build(name, true).stream(messages), "first token");
+      const stream = await withDeadline(() => build(name, true).stream(messages), "first token", left(deadline, FIRST_TOKEN_MS, FALLBACK_MS));
       // Reported once the provider has actually produced a stream rather than
       // when it was selected, so a provider that fails on connect is never
       // credited with an answer it did not give.
@@ -457,7 +488,7 @@ export async function* streamWithFailover(
  */
 export const EMBED_MODEL = "nvidia/nemotron-3-embed-1b";
 
-const EMBED_TIMEOUT_MS = Number(process.env.EMBED_TIMEOUT_MS ?? 4_000);
+const EMBED_TIMEOUT_MS = Number(process.env.EMBED_TIMEOUT_MS ?? 1_500);
 
 /**
  * Query vectors already computed, kept for the life of the process.
@@ -490,7 +521,7 @@ export function embedCacheStats() {
   return { size: embedCache.size, max: EMBED_CACHE_MAX };
 }
 
-export async function embedQuery(text: string): Promise<number[] | null> {
+export async function embedQuery(text: string, deadline = Infinity): Promise<number[] | null> {
   const key = process.env.NVIDIA_API_KEY;
   if (!key) return null;
 
@@ -498,7 +529,8 @@ export async function embedQuery(text: string): Promise<number[] | null> {
   if (cached) return cached;
 
   try {
-    const res = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
+    const ms = left(deadline, EMBED_TIMEOUT_MS);
+    const res = await (faulted(ms) ?? fetch("https://integrate.api.nvidia.com/v1/embeddings", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
       body: JSON.stringify({
@@ -507,7 +539,7 @@ export async function embedQuery(text: string): Promise<number[] | null> {
         input_type: "query",
       }),
       /*
-       * Four seconds, against a call measured at 236-421ms.
+       * 1.5 seconds (was four), against a call measured at 236-421ms.
        *
        * An order of magnitude past the observed worst case, and far short of
        * anyone's patience. Past it the dense half is simply skipped: BM25 has
@@ -516,8 +548,8 @@ export async function embedQuery(text: string): Promise<number[] | null> {
        * the better ranking is a real cost and it is not close to the cost of
        * losing the request.
        */
-      signal: AbortSignal.timeout(EMBED_TIMEOUT_MS),
-    });
+      signal: AbortSignal.timeout(ms),
+    }));
 
     if (!res.ok) return null;
     const json = await res.json();
@@ -558,15 +590,21 @@ export async function embedQuery(text: string): Promise<number[] | null> {
  * Returns null on any failure. The caller keeps the fused order, which is the
  * order it would have used anyway.
  */
+export const RERANK_MODEL = process.env.RERANK_MODEL ?? "nvidia/llama-nemotron-rerank-vl-1b-v2";
+
 export async function rerank(
   query: string,
   passages: string[],
+  deadline = Infinity,
 ): Promise<{ index: number; score: number }[] | null> {
   const key = process.env.NVIDIA_API_KEY;
   if (!key || passages.length === 0) return null;
 
   try {
-    const res = await fetch("https://ai.api.nvidia.com/v1/retrieval/nvidia/reranking", {
+    // The old rerank-qa-mistral-4b function returns 404 and llama-nemotron-rerank-1b-v2
+    // reached end of life on 2026-08-25 (410), which is why rerank never ran.
+    const rerankMs = left(deadline, Number(process.env.RERANK_TIMEOUT_MS ?? 1_500));
+    const res = await (faulted(rerankMs) ?? fetch(`https://ai.api.nvidia.com/v1/retrieval/nvidia/${RERANK_MODEL.split("/")[1]}/reranking`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -574,14 +612,14 @@ export async function rerank(
         authorization: `Bearer ${key}`,
       },
       body: JSON.stringify({
-        model: "nvidia/rerank-qa-mistral-4b",
+        model: RERANK_MODEL,
         query: { text: query },
         passages: passages.map((text) => ({ text })),
       }),
       // Tighter than the model call. A reranker that is slow has already lost
       // the argument for using it, and the fused order is a good fallback.
-      signal: AbortSignal.timeout(Number(process.env.RERANK_TIMEOUT_MS ?? 3_000)),
-    });
+      signal: AbortSignal.timeout(rerankMs),
+    }));
     if (!res.ok) return null;
     const json = (await res.json()) as { rankings?: { index: number; logit: number }[] };
     return json.rankings?.map((r) => ({ index: r.index, score: r.logit })) ?? null;
@@ -613,6 +651,7 @@ export async function rerank(
 export async function chooseTool(
   messages: { role: string; content: string }[],
   tools: unknown[],
+  deadline = Infinity,
 ): Promise<{ calls: { name: string; args: Record<string, unknown> }[]; provider: ProviderName } | null> {
   const providers = availableProviders();
   if (providers.length === 0) return null;
@@ -620,7 +659,7 @@ export async function chooseTool(
   for (const name of providers) {
     try {
       const bound = build(name, false).bindTools(tools as never);
-      const res = await withDeadline(bound.invoke(messages), "tool call", ANSWER_MS);
+      const res = await withDeadline(() => bound.invoke(messages), "tool call", left(deadline, ANSWER_MS, FALLBACK_MS));
       return {
         calls: (res.tool_calls ?? []).map((c) => ({ name: c.name, args: (c.args ?? {}) as Record<string, unknown> })),
         provider: name,

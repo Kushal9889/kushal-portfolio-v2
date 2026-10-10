@@ -9,6 +9,11 @@ init script, so it survives the dev server's reloads.
 Close the window (cmd+Q) to end.
 """
 
+import os as _os
+
+# FILM_ORIGIN points every gate at another server, e.g. the production build on :3003.
+ORIGIN = _os.environ.get("FILM_ORIGIN", "http://localhost:3002")
+
 import argparse
 
 from playwright.sync_api import sync_playwright
@@ -43,9 +48,10 @@ def main():
     ap.add_argument("--seconds", type=float, default=95)
     ap.add_argument("--debug", action="store_true")
     a = ap.parse_args()
-    url = "http://localhost:3002/classic" + ("?film=debug" if a.debug else "")
+    url = ORIGIN + "/classic" + ("?film=debug" if a.debug else "")
     with sync_playwright() as p:
         browser = p.chromium.launch(
+            channel="chrome",
             headless=False,
             args=["--start-fullscreen", "--kiosk", "--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"],
         )

@@ -22,17 +22,22 @@
   background: var(--paper-sunk);
 }
 
+/* Uppercase metadata is set in the data voice (brutalist 3.2: micro type is
+   mono, caps, wide-tracked). A 6 to 7 word caps line in the display face read as
+   shouting; in mono it reads as a plate. */
 .label {
+  font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--step--2);
   letter-spacing: var(--track-caps);
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .status {
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
+  font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--step--2);
   letter-spacing: var(--track-wide);
   text-transform: uppercase;
@@ -73,7 +78,7 @@
   }
 
   .body {
-    padding: var(--s-4);
+    padding: var(--s-3) var(--s-2);
   }
 }
 
@@ -164,6 +169,8 @@
 }
 
 .panel[data-kind="rack"] .label {
+  /* The identity of a unit is a title, not a plate: the display voice. */
+  font-family: inherit;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -187,4 +194,10 @@
     var(--bezel),
     0 1px 2px oklch(0.07 0.01 258 / 0.5),
     0 14px 34px oklch(0.07 0.01 258 / 0.34);
+}
+
+@media (max-width: 767px) {
+  .panel {
+    margin-block: var(--s-3);
+  }
 }

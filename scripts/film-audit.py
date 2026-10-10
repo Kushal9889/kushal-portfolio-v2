@@ -5,6 +5,11 @@ clip time and frame), tiled into sheets. Point at any tile by its label.
     python3 scripts/film-audit.py [--steps 100] [--out ~/Downloads/film-audit]
 """
 
+import os as _os
+
+# FILM_ORIGIN points every gate at another server, e.g. the production build on :3003.
+ORIGIN = _os.environ.get("FILM_ORIGIN", "http://localhost:3002")
+
 import argparse
 import os
 
@@ -20,9 +25,9 @@ def main():
     os.makedirs(a.out, exist_ok=True)
     tiles = []
     with sync_playwright() as p:
-        b = p.chromium.launch(args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
+        b = p.chromium.launch(channel="chrome", args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
         page = b.new_page(viewport={"width": 1440, "height": 900}, color_scheme="dark")
-        page.goto("http://localhost:3002/classic?film=debug&hud=1")
+        page.goto(ORIGIN + "/classic?film=debug&hud=1")
         page.wait_for_function("document.documentElement.dataset.film === 'live'", timeout=60000)
         page.wait_for_timeout(3000)
         top = page.evaluate("document.documentElement.scrollHeight - innerHeight")

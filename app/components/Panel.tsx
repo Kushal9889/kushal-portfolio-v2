@@ -46,6 +46,7 @@ export default function Panel({
   heading,
   children,
   className,
+  hue,
 }: {
   /** What the instrument is. Set in caps at label scale, left of the strip. */
   label: React.ReactNode;
@@ -66,6 +67,9 @@ export default function Panel({
   heading?: 3;
   children: React.ReactNode;
   className?: string;
+  /** The product hue that marks this box: a 2px rule on the left edge, the
+   *  head's hairline, the dates and the phrase figures (globals.css). */
+  hue?: string;
 }) {
   const Label = heading === 3 ? "h3" : "span";
 
@@ -73,6 +77,8 @@ export default function Panel({
     <section
       className={className ? `${styles.panel} ${className}` : styles.panel}
       data-surface={surface}
+      data-hue={hue ? "" : undefined}
+      style={hue ? ({ "--box-hue": hue, "--figure-tint": hue } as React.CSSProperties) : undefined}
       data-state={state}
       /* An instrument is an enclosure, not a rule between two things. The frame,
          the caught edge and the corner marks come from the ladder in

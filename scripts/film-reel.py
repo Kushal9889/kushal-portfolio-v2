@@ -8,6 +8,11 @@ contact section, as an MP4 plus a contact sheet of frames.
 Writes .playwright-mcp/film/reel/reel-<width>.mp4 and reel-<width>-sheet.jpg.
 """
 
+import os as _os
+
+# FILM_ORIGIN points every gate at another server, e.g. the production build on :3003.
+ORIGIN = _os.environ.get("FILM_ORIGIN", "http://localhost:3002")
+
 import argparse
 import glob
 import os
@@ -25,7 +30,7 @@ def main():
     ap.add_argument("--width", type=int, default=1440)
     ap.add_argument("--height", type=int, default=900)
     ap.add_argument("--seconds", type=float, default=60)
-    ap.add_argument("--url", default="http://localhost:3002/classic?film=debug")
+    ap.add_argument("--url", default=ORIGIN + "/classic?film=debug")
     ap.add_argument("--hold", default="", help="comma-separated beats (film-compare stop syntax) to hold on instead of scrolling")
     a = ap.parse_args()
     raw = os.path.join(OUT, "raw")
@@ -33,7 +38,7 @@ def main():
     os.makedirs(raw, exist_ok=True)
     size = {"width": a.width, "height": a.height}
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True, args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
+        browser = p.chromium.launch(channel="chrome", headless=True, args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
         ctx = browser.new_context(viewport=size, color_scheme="dark", record_video_dir=raw, record_video_size=size)
         page = ctx.new_page()
         page.goto(a.url)

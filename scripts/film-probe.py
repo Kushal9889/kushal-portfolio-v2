@@ -9,6 +9,11 @@ dropped (a frame over 25 ms); 0 blank frames; no console errors. Exit code 1
 on fail.
 """
 
+import os as _os
+
+# FILM_ORIGIN points every gate at another server, e.g. the production build on :3003.
+ORIGIN = _os.environ.get("FILM_ORIGIN", "http://localhost:3002")
+
 import argparse
 import json
 import sys
@@ -32,10 +37,10 @@ SCROLL = """(ms) => new Promise(done => {
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seconds", type=float, default=20)
-    ap.add_argument("--url", default="http://localhost:3002/classic?film=debug")
+    ap.add_argument("--url", default=ORIGIN + "/classic?film=debug")
     a = ap.parse_args()
     with sync_playwright() as p:
-        b = p.chromium.launch(args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
+        b = p.chromium.launch(channel="chrome", args=["--use-angle=metal", "--enable-gpu", "--ignore-gpu-blocklist"])
         page = b.new_page(viewport={"width": 1440, "height": 900}, color_scheme="dark")
         errors = []
         page.on("console", lambda m: m.type == "error" and errors.append(m.text))

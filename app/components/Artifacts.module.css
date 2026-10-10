@@ -58,7 +58,7 @@
   text-transform: uppercase;
   color: var(--ink-faint);
   border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-sm);
   padding: var(--s-1) var(--s-2);
   white-space: nowrap;
 }

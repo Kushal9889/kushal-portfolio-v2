@@ -2,6 +2,7 @@
 // base, so this page brings the rest with it.
 import "./globals.css";
 import Hero from "./components/Hero";
+import ProofWall from "./components/ProofWall";
 import Prose from "./components/Prose";
 import Certifications from "./components/Certifications";
 import DiffReveal from "./components/DiffReveal";
@@ -33,6 +34,7 @@ import Redact from "./components/Redact";
 import Vitals from "./components/Vitals";
 import FilmTransit from "./components/film/FilmTransit";
 import FilmChip from "./components/film/FilmChip";
+import FilmBoot from "./components/film/FilmBoot";
 import FilmMount from "./components/film/FilmMount";
 
 function Section({
@@ -76,6 +78,8 @@ function Section({
   "data-register"?: "chapter" | "instrument";
   /** Hidden below 768px: sections a phone reader can skip. */
   "data-phone"?: "hide";
+  /** One light sweep along the section's top rule when it first arrives (PageMotion + globals.css). */
+  "data-sweep"?: "on";
 }) {
   return (
     <section id={id} data-beat={beat ?? id} className={styles.section} {...tone}>
@@ -84,7 +88,7 @@ function Section({
           most of a screen on their own and the page used half its width. The
           children stay direct descendants of the wrap so the scroll batching
           still sees them individually. */}
-      <div className={`wrap ${styles.grid}`} data-film-scrim={scrim || undefined}>
+      <div className={`wrap ${styles.grid}`} data-film-scrim>
         <div className={styles.head}>
           {/* The heading carries the section on its own. The ordinal that used
               to sit above it named a position rather than a subject, and cost
@@ -117,6 +121,14 @@ function Section({
  * keeps it in the markup, so a crawler and a reader with scripting off still
  * get the whole thing.
  */
+/** The product hue each role's phrase figures take (tokens in globals.css). */
+const ROLE_TINT: Record<string, string> = {
+  "Boston University, Questrom Computational Lab": "var(--brand-azure)",
+  "Boston University, Questrom Computational Lab, backend": "var(--brand-django)",
+  "IMG Systems": "var(--brand-docker)",
+  Growaza: "var(--brand-aws)",
+};
+
 function RoleContent({
   section: s,
   past = false,
@@ -127,14 +139,17 @@ function RoleContent({
   /** Which grid row this role occupies. */
   row: number;
 }) {
-  const body = <Prose body={s.body} className={styles.roleBody} />;
+  // The first paragraph is the role in one breath and stays visible; the
+  // rest opens on demand.
+  const [lead, ...more] = s.body.split(/\n\s*\n/);
+  const body = more.length > 0 ? <Prose body={more.join("\n\n")} className={styles.roleBody} claimHref={s.claim} /> : null;
 
   return (
     <article
       className={styles.roleContent}
       data-role-content
       data-past={past || undefined}
-      style={{ "--row": row } as React.CSSProperties}
+      style={{ "--row": row, "--role-tint": ROLE_TINT[s.title] ?? "var(--rule)" } as React.CSSProperties}
     >
       <Panel
         kind="rack"
@@ -149,37 +164,44 @@ function RoleContent({
         state={past ? "done" : "running"}
         status={`${s.roleParts.dates}${s.roleParts.location ? ` \u00b7 ${s.roleParts.location}` : ""}`}
       >
-        <Metrics items={s.metrics} />
-        {/* Folded on a phone so the three roles read as titles and figures
-            first; WorkStack opens every [data-phone-fold] from 768px up, where it was always open. */}
-        <details className="more" data-phone-fold>
-          <summary>
-            <span className="more-open">Stack and what he built</span>
-            <span className="more-close">Show less</span>
-          </summary>
-          {s.asks.length > 0 && <AskSeeds items={s.asks} />}
-          {s.stack.length > 0 && (
-            <ul className={styles.stack}>
-              {s.stack.map((t) => (
-                <li key={t}>
-                  <BrandMark name={t} />
-                  {t}
-                </li>
-              ))}
-            </ul>
-          )}
-          {past ? (
-            <details className="more">
-              <summary>
-                <span className="more-open">Read what he built</span>
-                <span className="more-close">Show less</span>
-              </summary>
-              {body}
-            </details>
-          ) : (
-            body
-          )}
-        </details>
+        {/* Identity figure on the left, proof on the right (stacked on a
+            phone, where only the first figure shows). The ask sits outside
+            the fold so a phone reader can put the role to the agent at once. */}
+        <div className={styles.rolePair}>
+          <div
+            className={styles.roleFigures}
+            style={{ "--figure-tint": ROLE_TINT[s.title] } as React.CSSProperties}
+          >
+            <Metrics items={s.metrics} />
+          </div>
+          <div className={styles.roleProof}>
+            <Prose body={lead} className={`${styles.roleBody} ${styles.roleLead}`} claimHref={s.claim} />
+            {/* The stack is the first thing a reader checks against their own,
+                so it stays out of the fold, marks first. */}
+            {s.stack.length > 0 && (
+              <ul className={styles.stack}>
+                {s.stack.map((t) => (
+                  <li key={t}>
+                    <BrandMark name={t} />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {s.asks.length > 0 && <AskSeeds items={s.asks} />}
+            {/* Folded on both views so each role reads as title, figure,
+                one paragraph and its stack first. */}
+            {body && (
+              <details className="more" data-phone-fold>
+                <summary aria-label={`What he built as ${s.roleParts.title}`}>
+                  <span className="more-open">What he built</span>
+                  <span className="more-close">Show less</span>
+                </summary>
+                {body}
+              </details>
+            )}
+          </div>
+        </div>
       </Panel>
     </article>
   );
@@ -208,7 +230,6 @@ export default function Page() {
     href: merged?.url ?? profile.github,
     label: merged?.label ?? "",
   };
-  const featured = certs.find((c) => c.featured);
 
   /*
    * The agent's props, assembled here rather than inline.
@@ -249,6 +270,7 @@ export default function Page() {
 
   return (
     <>
+      <FilmBoot />
       <Palette email={profile.email} github={profile.github} repo={profile.repo} asks={asks} />
       {/* Reaching him from wherever the reader is, with the draft written for
           the section they are actually in. Six of the seven openers in
@@ -270,7 +292,7 @@ export default function Page() {
       <SectionRail
         items={[
           { id: "work", label: "Work" },
-          { id: "opensource", label: "A bug in LangChain" },
+          { id: "opensource", label: "The bug that looked like success" },
           { id: "running", label: "Also running" },
           { id: "research", label: "Research" },
           { id: "proof", label: "What else checks out" },
@@ -288,15 +310,15 @@ export default function Page() {
         tagline={profile.tagline}
         location={profile.location}
         current={profile.current}
+        skills={section("Skills").stack}
         evidence={evidence}
         available={profile.available}
-        credential={{
-          label: featured ? `${featured.issuer} Certified · ${featured.short ?? featured.name}` : "",
-          url: featured?.url ?? "#",
-        }}
+        credentials={certs
+          .filter((c) => c.pinned && c.url)
+          .map((c) => ({ label: `${c.name}, ${c.issuer}`, url: c.url as string, image: c.image }))}
         contactHref="#contact"
       >
-        <Agent {...agentProps} />
+        <Agent {...agentProps} loop={false} />
       </Hero>
 
       <main id="main">
@@ -326,10 +348,11 @@ export default function Page() {
 
         <Section
           id="opensource"
-          title="A bug in LangChain"
+          title="The bug that looked like success"
           data-lead="artifact"
           data-layout="banner"
           data-register="chapter"
+          data-sweep="on"
         >
           {/* The duration and the pull request come from the corpus, not from
               inside the component: the same three values are rendered by the
@@ -339,8 +362,10 @@ export default function Page() {
             prUrl={merged?.url ?? ""}
             prLabel={merged?.label.replace(/^.*#/, "PR #") ?? ""}
           />
-          <Metrics items={os.metrics} />
-          <Prose body={section("Open source, LangChain deepagents").body} />
+          <div className={styles.roleFigures} style={{ "--figure-tint": "var(--brand-langchain)" } as React.CSSProperties}>
+            <Metrics items={os.metrics} />
+          </div>
+          <Prose body={section("Open source, LangChain deepagents").body} topic="the LangChain deepagents fix" claimHref={section("Open source, LangChain deepagents").claim} />
           <details className="more" data-phone-fold>
             <summary>
               <span className="more-open">The issue, the pull request and questions to ask</span>
@@ -358,6 +383,7 @@ export default function Page() {
         <Section id="running" beat="research" title="Also running" data-register="instrument">
           <Panel
             className={styles.alsoBuilt}
+            hue="var(--brand-nvidia)"
             kind="instrument"
             surface="console"
             heading={3}
@@ -365,14 +391,19 @@ export default function Page() {
             state="running"
             status="reachability"
           >
-            <Metrics items={section("BU Life AI").metrics} />
+            <div
+              className={styles.roleFigures}
+              style={{ "--figure-tint": "var(--brand-nvidia)" } as React.CSSProperties}
+            >
+              <Metrics items={section("BU Life AI").metrics} />
+            </div>
             <details className="more">
               <summary>
                 <span className="more-open">Stack and live status</span>
                 <span className="more-close">Show less</span>
               </summary>
               <LiveStatus url="https://bulife-ai.netlify.app/" label="bulife-ai.netlify.app" />
-              <Prose body={section("BU Life AI").body} />
+              <Prose body={section("BU Life AI").body} topic="BU Life AI" claimHref={section("BU Life AI").claim} />
               <ul className={styles.stack}>
                 {section("BU Life AI").stack.map((t) => (
                   <li key={t}>
@@ -393,18 +424,36 @@ export default function Page() {
             held a top-level heading. It also completes the thread section 01
             opens: the paper argues context is needed to catch bugs static
             analysis misses, and the LangChain defect was exactly that shape. */}
-        <Section id="research" beat="approach" scrim title="Research" data-register="instrument">
-          <Metrics items={section("Publications").metrics} />
-          <Prose body={section("Publications").body} />
-          {/* Both papers as rows a reader can open, rather than as two links
-              inside a paragraph. The DOI resolves; the link checker proves it. */}
-          <details className="more" data-phone-fold>
-            <summary>
-              <span className="more-open">Both papers</span>
-              <span className="more-close">Show less</span>
-            </summary>
-            <Artifacts2 items={section("Publications").artifacts} />
-          </details>
+        <Section id="research" beat="approach" title="Research" data-register="instrument">
+          {/* Framed the way Also running is: one console panel with a status,
+              the figures, the argument, and the papers behind a fold. */}
+          <Panel
+            className={styles.alsoBuilt}
+            hue="var(--brand-ieee)"
+            kind="instrument"
+            surface="console"
+            heading={3}
+            label="IEEE ICAICCIT 2024 · first author"
+            state="done"
+            status="published"
+          >
+            <div
+              className={styles.roleFigures}
+              style={{ "--figure-tint": "var(--brand-ieee)" } as React.CSSProperties}
+            >
+              <Metrics items={section("Publications").metrics} />
+            </div>
+            <Prose body={section("Publications").body} topic="publications" claimHref={section("Publications").claim} phoneOpen={1} />
+            {/* Both papers as rows a reader can open, rather than as two links
+                inside a paragraph. The DOI resolves; the link checker proves it. */}
+            <details className="more" data-phone-fold>
+              <summary>
+                <span className="more-open">Both papers</span>
+                <span className="more-close">Show less</span>
+              </summary>
+              <Artifacts2 items={section("Publications").artifacts} />
+            </details>
+          </Panel>
         </Section>
 
 
@@ -418,6 +467,7 @@ export default function Page() {
         <Section
           id="proof"
           beat="measured"
+         
           title="What else checks out"
           data-tone="sunk"
           data-layout="rule"
@@ -433,8 +483,8 @@ export default function Page() {
             the scope limits are here rather than buried because stating them
             early is what makes the rest of the page readable as fact. */}
         <Section id="approach" beat="running" data-phone="hide" title="How he works" data-layout="rule" data-register="instrument">
-          <Prose body={section("Who he is").body} />
-          <Prose body={section("What he is good at").body} />
+          <Prose body={section("Who he is").body} topic="who he is" claimHref={section("Who he is").claim} />
+          <Prose body={section("What he is good at").body} topic="what he is good at" claimHref={section("What he is good at").claim} />
           {/* Condensed mode keeps only the first paragraph of a prose block,
               which took two thirds of the scope limits with it. This is the one
               section whose whole value is that it narrows the claim. */}
@@ -455,7 +505,7 @@ export default function Page() {
         {/* The strongest signal in 2026 hiring is evidence that the thing was
             measured, not that it was built. It sits second because the bug above
             proves he finds failures and this proves he checks for them. */}
-        <Section id="measured" beat="proof" scrim data-phone="hide" title="How this is measured" data-layout="bank" data-register="instrument">
+        <Section id="measured" beat="proof" data-phone="hide" title="How this is measured" data-layout="bank" data-register="instrument" data-sweep="on">
           <Measured />
           {/*
            * Order is the layout here. This grid auto-places into two columns in
@@ -494,16 +544,22 @@ export default function Page() {
         <FilmTransit id="T8" />
 
         <Section id="education" title="Education" data-tone="sunk" data-layout="rule" data-register="instrument">
-          <div className={styles.split}>
-            <div>
-              <h3 className={styles.subhead}>Education</h3>
-              <Prose body={section("Education").body} />
-            </div>
-            <div>
-              <h3 className={styles.subhead}>Before this</h3>
-              <Metrics items={section("Achievements").metrics} />
-              <Prose body={section("Achievements").body} />
-            </div>
+          {/* Two panels: the degrees, then what came before them. Stacked: side
+              by side inside the reading column each panel was too narrow for
+              its figures. */}
+          <div className={styles.panelStack}>
+            <Panel className={styles.alsoBuilt} hue="var(--brand-bu)" kind="instrument" surface="console" heading={3} label="Degrees" state="running" status="M.S. in progress">
+              <div className={styles.eduFigures}>
+                <Metrics items={section("Education").metrics} />
+              </div>
+              <Prose body={section("Education").body} topic="education" phoneOpen={1} />
+            </Panel>
+            <Panel className={styles.alsoBuilt} hue="var(--brand-bu)" kind="instrument" surface="console" heading={3} label="Before this" state="done" status="2020 to 2024">
+              <div className={styles.eduFigures}>
+                <Metrics items={section("Achievements").metrics} />
+              </div>
+              <Prose body={section("Achievements").body} topic="achievements" phoneOpen={1} />
+            </Panel>
           </div>
         </Section>
 
@@ -511,10 +567,12 @@ export default function Page() {
 
         <Section
           id="contact"
+         
           title="Get in touch"
           data-weight="closing"
           data-layout="banner"
           data-register="chapter"
+          data-sweep="on"
         >
           <Prose body={section("Availability").body} />
           {/* Every path from "decided to write" to "message sent", with the
@@ -536,6 +594,8 @@ export default function Page() {
               evals,
             }}
           />
+          {/* The record, last: what he can prove, as badges, each one a link. */}
+          <ProofWall certs={certs} badges={section("Proof wall").badges} />
           <FilmLine which="closing" />
         </Section>
       </main>
@@ -546,7 +606,7 @@ export default function Page() {
             h1 at the top of this page, and a screen reader meeting it a second
             time at the bottom learns nothing and loses its place. Here it is
             type as a graphic object, so it is drawn for the eye only. */}
-        <p className={styles.wordmark} aria-hidden="true">
+        <p className={styles.wordmark} aria-hidden="true" data-film-scrim>
           {profile.name}
         </p>
         <div className="wrap" data-film-scrim>

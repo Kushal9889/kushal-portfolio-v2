@@ -63,7 +63,11 @@ export default function PageMotion() {
     const closing = document.querySelector<HTMLElement>("#contact h2");
 
     if (closing) {
-      const split = new SplitText(closing, { type: "lines", mask: "lines" });
+      // aria "none": the default labels the h2 and hides its lines, which hid
+      // the heading's own "#" link from assistive tech while it stayed
+      // focusable (axe aria-hidden-focus). Lines keep their words, so the
+      // heading reads the same unlabelled.
+      const split = new SplitText(closing, { type: "lines", mask: "lines", aria: "none" });
 
       /*
        * The mask has one job and it ends when the line has arrived.
@@ -184,116 +188,46 @@ export default function PageMotion() {
       });
     }
 
-    /* --- The figures arrive as readings ------------------------------------
+    /* --- The figures are read by a scan ----------------------------------
      *
      * Every quantified outcome on this page is a measurement taken off something
-     * that ran. Giving the figure an arrival is the one piece of motion here that
-     * reports what the element actually is.
+     * that ran, so its arrival is a reading being taken: one hard 2 px beam in
+     * the signal colour crosses the figure once and the figure is there behind
+     * it. The text is never anything but the reading. A count published values
+     * the corpus does not hold, and the odometer that replaced it showed
+     * half-turned wheels ("1,2⁴6+") in every still and every fast scroll.
      *
-     * This counted up first, and counting was wrong on this page in particular: a
-     * count publishes every value between zero and the reading, so on a clean load
-     * the merge time rendered a crisp `47 hours` and the contradiction count a
-     * crisp `2`, both held long enough to photograph. Every other page can afford
-     * that. This one cannot, because its entire argument is that no figure appears
-     * which was not measured.
-     *
-     * An odometer does not have that problem, and the reason is mechanical rather
-     * than a matter of degree. Each digit is its own column running behind a
-     * window one line tall, so while it spins the window shows two half-glyphs
-     * meeting at its edge. There is no instant at which the strip renders a
-     * legible number that is not the reading: the intermediate states are visibly
-     * in motion, which is what a measurement settling looks like.
-     *
-     * Only `transform` moves, so the whole thing runs on the compositor. The
-     * original text is written back on completion from the string the corpus gave
-     * us, so what settles is character-for-character what `verify:facts` checked.
+     * The sweep is CSS (globals.css, [data-scan]); this only marks the figure
+     * when it first enters. Reduced motion never loads this file.
      */
-    const ODO_CYCLES = 2;
-    // Each cell is taller than the glyph, so a settled window never shows a
-    // sliver of the digits above and below it (display numerals ink past 1em).
-    const CELL = 1.3;
-
     const figures = Array.from(document.querySelectorAll<HTMLElement>("main dt.tabular")).filter(
-      (el) => /^[+-]?\d/.test(el.textContent?.trim() ?? ""),
+      (el) => /^[+-~$]?\d/.test(el.textContent?.trim() ?? ""),
     );
-
     for (const el of figures) {
-      const raw = el.textContent?.trim() ?? "";
-      // The accessible name is set before the DOM is rebuilt, so a screen reader
-      // reads the reading and never the digit ladders behind it.
-      el.setAttribute("aria-label", raw);
-
-      const tracks: HTMLElement[] = [];
-      const rebuilt = document.createDocumentFragment();
-
-      for (const ch of raw) {
-        if (!/\d/.test(ch)) {
-          rebuilt.appendChild(document.createTextNode(ch));
-          continue;
-        }
-
-        const window_ = document.createElement("span");
-        window_.setAttribute("aria-hidden", "true");
-        window_.style.cssText =
-          `display:inline-block;overflow:hidden;height:${CELL}em;line-height:${CELL};vertical-align:bottom;margin-block:${(1 - CELL) / 2}em`;
-
-        const track = document.createElement("span");
-        track.style.cssText = "display:block;will-change:transform";
-        for (let cycle = 0; cycle <= ODO_CYCLES; cycle++) {
-          for (let d = 0; d <= 9; d++) {
-            const cell = document.createElement("span");
-            cell.style.cssText = `display:block;height:${CELL}em;line-height:${CELL}`;
-            cell.textContent = String(d);
-            track.appendChild(cell);
-          }
-        }
-
-        window_.appendChild(track);
-        rebuilt.appendChild(window_);
-        tracks.push(track);
-        track.dataset.target = ch;
-      }
-
-      if (tracks.length === 0) continue;
-      el.textContent = "";
-      el.appendChild(rebuilt);
-
-      // Painted at the reading before anything animates: a blocked or failed
-      // bundle costs the spin and never the number.
-      for (const track of tracks) {
-        const target = Number(track.dataset.target);
-        track.style.transform = `translateY(${-(ODO_CYCLES * 10 + target) * CELL}em)`;
-      }
-
       ScrollTrigger.create({
         trigger: el,
-        start: "top 92%",
+        start: "top 88%",
         onEnter: () => {
           if (!first(el)) return;
-          // The spinning wheels stay dim until they land, so no passing digit
-          // reads as a figure the corpus does not hold. Opacity, not a blur
-          // filter: a filter repaints every frame and cost the film frames.
-          gsap.fromTo(el, { opacity: 0.3 }, { opacity: 1, duration: 1.1, ease: "power4.in", clearProps: "opacity" });
-          tracks.forEach((track, i) => {
-            const target = Number(track.dataset.target);
-            gsap.fromTo(
-              track,
-              // Zero, which is the first cell of the ladder. Starting anywhere
-              // positive scrolls the window above the track and shows blank.
-              { y: 0 },
-              {
-                y: `${-(ODO_CYCLES * 10 + target) * CELL}em`,
-                duration: 1.1,
-                // Lower-order digits settle last, the way a mechanical counter
-                // carries: the rightmost wheel is the one still turning.
-                delay: (tracks.length - 1 - i) * 0.06,
-                ease: "power4.out",
-                onComplete: () => {
-                  track.style.willChange = "auto";
-                },
-              },
-            );
-          });
+          el.dataset.scan = "";
+        },
+      });
+    }
+
+    /* --- Section arrival: one light sweep ---------------------------------
+     *
+     * Kushal's brief asks for laser-like light sweeps on the key sections. The
+     * figures already carry theirs (the scan above); the sections that hold no
+     * figures to scan (Measured, Contact) carry one beam along their top rule,
+     * once, when they first arrive. CSS in globals.css; this only marks them.
+     */
+    for (const section of Array.from(document.querySelectorAll<HTMLElement>("main > section[data-sweep]"))) {
+      ScrollTrigger.create({
+        trigger: section,
+        start: "top 80%",
+        onEnter: () => {
+          if (!first(section)) return;
+          section.dataset.arrive = "";
         },
       });
     }

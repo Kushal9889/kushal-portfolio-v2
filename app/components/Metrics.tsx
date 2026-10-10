@@ -65,7 +65,7 @@ export default function Metrics({ items }: { items: Metric[] }) {
                one test, so `57 hours` counted as a phrase at eight characters
                and set in the interface face beside `14` in the data face. A
                reading is a reading at any length. */
-            data-numeric={/^[+-]?\d/.test(m.value) ? "" : undefined}
+            data-numeric={/^[+\-~$]?\d/.test(m.value) ? "" : undefined}
           >
             {m.value}
           </dt>
@@ -76,20 +76,18 @@ export default function Metrics({ items }: { items: Metric[] }) {
                 willingness to believe it, and "resume" is an honest answer for
                 a figure whose only witness is a former employer. A URL is a
                 better one, and it is the reason this is a link when it can be. */}
-            {m.source &&
-              (m.source.startsWith("http") ? (
-                <a
-                  className={styles.source}
-                  href={m.source}
-                  target="_blank"
-                  rel="noreferrer"
-                  title={m.source}
-                >
-                  source
-                </a>
-              ) : (
-                <span className={styles.source}>{m.source}</span>
-              ))}
+            {m.source && (
+              <a
+                className={styles.source}
+                href={m.source === "resume" ? "/kushal-gaddamwar-resume.pdf" : m.source}
+                target="_blank"
+                rel="noreferrer"
+                title={m.source === "resume" ? "His resume (PDF)" : m.source}
+                aria-label={`${m.source === "resume" ? "resume" : "source"} for ${m.label}`}
+              >
+                {m.source === "resume" ? "resume" : "source"}
+              </a>
+            )}
           </dd>
           {percentPosition(m.value) !== null && (
             <span className={styles.scaleMark} aria-hidden="true" />

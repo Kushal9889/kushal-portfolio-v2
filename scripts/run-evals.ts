@@ -15,7 +15,7 @@ import { join } from "node:path";
 const envFile = join(process.cwd(), ".env.local");
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 import { ask } from "../lib/agent/graph";
-import { assertNoReasoning } from "../lib/agent/policy";
+import { assertNoReasoning, NOT_IN_PROFILE } from "../lib/agent/policy";
 import { CASES, GROUND_TRUTH, type Group, type Case, type Mode } from "../lib/agent/evals";
 
 /**
@@ -100,8 +100,10 @@ async function main() {
       const answer = (r.answer ?? "").toString();
       latencies.push(r.total);
 
+      // The unknown band's fixed text never came from a model, and its
+      // "open-source" tripped the meta-sentence pattern (3/78 false leaks).
       try {
-        assertNoReasoning(answer);
+        if (answer !== NOT_IN_PROFILE) assertNoReasoning(answer);
       } catch (err) {
         reasoningLeaks++;
         if (leakSamples.length < 3) leakSamples.push(`${c.question}: ${(err as Error).message}`);
