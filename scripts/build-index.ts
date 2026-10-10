@@ -1,9 +1,10 @@
-import { writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadContent } from "../lib/content";
 import { chunkSection, sentences, estimateTokens, BREAK_BELOW, type Passage } from "../lib/agent/chunk";
 import { indexTokens } from "../lib/agent/tokenize";
 import { EMBED_MODEL } from "../lib/agent/model";
+import { cachedEmbed, embedKey, prune, type EmbedCache } from "../lib/agent/embed-cache";
 
 /**
  * Builds the retrieval index at compile time.
@@ -166,8 +167,37 @@ async function embedPassagesLegacy(texts: string[]): Promise<number[][] | null> 
   return perChunk.map(pool);
 }
 
+/**
+ * Vectors from earlier builds, keyed by sha256(model, input type, text).
+ *
+ * Kept out of git: at 2048 dimensions it runs to megabytes, and a fresh clone
+ * pays for one full embed and is incremental after that.
+ */
+const CACHE_PATH = join(process.cwd(), ".cache", "embeddings.json");
+
+function loadCache(): EmbedCache {
+  if (!existsSync(CACHE_PATH)) return {};
+  try {
+    return JSON.parse(readFileSync(CACHE_PATH, "utf8")) as EmbedCache;
+  } catch {
+    // A corrupt cache costs one full rebuild, never a failed one.
+    return {};
+  }
+}
+
 async function main() {
   const { sections } = loadContent();
+  const cache = loadCache();
+  const used = new Set<string>();
+  let embedded = 0;
+  let reused = 0;
+  const embed = async (texts: string[]) => {
+    for (const t of texts) used.add(embedKey(EMBED_MODEL, "passage", t));
+    const r = await cachedEmbed(texts, "passage", EMBED_MODEL, cache, embedAll);
+    if (r.vectors) embedded += r.misses;
+    reused += r.hits;
+    return r.vectors;
+  };
 
   /*
    * The parent unit: everything a section knows, as the model will see it.
@@ -214,10 +244,7 @@ async function main() {
   }
   console.log(`build-index: ${sentenceIndex.length} sentences across ${parents.length} sections`);
 
-  const sentenceVectors = await embedAll(
-    sentenceIndex.map((s) => s.text),
-    "passage",
-  );
+  const sentenceVectors = await embed(sentenceIndex.map((s) => s.text));
 
   if (sentenceVectors) {
     /*
@@ -317,15 +344,21 @@ async function main() {
   // windowing and no mean-pooling. That pooling was averaging three
   // semantically different windows into one vector that represented none of
   // them, on exactly the sections that explain how this page works.
-  const vectors = await embedAll(
-    passages.map((p) => `${p.parent}\n${p.text}`),
-    "passage",
-  );
+  const vectors = await embed(passages.map((p) => `${p.parent}\n${p.text}`));
 
   const out = { passages, parents, tf, lengths, df, avgLength, vectors };
   const path = join(process.cwd(), "lib", "agent", "index.json");
 
   writeFileSync(path, JSON.stringify(out));
+
+  // Only a build that produced vectors may rewrite the cache. A keyless build
+  // embeds nothing, and pruning against it would empty the cache.
+  if (vectors) {
+    mkdirSync(join(process.cwd(), ".cache"), { recursive: true });
+    writeFileSync(CACHE_PATH, JSON.stringify(prune(cache, used)));
+  }
+  // The number that proves the cache works: 0 on an unchanged rebuild.
+  console.log(`build-index: embeddings ${embedded} new, ${reused} reused from cache`);
 
   const size = (JSON.stringify(out).length / 1024).toFixed(0);
   console.log(

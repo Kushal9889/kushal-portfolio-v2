@@ -28,3 +28,6 @@ NOTES.private.md
 # notes someone kept while building it.
 CLAUDE.md
 HANDOFF.md
+
+# Embedding vectors from earlier index builds (scripts/build-index.ts)
+.cache/

@@ -22,6 +22,7 @@ import {
   type ReachContext,
 } from "../lib/reach";
 import { tokenize } from "../lib/agent/retrieve";
+import { cachedEmbed, embedKey, prune } from "../lib/agent/embed-cache";
 import { nearestTerm, correct } from "../lib/agent/vocab";
 import { indexTokens, queryTokens, normalize } from "../lib/agent/tokenize";
 import {
@@ -1040,5 +1041,59 @@ describe("merged patch", () => {
       patch.files[0].lines.map((l) => [l.mark, l.old, l.new]),
       [["@", null, null], [" ", 10, 10], ["+", null, 11], [" ", 11, 12]],
     );
+  });
+});
+
+describe("embedding cache", () => {
+  // A fake model that counts what it was asked to embed, so the test measures
+  // calls rather than trusting that the cache was consulted.
+  const counting = () => {
+    const seen: string[] = [];
+    const embed = async (texts: string[]) => {
+      seen.push(...texts);
+      return texts.map((t) => [t.length, 1]);
+    };
+    return { seen, embed };
+  };
+
+  test("an unchanged rebuild embeds nothing", async () => {
+    const cache = {};
+    const m = counting();
+    await cachedEmbed(["a", "bb", "ccc"], "passage", "m1", cache, m.embed);
+    assert.equal(m.seen.length, 3);
+    const again = await cachedEmbed(["a", "bb", "ccc"], "passage", "m1", cache, m.embed);
+    assert.equal(again.misses, 0);
+    assert.equal(m.seen.length, 3);
+    assert.deepEqual(again.vectors, [[1, 1], [2, 1], [3, 1]]);
+  });
+
+  test("one changed text costs one call, and duplicates are sent once", async () => {
+    const cache = {};
+    const m = counting();
+    await cachedEmbed(["a", "bb"], "passage", "m1", cache, m.embed);
+    const r = await cachedEmbed(["a", "dddd", "dddd"], "passage", "m1", cache, m.embed);
+    assert.equal(r.misses, 1);
+    assert.deepEqual(m.seen, ["a", "bb", "dddd"]);
+  });
+
+  test("a different model never reuses a vector", async () => {
+    const cache = {};
+    const m = counting();
+    await cachedEmbed(["a"], "passage", "m1", cache, m.embed);
+    const r = await cachedEmbed(["a"], "passage", "m2", cache, m.embed);
+    assert.equal(r.misses, 1);
+  });
+
+  test("a failed embed returns null and caches nothing", async () => {
+    const cache = {};
+    const r = await cachedEmbed(["a"], "passage", "m1", cache, async () => null);
+    assert.equal(r.vectors, null);
+    assert.deepEqual(cache, {});
+  });
+
+  test("prune keeps only the keys a build used", () => {
+    const keep = embedKey("m1", "passage", "a");
+    const pruned = prune({ [keep]: [1], stale: [2] }, new Set([keep]));
+    assert.deepEqual(Object.keys(pruned), [keep]);
   });
 });
