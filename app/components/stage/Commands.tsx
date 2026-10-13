@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useEffect, useId, useImperativeHandle, useMemo, useRef, useState } from "react";
+import { applyPalette, palettes } from "@/lib/palettes";
 import styles from "./Commands.module.css";
 
 export type CommandLinks = { email: string; resume: string; repo: string; github: string; linkedin: string };
@@ -94,6 +95,13 @@ const Commands = forwardRef<
       })),
       { key: "ask", group: "Ask", label: "Ask the agent about him", hint: "/", run: onAsk },
       ...(links ? reach(links, () => setCopied(true)) : []),
+      ...palettes.map((p) => ({
+        key: `palette-${p.id}`,
+        group: "Palette",
+        label: p.label,
+        hint: "palette",
+        run: () => applyPalette(p.id),
+      })),
     ],
     [chapters, links, onJump, onAsk],
   );

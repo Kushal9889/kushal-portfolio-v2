@@ -13,6 +13,7 @@ import Glyph from "./Glyph";
 import { setSound, soundOn } from "@/lib/audio";
 import { markFrameReady, parseFrame, waitFor, watchRefresh } from "./frame";
 import "../../stage.css";
+import "../../palettes.css";
 import styles from "./Stage.module.css";
 
 const CorpusCloud = dynamic(() => import("./CorpusCloud"), { ssr: false });

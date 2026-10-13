@@ -42,6 +42,8 @@ export type Cloud = {
   setCamera(eye: Vec3, target: Vec3, fov?: number, options?: CameraOptions): void;
   /** Chapter tint multiplied into the particle ink, low chroma (plan 3.1). */
   setTint(rgb: RGB): void;
+  /** The ink and accent, re-read when the reader switches palette. */
+  setColors(colors: { ink: RGB; voltage: RGB }): void;
   /** Scroll velocity as 0..1; particles stretch along the scroll axis (F-012). */
   setStreak(amount: number): void;
   /**
@@ -683,6 +685,11 @@ export function createCloud(
         }
       }
       if (changed) invalidate();
+    },
+    setColors(next) {
+      colors.ink = next.ink;
+      colors.voltage = next.voltage;
+      invalidate();
     },
     setTint(rgb) {
       if (rgb.every((v, i) => Math.abs(v - tint[i]) < 1e-4)) return;

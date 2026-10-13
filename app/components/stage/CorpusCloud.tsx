@@ -106,7 +106,21 @@ export default function CorpusCloud({
       particles: drawn.length,
     });
 
-    return () => cloud.destroy();
+    // A palette switch changes the custom properties; the renderer only sees
+    // them when they are read again. Read after the attribute has applied.
+    const repaint = () =>
+      requestAnimationFrame(() =>
+        cloud.setColors({
+          ink: readRGB(canvas, "--ink-rgb", [0.96, 0.95, 0.93]),
+          voltage: readRGB(canvas, "--voltage-rgb", [1, 0.31, 0]),
+        }),
+      );
+    window.addEventListener("stage:palette", repaint);
+
+    return () => {
+      window.removeEventListener("stage:palette", repaint);
+      cloud.destroy();
+    };
     // Mounted once; callbacks are read at mount by design.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

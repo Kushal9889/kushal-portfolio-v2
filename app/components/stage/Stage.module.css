@@ -51,8 +51,8 @@
 
 .bar[data-bar="voltage"],
 .ticks[data-bar="voltage"] {
-  --ink: oklch(0.14 0.002 90);
-  --hair: oklch(0.14 0.002 90 / 0.32);
+  --ink: var(--on-signal);
+  --hair: color-mix(in oklch, var(--on-signal) 32%, transparent);
   --tick-ground: var(--voltage);
 }
 

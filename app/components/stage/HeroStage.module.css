@@ -217,7 +217,7 @@
   margin-top: clamp(88px, 12vh, 132px);
   padding: 6px;
   border: 1px solid var(--hair);
-  background: oklch(0.16 0.002 90 / 0.94);
+  background: color-mix(in oklch, var(--void) 94%, transparent);
 }
 
 /* Sized to the tallest real content: question, four answer lines, three rows of
@@ -414,7 +414,7 @@
   margin: -10px 0 0 22px;
   padding: 6px 10px;
   border: 1px solid var(--voltage);
-  background: oklch(0.16 0.002 90 / 0.8);
+  background: color-mix(in oklch, var(--void) 80%, transparent);
   font-family: var(--font-mono);
   font-size: 0.8125rem;
   white-space: nowrap;
@@ -514,7 +514,7 @@
   display: grid;
   gap: 2px;
   padding: 6px 10px 7px;
-  background: oklch(0.16 0.002 90);
+  background: var(--void);
 }
 
 .gauge dt {

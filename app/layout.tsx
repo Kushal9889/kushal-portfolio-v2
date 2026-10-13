@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Martian_Mono, Bricolage_Grotesque } from "next/font/google";
 import localFont from "next/font/local";
 import { loadContent, loadCertifications, section } from "@/lib/content";
+import { DEFAULT_PALETTE, paletteIds } from "@/lib/palettes";
 // The stage page's share of the old stylesheet: tokens, the element base, and
 // the global classes the reused components match. The classic document's own
 // system is imported by the routes that render it, so the home page no longer
@@ -275,6 +276,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               // it was written, because nothing ever set this attribute.
               'var t=localStorage.getItem("theme");' +
               'if(t==="dark"||t==="light")d.dataset.theme=t;' +
+              // The stage palette, from a shared ?palette= link first (kept for
+              // the next visit) and storage second, before paint so the page
+              // never shows one palette and then repaints in another.
+              `var P=${JSON.stringify(paletteIds)},q=new URLSearchParams(location.search).get("palette");` +
+              'if(q&&P.indexOf(q)>-1)localStorage.setItem("palette",q);' +
+              'var p=q&&P.indexOf(q)>-1?q:localStorage.getItem("palette");' +
+              `if(p&&p!==${JSON.stringify(DEFAULT_PALETTE)}&&P.indexOf(p)>-1)d.dataset.palette=p;` +
               '}catch(e){}',
           }}
         />
