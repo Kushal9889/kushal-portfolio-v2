@@ -535,61 +535,36 @@
 
 
 /*
- * The closing wordmark.
- *
- * Outlined rather than filled, and that is the whole reason it can be this
- * large. The two chapter headings above it are solid with a misregistered second
- * impression behind them; a third element at that weight would compete with
- * both. A stroke at the hairline colour occupies the same area and almost none
- * of the visual weight, so it reads as a watermark on the stock rather than as
- * another headline.
- *
- * It runs past the right edge on purpose. `overflow-x: clip` on the footer
- * rather than `hidden`, so no scroll container is created and nothing on the
- * page gains a scrollbar; and because the element is decorative and
- * aria-hidden, nothing readable is being cut off. That is the difference
- * between this and the section headings, which wrap instead: those carry a
- * focusable control inside them.
+ * The closing wordmark: the name, solid, in the claim white. The outline it replaced was a 2px
+ * stroke at 36 to 64 percent that vanished over the bright end of the film.
+ * Sized so the whole name fits inside the gutters at every width; the footer
+ * clips rather than scrolls, so a cut name would read as a bug.
  */
 .wordmark {
-  /* Display voice: it is the same register as the chapter headings above it,
-     one level louder and drawn rather than read. */
   font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  margin: var(--s-8) 0 0;
-  /* Same gutter as .wrap: at 9.6vw with no inset the K's stem ran into the
-     viewport edge and the footer's clip cut it on phones. */
+  margin: var(--s-8) 0 var(--s-4);
   padding-inline: clamp(1.25rem, 5vw, 4rem);
-  /* Sized so the whole name fits inside the gutters: a cut name reads as a bug. */
-  font-size: clamp(2rem, 8.4vw, 13rem);
-  font-weight: 700;
-  line-height: 0.78;
+  font-size: clamp(1.9rem, 8.2vw, 13rem);
+  font-weight: 800;
+  line-height: 0.9;
   letter-spacing: -0.05em;
   text-transform: uppercase;
   text-wrap: nowrap;
-  color: transparent;
-  /* 2px and lifted off --rule.
-   *
-   * A 1px stroke in the hairline colour measured L21 against an L4 ground and
-   * was effectively invisible: the same failure mode as a low-opacity border on
-   * a dark surface, which is the thing this scheme replaced everywhere else. It
-   * is still a watermark rather than a headline, it just exists now. */
-  -webkit-text-stroke: 2px color-mix(in oklch, var(--ink) 36%, transparent);
-  /* Over the film the name sits on the veil (data-film-scrim), so the stroke
-     can be read at 64 percent without turning into a headline. */
+  color: var(--ink);
+  -webkit-text-fill-color: var(--ink);
+  -webkit-text-stroke: 0;
+  text-shadow: 0 2px 28px color-mix(in oklch, var(--paper) 85%, transparent);
   user-select: none;
 }
 
-/* The subtitle outline the footer inherits (globals.css) draws its dark edge
-   around every glyph; on transparent, stroked letters that edge filled them in,
-   so the watermark read as black type sunk into the dark film. Over the film
-   the stroke is the whole mark, so it carries no outline. */
 html[data-film="live"] .wordmark {
-  text-shadow: none;
-  -webkit-text-stroke-color: color-mix(in oklch, var(--ink) 64%, transparent);
+  -webkit-text-stroke: 0;
 }
 
+/* The page ends on a graphite band, so the name reads over any frame. */
 .footer {
   overflow-x: clip;
+  background: linear-gradient(to bottom, transparent, color-mix(in oklch, var(--paper) 92%, transparent) 28%);
 }
 
 /* One line in place of the session card: the published latency from the eval run. */
@@ -815,4 +790,259 @@ html[data-film="live"] .wordmark {
   .eduFigures dl:has(> :nth-child(2):last-child) > div:last-child {
     grid-column: auto;
   }
+}
+
+/* ---- Beside the prose (2026-10-21) -----------------------------------------
+ * A reading column stops at its measure, which left the other half of five
+ * sections empty. That half now carries what the paragraph describes, drawn:
+ * the path of a fix, the figures of a paper, the dates of a degree, the page a
+ * reader will forward. Stacked below 62rem, the drawing after the words. */
+.beside {
+  display: grid;
+  gap: var(--s-6);
+  align-items: start;
+}
+
+@media (min-width: 62rem) {
+  .beside {
+    grid-template-columns: minmax(0, 1.4fr) minmax(15rem, 1fr);
+    column-gap: var(--s-7);
+  }
+}
+
+.figures {
+  display: grid;
+  gap: var(--s-6);
+  align-content: start;
+  padding: var(--s-4);
+  background: var(--graphite);
+  border: var(--border-hair) solid var(--rule);
+}
+
+.figures > .stack {
+  margin: 0;
+}
+
+/* The fix, as a path: report, the hours between, the merge. */
+.chain {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+
+.chainNode {
+  display: grid;
+  gap: 2px;
+  min-height: 44px;
+  padding: var(--s-3) var(--s-4);
+  background: var(--graphite);
+  border: var(--border-hair) solid var(--rule);
+  border-inline-start: 1px solid var(--tone, var(--ink));
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.chainKind {
+  font-size: var(--step--1);
+  font-weight: 600;
+}
+
+.chainLabel {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.chainState {
+  justify-self: start;
+  margin-block-start: var(--s-1);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--tone, var(--ink));
+}
+
+.chainGap {
+  padding: var(--s-4) var(--s-4) var(--s-4) var(--s-6);
+  margin-inline-start: var(--s-4);
+  border-inline-start: var(--border-hair) dashed var(--tone, var(--ink));
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.chainHours {
+  font-family: var(--font-plate, inherit);
+  font-weight: 750;
+  font-size: var(--step-1);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .chainNode {
+    transition: border-color var(--t-fast) ease;
+  }
+  .chainNode:hover {
+    border-color: var(--tone, var(--ink));
+  }
+}
+
+/* The thesis, as display type: tight leading and negative tracking as the size
+   grows, weight rather than colour for the emphasis. It stays in view while
+   the column beside it is read. */
+.pull {
+  margin: 0;
+  padding-inline-start: var(--s-5);
+  border-inline-start: 1px solid var(--tone, var(--ink));
+}
+
+.pull p {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.4vw, 2.25rem);
+  font-weight: 650;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+@media (min-width: 62rem) {
+  .pull {
+    position: sticky;
+    top: 28vh;
+  }
+}
+
+/* When he can start and the page a reader will forward. */
+.resume {
+  display: grid;
+  gap: var(--s-4);
+  align-content: start;
+}
+
+.start {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: var(--s-4);
+  background: var(--graphite);
+  border: var(--border-hair) solid var(--rule);
+}
+
+.startLabel,
+.startCount {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.startCount {
+  color: var(--tone, var(--ink-soft));
+}
+
+.startDate {
+  font-size: var(--step-2);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.sheet {
+  display: grid;
+  background: var(--graphite);
+  border: var(--border-hair) solid var(--rule);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.sheet img {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  aspect-ratio: 560 / 411;
+  object-fit: cover;
+  object-position: top;
+  border-block-end: var(--border-hair) solid var(--rule);
+}
+
+.sheetCap {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-3);
+  min-height: 44px;
+  padding: var(--s-3) var(--s-4);
+  font-weight: 600;
+}
+
+.sheetMeta {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  font-weight: 400;
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .sheet {
+    transition: border-color var(--t-fast) ease;
+  }
+  .sheet:hover {
+    border-color: var(--tone, var(--ink));
+  }
+}
+
+/* Every section by its heading, from the end of the page. */
+.footIndex {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-4) var(--s-7);
+  padding-block: var(--s-5);
+  border-block-end: var(--border-hair) solid var(--rule);
+}
+
+.footIndex ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(12rem, 45%), 1fr));
+  gap: 0 var(--s-5);
+  flex: 1 1 36rem;
+}
+
+.footIndex a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  text-decoration: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .footIndex a:hover {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+}
+
+.footIndex a:focus-visible {
+  color: var(--ink);
+}
+
+.top {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
 }
