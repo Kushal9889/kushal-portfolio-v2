@@ -198,9 +198,13 @@
   display: block;
   height: 44px;
   width: auto;
+  /* Optical, not equal heights: a wide wordmark at 44px tall is 118px of ink
+     beside two square marks. Capped, it scales down inside the same box. */
+  max-width: 4.5rem;
+  object-fit: contain;
 }
 
-/* IBM's own striped mark is not redistributable, so the name stands as type. */
+/* An issuer with no mark stands as type. */
 .wordmark {
   font-size: var(--step-1);
   font-weight: 800;
