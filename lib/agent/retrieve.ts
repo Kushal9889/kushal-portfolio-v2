@@ -1,4 +1,6 @@
-import { embedQuery, rerank } from "./model";
+import { Document } from "@langchain/core/documents";
+import { embedQuery } from "./model";
+import { NvidiaRerank } from "./rerank";
 import type { ChunkMeta } from "./query";
 import { correct } from "./vocab";
 import index from "./index.json";
@@ -202,7 +204,36 @@ export type RetrievalTrace = {
   /** Tokens repaired against the index vocabulary, as [typed, read as]. */
   corrections?: [string, string][];
   rows: FusionRow[];
+  /** Answer, partial or unknown, from the best reranker logit (or the agreement rule). */
+  band?: Band;
+  /** The best reranker logit, null when the reranker was unreachable. */
+  relevance?: number | null;
 };
+
+export type Band = "answer" | "partial" | "unknown";
+
+/**
+ * Cut points on the reranker logit, set on the dev split of
+ * content/agent-scenarios.json by scripts/agent-calibrate.ts and never on test.
+ * At or above `answer` the profile says it; between the two the profile holds
+ * something related but not the thing asked; below `partial` it is not there.
+ * Versioned with the reranker: a new model means a new calibration run.
+ */
+export const BANDS = { answer: -4.5, partial: -5.0 } as const;
+
+/** Candidates the reranker reads, and what it keeps. */
+const CANDIDATES = 50;
+/** BM25 score the agreement rule needs before it overrides an unknown band. */
+const AGREE_LEXICAL = 4;
+const RERANK_TOP = 5;
+const MAX_SECTIONS = 3;
+/**
+ * Sections answered by a fixed route and never retrieved. Work authorisation is
+ * answered when asked (policy.ts AUTHORISATION_ANSWER) and must not reach any
+ * other answer: with the model down, "Has he worked at Google?" matched "work"
+ * and served the visa paragraph as the degraded answer (AGENT_FAULT=outage).
+ */
+const NEVER_RETRIEVED = new Set(["Work authorisation"]);
 
 /**
  * The part of a question that is actually about the corpus.
@@ -296,12 +327,20 @@ export function searchText(query: string): string {
   return correct(core(query)).text;
 }
 
+/**
+ * The source line under an answer: one name per section. Two chunks of one
+ * section ("Boston University, Questrom Computational Lab" and "..., backend")
+ * used to print as two near-identical chips; a title that another title
+ * extends at a ", " boundary folds into the more specific one. Order kept.
+ */
+export function sourceTitles(chunks: { title: string }[]): string[] {
+  const titles = [...new Set(chunks.map((c) => c.title))];
+  return titles.filter((t) => !titles.some((o) => o !== t && o.startsWith(`${t}, `)));
+}
+
 export async function retrieve(
   query: string,
-  topK = 4,
-  weight: (meta: ChunkMeta | undefined) => number = () => 1,
-  floor = RELEVANCE_FLOOR,
-  metric: Metric = "cosine",
+  { topK = 4, floor = RELEVANCE_FLOOR, metric = "cosine" as Metric, deadline = Infinity } = {},
 ) {
   query = core(query);
   // Typos are repaired against the index vocabulary before scoring. BM25
@@ -313,27 +352,16 @@ export async function retrieve(
 
   let dense = new Map<number, number>();
   if (idx.vectors) {
-    const q = await embedQuery(corrected);
+    const q = await embedQuery(corrected, deadline);
     if (q) dense = rankOf(idx.vectors.map((v) => similarity(q, v, metric)), true);
   }
 
   const parentOf = new Map(idx.parents.map((p) => [p.title, p]));
 
   const fused = idx.passages.map((passage, i) => {
-    const l = lexical.get(i);
-    const d = dense.get(i);
-    /*
-     * Rank fusion, then a weight for what kind of section can answer this kind
-     * of question.
-     *
-     * Applied after fusion rather than inside it, so the weight breaks ties and
-     * demotes structurally wrong sections without being able to invent a match
-     * neither retriever found: a passage that scored zero in both still scores
-     * zero here, whatever its parent's metadata says.
-     */
-    const score =
-      ((l ? 1 / (RRF_K + l) : 0) + (d ? 1 / (RRF_K + d) : 0)) *
-      weight(parentOf.get(passage.parent)?.meta);
+    const l = NEVER_RETRIEVED.has(passage.parent) ? undefined : lexical.get(i);
+    const d = NEVER_RETRIEVED.has(passage.parent) ? undefined : dense.get(i);
+    const score = (l ? 1 / (RRF_K + l) : 0) + (d ? 1 / (RRF_K + d) : 0);
     return {
       passage,
       score,
@@ -358,32 +386,38 @@ export async function retrieve(
   const ranked = fused
     .filter((r) => r.score > 0)
     .sort((a, b) => b.score - a.score || a.best - b.best || b.lexicalScore - a.lexicalScore)
-    .slice(0, PASSAGE_K);
+    .slice(0, CANDIDATES);
 
   /*
-   * Optional cross-encoder pass over the shortlist.
-   *
-   * Off unless RERANK=1. Retrieval already scores precision@1 1.00 on the eval
-   * set and a second stage cannot improve on that, so this costs 587ms to
-   * reorder a list that is already correct. It exists, it is benchmarked by
-   * scripts/bench-retrieval.ts, and it is off -- which is a decision with a
-   * number behind it rather than a stage nobody built.
+   * The cross-encoder gate (lib/agent/rerank.ts) reads every candidate with the
+   * question and keeps the best five, each with its logit. When it cannot be
+   * reached the fused order stands and the band is never "answer": nothing has
+   * judged relevance, and keyword score alone cannot (on the dev split "What did
+   * he build in Rust?" scored BM25 37.5, above most answerable questions at
+   * 2-41). Partial when any keyword matches, unknown when none does
+   * (2026-10-10).
    */
-  let shortlist = ranked;
-  if (process.env.RERANK === "1" && ranked.length > 1) {
-    const scores = await rerank(
+  let shortlist = ranked.slice(0, PASSAGE_K);
+  let band: Band;
+  let relevance: number | null = null;
+  try {
+    if (process.env.RERANK === "0" || !ranked.length) throw new Error("rerank off");
+    const kept = await new NvidiaRerank(RERANK_TOP, deadline).compressDocuments(
+      ranked.map((r, i) => new Document({ pageContent: `${r.passage.parent}\n${r.passage.text}`, metadata: { i } })),
       corrected,
-      ranked.map((r) => `${r.passage.parent}\n${r.passage.text}`),
     );
-    if (scores) {
-      const order = new Map(scores.map((s, position) => [s.index, position]));
-      shortlist = [...ranked].sort(
-        (a, b) => (order.get(ranked.indexOf(a)) ?? 99) - (order.get(ranked.indexOf(b)) ?? 99),
-      );
-      // Rank position becomes the score so the fold below still works on one
-      // comparable number, whichever stage produced the order.
-      shortlist = shortlist.map((r, i) => ({ ...r, score: 1 / (RRF_K + i + 1) }));
-    }
+    shortlist = kept.map((d) => ({ ...ranked[d.metadata.i as number], score: d.metadata.relevance as number }));
+    relevance = shortlist[0]?.score ?? null;
+    band = relevance === null ? "unknown" : relevance >= BANDS.answer ? "answer" : relevance >= BANDS.partial ? "partial" : "unknown";
+    // A reranker can miss a paraphrase ("which reranker sat on top of the hybrid
+    // search" scored -6.8 on its own answer). When both retrievers put the same
+    // passage first and the keyword match is strong, that is independent
+    // evidence: hedge rather than refuse. Set on the dev split.
+    const top = ranked[0];
+    const i = top ? idx.passages.indexOf(top.passage) : -1;
+    if (band === "unknown" && lexical.get(i) === 1 && dense.get(i) === 1 && top.lexicalScore >= AGREE_LEXICAL) band = "partial";
+  } catch {
+    band = lexical.size > 0 ? "partial" : "unknown";
   }
 
   /*
@@ -403,7 +437,7 @@ export async function retrieve(
   for (const r of shortlist) {
     const prev = bySection.get(r.passage.parent);
     bySection.set(r.passage.parent, {
-      score: Math.max(prev?.score ?? 0, r.score),
+      score: Math.max(prev?.score ?? -Infinity, r.score),
       lexicalScore: Math.max(prev?.lexicalScore ?? 0, r.lexicalScore),
       hits: (prev?.hits ?? 0) + 1,
     });
@@ -412,14 +446,15 @@ export async function retrieve(
   const sections = [...bySection.entries()]
     .map(([title, v]) => ({ title, ...v }))
     .sort((a, b) => b.score - a.score || b.hits - a.hits)
-    .slice(0, topK);
+    .slice(0, Math.min(topK, MAX_SECTIONS));
 
   // topK is a ceiling, not a quota. A section scoring far under the leader is
   // not evidence, it is filler, and filler in the context window is how a
   // grounded answer drifts off the question that was asked. The first result
   // always survives: a weak best match is still the best match.
   const lead = sections[0]?.score ?? 0;
-  const kept = sections.filter((s, i) => i === 0 || s.score >= lead * floor);
+  // With logits the floor is absolute (BANDS.partial); with fused scores it stays relative.
+  const kept = sections.filter((s, i) => i === 0 || (relevance !== null ? s.score >= BANDS.partial : s.score >= lead * floor));
   const chosen = new Set(kept.map((s) => s.title));
 
   const trace: RetrievalTrace = {
@@ -429,6 +464,8 @@ export async function retrieve(
     // should be able to see what it was read as.
     corrections: fixes,
     passages: idx.passages.length,
+    band,
+    relevance,
     // Reported per section rather than per passage. Fifty-three rows is a
     // table; eighteen is a figure a reader can actually follow, and the section
     // is the unit the answer is grounded in.
@@ -451,5 +488,32 @@ export async function retrieve(
   return {
     chunks: kept.map((s) => parentOf.get(s.title)!).filter(Boolean),
     trace,
+    band,
+    // What a degraded answer serves: the best-ranked prose passage. A card
+    // passage ("Role: ... Stack: ...") is data, not a sentence (U16).
+    best: (shortlist.find((r) => !/^(Role|Stack|Measured|Links):/.test(r.passage.text.trim())) ?? shortlist[0])?.passage.text,
   };
+}
+
+/**
+ * The raw evidence per section: the best passage cosine and the best BM25.
+ *
+ * Ranks hide magnitude, and magnitude is what an absolute relevance test needs:
+ * rank one of a question the corpus cannot answer is still rank one. Used by
+ * scripts/agent-calibrate.ts to set thresholds on the dev split only.
+ */
+export async function sectionEvidence(query: string) {
+  const text = searchText(query);
+  const lexical = bm25(text);
+  const q = idx.vectors ? await embedQuery(text) : null;
+  const cos = q && idx.vectors ? idx.vectors.map((v) => cosine(q, v)) : null;
+  const out = new Map<string, { cosine: number | null; lexical: number }>();
+  idx.passages.forEach((p, i) => {
+    const prev = out.get(p.parent) ?? { cosine: cos ? -1 : null, lexical: 0 };
+    out.set(p.parent, {
+      cosine: cos ? Math.max(prev.cosine ?? -1, cos[i]) : null,
+      lexical: Math.max(prev.lexical, lexical[i]),
+    });
+  });
+  return out;
 }

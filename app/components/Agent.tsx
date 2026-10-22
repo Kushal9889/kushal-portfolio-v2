@@ -4,9 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import type { RetrievalTrace } from "@/lib/agent/retrieve";
 import { isAcceptance, type Offer } from "@/lib/agent/offers";
 import type { ToolResult } from "@/lib/agent/tools";
+import type { Grounding, Citation } from "@/lib/agent/ground";
 import { listen, speak, silence, speechSupported, synthesisSupported, warmNeural } from "@/lib/voice/speech";
 import { track, trackOnce } from "@/lib/analytics";
+import { mailtoLink } from "@/lib/reach";
+import Glyph from "./stage/Glyph";
+import DockDrift from "./DockDrift";
+import WorkLoop from "./WorkLoop";
+import Paced from "./Paced";
+import type { GlyphKey } from "@/lib/ui-icons";
 import styles from "./Agent.module.css";
+import { reducedMotion } from "@/lib/verbs";
 
 type Result = {
   answer: string;
@@ -29,6 +37,10 @@ type Result = {
   degraded?: boolean;
   /** The system prompt, context elided. */
   policy?: string;
+  /** Figures and names in the answer that its context does not contain. */
+  grounding?: Grounding;
+  /** The section each answer sentence came from. */
+  citations?: Citation[];
   /** Everything the retriever considered, not only what it chose. */
   trace?: RetrievalTrace | null;
   /** What to do next, computed from the sections this answer was grounded in. */
@@ -45,12 +57,14 @@ type Turn = { question: string; result: Result | null };
  * answer is useful rather than a demonstration that the box works.
  */
 const OPENERS = [
-  { q: "What has he shipped on Azure?", shows: "grounding" },
   { q: "What broke in production and how did he find it?", shows: "failure" },
-  // Swapped in for an architecture question that the third opener already
-  // covered. A 2026 screen opens on evidence, not on design: the first thing
-  // asked of anyone claiming a working agent is how they know it works.
+  // A 2026 screen opens on evidence, not on design: the first thing asked of
+  // anyone claiming a working agent is how they know it works.
   { q: "How does he know the retrieval is actually working?", shows: "evals" },
+  // Two, not three. The third asked what he shipped on Azure, which demonstrates
+  // grounding -- and the answer already rendered above this bar demonstrates
+  // grounding with its own source chips. A suggestion that repeats what is
+  // already on screen spends a row of the first viewport to show nothing new.
 ];
 
 /**
@@ -91,24 +105,42 @@ export const ASK_EVENT = "corpus:ask";
 /** The branch the router chose, so the topology figure can light its own path. */
 export const ROUTE_EVENT = "corpus:route";
 
-/**
- * One completed request, for the telemetry strip in the hero.
- *
- * Emitted per answer rather than polled, and never on a timer: the strip is
- * completely still between requests because nothing is happening between them.
- * A sparkline that moves on its own would be decoration dressed as measurement,
- * which is the one thing this page cannot afford to fake.
- */
-export const TELEMETRY_EVENT = "corpus:telemetry";
+// The request's outbound and completed events live in lib/agent/events.ts so
+// code outside React (the film) can read the same contract.
+export { SENT_EVENT, TELEMETRY_EVENT, type SentDetail, type TelemetryPing } from "@/lib/agent/events";
+import { SENT_EVENT, TELEMETRY_EVENT, type SentDetail, type TelemetryPing } from "@/lib/agent/events";
 
-export type TelemetryPing = {
-  ms: number;
-  tokens: number;
-  cost: number;
-  provider: string | null;
+type Openable = { key: string; label: string; url: string; about: string };
+
+/** How sure the answer is, from the reranker's best logit (lib/agent/retrieve.ts BANDS). */
+const BAND_LABEL: Record<NonNullable<RetrievalTrace["band"]>, string> = {
+  answer: "sure",
+  partial: "partly sure",
+  unknown: "don't know",
 };
 
-export default function Agent({ email, linkedin }: { email: string; linkedin: string }) {
+const STATUS = {
+  routing: "Classifying the question",
+  retrieving: "Searching the corpus",
+  answering: "Writing the answer",
+} as const;
+
+
+export default function Agent({
+  email,
+  linkedin,
+  site,
+  openable,
+  loop = true,
+}: {
+  email: string;
+  linkedin: string;
+  site: string;
+  /** The tool registry, as things a reader can open without asking first. */
+  openable: Openable[];
+  /** Draws the racks behind the console while an answer is written. Off where the host draws its own. */
+  loop?: boolean;
+}) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [pending, setPending] = useState(false);
   const [openTrace, setOpenTrace] = useState<number | null>(null);
@@ -127,7 +159,6 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
   /** Set when the microphone is unavailable, so the failure is stated rather than silent. */
   const [micError, setMicError] = useState<string | null>(null);
   /** Rendered after mount: the shortcut differs by platform and the server cannot know it. */
-  const [modKey, setModKey] = useState("Ctrl");
   const [voiceOn, setVoiceOn] = useState(false);
   const [canVoice, setCanVoice] = useState(false);
   const mic = useRef<{ cancel: () => void } | null>(null);
@@ -142,13 +173,27 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
    */
   const pendingOpen = useRef<Extract<Offer, { kind: "open" }> | null>(null);
 
+  /*
+   * Tells the motion layer to stand down while an answer is in flight.
+   *
+   * lib/motion.ts re-measures every ScrollTrigger whenever the document
+   * changes height, and a streaming answer changes it on nearly every token,
+   * so the page was running a full layout pass per frame for the length of an
+   * answer. Driven off `pending` in an effect rather than set beside each
+   * setPending call: there are three of those, one of them an error path, and
+   * a flag left set would silently freeze re-measurement for the rest of the
+   * session.
+   */
+  useEffect(() => {
+    document.documentElement.dataset.streaming = pending ? "yes" : "no";
+  }, [pending]);
+
   // Capability is read after mount: it differs per browser, and rendering a
   // control on the server that will not work on the client is worse than not
   // offering it. Firefox has no speech recognition, so it gets the text path
   // with nothing broken on screen.
   useEffect(() => {
     setCanVoice(speechSupported() && synthesisSupported());
-    if (navigator.platform?.startsWith("Mac")) setModKey("\u2318");
     trackOnce("view");
   }, []);
 
@@ -228,7 +273,7 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
     const offscreen = box.top < 0 || box.top > window.innerHeight * 0.6;
     if (!offscreen) return;
 
-    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const calm = reducedMotion();
     root.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "center" });
 
     /*
@@ -244,11 +289,18 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
      * attempt should have finished, an instant scroll finishes the job.
      */
     if (!calm) {
+      const before = window.scrollY;
       setTimeout(() => {
-        const stillOffscreen =
+        // Only when the smooth attempt did nothing at all. The earlier version
+        // re-checked "is it offscreen" alone, which is also true whenever a
+        // long answer has grown the agent past the viewport while the reader is
+        // reading it -- so a correction meant for a scroll that never started
+        // fired mid-answer and yanked the page instead.
+        const neverMoved = Math.abs(window.scrollY - before) < 2;
+        const offscreenNow =
           root.getBoundingClientRect().top < 0 ||
           root.getBoundingClientRect().top > window.innerHeight * 0.6;
-        if (stillOffscreen) {
+        if (neverMoved && offscreenNow) {
           root.scrollIntoView({ behavior: "auto", block: "center" });
         }
       }, 700);
@@ -301,6 +353,7 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
     setStage("routing");
     setTurns((t) => [...t, { question, result: null }]);
     setPending(true);
+    window.dispatchEvent(new CustomEvent<SentDetail>(SENT_EVENT, { detail: { question, t0: performance.now() } }));
 
     // Streamed over Server-Sent Events. The answer is assembled here rather than
     // waiting on a settled response, so the first words appear roughly a second
@@ -422,6 +475,8 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
           warm: data.warm,
           degraded: data.degraded,
           policy: data.policy,
+          grounding: data.grounding,
+          citations: data.citations,
         });
         window.dispatchEvent(
           new CustomEvent<TelemetryPing>(TELEMETRY_EVENT, {
@@ -430,6 +485,13 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
               tokens: (data.usage?.in ?? 0) + (data.usage?.out ?? 0),
               cost: data.listPrice ?? 0,
               provider: data.provider ?? null,
+              tokensIn: data.usage?.in,
+              tokensOut: data.usage?.out,
+              timings: { ...timings },
+              sources,
+              warm: data.warm === true,
+              degraded: data.degraded === true,
+              answerChars: answer.length,
             },
           }),
         );
@@ -491,9 +553,9 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
   }
 
   /**
-   * The conversion step. LinkedIn removed URL-prefilled connection notes, so the
-   * line goes to the clipboard and the profile opens in a new tab. That also
-   * works for email, a referral thread, or anywhere else they would rather write.
+   * Copies the opening line and opens the profile in a new tab, because
+   * LinkedIn accepts no URL-prefilled connection note. The same line works for
+   * email or any other thread the reader would rather write in.
    */
   async function copyOpener(turn: Turn) {
     const line = `Saw your agent answer "${turn.question}" on your site. Wanted to ask about it.`;
@@ -536,6 +598,9 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
     // redefines --paper and --ink rather than introducing new names, so every
     // child stylesheet works here without knowing it is on a dark surface.
     <div className={styles.agent} id="agent" ref={rootRef} data-surface="console">
+      {/* Racks at work behind the glass, only while an answer is being
+          written: the motion is the request being served. */}
+      {loop && <WorkLoop on={pending} className={styles.workLoop} />}
       {selection && (
         <button
           data-surface="console"
@@ -590,8 +655,8 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
           ref={inputRef}
           className={styles.input}
           rows={1}
-          placeholder="Ask anything about his work"
-          aria-label="Ask anything about his work"
+          placeholder="Ask about his work"
+          aria-label="Ask about his work"
           maxLength={2000}
           disabled={pending}
           // The demo endpoint is cached for sixty seconds and shares the cold
@@ -616,12 +681,13 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
         {canVoice && !pending && (
           <button
             type="button"
-            className={listening ? `${styles.mic} ${styles.micOn}` : styles.mic}
+            className={listening ? `${styles.mic} ${styles.micLive}` : styles.mic}
             onClick={startListening}
             aria-pressed={listening}
             aria-label={listening ? "Stop listening" : "Ask by voice"}
           >
-            {listening ? "Listening" : "Speak"}
+            <Glyph name="Microphone:regular" size={18} />
+            <span>{listening ? "Listening" : "Speak"}</span>
           </button>
         )}
         {pending || listening ? (
@@ -657,25 +723,101 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
        * when the real shortcut fires so the hint demonstrates itself. */}
       <ul className={styles.hints}>
         <li>
-          <span className={styles.keys}>
-            <kbd className={styles.kbd}>{modKey}</kbd>
-            <kbd className={styles.kbd}>K</kbd>
-          </span>
-          <span>jump anywhere</span>
-        </li>
-        <li>
           <span className={styles.gesture} aria-hidden="true">
             drag
           </span>
-          <span>highlight any sentence to ask about it</span>
+          <span>select text to ask</span>
         </li>
         <li>
           <span className={styles.gesture} aria-hidden="true">
             trace
           </span>
-          <span>every answer opens its own</span>
+          {/* It sits under every answer as a control; it does not open itself. */}
+          <span>under every answer</span>
         </li>
       </ul>
+
+      {/* The registry, as controls rather than as a capability the reader has
+          to discover by guessing.
+          
+          These are the exact targets `open_evidence` routes over, and the
+          draft `compose_intro` writes. Both were reachable only by asking for
+          them in words -- the agent would open a merged pull request on
+          request and nothing on screen said so, which makes a working tool
+          layer indistinguishable from an absent one. Rendered as real links,
+          so they are visibly clickable, open without spending a model call,
+          and cannot offer anything the tool itself could not. */}
+      <details className={styles.toolkit}>
+        <summary className={styles.toolkitSummary}>
+          <span>{openable.length + 1} things it can open for you</span>
+          <span className={styles.toolkitHint}>click any of them</span>
+        </summary>
+        <ul className={styles.tools}>
+          {openable.map((t) => (
+            <li key={t.key}>
+              <a
+                className={styles.tool}
+                href={t.url}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => track("contact", `toolkit-${t.key}`)}
+              >
+                <span className={styles.toolLabel} data-id={/\s/.test(t.label) ? undefined : ""}>
+                  {t.label}
+                </span>
+                {/* What it is, in the words the registry uses to route on it. */}
+                <span className={styles.toolAbout}>{t.about}</span>
+              </a>
+            </li>
+          ))}
+          <li>
+            <a
+              className={styles.tool}
+              href={mailtoLink(email, site, "general")}
+              onClick={() => track("contact", "toolkit-draft")}
+            >
+              <span className={styles.toolLabel}>A written email to him</span>
+              <span className={styles.toolAbout}>
+                Opens your mail app with the message already drafted. Nothing is sent by this
+                site, and you can edit every word.
+              </span>
+            </a>
+          </li>
+        </ul>
+      </details>
+
+      {/* The same targets on a phone: one line, thumb-scrolled, icon first. The
+          list above needs a tap to open and then a screen to read; this is the
+          whole offer in one row. Two renderings, one shown per width. */}
+      <DockDrift className={styles.dock} label={`${openable.length + 1} things it can open for you`}>
+        {openable.map((t, n) => (
+          <li key={t.key} style={{ "--n": n } as React.CSSProperties}>
+            <a
+              className={styles.dockLink}
+              href={t.url}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={t.label}
+              onClick={() => track("contact", `toolkit-${t.key}`)}
+            >
+              <ToolIcon id={t.key} />
+              <span>{toolTag(t)}</span>
+            </a>
+          </li>
+        ))}
+        <li style={{ "--n": openable.length } as React.CSSProperties}>
+          <a
+            className={styles.dockLink}
+            href={mailtoLink(email, site, "general")}
+            aria-label="A written email to him"
+            onClick={() => track("contact", "toolkit-draft")}
+          >
+            <Glyph name="EnvelopeSimple:regular" size={18} />
+            <span>Draft</span>
+          </a>
+        </li>
+      </DockDrift>
+
 
       {/* Suggestions, until there is something better to look at.
           They rendered unconditionally before, so the same four cards sat above
@@ -699,6 +841,27 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
         </ul>
       )}
 
+      {/* What the answers come from, named where they appear, and the one link
+          a reader most often wants next. The mark is the logo alone. */}
+      <div className={styles.meta}>
+        <p className={styles.kb}>
+          <Glyph name="BookOpenText:light" size={16} />
+          <span>
+            Grounded in <b>his Obsidian knowledge base</b>
+          </span>
+        </p>
+        <a
+          className={styles.social}
+          href={linkedin}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="His LinkedIn profile"
+          onClick={() => track("contact", "linkedin")}
+        >
+          <LinkedInMark />
+        </a>
+      </div>
+
       {/* Held back until an answer exists above it. */}
       {turns.length > 0 && !pending && (
         <button
@@ -711,7 +874,17 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
         </button>
       )}
 
-      <div className={styles.thread} aria-live="polite">
+      {/* One atomic status line for assistive technology (no competing
+          live regions). The thread itself is not live: a streaming
+          answer would be re-read on every token. */}
+      <div className={styles.thread} aria-live="off" aria-busy={pending}>
+        <p role="status" className={styles.srOnly}>
+          {pending
+            ? STATUS[stage]
+            : turns.length > 0 && turns[turns.length - 1].result
+              ? "Answer ready"
+              : ""}
+        </p>
         {turns.map((turn, i) => {
           // Only the newest exchange stays open. Earlier ones collapse to the
           // question, which keeps the history reachable without letting a third
@@ -730,14 +903,19 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
             );
           return (
           <article key={i} className={styles.turn}>
-            <p className={styles.question}>{turn.question}</p>
+            {/* The exchange as typed messages: who spoke, what the graph did,
+                then the answer with the time it actually took. */}
+            <p className={styles.question}>
+              <span className={styles.msgHead}>you</span>
+              {turn.question}
+            </p>
 
             {!turn.result ? (
               // "running the graph" sat unchanged for the whole wait, which on
               // a slow provider is five seconds of a sentence that stops being
               // information after the first one. The events that drive this
               // already arrive separately, so the label follows them.
-              <p className={styles.thinking}>
+              <p className={styles.thinking} data-stage={stage}>
                 <span className="live-dot" data-state="running" />{" "}
                 <span className="live">
                   {fromLink && i === 0
@@ -748,13 +926,47 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
                         ? "searching the corpus"
                         : "writing the answer"}
                 </span>
+                <span className={styles.sweep} aria-hidden="true" />
+                {/* Where the graph is, step by step: the step running now is lit. */}
+                <span className={styles.steps} aria-hidden="true">
+                  {(["routing", "retrieving", "answering"] as const).map((k, n) => (
+                    <span key={k} data-on={stage === k || undefined}>
+                      {n > 0 && "› "}
+                      {["route", "retrieve", "answer"][n]}
+                    </span>
+                  ))}
+                </span>
               </p>
             ) : (
               <>
                 {/* Answer first, complete on its own. Evidence and trace are
                     below it, so a reader who only wants the answer is done. */}
-                <p className={styles.answer}>
-                  {turn.result.answer}
+                <p className={styles.answer} data-degraded={turn.result.degraded || undefined} data-live={(latest && pending) || undefined}>
+                  <span className={styles.msgHead}>
+                    {turn.result.route ?? "answer"}
+                    {turn.result.trace?.band && (() => {
+                      // "sure" is about the sources; an answer with a figure the
+                      // sources do not hold is at most partly sure (ground.ts).
+                      const band = turn.result.trace.band === "answer" && (turn.result.grounding?.g ?? 1) < 1 ? "partial" : turn.result.trace.band;
+                      return (
+                        <span className={styles.band} data-band={band} role="status" aria-atomic="true">
+                          {BAND_LABEL[band]}
+                        </span>
+                      );
+                    })()}
+                    {turn.result.total > 0 && <b>{turn.result.total.toLocaleString("en-US")} ms</b>}
+                    {/* Said on the answer itself, not only in the trace: a
+                        reader who never opens the trace still knows which of
+                        the two kinds of answer they are reading. */}
+                    {turn.result.degraded && <i>no model reachable, showing the passage ranked first</i>}
+                    {!!turn.result.grounding?.unsupported.length && (
+                      <i>
+                        {turn.result.grounding.unsupported.length === 1 ? "1 figure or name" : `${turn.result.grounding.unsupported.length} figures or names`} not found in his facts:{" "}
+                        {turn.result.grounding.unsupported.join(", ")}
+                      </i>
+                    )}
+                  </span>
+                  <Paced text={turn.result.answer} live={latest && pending} marks={turn.result.grounding?.unsupported} markClass={styles.unsupported} />
                   {/* The cursor is the only thing that told a reader the box was
                       thinking before the first token; once text started arriving
                       it fell silent for however long the rest of the answer took,
@@ -774,6 +986,12 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
                     nothing because these nodes did not exist a moment ago. */}
                 {turn.result.sources.length > 0 && (
                   <p className={styles.sources}>
+                    <span className={styles.msgHead}>
+                      result
+                      <b>
+                        {turn.result.sources.length} {turn.result.sources.length === 1 ? "source" : "sources"}
+                      </b>
+                    </span>
                     <span className="label">grounded in</span>{" "}
                     {turn.result.sources.map((s, n) => (
                       <span
@@ -829,6 +1047,13 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
 
                 {latest && turn.result.action?.ok && turn.result.action.kind === "draft" && (
                   <div className={styles.draft}>
+                    {/* The draft as an envelope: its subject is the flap, the
+                        body the sheet inside. Both strings are the ones the
+                        mail client receives. */}
+                    <p className={styles.draftHead}>
+                      <span>Subject</span>
+                      {turn.result.action.subject}
+                    </p>
                     <a
                       className={styles.actionBtn}
                       href={turn.result.action.mailto}
@@ -855,11 +1080,7 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
                     >
                       {copied ? "Copied" : "Copy it instead"}
                     </button>
-                    <pre className={styles.draftText}>
-                      {turn.result.action.subject}
-                      {"\n\n"}
-                      {turn.result.action.body}
-                    </pre>
+                    <pre className={styles.draftText}>{turn.result.action.body}</pre>
                   </div>
                 )}
 
@@ -868,6 +1089,10 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
                     className={styles.evalResult}
                     data-outcome={turn.result.action.passed ? "pass" : "fail"}
                   >
+                    <span className={styles.msgHead}>
+                      check
+                      <b>{turn.result.action.passed ? "passed" : "failed"}</b>
+                    </span>
                     <span className={styles.evalCase}>{turn.result.action.question}</span>
                     <span className={styles.evalAsserts}>{turn.result.action.asserts}</span>
                   </p>
@@ -957,16 +1182,33 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
 
                     {openTrace === i && (
                       <dl className={styles.trace}>
-                        {Object.entries(turn.result.timings).map(([node, ms]) => (
-                          <div key={node} className={styles.traceRow}>
-                            <dt>{node}</dt>
-                            <dd className="tabular">{ms}ms</dd>
-                            <dd
-                              className={styles.traceBar}
-                              style={{ ["--w" as string]: `${(ms / turn.result!.total) * 100}%` }}
-                            />
-                          </div>
-                        ))}
+                        <div className={styles.traceHead}>
+                          <span className={styles.msgHead}>
+                            trace
+                            <b>
+                              {Object.keys(turn.result.timings).length} nodes, {turn.result.total.toLocaleString("en-US")} ms
+                            </b>
+                          </span>
+                        </div>
+                        {(() => {
+                          // Which node actually cost the answer its time. Named
+                          // rather than left for the reader to compare bars.
+                          const entries = Object.entries(turn.result!.timings);
+                          const slowest = entries.reduce((a, b) => (b[1] > a[1] ? b : a), entries[0] ?? ["", 0])[0];
+                          return entries.map(([node, ms]) => (
+                            <div key={node} className={styles.traceRow} data-slowest={node === slowest || undefined}>
+                              <dt>
+                                {node}
+                                {node === slowest && entries.length > 1 && <em>slowest</em>}
+                              </dt>
+                              <dd className="tabular">{ms}ms</dd>
+                              <dd
+                                className={styles.traceBar}
+                                style={{ ["--w" as string]: `${(ms / turn.result!.total) * 100}%` }}
+                              />
+                            </div>
+                          ));
+                        })()}
                         {turn.result.usage && (
                           <div className={styles.traceRow}>
                             <dt>tokens</dt>
@@ -1006,6 +1248,30 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
                           </div>
                         )}
 
+                        {/* The answer read back against its sources: how many of
+                            its figures and names the context holds, and which
+                            section each sentence came from. */}
+                        {turn.result.grounding && turn.result.grounding.claims > 0 && (
+                          <div className={styles.traceRow}>
+                            <dt>grounded</dt>
+                            <dd className="tabular">
+                              {turn.result.grounding.found}/{turn.result.grounding.claims}
+                            </dd>
+                            <dd className={styles.usage}>
+                              figures and names found in the sources
+                              {turn.result.citations?.length ? (
+                                <ol className={styles.cites}>
+                                  {turn.result.citations.map((c, k) => (
+                                    <li key={k} data-none={c.source ? undefined : true}>
+                                      {c.source ?? "no source"}
+                                    </li>
+                                  ))}
+                                </ol>
+                              ) : null}
+                            </dd>
+                          </div>
+                        )}
+
                         {/* The whole roster, not only the benched half.
                             failoverState() returns every configured provider
                             and this filtered to the ones cooling off, so a
@@ -1023,6 +1289,10 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
                                   className={styles.provider}
                                   data-health={f.coolingOffFor > 0 ? "benched" : "ready"}
                                 >
+                                  {/* The square is allowed to be live here: this
+                                      is the failover state the server reported
+                                      for this request, not a claim about now. */}
+                                  <i aria-hidden="true" />
                                   {f.name}
                                   {f.coolingOffFor > 0
                                     ? ` · benched ${Math.ceil(f.coolingOffFor / 60)}m`
@@ -1058,7 +1328,13 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
                     )}
 
                     {openTrace === i && openPolicy === i && turn.result.policy && (
-                      <pre className={styles.policy}>{turn.result.policy}</pre>
+                      <div className={styles.policyBlock}>
+                        <p className={styles.msgHead}>
+                          system
+                          <b>context elided</b>
+                        </p>
+                        <pre className={styles.policy}>{turn.result.policy}</pre>
+                      </div>
                     )}
                   </>
                 )}
@@ -1069,10 +1345,11 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
         })}
       </div>
 
-      {/* A preference, so it sits after the conversation rather than inside it.
-          Between the ask bar and the suggested questions it spent 44px of the
-          first screen on a control most visitors never touch. */}
-      {canVoice && (
+      {/* A preference, so it sits after the conversation rather than inside it,
+          and only once there is a conversation: before the first answer there
+          is nothing to read aloud, and the control spent 44px of the first
+          screen offering to speak silence. */}
+      {canVoice && turns.length > 0 && (
         <label className={styles.voiceToggle}>
           <input
             type="checkbox"
@@ -1095,16 +1372,13 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
       )}
 
       {showConversion && (
-        <div className={styles.conversion}>
+        <div className={styles.reachRow}>
           <button className={styles.copy} data-copied={copied || undefined} onClick={() => copyOpener(last)}>
             {copied ? "Copied. Paste it anywhere." : "Copy an opening line"}
           </button>
           <button className={styles.copy} data-copied={shared || undefined} onClick={() => shareTurn(last)}>
             {shared ? "Link copied" : "Share this answer"}
           </button>
-          <a href={linkedin} target="_blank" rel="noreferrer" onClick={() => track("contact", "linkedin")}>
-            LinkedIn
-          </a>
           <a href={`mailto:${email}`} onClick={() => track("contact", "email")}>
             {email}
           </a>
@@ -1112,4 +1386,39 @@ export default function Agent({ email, linkedin }: { email: string; linkedin: st
       )}
     </div>
   );
+}
+
+/** LinkedIn's mark, the logo alone. Colour comes from the surrounding text. */
+function LinkedInMark() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true" focusable="false">
+      <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+    </svg>
+  );
+}
+
+/** One glyph per kind of thing the agent can open. */
+function ToolIcon({ id }: { id: string }) {
+  if (id === "linkedin") return <LinkedInMark />;
+  const name: GlyphKey = /issue/.test(id)
+    ? "Bug:bold"
+    : /fix|merged/.test(id)
+      ? "GitMerge:bold"
+      : /pull|pr\b/.test(id)
+        ? "GitPullRequest:bold"
+        : /ieee|igi|paper|published|cyber|deep-learning/.test(id)
+          ? "BookOpenText:light"
+          : /github/.test(id)
+            ? "GitBranch:bold"
+            : "Terminal:regular";
+  return <Glyph name={name} size={18} />;
+}
+
+/** The short name a chip carries: the reference after the slash, or the first words. */
+function toolTag(t: { key: string; label: string }) {
+  if (t.key === "linkedin") return "LinkedIn";
+  if (t.key === "github") return "GitHub";
+  if (t.key === "repository") return "Source";
+  const ref = t.label.split("/").pop() ?? t.label;
+  return ref.length > 18 ? `${ref.slice(0, 16)}\u2026` : ref;
 }

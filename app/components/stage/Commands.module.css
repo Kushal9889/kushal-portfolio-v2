@@ -1,0 +1,141 @@
+.palette {
+  width: min(640px, 92vw);
+  max-width: none;
+  max-height: min(560px, 80vh);
+  margin: 12vh auto auto;
+  padding: 0;
+  border: 1px solid var(--hair-strong);
+  background: var(--void-raised);
+  color: var(--ink);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    opacity 180ms var(--ease-glass),
+    transform 280ms var(--ease-glass),
+    overlay 280ms allow-discrete,
+    display 280ms allow-discrete;
+}
+
+.palette[open] {
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@starting-style {
+  .palette[open] {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.palette::backdrop {
+  background: oklch(0 0 0 / 0.5);
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 56px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 400 1.0625rem/1 var(--font-spine);
+  caret-color: var(--voltage);
+}
+
+.input::placeholder {
+  color: var(--ink-faint);
+}
+
+.input:focus {
+  outline: none;
+}
+
+.field:focus-within {
+  box-shadow: inset 0 -2px 0 var(--voltage);
+}
+
+.esc {
+  padding: 3px 6px;
+  border: 1px solid var(--hair);
+  font: 500 0.75rem/1 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+.list {
+  margin: 0;
+  padding: 6px 0 10px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.group {
+  margin: 10px 16px 4px;
+  font: 400 0.75rem/1.2 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-left: 2px solid transparent;
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.option[aria-selected="true"] {
+  border-left-color: var(--voltage);
+  background: oklch(0.96 0.003 90 / 0.06);
+}
+
+.label {
+  font: 500 0.9375rem/1.3 var(--font-spine);
+}
+
+.hint {
+  flex: none;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 0.75rem/1 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+.empty {
+  padding: 16px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .palette {
+    transition: none;
+  }
+}

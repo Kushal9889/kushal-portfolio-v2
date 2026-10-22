@@ -1,20 +1,15 @@
 /**
- * The distance between deciding and acting.
+ * Builds a prefilled `mailto:` draft, the same text as plain text for clients
+ * that ignore `mailto:`, and the note the LinkedIn flow copies.
  *
- * Every contact link on this page was a bare `mailto:`, which opens an empty
- * draft and hands the reader a blank page at the exact moment they had decided
- * to write. The cost of that blank page is paid by the person we most want to
- * hear from, and it is paid silently: nobody reports the email they did not
- * send.
+ * One function builds each string once: the subject and body handed to the mail
+ * client are the same values the page prints on screen, so the two cannot drift.
+ * Every value comes from `content/facts.md` through the caller; nothing here
+ * restates a fact.
  *
- * So the draft arrives written. Not a form, not a template with brackets to
- * fill, and not a message pretending to be from them. It is a short, honest
- * opener a busy person can send as-is or overwrite in two seconds, and it names
- * the specific thing the sender was reading, so the reply lands with context
- * already attached.
- *
- * Everything below is generated from `content/facts.md`. Nothing here restates
- * a fact, because a second copy of a fact is a fact that can drift.
+ * Bodies are written in the sender's voice and assert nothing about who the
+ * sender is, because the text is typed into a stranger's outbox under their own
+ * name.
  */
 
 /** Where the reader was when they decided to write. Shapes the opener only. */
@@ -31,10 +26,9 @@ export type ReachContext =
  * Subject lines are the part an inbox shows before anything else, so they carry
  * the specific hook and nothing else.
  *
- * The general subject used to read "Your portfolio, and a role I think fits".
- * That is a claim about who is writing, made before anyone has written a word,
- * and it was wrong for every sender who was not a recruiter. A subject line
- * states what the message is about; who the sender is, is theirs to say.
+ * The general subject once read "Your portfolio, and a role I think fits",
+ * which asserts who is writing before they have written a word. A subject line
+ * here states what the message is about and nothing about its sender.
  */
 export const SUBJECT: Record<ReachContext, string> = {
   general: "Your portfolio",
@@ -53,21 +47,12 @@ export const SUBJECT: Record<ReachContext, string> = {
 };
 
 /**
- * Openers are written in the SENDER's voice, and claim nothing on their behalf.
+ * Openers name what the reader was looking at and assert nothing about who is
+ * writing.
  *
- * Two rules, both learned from the version this replaces.
- *
- * First: state what they read, not how they felt about it. The previous
- * openers admired -- "I spent a while on the retrieval figure", "I had a look
- * at" -- and admiration in a stranger's outbox reads as flattery they did not
- * choose to send.
- *
- * Second: never assert who the sender is. Every previous body ended with "I am
- * hiring for a role I think could be a fit", which meant an engineer, a
- * classmate or a former colleague who clicked had a false claim typed into
- * their outbox under their own name. The file's own comment two paragraphs up
- * promised "not a message pretending to be from them"; that line broke the
- * promise. The ask is neutral now, and works whoever is writing.
+ * Two constraints hold every string below. The text states which chapter the
+ * draft was opened from, never an opinion of it. And no body may include a
+ * claim about the sender, because the sender is whoever pressed the link.
  */
 export const OPENER: Record<ReachContext, string> = {
   general: "I came across your portfolio and read through it.",
@@ -116,14 +101,11 @@ export function mailtoLink(email: string, site: string, context: ReachContext = 
 }
 
 /**
- * The same draft as plain text, for when `mailto:` does nothing.
+ * The same draft as plain text.
  *
- * A locked-down corporate machine with no mail client registered, and a reader
- * living in webmail, both get the same result from a `mailto:` link: the click
- * lands, nothing opens, and the page looks broken at the exact moment someone
- * decided to act. There is no event for that failure, so it cannot be detected
- * and has to be covered instead. Every caller that opens a draft can also hand
- * over the identical text to paste.
+ * A `mailto:` press on a machine with no mail client registered raises no event,
+ * so the failure cannot be detected and is covered instead: every caller that
+ * opens a draft can also show the identical text to copy.
  */
 export function mailDraft(email: string, site: string, context: ReachContext = "general") {
   return {
@@ -137,17 +119,14 @@ export function mailDraft(email: string, site: string, context: ReachContext = "
 export const LINKEDIN_NOTE_LIMIT = 300;
 
 /**
- * LinkedIn cannot be handed a prefilled message by URL.
+ * LinkedIn accepts no prefilled message by URL.
  *
- * The message parameter on /messaging/thread was removed, and the connect flow
- * accepts no note from a link. Anything claiming otherwise sends the reader to
- * a dead screen, which is worse than sending them to the profile. So the
- * profile opens, and the note is copied to their clipboard at the same moment,
- * with a line on the page telling them it is there. One paste instead of one
- * blank box.
+ * The message parameter on /messaging/thread was removed and the connect flow
+ * takes no note from a link, so the profile opens and the note is copied to the
+ * clipboard at the same moment, with a line on the page saying so.
  *
- * Trimmed to the connection-note limit rather than trusted to fit. The previous
- * version appended a hiring claim to the longest opener and never checked the
+ * Trimmed to the connection-note limit rather than trusted to fit. An earlier
+ * version appended a claim about the sender to the longest opener and never checked the
  * total, so the two longest contexts were over the cap and LinkedIn would have
  * cut them mid-sentence in front of the person being written to.
  */
@@ -161,13 +140,9 @@ export function linkedinNote(context: ReachContext = "general") {
 }
 
 /**
- * The three lines an internal employee forwards, rather than the page a
- * recruiter reads.
+ * Three lines and a link, short enough to paste into a message.
  *
- * Most hires that come from a portfolio do not come from the person who found
- * it. They come from that person pasting something into a channel, and what
- * they paste is whatever is short enough to paste. A URL alone forces the next
- * reader to open a tab before they know whether it is worth one, so the three
+ * A URL alone tells the next reader nothing before they open it, so the three
  * strongest facts travel with it, and the link is the condensed view, which is
  * the version that survives being opened on a phone in a meeting.
  *
@@ -181,7 +156,9 @@ export function forwardBlurb(
   return [
     `${profile.name} - ${profile.current}.`,
     profile.proof,
-    `His site runs a live agent over his own resume: ${evals.passed}/${evals.cases} eval assertions pass, ${evals.p50}ms median answer.`,
+    // `passed` counts cases green on every run, not assertions: calling them
+    // assertions overstated what the suite checks by a whole unit.
+    `His site runs a live agent over his own resume: ${evals.passed} of ${evals.cases} eval cases pass on every run, ${evals.p50}ms median answer.`,
     `${profile.site}?mode=condensed`,
   ].join("\n");
 }

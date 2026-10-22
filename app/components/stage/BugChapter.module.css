@@ -1,0 +1,921 @@
+.bug {
+  position: relative;
+  z-index: 2;
+  height: 100vh;
+  min-height: 720px;
+}
+
+.inner {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  align-items: center;
+  gap: 48px;
+  padding: 88px clamp(24px, 5vw, 88px) 32px;
+}
+
+/* ---- The claim ---------------------------------------------------------- */
+
+.figure {
+  display: inline-block;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-stretch: 90%;
+  font-size: clamp(7rem, 14vw, 13.5rem);
+  font-weight: 820;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.78;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.figure:focus-visible {
+  outline: 2px solid var(--voltage);
+  outline-offset: 6px;
+}
+
+.unit {
+  margin: 14px 0 0;
+  max-width: 30ch;
+  text-wrap: balance;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-size: clamp(1.375rem, 1.9vw, 2rem);
+  font-weight: 760;
+  font-stretch: 82%;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0 0.12em;
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: inset 0 -0.42em 0 color-mix(in oklch, var(--langchain) 26%, transparent);
+}
+
+.brand svg {
+  color: var(--langchain);
+}
+
+.lead {
+  margin: 12px 0 0;
+  max-width: 42ch;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* Diff notation, not an icon: the column a reader of any diff expects. */
+.line::before {
+  content: attr(data-mark);
+  position: absolute;
+  left: 6px;
+  color: var(--ink-soft);
+}
+
+.bad,
+.good,
+.good::before {
+  color: var(--ink);
+}
+
+/* Struck, not deleted: the line looked correct, so it stays legible. */
+.struck {
+  position: relative;
+  display: inline-block;
+}
+
+.strike {
+  position: absolute;
+  top: 52%;
+  left: -3px;
+  right: -3px;
+  height: 2px;
+  background: var(--ink);
+  transform-origin: left center;
+}
+
+.fix {
+  padding-top: 12px;
+  border-top: 1px solid var(--hair);
+}
+
+/* ---- The log: the headline figure drawn to scale ------------------------ */
+
+.log {
+  max-width: 480px;
+  margin: 18px 0 0;
+}
+
+.stamps {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0;
+  font: 400 0.8125rem/1.4 var(--font-code);
+  color: var(--ink);
+}
+
+.stamps em {
+  margin-right: 8px;
+  font-style: normal;
+  color: var(--ink-soft);
+}
+
+/* Both ends are ruled in ink; each midnight between them is a hairline with its
+   date under it, so the bar reads as a measured interval, not a progress bar. */
+.span {
+  position: relative;
+  height: 22px;
+  margin-top: 8px;
+  border-right: 1px solid var(--ink);
+  border-left: 1px solid var(--ink);
+}
+
+.span i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: color-mix(in oklch, var(--ink) 30%, transparent);
+}
+
+.span i span {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  transform: translateX(-50%);
+  font: 400 0.6875rem/1 var(--font-mono);
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+
+/* A midnight close to the merge labels to its left, so the date never overhangs the ruled end. */
+.span i[data-end] span {
+  transform: translateX(-100%);
+}
+
+.bar {
+  position: absolute;
+  top: 8px;
+  right: 0;
+  left: 0;
+  height: 6px;
+  transform-origin: left center;
+  background: var(--ink);
+}
+
+/* ---- Provenance and the merged patch ------------------------------------ */
+
+.figureSource {
+  margin: 14px 0 0;
+}
+
+.patch {
+  margin-left: auto;
+}
+
+/* The patch covers the walk-through from the caption down; the caption, and the
+   control that closes the patch, stay above it on one row. */
+
+.patch summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--hair-strong);
+  font: 400 0.75rem/1 var(--font-code);
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+}
+
+.patch summary::-webkit-details-marker {
+  display: none;
+}
+
+.patch summary svg {
+  margin-left: 8px;
+  transition: transform 200ms var(--ease-arrive);
+}
+
+.patch[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.patch summary:focus-visible,
+.patchBody:focus-visible {
+  outline: 2px solid var(--voltage);
+  outline-offset: 2px;
+}
+
+/* Laid over the walk-through on the same sheet, so opening the patch never
+   changes the height of a pinned chapter. It scrolls inside itself. */
+.patchBody {
+  position: absolute;
+  z-index: 3;
+  inset: 58px 0 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0 28px 24px;
+  background: var(--void-raised);
+}
+
+.patchFile + .patchFile {
+  margin-top: 18px;
+}
+
+.patchPath {
+  position: sticky;
+  top: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--hair);
+  background: var(--void-raised);
+  font: 700 0.75rem/1.3 var(--font-code);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.patchPath span {
+  flex: none;
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+.patchCode {
+  display: grid;
+  margin: 6px 0 0;
+  font: 400 0.75rem/1.7 var(--font-code);
+}
+
+.patchCode code {
+  display: grid;
+  grid-template-columns: 4ch 4ch minmax(0, 1fr);
+  gap: 10px;
+  color: var(--ink-soft);
+}
+
+.gutter {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in oklch, var(--ink) 38%, transparent);
+  user-select: none;
+}
+
+.patchText {
+  white-space: pre;
+}
+
+.patchCode code[data-mark="+"] {
+  color: var(--ink);
+  background: color-mix(in oklch, var(--voltage) 12%, transparent);
+}
+
+.patchCode code[data-mark="@"] {
+  margin-top: 6px;
+  color: color-mix(in oklch, var(--ink) 55%, transparent);
+}
+
+
+
+/* ---- Claim column additions ------------------------------------------- */
+
+.machine {
+  margin: 10px 0 0;
+  font: 400 0.8125rem/1.4 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+.machine span {
+  color: var(--ink);
+}
+
+.stamps span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stamps svg {
+  color: var(--ink-soft);
+}
+
+/* The log foot reads as structured output: key and value pairs on one hairline. */
+.logFoot {
+  margin-top: 22px;
+}
+
+.logFoot dl,
+.rows,
+.invariant dl {
+  margin: 0;
+}
+
+.logFoot dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  width: fit-content;
+  border: 1px solid var(--hair);
+  background: var(--hair);
+}
+
+.logFoot dl div {
+  display: flex;
+  gap: 6px;
+  padding: 4px 7px;
+  background: var(--void);
+  font: 400 0.6875rem/1.3 var(--font-mono);
+}
+
+.logFoot dt,
+.rows dt,
+.invariant dt {
+  color: var(--ink-soft);
+}
+
+.logFoot dd,
+.rows dd,
+.invariant dd {
+  margin: 0;
+  color: var(--ink);
+}
+
+.sinceMerge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 14px 0 0;
+  font: 400 0.75rem/1.3 var(--font-mono);
+  color: var(--ink);
+}
+
+.sinceMerge i {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--hair-strong);
+}
+
+.sinceMerge[data-live] i {
+  border-color: var(--live);
+  background: var(--live);
+}
+
+.sinceMerge span {
+  color: var(--ink-soft);
+}
+
+/* ---- Lineage: a thread spine with a node per report ------------------- */
+
+.chain {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  margin: 14px 0 0;
+  padding: 0 0 0 18px;
+  list-style: none;
+}
+
+.chain::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 2px;
+  width: 1px;
+  background: var(--hair-strong);
+}
+
+.chain li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chain li > i {
+  position: absolute;
+  left: -18px;
+  width: 5px;
+  height: 5px;
+  background: var(--ink);
+}
+
+.chain li svg {
+  color: var(--ink-soft);
+}
+
+.chain a {
+  font: 500 0.875rem/1.3 var(--font-mono);
+  color: var(--ink);
+  text-underline-offset: 3px;
+}
+
+.chain span {
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+/* ---- The log of the case ---------------------------------------------- */
+
+/* The frame clips; the log inside it scrolls up as each message arrives. */
+.frame {
+  position: relative;
+  align-self: stretch;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, transparent 0, var(--ink) 32px, var(--ink) calc(100% - 8px), transparent 100%);
+}
+
+.stream {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  margin: 0;
+  padding: 32px 0 48px 22px;
+  list-style: none;
+}
+
+.stream::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  background: var(--hair);
+}
+
+.message {
+  position: relative;
+  min-width: 0;
+  padding: 14px 18px 16px;
+  border: 1px solid var(--hair);
+  border-radius: 2px;
+  background: var(--void-raised);
+}
+
+.message::before {
+  content: "";
+  position: absolute;
+  top: 20px;
+  left: -26px;
+  width: 9px;
+  height: 1px;
+  background: var(--hair-strong);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font: 400 0.75rem/1.3 var(--font-mono);
+  color: var(--ink);
+}
+
+.head > span,
+.head time {
+  color: var(--ink-soft);
+}
+
+.head time {
+  margin-left: auto;
+}
+
+.head svg {
+  color: var(--ink-soft);
+}
+
+.call {
+  margin: 0;
+  overflow-x: auto;
+  font: 400 0.8125rem/1.5 var(--font-mono);
+  color: var(--ink);
+  white-space: pre;
+}
+
+.badge {
+  margin-left: auto;
+  padding: 1px 6px;
+  border: 1px solid var(--hair-strong);
+  font-weight: 400;
+  color: var(--ink-soft);
+}
+
+.badge[data-live] {
+  border-color: var(--live);
+  color: var(--ink);
+}
+
+.rows {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 20px;
+}
+
+.rows div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 0;
+  border-bottom: 1px dotted var(--hair);
+  font: 400 0.75rem/1.4 var(--font-mono);
+}
+
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--hair-strong);
+  border-radius: 50%;
+  font: 600 0.5625rem/1 var(--font-mono);
+  color: var(--ink);
+}
+
+.body {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.body p {
+  margin: 0;
+}
+
+blockquote.body {
+  padding-left: 12px;
+  border-left: 1px solid var(--hair-strong);
+}
+
+.issue {
+  display: inline-block;
+  margin-top: 8px;
+  font: 400 0.75rem/1.3 var(--font-mono);
+  color: var(--ink-soft);
+  text-underline-offset: 4px;
+}
+
+/* ---- Walk-through ----------------------------------------------------- */
+
+.walk {
+  padding-bottom: 18px;
+}
+
+.caption {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 8px;
+  font: 400 0.75rem/1.3 var(--font-mono);
+  white-space: nowrap;
+}
+
+.repo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  color: var(--ink);
+  text-underline-offset: 4px;
+}
+
+.path {
+  color: var(--ink-soft);
+}
+
+.code {
+  display: grid;
+  margin: 0;
+  overflow-x: auto;
+  font: 400 0.8125rem/1.6 var(--font-mono);
+  font-variant-numeric: slashed-zero;
+}
+
+.line {
+  position: relative;
+  padding-left: 26px;
+  white-space: pre;
+  color: var(--ink-soft);
+}
+
+.bad {
+  background: color-mix(in oklch, var(--fail) 18%, transparent);
+}
+
+.bad::before {
+  color: var(--fail);
+}
+
+.strike {
+  background: var(--fail);
+}
+
+.good {
+  background: color-mix(in oklch, var(--signal) 12%, transparent);
+}
+
+.good::before {
+  color: var(--signal);
+}
+
+/* The swallowed error: dots fall onto the line and vanish into it. */
+.drops {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.drops i {
+  position: absolute;
+  top: 40%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--fail);
+  opacity: 0;
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.verdict {
+  margin: 12px 0 10px;
+  max-width: 56ch;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.verdict samp {
+  font-family: inherit;
+  color: var(--ink);
+}
+
+.verdict a {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink);
+  text-underline-offset: 4px;
+}
+
+.invariant {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--hair-strong);
+}
+
+.invariant svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--ink-soft);
+}
+
+.invariant dl {
+  display: grid;
+  gap: 2px;
+}
+
+.invariant div {
+  display: flex;
+  gap: 10px;
+  font: 400 0.75rem/1.5 var(--font-mono);
+}
+
+.invariant dt {
+  flex: none;
+  width: 6ch;
+}
+
+/* ---- The merge event -------------------------------------------------- */
+
+.event {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 4px 12px;
+  padding-top: 40px;
+  background: transparent;
+  border-style: dashed;
+}
+
+.branches {
+  position: absolute;
+  top: -16px;
+  left: 4px;
+  width: 60px;
+  height: 64px;
+  fill: none;
+  stroke: var(--hair-strong);
+  stroke-width: 1;
+  stroke-dasharray: 1;
+}
+
+.mergeGlyph {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 16px;
+  border-radius: 50%;
+  background: var(--signal);
+  color: var(--on-signal);
+}
+
+ /* The merge is the chapter's one outcome, so it is set as a state plate:
+   monument weight, a live-square beside it, and its own orange rule. */
+.prState {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 2px 12px 4px 10px;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-size: 1.75rem;
+  font-weight: 800;
+  font-stretch: 90%;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-transform: lowercase;
+}
+
+.prState::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  background: var(--signal);
+}
+
+.prState::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--signal);
+}
+
+.prLink {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--hair-strong);
+  font: 400 0.8125rem/1.3 var(--font-mono);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.prLink::before {
+  content: "$ ";
+  color: var(--ink-soft);
+}
+
+.prLink:hover {
+  background: var(--paper-high);
+}
+
+.prName {
+  grid-column: 2 / -1;
+  font: 400 0.75rem/1.3 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+/* ---- Receipt ------------------------------------------------------------ */
+
+.receipt {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding-top: 10px;
+  font: 400 0.6875rem/1.3 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+.receipt::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-top: 1px dotted var(--hair-strong);
+}
+
+.receipt span:first-child {
+  color: var(--ink);
+}
+
+/* Three dots from the field while the next message is being written. */
+.typing {
+  position: absolute;
+  bottom: 12px;
+  left: 22px;
+  display: flex;
+  gap: 5px;
+  margin: 0;
+  opacity: 0;
+}
+
+.typing i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+  animation: typing 900ms ease-in-out infinite;
+}
+
+.typing i:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.typing i:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+@keyframes typing {
+  50% {
+    transform: translateY(-3px);
+    opacity: 0.4;
+  }
+}
+
+.repo:focus-visible,
+.verdict a:focus-visible,
+.prLink:focus-visible,
+.issue:focus-visible,
+.chain a:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+/* Reduced motion and small screens read the log in flow, nothing withheld. */
+@media (prefers-reduced-motion: reduce) {
+  .bug {
+    height: auto;
+  }
+
+  .frame {
+    mask-image: none;
+  }
+
+  .typing {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .bug {
+    height: auto;
+  }
+
+  .inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .frame {
+    overflow: visible;
+    mask-image: none;
+  }
+
+  .rows {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .frame {
+    min-width: 0;
+  }
+
+  .caption {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+
+  .patch {
+    margin-left: 0;
+  }
+}

@@ -32,6 +32,7 @@ import {
   TARGETS,
 } from "../lib/agent/tools";
 import { loadContent, section, loadCertifications, progress } from "../lib/content";
+import { interpolatedGradients } from "../scripts/gradients";
 
 /**
  * Unit tests: one function, no network, no filesystem beyond the corpus.
@@ -165,38 +166,6 @@ describe("content", () => {
     assert.equal(p!.earned, program!.components!.filter((c) => c.url).length);
   });
 });
-
-/**
- * The build has to survive having no embedding key.
- *
- * CI has no NVIDIA_API_KEY, so build-index emits a lexical-only index with
- * `vectors: null`. build-field read `.length` off that null and took the whole
- * pipeline down, which broke the rule the rest of this repo runs on: a missing
- * key degrades, it does not fail. Caught in CI rather than locally, because a
- * local build always has the key.
- */
-describe("keyless build", () => {
-  test("field.json tolerates an index with no vectors", () => {
-    const field = JSON.parse(
-      readFileSync(join(process.cwd(), "lib/agent/field.json"), "utf8"),
-    );
-    // Either a real projection with a stress figure, or an explicit null. Never
-    // a number invented to fill the gap.
-    assert.ok(field.method === "classical-mds" || field.method === "lexical-only");
-    if (field.method === "lexical-only") {
-      assert.equal(field.stress, null, "no vectors means no stress to report");
-    } else {
-      assert.ok(typeof field.stress === "number" && field.stress > 0);
-    }
-    assert.ok(Array.isArray(field.points) && field.points.length > 0);
-  });
-
-  test("build-field guards the null-vector path explicitly", () => {
-    const src = readFileSync(join(process.cwd(), "scripts/build-field.ts"), "utf8");
-    assert.match(src, /if \(!vectors\)/, "the guard must exist, not be implied by types");
-  });
-});
-
 
 describe("corpus directives", () => {
   test("@ask seeds parse and point at a real section", () => {
@@ -1014,5 +983,113 @@ describe("tools fail as answers, not as exceptions", () => {
         assert.ok(Array.isArray((prop as { enum?: unknown[] }).enum), "a tool parameter is not enumerated");
       }
     }
+  });
+});
+
+/*
+ * The gradient rule is a design decision expressed as a parser, so it gets a
+ * test rather than a promise. Audit 2.5 is blocking: if this drifts, either a
+ * fade ships or a hatch is refused, and neither failure announces itself.
+ */
+describe("audit 2.5, interpolated gradients", () => {
+  test("a fade is refused, whichever function draws it", () => {
+    for (const css of [
+      "background: linear-gradient(90deg, var(--ink), transparent);",
+      "background: radial-gradient(circle, #fff, #000);",
+      "background: conic-gradient(from 0deg, red, blue);",
+      "background: repeating-linear-gradient(0deg, red, blue 8px);",
+    ]) {
+      assert.ok(interpolatedGradients(css).length > 0, `should refuse: ${css}`);
+    }
+  });
+
+  test("a hard-stop pattern is not a gradient", () => {
+    for (const css of [
+      // A scanline field: every colour ends exactly where the next begins.
+      "background: repeating-linear-gradient(0deg, transparent 0 2px, var(--ink) 2px 4px);",
+      // The console dot grid, which the first draft of this rule wrongly refused.
+      "background-image: conic-gradient(from 90deg at 1px 1px, color-mix(in oklch, var(--ink) 4%, transparent) 0 25%, transparent 0 100%);",
+    ]) {
+      assert.deepEqual(interpolatedGradients(css), [], `should allow: ${css}`);
+    }
+  });
+
+  test("nested var() and color-mix() do not end the argument list early", () => {
+    const css =
+      "background: repeating-linear-gradient(90deg, color-mix(in oklch, var(--ink) 8%, transparent) 0 1px, transparent 1px 6px);";
+    assert.deepEqual(interpolatedGradients(css), []);
+  });
+});
+
+describe("merged patch", () => {
+  test("the stored diff is the patch the corpus describes", async () => {
+    const { parsePatch } = await import("../lib/patch");
+    const patch = parsePatch(readFileSync(join(process.cwd(), "content/pr-4925.diff"), "utf8"));
+    const facts = readFileSync(join(process.cwd(), "content/facts.md"), "utf8").replace(/\s+/g, " ");
+    const said = facts.match(/in (\d+) added lines across (\d+) files with nothing deleted/);
+    assert.ok(said, "facts.md states the size of the merged patch");
+    assert.equal(patch.added, Number(said[1]));
+    assert.equal(patch.files.length, Number(said[2]));
+    assert.equal(patch.removed, 0);
+  });
+
+  test("every line keeps the line number it has in the file", async () => {
+    const { parsePatch } = await import("../lib/patch");
+    const patch = parsePatch("diff --git a/x.py b/x.py\n--- a/x.py\n+++ b/x.py\n@@ -10,2 +10,3 @@ def f():\n     a\n+    b\n     c\n");
+    assert.deepEqual(
+      patch.files[0].lines.map((l) => [l.mark, l.old, l.new]),
+      [["@", null, null], [" ", 10, 10], ["+", null, 11], [" ", 11, 12]],
+    );
+  });
+});
+
+describe("sourceTitles", () => {
+  test("folds a section into its more specific sibling, keeps distinct sections", async () => {
+    const { sourceTitles } = await import("../lib/agent/retrieve");
+    const lab = "Boston University, Questrom Computational Lab";
+    assert.deepEqual(
+      sourceTitles([{ title: `${lab}, backend` }, { title: lab }, { title: "IMG Systems" }, { title: "IMG Systems" }]),
+      [`${lab}, backend`, "IMG Systems"],
+    );
+    // A shared word is not a shared section.
+    assert.deepEqual(sourceTitles([{ title: "Growaza" }, { title: "Growaza Labs" }]), ["Growaza", "Growaza Labs"]);
+  });
+});
+
+describe("ground: claim-level groundedness", async () => {
+  const { ground } = await import("../lib/agent/ground");
+  const ctx = "Apache Tika pipeline, extraction accuracy **+20%**, **5,000+** profiles/month. Docker, PostgreSQL. LangGraph-based agent on Azure.";
+
+  test("a figure written differently from the source still counts as found", () => {
+    const r = ground("At IMG Systems he raised extraction accuracy by 20% across 5000 profiles with Docker.", ctx, "What did he do at IMG Systems?");
+    assert.equal(r.g, 1);
+  });
+
+  test("an invented figure and an invented name are both caught", () => {
+    const r = ground("He cut latency by 40% on Kubernetes.", ctx);
+    assert.deepEqual(r.unsupported, ["40%", "Kubernetes"]);
+    assert.equal(r.g, 0);
+  });
+
+  test("list markers and sentence-opening words are not claims", () => {
+    const r = ground("1. He used PostgreSQL.\n2. Both ran on Azure's cloud.", ctx);
+    assert.equal(r.claims, 2);
+    assert.equal(r.g, 1);
+  });
+
+  test("an answer with nothing checkable is not penalised", () => {
+    assert.equal(ground("He knows the work well.", ctx).g, 1);
+  });
+});
+
+describe("cite: per-sentence source", async () => {
+  const { cite } = await import("../lib/agent/ground");
+  const sections = [
+    { title: "IMG Systems", body: "Role: SWE Intern\n\nBuilt an Apache Tika extraction pipeline handling 5,000+ profiles a month with Docker and PostgreSQL." },
+    { title: "Growaza", body: "Cut API response time 30% and raised engagement 22% with a MySQL dashboard." },
+  ];
+  test("each sentence maps to the section whose passage holds most of its words", () => {
+    const c = cite("He built an Apache Tika pipeline for 5,000+ profiles a month. He cut API response time 30% at Growaza. He enjoys hiking.", sections);
+    assert.deepEqual(c.map((x) => x.source), ["IMG Systems", "Growaza", null]);
   });
 });

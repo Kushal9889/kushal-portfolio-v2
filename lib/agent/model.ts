@@ -33,7 +33,10 @@ const PROVIDERS: Record<
     // retrieved text, so the model is summarising rather than reasoning. This is
     // a mixture-of-experts model with roughly 3B active parameters, which is what
     // keeps time-to-first-token low enough to sit in front of a visitor.
-    model: process.env.OPENROUTER_MODEL ?? "nvidia/nemotron-3-nano-30b-a3b:free",
+    // Checked against the provider's own model list on 2026-09-16: the previous
+    // default had moved behind the paid tier and answered 404, which made the
+    // whole failover chain one provider deep without saying so.
+    model: process.env.OPENROUTER_MODEL ?? "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
     // Both, because OpenRouter routes to more than one upstream for this model
     // and they do not agree on how reasoning is suppressed. `exclude` is
     // OpenRouter's own field; `chat_template_kwargs` is what the NVIDIA-hosted
@@ -47,7 +50,10 @@ const PROVIDERS: Record<
     // change where an answer comes from, not how good it is: an earlier 8B
     // fallback answered correctly but dropped the headline metric, so a visitor
     // would have got a quietly worse site on the days the primary was capped.
-    model: process.env.NVIDIA_MODEL ?? "nvidia/nemotron-3-nano-30b-a3b",
+    // The previous default was retired by the provider and answered 410 Gone.
+    // An environment without NVIDIA_MODEL set therefore degraded every answer to
+    // the retrieved passage, which is the failure this default exists to avoid.
+    model: process.env.NVIDIA_MODEL ?? "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
     /*
      * Reasoning off, at the source.
      *
@@ -85,7 +91,22 @@ const PROVIDERS: Record<
   },
 };
 
-const ORDER: ProviderName[] = ["openrouter", "nvidia", "azure", "openai"];
+/*
+ * NVIDIA first, OpenRouter second.
+ *
+ * OpenRouter was primary for its free tier, and that tier stopped serving this
+ * model: the slug now 404s with "This model is unavailable for free. The paid
+ * version is available now". Failover caught it, so nothing broke, and every
+ * request paid a failed round trip to find out. The cooldown bounds that to
+ * once per 15 minutes rather than once per question, which is why it stayed
+ * invisible.
+ *
+ * NVIDIA runs the same model, so this changes where the answer comes from and
+ * not how good it is. OpenRouter stays in the list: the moment its slug or its
+ * tier changes back it is a working second provider, and a dead entry behind a
+ * live one costs nothing.
+ */
+const ORDER: ProviderName[] = ["nvidia", "openrouter", "azure", "openai"];
 
 /**
  * Published list prices, US dollars per million tokens.
@@ -173,6 +194,19 @@ function availableProviders(): ProviderName[] {
   return ready.length ? ready : ordered;
 }
 
+/** The model id a provider is configured to call, read from the environment per call. */
+export function modelOf(name: ProviderName): string;
+export function modelOf(name: string): string | null;
+export function modelOf(name: string) {
+  if (!(name in PROVIDERS)) return null;
+  const provider = PROVIDERS[name as ProviderName];
+  return name === "nvidia"
+    ? (process.env.NVIDIA_MODEL ?? provider.model)
+    : name === "openrouter"
+      ? (process.env.OPENROUTER_MODEL ?? provider.model)
+      : provider.model;
+}
+
 export function activeProvider(): ProviderName | null {
   return availableProviders()[0] ?? null;
 }
@@ -189,12 +223,7 @@ function build(name: ProviderName, streaming: boolean) {
    * several models in one process. A benchmark that silently measured one model
    * five times would have looked exactly like a benchmark.
    */
-  const model =
-    name === "nvidia"
-      ? (process.env.NVIDIA_MODEL ?? provider.model)
-      : name === "openrouter"
-        ? (process.env.OPENROUTER_MODEL ?? provider.model)
-        : provider.model;
+  const model = modelOf(name);
   const shared = {
     streaming,
     temperature: 0.1,
@@ -279,6 +308,7 @@ function build(name: ProviderName, streaming: boolean) {
  */
 export async function invokeWithFailover(
   messages: { role: string; content: string }[],
+  deadline = Infinity,
 ): Promise<{ text: string; provider: ProviderName; usage: { in: number; out: number } | null }> {
   const providers = availableProviders();
   if (providers.length === 0) throw new Error("no provider configured");
@@ -286,7 +316,7 @@ export async function invokeWithFailover(
   let lastError: unknown;
   for (const name of providers) {
     try {
-      const res = await build(name, false).invoke(messages);
+      const res = await withDeadline(() => build(name, false).invoke(messages), "answer", left(deadline, ANSWER_MS, FALLBACK_MS));
       const meta = (res.response_metadata?.tokenUsage ?? res.usage_metadata ?? null) as {
         promptTokens?: number;
         completionTokens?: number;
@@ -322,10 +352,70 @@ export async function invokeWithFailover(
  * half-finished sentence. Restarting is correct here because a partial answer
  * from one model cannot be continued coherently by another.
  */
+/** How long one provider may take to answer before the next one is tried. */
+const FIRST_TOKEN_MS = Number(process.env.AGENT_FIRST_TOKEN_MS ?? 6_000);
+
+/**
+ * A complete answer is allowed longer than a stream is allowed to open.
+ *
+ * `stream()` settles when the connection is up, which is fast or not happening;
+ * `invoke()` settles only when the whole answer is written, so it has to clear
+ * the slowest answers this model actually gives. The eval suite measured p95
+ * 5,733ms on 2026-09-16, which the 6s stream bound sits directly on top of: a
+ * slower-than-p95 answer would have been killed and degraded for no reason.
+ */
+const ANSWER_MS = Number(process.env.AGENT_ANSWER_MS ?? 15_000);
+
+/**
+ * The per-question budget (2026-10-10): 8 s from the question to an
+ * answer or the passage fallback, whatever the provider does. Each NVIDIA call
+ * gets min(its own cap, time left), so a hanging provider costs at most the
+ * budget. Measured before: embed 4 s + rerank 3 s + answer 12 s = 19.0 s.
+ */
+export const BUDGET_MS = Number(process.env.AGENT_BUDGET_MS ?? 8_000);
+/** Time a call may take: its cap, cut to what the question has left minus a reserve. */
+export function left(deadline: number, cap: number, reserve = 0): number {
+  return Math.max(0, Math.min(cap, deadline - Date.now() - reserve));
+}
+/** Kept back for the fallback answer once the model has had its turn. */
+const FALLBACK_MS = 500;
+
+/**
+ * Fault injection for the degraded-path test (scripts/agent-scenarios.ts --fault).
+ *
+ * AGENT_FAULT=outage|429|timeout makes every NVIDIA call fail the way that
+ * failure arrives in production: a refused connection and a rate limit fail at
+ * once, a timeout fails only after the call's own timeout. It runs before the
+ * request is sent, so the test spends no quota. Unset in every deployment.
+ */
+function faulted(ms: number): Promise<never> | null {
+  const fault = process.env.AGENT_FAULT;
+  if (!fault) return null;
+  const message = fault === "429" ? "429 Too Many Requests (AGENT_FAULT)" : fault === "timeout" ? "timeout (AGENT_FAULT)" : "fetch failed (AGENT_FAULT)";
+  return new Promise((_, reject) => setTimeout(() => reject(new Error(message)), fault === "timeout" ? ms : 0));
+}
+
+/**
+ * A deadline on one provider, not only on the whole request.
+ *
+ * The request timeout alone is the wrong bound when there are two providers and
+ * both are refusing: each one burns its full timeout in turn while the reader
+ * watches a running dot. Measured with both free tiers exhausted, that was forty
+ * seconds before the degraded answer the page could have served immediately.
+ * Every path that calls a provider goes through here.
+ */
+function withDeadline<T>(work: () => Promise<T>, what: string, ms = FIRST_TOKEN_MS): Promise<T> {
+  return Promise.race([
+    faulted(ms) ?? work(),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`${what} deadline`)), ms)),
+  ]);
+}
+
 export async function* streamWithFailover(
   messages: { role: string; content: string }[],
   onUsage?: (usage: { in: number; out: number }) => void,
   onProvider?: (provider: ProviderName, model: string) => void,
+  deadline = Infinity,
 ): AsyncGenerator<string> {
   const providers = availableProviders();
   if (providers.length === 0) throw new Error("no provider configured");
@@ -333,7 +423,11 @@ export async function* streamWithFailover(
   let lastError: unknown;
   for (const name of providers) {
     try {
-      const stream = await build(name, true).stream(messages);
+      // A deadline on the connection, not only on the whole request. Measured
+      // with both providers refusing: the request timeout alone left the reader
+      // watching "writing the answer" for 40 seconds before the degraded answer
+      // it could have had immediately. Whichever is shorter wins.
+      const stream = await withDeadline(() => build(name, true).stream(messages), "first token", left(deadline, FIRST_TOKEN_MS, FALLBACK_MS));
       // Reported once the provider has actually produced a stream rather than
       // when it was selected, so a provider that fails on connect is never
       // credited with an answer it did not give.
@@ -378,7 +472,23 @@ export async function* streamWithFailover(
  * model client and this one was left, because it was written as a function that
  * "returns null on failure" and read like one.
  */
-const EMBED_TIMEOUT_MS = Number(process.env.EMBED_TIMEOUT_MS ?? 4_000);
+/**
+ * The embedding model, named once because it was named at three call sites and
+ * all three died together: `nv-embedqa-e5-v5` reached end of life 2026-08-25 and
+ * answers 410. build-index reports that and continues, writing `vectors: null`,
+ * so the dense half of a hybrid retriever can stop existing without failing.
+ *
+ * Chosen by measurement, not by the migration note. NVIDIA names
+ * `llama-3.2-nv-embedqa-1b-v2`; the account does not carry it, and six of the
+ * seven listed embedding models answer 404. This one serves: 2048 dims, fixed
+ * (the endpoint rejects every other value, so no Matryoshka slicing), 249ms.
+ *
+ * Index and query path must name the same model. Cosine across two embedding
+ * spaces returns plausible numbers rather than an error.
+ */
+export const EMBED_MODEL = "nvidia/nemotron-3-embed-1b";
+
+const EMBED_TIMEOUT_MS = Number(process.env.EMBED_TIMEOUT_MS ?? 1_500);
 
 /**
  * Query vectors already computed, kept for the life of the process.
@@ -411,7 +521,7 @@ export function embedCacheStats() {
   return { size: embedCache.size, max: EMBED_CACHE_MAX };
 }
 
-export async function embedQuery(text: string): Promise<number[] | null> {
+export async function embedQuery(text: string, deadline = Infinity): Promise<number[] | null> {
   const key = process.env.NVIDIA_API_KEY;
   if (!key) return null;
 
@@ -419,16 +529,17 @@ export async function embedQuery(text: string): Promise<number[] | null> {
   if (cached) return cached;
 
   try {
-    const res = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
+    const ms = left(deadline, EMBED_TIMEOUT_MS);
+    const res = await (faulted(ms) ?? fetch("https://integrate.api.nvidia.com/v1/embeddings", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
       body: JSON.stringify({
         input: [text],
-        model: "nvidia/nv-embedqa-e5-v5",
+        model: EMBED_MODEL,
         input_type: "query",
       }),
       /*
-       * Four seconds, against a call measured at 236-421ms.
+       * 1.5 seconds (was four), against a call measured at 236-421ms.
        *
        * An order of magnitude past the observed worst case, and far short of
        * anyone's patience. Past it the dense half is simply skipped: BM25 has
@@ -437,8 +548,8 @@ export async function embedQuery(text: string): Promise<number[] | null> {
        * the better ranking is a real cost and it is not close to the cost of
        * losing the request.
        */
-      signal: AbortSignal.timeout(EMBED_TIMEOUT_MS),
-    });
+      signal: AbortSignal.timeout(ms),
+    }));
 
     if (!res.ok) return null;
     const json = await res.json();
@@ -479,15 +590,21 @@ export async function embedQuery(text: string): Promise<number[] | null> {
  * Returns null on any failure. The caller keeps the fused order, which is the
  * order it would have used anyway.
  */
+export const RERANK_MODEL = process.env.RERANK_MODEL ?? "nvidia/llama-nemotron-rerank-vl-1b-v2";
+
 export async function rerank(
   query: string,
   passages: string[],
+  deadline = Infinity,
 ): Promise<{ index: number; score: number }[] | null> {
   const key = process.env.NVIDIA_API_KEY;
   if (!key || passages.length === 0) return null;
 
   try {
-    const res = await fetch("https://ai.api.nvidia.com/v1/retrieval/nvidia/reranking", {
+    // The old rerank-qa-mistral-4b function returns 404 and llama-nemotron-rerank-1b-v2
+    // reached end of life on 2026-08-25 (410), which is why rerank never ran.
+    const rerankMs = left(deadline, Number(process.env.RERANK_TIMEOUT_MS ?? 1_500));
+    const res = await (faulted(rerankMs) ?? fetch(`https://ai.api.nvidia.com/v1/retrieval/nvidia/${RERANK_MODEL.split("/")[1]}/reranking`, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -495,14 +612,14 @@ export async function rerank(
         authorization: `Bearer ${key}`,
       },
       body: JSON.stringify({
-        model: "nvidia/rerank-qa-mistral-4b",
+        model: RERANK_MODEL,
         query: { text: query },
         passages: passages.map((text) => ({ text })),
       }),
       // Tighter than the model call. A reranker that is slow has already lost
       // the argument for using it, and the fused order is a good fallback.
-      signal: AbortSignal.timeout(Number(process.env.RERANK_TIMEOUT_MS ?? 3_000)),
-    });
+      signal: AbortSignal.timeout(rerankMs),
+    }));
     if (!res.ok) return null;
     const json = (await res.json()) as { rankings?: { index: number; logit: number }[] };
     return json.rankings?.map((r) => ({ index: r.index, score: r.logit })) ?? null;
@@ -534,6 +651,7 @@ export async function rerank(
 export async function chooseTool(
   messages: { role: string; content: string }[],
   tools: unknown[],
+  deadline = Infinity,
 ): Promise<{ calls: { name: string; args: Record<string, unknown> }[]; provider: ProviderName } | null> {
   const providers = availableProviders();
   if (providers.length === 0) return null;
@@ -541,7 +659,7 @@ export async function chooseTool(
   for (const name of providers) {
     try {
       const bound = build(name, false).bindTools(tools as never);
-      const res = await bound.invoke(messages);
+      const res = await withDeadline(() => bound.invoke(messages), "tool call", left(deadline, ANSWER_MS, FALLBACK_MS));
       return {
         calls: (res.tool_calls ?? []).map((c) => ({ name: c.name, args: (c.args ?? {}) as Record<string, unknown> })),
         provider: name,

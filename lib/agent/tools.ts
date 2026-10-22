@@ -1,4 +1,6 @@
 import { loadContent } from "../content";
+import { queryTokens } from "./tokenize";
+import { correct } from "./vocab";
 import { mailtoLink, mailDraft, type ReachContext } from "../reach";
 import { CASES } from "./evals";
 
@@ -32,27 +34,65 @@ const { profile, sections } = loadContent();
  * here, and both are sentences rather than a broken control.
  */
 
-/** Everything a reader can be shown, gathered from the corpus, not written here. */
+/**
+ * Everything a reader can be shown, gathered from the corpus, not written here.
+ *
+ * Each entry carries `about`: the words a person would actually use for this
+ * thing, assembled from the artifact's own kind and label and the heading of
+ * the section it belongs to. That string is what the model matches a question
+ * against, and it is the difference between a registry the model can route
+ * with and one it has to guess at.
+ *
+ * The keys alone were the guess. `merged_fix`, `reported_issue`, `ieee_paper`
+ * are identifiers, not language: a reader asking to see "the deep agents repo"
+ * or "the open source thing" gave the model nothing to match, so it either
+ * declined or opened whichever key read closest to the query as a string.
+ * Composed from the corpus rather than typed here, so a new artifact arrives
+ * already described and nothing has to be kept in step by hand.
+ */
 function targets() {
-  const found = new Map<string, { url: string; label: string }>();
+  const found = new Map<string, { url: string; label: string; about: string }>();
 
   // Section artifacts first. Every URL in this list is resolved by
   // `npm run verify:links` on each build, so a tool cannot open a dead page.
   for (const section of sections) {
     for (const artifact of section.artifacts) {
       const key = slug(artifact.kind, artifact.label);
-      if (!found.has(key)) found.set(key, { url: artifact.url, label: artifact.label });
+      if (!found.has(key)) {
+        found.set(key, {
+          url: artifact.url,
+          label: artifact.label,
+          about: `${artifact.kind}: ${artifact.label}. From the section "${section.title}".`,
+        });
+      }
     }
   }
 
   // Then the three links that belong to him rather than to a section.
-  found.set("linkedin", { url: profile.linkedin, label: "his LinkedIn profile" });
-  found.set("github", { url: profile.github, label: "his GitHub profile" });
-  found.set("repository", { url: profile.repo, label: "the source for this page" });
+  found.set("linkedin", {
+    url: profile.linkedin,
+    label: "his LinkedIn profile",
+    about: "His LinkedIn profile: professional profile, work history, contact.",
+  });
+  found.set("github", {
+    url: profile.github,
+    label: "his GitHub profile",
+    about: "His GitHub profile: all of his public repositories and activity.",
+  });
+  found.set("repository", {
+    url: profile.repo,
+    label: "the source for this page",
+    about:
+      "The source code for this website and the agent answering you: repo, repository, how this page is built.",
+  });
 
   return found;
 }
 
+/**
+ * A stable key for an artifact, so the same thing keeps the same name across
+ * builds even if its label is reworded.
+ */
 function slug(kind: string, label: string): string {
   const k = kind.toLowerCase();
   if (k.includes("fix") || k.includes("pull")) return "merged_fix";
@@ -63,6 +103,79 @@ function slug(kind: string, label: string): string {
 }
 
 export const TARGETS = targets();
+
+/**
+ * The registry, ordered by what the question is actually about.
+ *
+ * Scored with the same tokenizer and the same compound repair the retriever
+ * uses, so "deep agents" reaches the `deepagents` artifacts here for exactly
+ * the reason it reaches that section in retrieval, rather than through a
+ * second rule that could drift from the first.
+ *
+ * Nothing is dropped. A low-scoring target stays available and simply sits
+ * lower in the list -- the ordering is there to make the right choice
+ * obvious, not to make the others unreachable, because a reader is always
+ * free to ask for something the wording of their question did not predict.
+ */
+export function rankTargets(question: string): string[] {
+  /*
+   * A compound speaks for its parts.
+   *
+   * `correct()` repairs "deep agents" by adding the term the corpus actually
+   * indexes, "deepagents", while keeping the two words the reader typed. For
+   * scoring that is one signal arriving three times, and the two weak copies
+   * won: "deep" appears against exactly one target -- the IEEE paper, which
+   * is titled "Deep Learning for Contextual Bug Detection" -- so the rarity
+   * weighting below treated it as the most distinguishing word in the
+   * question and opened a paper for someone asking about a repository.
+   *
+   * So a token is dropped when a longer asked token begins or ends with it,
+   * which is precisely the shape a merge leaves behind. The compound keeps
+   * its own weight and the halves stop competing with it.
+   */
+  const all = queryTokens(correct(question).text);
+  const asked = new Set(
+    all.filter(
+      (token) =>
+        !all.some(
+          (other) =>
+            other.length > token.length &&
+            (other.startsWith(token) || other.endsWith(token)),
+        ),
+    ),
+  );
+  const vocab = [...TARGETS.entries()].map(([key, value]) => ({
+    key,
+    terms: new Set(queryTokens(`${key.replace(/_/g, " ")} ${value.about}`)),
+  }));
+
+  /*
+   * A term is worth what it distinguishes.
+   *
+   * Counting matches evenly, "open the source for this page" tied the
+   * repository against the deepagents issue at two hits each and lost on map
+   * order: "open" and "source" are both in the heading "Open source,
+   * LangChain deepagents", so the two words the reader leaned on were the two
+   * that separated nothing. "page" appears against one target only, and that
+   * is the word that should have decided it. Dividing by the number of
+   * targets carrying a term is the smallest thing that says so.
+   */
+  const spread = new Map<string, number>();
+  for (const entry of vocab) {
+    for (const term of entry.terms) spread.set(term, (spread.get(term) ?? 0) + 1);
+  }
+
+  return vocab
+    .map((entry) => {
+      let score = 0;
+      for (const term of entry.terms) {
+        if (asked.has(term)) score += 1 / (spread.get(term) ?? 1);
+      }
+      return { key: entry.key, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .map((s) => s.key);
+}
 
 export type ToolResult =
   | { ok: true; kind: "open"; url: string; label: string; say: string }
@@ -78,7 +191,22 @@ export type ToolResult =
  * descriptions are not a documentation problem, they are a routing problem --
  * the description is the prompt.
  */
-export function toolSchemas() {
+export function toolSchemas(question = "") {
+  /*
+   * The registry is handed over described and in order, not as bare keys.
+   *
+   * A model choosing between `merged_fix` and `ieee_paper` on identifiers
+   * alone is reading variable names, and the failure that produced was a
+   * question about "deep agents" opening the wrong artifact -- both keys are
+   * plausible strings, neither contains the words asked. Every key now
+   * arrives with the sentence describing what it is, drawn from the corpus,
+   * and the list leads with whatever the question actually scored against.
+   */
+  const ordered = question ? rankTargets(question) : [...TARGETS.keys()];
+  const catalogue = ordered
+    .map((key) => `- ${key}: ${TARGETS.get(key)?.about ?? ""}`)
+    .join("\n");
+
   return [
     {
       type: "function" as const,
@@ -95,8 +223,12 @@ export function toolSchemas() {
           properties: {
             target: {
               type: "string",
-              enum: [...TARGETS.keys()],
-              description: "Which artifact to open.",
+              enum: ordered,
+              description:
+                "Which artifact to open. Choose the one whose description matches what " +
+                "the reader asked for, and prefer the earlier entries: this list is " +
+                "ordered by how well each one scored against their question.\n" +
+                catalogue,
             },
           },
           required: ["target"],

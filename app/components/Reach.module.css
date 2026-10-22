@@ -1,5 +1,5 @@
 .wrap {
-  margin-top: clamp(1rem, 3vh, 1.75rem);
+  margin-top: var(--s-5);
 }
 
 .links {
@@ -7,7 +7,7 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 0.5rem;
+  gap: var(--s-2);
   max-width: 34rem;
 }
 
@@ -23,11 +23,11 @@
 .primary {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--s-3);
   width: 100%;
   min-height: 56px;
-  padding: 0.7rem 0.9rem;
-  border: 1px solid var(--rule);
+  padding: var(--s-3) var(--s-4);
+  border: var(--border-hair) solid var(--rule);
   background: none;
   font: inherit;
   color: inherit;
@@ -35,6 +35,7 @@
   text-decoration: none;
   cursor: pointer;
   transition:
+    transform var(--t-fast) var(--ease-out),
     border-color var(--t-fast) var(--ease-standard),
     background-color var(--t-fast) var(--ease-standard);
 }
@@ -51,7 +52,17 @@
    full ink. Weight, not colour: the accent means live state everywhere else. */
 .primary {
   border-color: var(--ink);
-  border-width: 1.5px;
+  border-width: var(--border-emphasis);
+}
+
+/* One icon column for every row: the PDF glyph is wider than the drawn marks,
+   and with each row sizing its own icon the Résumé title started 21px to the
+   right of the titles above it. An SVG given a wider box keeps its aspect and
+   centres its drawing, so the marks stay the same size. */
+.item > :first-child,
+.primary > :first-child {
+  flex: 0 0 2.5rem;
+  text-align: center;
 }
 
 .item strong,
@@ -67,7 +78,7 @@
   display: block;
   font-size: var(--step--1);
   color: var(--ink-soft);
-  margin-top: 0.1rem;
+  margin-top: var(--s-1);
 }
 
 /* A text glyph rather than a drawn icon: there is no PDF mark worth redrawing,
@@ -77,13 +88,13 @@
   font-size: var(--step--2);
   letter-spacing: 0.06em;
   color: var(--ink-soft);
-  border: 1px solid var(--rule);
+  border: var(--border-hair) solid var(--rule);
   padding: 0.15em 0.35em;
   flex: none;
 }
 
 .plain {
-  margin: 0.9rem 0 0;
+  margin: var(--s-4) 0 0;
   font-size: var(--step--1);
   color: var(--ink-soft);
 }
@@ -108,11 +119,11 @@
    which is a different intention and should not compete for the same glance. */
 .forward {
   justify-self: start;
-  margin-block-start: 1rem;
+  margin-block-start: var(--s-4);
   font-size: var(--step--1);
   color: var(--ink-soft);
   text-align: left;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: var(--border-hair) solid var(--rule);
   padding-block-end: 0.2rem;
   transition: color var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out);
 }
@@ -127,4 +138,18 @@
 .item[data-copied] {
   border-color: var(--ink);
   background: var(--paper-sunk);
+}
+
+/* On a phone, met in person: email, LinkedIn, resume and the contact card.
+   The source link and the forwarding note are for the desktop reader. */
+@media (max-width: 767px) {
+  .links > li:nth-child(4),
+  .forward {
+    display: none;
+  }
+}
+
+/* A phone number never breaks inside itself. */
+a.address {
+  white-space: nowrap;
 }

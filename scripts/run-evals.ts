@@ -1,7 +1,21 @@
-import { writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+
+/**
+ * The suite has to measure the model the site serves.
+ *
+ * Next.js loads `.env.local` for the running app; a script run through tsx does
+ * not, so this file inherited only whatever the shell exported. The key was
+ * there and `NVIDIA_MODEL` was not, which meant the suite quietly graded the
+ * code default instead of the configured model. On 2026-09-16 that default had
+ * been retired by the provider and answered 410 Gone, so every run degraded to
+ * the retrieved passage and the suite recorded three correct cases as
+ * omissions. Values already in the environment still win.
+ */
+const envFile = join(process.cwd(), ".env.local");
+if (existsSync(envFile)) process.loadEnvFile(envFile);
 import { ask } from "../lib/agent/graph";
-import { assertNoReasoning } from "../lib/agent/policy";
+import { assertNoReasoning, NOT_IN_PROFILE } from "../lib/agent/policy";
 import { CASES, GROUND_TRUTH, type Group, type Case, type Mode } from "../lib/agent/evals";
 
 /**
@@ -48,6 +62,8 @@ async function main() {
    * reason this counter exists: the previous defence grew to two hundred lines
    * of regex because nothing ever told anyone the source had broken.
    */
+  /** How long to stand down before taking a provider-less run again. */
+  const RETRY_PAUSE_MS = 4_000;
   let reasoningLeaks = 0;
   const leakSamples: string[] = [];
   let provider: string | null = null;
@@ -59,7 +75,23 @@ async function main() {
     let lastProblems: string[] = [];
 
     for (let run = 0; run < RUNS; run++) {
-      const r = await ask(c.question);
+      /**
+       * A run that got no provider is not a failed case.
+       *
+       * The suite makes 78 calls in a row against a free tier. When that tier
+       * starts refusing, the answer comes back as the retrieved passage with no
+       * provider on it, and scoring that as a missing substring makes the suite
+       * report the tier's limit as the agent's quality: measured on 2026-09-16,
+       * three cases that answer correctly one at a time were recorded as
+       * omissions by a suite that had exhausted the tier reaching them.
+       *
+       * So a provider-less run waits and is taken again, once.
+       */
+      let r = await ask(c.question);
+      if (!r.provider) {
+        await new Promise((resolve) => setTimeout(resolve, RETRY_PAUSE_MS));
+        r = await ask(c.question);
+      }
       provider ??= r.provider;
       if (r.trace) {
         retrievals++;
@@ -68,8 +100,10 @@ async function main() {
       const answer = (r.answer ?? "").toString();
       latencies.push(r.total);
 
+      // The unknown band's fixed text never came from a model, and its
+      // "open-source" tripped the meta-sentence pattern (3/78 false leaks).
       try {
-        assertNoReasoning(answer);
+        if (answer !== NOT_IN_PROFILE) assertNoReasoning(answer);
       } catch (err) {
         reasoningLeaks++;
         if (leakSamples.length < 3) leakSamples.push(`${c.question}: ${(err as Error).message}`);

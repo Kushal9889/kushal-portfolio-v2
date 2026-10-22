@@ -1,10 +1,10 @@
 .wrap {
-  margin-block: clamp(1rem, 3vh, 2rem);
+  margin-block: var(--s-5);
 }
 
 .grid {
   margin: 0;
-  border-block-start: 1px solid var(--rule);
+  border-block-start: var(--border-hair) solid var(--rule);
 }
 
 /* Figure and its explanation on one line at reading width, stacked below it.
@@ -13,26 +13,32 @@
 .row {
   display: grid;
   grid-template-columns: minmax(9rem, 14rem) 1fr;
-  gap: 0.4rem 2rem;
-  padding: 1.1rem 0;
-  border-block-end: 1px solid var(--rule);
+  gap: var(--s-2) var(--s-6);
+  padding: var(--s-4) 0;
+  border-block-end: var(--border-hair) solid var(--rule);
   align-items: baseline;
 }
 
 .head {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: var(--s-1);
 }
 
 /* Every figure in this section is written into content/evals.json by
    `npm run test:evals`, which the caption names and anyone can run. That is the
    strongest form of checkable this page has, so these carry the accent. */
+/* A measured number is read, not clicked and not checked elsewhere: it is the
+   evidence itself. It was wearing the accent, which is now the one colour on
+   the page and belongs to the things a reader can act on. Size, weight and
+   tabular figures carry a figure better than a tint does. */
 .value {
   font-size: var(--step-2);
   line-height: 1;
   letter-spacing: -0.02em;
-  color: var(--mark);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--ink);
 }
 
 .note {
@@ -45,7 +51,7 @@
 }
 
 .foot {
-  margin: 1rem 0 0;
+  margin: var(--s-4) 0 0;
   font-size: var(--step--1);
   color: var(--ink-soft);
   max-width: var(--measure);
@@ -56,14 +62,14 @@
   font-size: var(--step-code);
   background: var(--paper-sunk);
   padding: 0.1em 0.32em;
-  border-radius: 2px;
+  border-radius: var(--r-sm);
   color: var(--ink);
 }
 
 @media (max-width: 40rem) {
   .row {
     grid-template-columns: 1fr;
-    gap: 0.5rem;
+    gap: var(--s-2);
   }
 }
 
@@ -72,10 +78,10 @@
    breakdown, and giving both the same weight would flatten the section. */
 .groups {
   list-style: none;
-  margin: 1.1rem 0 0;
+  margin: var(--s-4) 0 0;
   padding: 0;
   display: grid;
-  gap: 0.55rem;
+  gap: var(--s-2);
 }
 
 .group {
@@ -84,7 +90,7 @@
      used to be, and a grid track does not clip: the label ran straight into the
      sentence beside it and rendered as "AUTHORISATIONasked, it answers". */
   grid-template-columns: 3.2rem minmax(10.5rem, auto) 1fr;
-  gap: 0.9rem;
+  gap: var(--s-4);
   align-items: baseline;
   font-size: var(--step--1);
   color: var(--ink-soft);
@@ -95,34 +101,13 @@
 }
 
 .groupValue {
-  color: var(--mark);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--ink);
 }
 
 .groupNote {
   max-width: 46em;
-}
-
-.cases {
-  margin-block-start: 1.3rem;
-  border-block-start: 1px solid var(--rule);
-  padding-block-start: 0.9rem;
-}
-
-.summary {
-  cursor: pointer;
-  font-size: var(--step--1);
-  color: var(--ink);
-}
-
-.summary::marker {
-  color: var(--ink-soft);
-}
-
-.caseList {
-  margin: 0.9rem 0 0;
-  padding-inline-start: 1.4rem;
-  display: grid;
-  gap: 0.7rem;
 }
 
 .case {
@@ -130,28 +115,18 @@
   color: var(--ink-soft);
 }
 
-.caseQ {
-  display: block;
-  color: var(--ink);
-}
-
-.caseA {
-  display: block;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: var(--step--2);
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
+/* What the case asserts, in words. Mono made 26 short sentences read as
+   output rather than as the description of a test. */
 
 .limits {
-  margin-block-start: 1.4rem;
-  padding: 1rem 1.1rem;
+  margin-block-start: var(--s-5);
+  padding: var(--s-4) var(--s-4);
   background: var(--paper-sunk);
-  border-radius: 3px;
+  border-radius: var(--r-lg);
 }
 
 .limitHead {
-  margin: 0 0 0.6rem;
+  margin: 0 0 var(--s-2);
   font-size: var(--step--1);
   font-weight: 400;
   letter-spacing: 0.04em;
@@ -163,7 +138,7 @@
   margin: 0;
   padding-inline-start: 1.1rem;
   display: grid;
-  gap: 0.55rem;
+  gap: var(--s-2);
   font-family: var(--font-serif), Georgia, serif;
   font-size: var(--step-prose);
   line-height: 1.55;
@@ -184,5 +159,22 @@
   }
   .groupNote {
     grid-column: 1 / -1;
+  }
+}
+
+/* The case breakdown and the latency scale share one row where there is room. */
+.pair {
+  display: grid;
+  gap: var(--s-6);
+  align-items: start;
+}
+
+@media (min-width: 62rem) {
+  .pair {
+    grid-template-columns: minmax(0, 1.4fr) minmax(15rem, 1fr);
+    column-gap: var(--s-7);
+  }
+  .pair > figure {
+    margin-block-start: var(--s-4);
   }
 }

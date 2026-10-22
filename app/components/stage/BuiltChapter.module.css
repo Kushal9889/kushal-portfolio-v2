@@ -1,0 +1,510 @@
+/*
+ * Built ("Running now"): four terminal panes in a 2 by 2 grid. Terminal chrome
+ * is the chapter's border language (plan D.6): a title bar with a dot-matrix
+ * marker, a body, and a status line naming where the value came from.
+ */
+
+.built {
+  position: relative;
+  min-height: 100vh;
+  padding: 120px clamp(24px, 5vw, 88px) 96px;
+}
+
+.inner {
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px 32px;
+  margin-bottom: 40px;
+}
+
+.title {
+  grid-column: 1;
+  margin: 0;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.machine {
+  grid-column: 1;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+.machine span {
+  color: var(--ink);
+}
+
+.prompt {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: end;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--hair-strong);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--ink);
+  font: 400 0.875rem/1 var(--font-mono);
+  cursor: pointer;
+  transition: background-color 150ms linear;
+}
+
+.prompt span {
+  color: var(--ink-soft);
+}
+
+.prompt:hover:not(:disabled) {
+  background: var(--paper-high);
+}
+
+.prompt:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.prompt:disabled {
+  opacity: 0.4;
+  cursor: progress;
+}
+
+.prompt:focus-visible,
+.pane a:focus-visible,
+.lead summary:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
+
+.panes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--hair);
+  border: 1px solid var(--hair);
+  border-radius: 2px;
+}
+
+.pane {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 300px;
+  background: var(--void-raised);
+  box-shadow: inset 0 1px 0 var(--hair-strong);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 32px;
+  padding: 0 14px;
+  background: var(--void);
+  border-bottom: 1px solid var(--hair);
+}
+
+/* The identity hue: one 1px rule under the title bar, never a fill. */
+.bar[data-identity] {
+  box-shadow: inset 0 -1px 0 var(--identity);
+}
+
+.dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.dots i {
+  width: 6px;
+  height: 6px;
+  background: var(--hair-strong);
+}
+
+.paneTitle {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.paneTitle svg {
+  fill: var(--ink);
+}
+
+.word {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--ink-soft);
+}
+
+.word i {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--hair-strong);
+}
+
+.word[data-status="live"] i {
+  border-color: var(--live);
+  background: var(--live);
+}
+
+.word[data-status="checking"] i {
+  animation: blink 1s steps(2, jump-none) infinite;
+}
+
+@keyframes blink {
+  50% {
+    border-color: transparent;
+  }
+}
+
+.body {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding: 20px 20px 16px;
+}
+
+.events {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+.events li {
+  min-height: 1.4em;
+}
+
+.events li::before {
+  content: "›";
+  margin-right: 8px;
+  color: var(--ink-faint);
+}
+
+.events b {
+  font-weight: 400;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.events li[data-warn] {
+  color: var(--warn);
+}
+
+.waiting::before {
+  visibility: hidden;
+}
+
+.median {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+  min-height: 2.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+.medianValue {
+  position: relative;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  --sweep: 0;
+}
+
+.medianValue::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1px;
+  background: var(--live);
+  transform: scaleX(var(--sweep));
+  transform-origin: 0 50%;
+}
+
+.cached {
+  color: var(--ink-soft);
+}
+
+.status {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 14px;
+  background: var(--void);
+  border-top: 1px solid var(--hair);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--ink-soft);
+}
+
+.status a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--hair-strong);
+  text-underline-offset: 0.18em;
+}
+
+.status a:hover {
+  text-decoration-color: var(--ink);
+}
+
+.arch {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+}
+
+.graph {
+  width: 100%;
+  height: auto;
+}
+
+.node {
+  fill: var(--void);
+  stroke: var(--ink-soft);
+  stroke-width: 1;
+}
+
+.nodeLabel {
+  fill: var(--ink);
+  font: 400 9px var(--font-mono);
+  text-anchor: middle;
+}
+
+.edge,
+.thread {
+  fill: none;
+  stroke: var(--hair-strong);
+  stroke-width: 1;
+}
+
+.thread {
+  stroke-dasharray: 2 3;
+}
+
+.figures {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.figures div {
+  display: grid;
+}
+
+.figures dd {
+  margin: 0;
+  order: 0;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.figures dt {
+  order: 1;
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+.lead summary {
+  cursor: pointer;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--ink);
+  list-style: none;
+}
+
+.lead summary::-webkit-details-marker {
+  display: none;
+}
+
+.lead summary::after {
+  content: " full";
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.lead[open] summary::after {
+  content: " less";
+}
+
+.lead p {
+  margin: 10px 0 0;
+  max-width: 62ch;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips li {
+  padding: 4px 8px;
+  border: 1px solid var(--hair-strong);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--ink-soft);
+}
+
+.commit {
+  margin: 12px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+.commitWhen {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-size: clamp(2rem, 3.2vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.commitDate {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.rows {
+  display: grid;
+  margin: 0;
+}
+
+.rows div {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hair);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.rows div:last-child {
+  border-bottom: 0;
+}
+
+.rows dt {
+  color: var(--ink-soft);
+}
+
+.rows dd {
+  margin: 0;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 767px) {
+  .built {
+    padding: 96px 16px 64px;
+  }
+
+  .head {
+    grid-template-columns: 1fr;
+  }
+
+  .prompt {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: start;
+  }
+
+  .panes,
+  .arch,
+  .pane,
+  .bar {
+    grid-template-columns: 1fr;
+  }
+
+  /* A machine line and a status word on one row need to be allowed to wrap. */
+  .bar {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .bar > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  /* A grid child's default min-width is its content, so one long machine line
+     pushed each pane past the screen. */
+  .panes > *,
+  .arch > *,
+  .pane {
+    min-width: 0;
+  }
+
+  .pane svg,
+  .arch svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .pane pre,
+  .pane code {
+    overflow-x: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word[data-status="checking"] i {
+    animation: none;
+  }
+}

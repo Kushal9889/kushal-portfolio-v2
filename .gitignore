@@ -28,3 +28,10 @@ NOTES.private.md
 # notes someone kept while building it.
 CLAUDE.md
 HANDOFF.md
+__pycache__/
+
+# Local tooling for the editing loop, not part of the site.
+scripts/loop-plan.py
+scripts/loop-skills.py
+scripts/skill-cache.py
+scripts/issues.py

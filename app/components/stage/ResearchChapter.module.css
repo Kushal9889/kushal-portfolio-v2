@@ -1,0 +1,356 @@
+.research {
+  position: relative;
+  z-index: 2;
+  height: 100vh;
+  min-height: 760px;
+}
+
+.inner {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  align-items: center;
+  gap: clamp(40px, 5vw, 96px);
+  padding: 88px clamp(24px, 5vw, 88px) 40px;
+}
+
+/* ---- The paper ---------------------------------------------------------- */
+
+.stand {
+  display: grid;
+  justify-items: start;
+}
+
+/* The paper as the object it is: a printed sheet lying on the ground. No
+   shadow and no radius; its own edge is the only border it needs. */
+.paper {
+  width: min(100%, 440px);
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 36px 34px;
+}
+
+.venue {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+.paperTitle {
+  margin: 14px 0 0;
+  font-family: var(--font-paper);
+  font-size: clamp(1.75rem, 2.3vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.paperTitle a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.byline {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--ink-soft);
+}
+
+/* The method, set as the paper's opening line rather than as marketing copy. */
+.method {
+  margin: 10px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in oklch, var(--ink) 14%, transparent);
+  font-family: var(--font-paper);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.method span {
+  display: block;
+  margin-bottom: 4px;
+  font: 400 0.6875rem/1.3 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+/* The cover's own reference list: field names in the data face, entries in the
+   paper's face. */
+.refs {
+  display: grid;
+  margin: auto 0 0;
+  border-top: 1px solid color-mix(in oklch, var(--ink) 14%, transparent);
+}
+
+.refs div {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid color-mix(in oklch, var(--ink) 10%, transparent);
+}
+
+.refs dt {
+  font: 400 0.6875rem/1.6 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+.refs dd {
+  margin: 0;
+  font-family: var(--font-paper);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.refs a {
+  color: var(--ink);
+  text-underline-offset: 3px;
+}
+
+.copy {
+  justify-self: start;
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in oklch, var(--ink) 30%, transparent);
+  background: transparent;
+  color: var(--ink);
+  font: 500 0.8125rem/1 var(--font-display);
+  cursor: pointer;
+}
+
+.copy:hover {
+  border-color: var(--ink);
+}
+
+.paperTitle a:focus-visible,
+.refs a:focus-visible,
+.bridge a:focus-visible,
+.copy:focus-visible {
+  outline: 2px solid var(--voltage);
+  outline-offset: 3px;
+}
+
+/* ---- The result --------------------------------------------------------- */
+
+.lead {
+  margin: 0;
+  max-width: 24ch;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-size: clamp(1.75rem, 2.8vw, 2.5rem);
+  font-weight: 700;
+  font-stretch: 100%;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+ /*
+ * The paper's headline figure is filled with a matcap: a photograph of light on
+ * a mirror sphere, which is how chrome is shaded everywhere it is shaded well.
+ * The sample point moves with the pointer, so the reflection travels across the
+ * digits the way it would across a real surface. Where background-clip: text is
+ * unsupported the figure keeps its ink colour and nothing is lost.
+ */
+.figure {
+  display: inline-block;
+  margin: 22px 0 0;
+  font-family: var(--font-paper);
+  font-size: clamp(6rem, 12vw, 11rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.8;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+@supports (background-clip: text) {
+  .figure {
+    background-image: image-set(
+      url("/stage/matcap-chrome.avif") type("image/avif"),
+      url("/stage/matcap-chrome.png") type("image/png")
+    );
+    background-repeat: no-repeat;
+    background-size: 190% 190%;
+    background-position: calc(20% + var(--pointer-x, 0.5) * 60%) calc(20% + var(--pointer-y, 0.5) * 60%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    /* The glyph edge stays legible where the matcap goes dark. */
+    filter: drop-shadow(0 0 1px color-mix(in oklch, var(--ink) 55%, transparent));
+  }
+}
+
+.figureLabel {
+  margin: 14px 0 0;
+  font-size: 1.125rem;
+  color: var(--ink-soft);
+}
+
+/* ---- Plates ------------------------------------------------------------- */
+
+.plate {
+  max-width: 640px;
+  margin: 22px 0 0;
+}
+
+/* A caption set above its figure, as a paper sets it: a drawn rule, the source,
+   then the title in the paper's face. */
+.caption {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding-top: 10px;
+  font-family: var(--font-paper);
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.rule {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 1px;
+  transform-origin: left center;
+  background: color-mix(in oklch, var(--ink) 40%, transparent);
+}
+
+.source {
+  font: 400 0.6875rem/1.3 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+.bridge {
+  max-width: 60ch;
+  margin: 24px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in oklch, var(--ink) 14%, transparent);
+  font-family: var(--font-paper);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.bridge a {
+  color: var(--ink);
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+
+.rows {
+  display: grid;
+  gap: 10px;
+  max-width: 640px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rows li {
+  display: grid;
+  grid-template-columns: 16.5rem minmax(0, 1fr) 4.5rem;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+}
+
+.rows li[data-lead] {
+  color: var(--ink);
+}
+
+/* Bars on a true zero, with no rail: lengths compare directly, and the value
+   beside each one is the reading. */
+.track {
+  position: relative;
+  height: 10px;
+}
+
+.track > span {
+  position: absolute;
+  inset: 0;
+  transform-origin: left center;
+  background: var(--ink-soft);
+}
+
+.rows li[data-lead] .track > span {
+  background: var(--ink);
+}
+
+.value {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* A truncated axis is only honest if it is stated beside the bars it changes. */
+.axis {
+  margin: 10px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
+/* Pushed to the foot of the cover under a short rule, the way a paper sets its
+   first-page footnote. */
+.footnote {
+  margin: auto 0 0;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in oklch, var(--ink) 14%, transparent);
+  width: 40%;
+  font: 400 0.6875rem/1.3 var(--font-mono);
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+/* One column at phone width: the paper, then its bars, then the references. */
+@media (max-width: 767px) {
+  .research {
+    padding: 96px 16px 64px;
+  }
+
+  .inner,
+  .stand,
+  .paper,
+  .rows {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  /* The section already holds the page gutter; the inner one doubled it and
+     pushed its own column past the screen. */
+  .inner {
+    padding-inline: 0;
+  }
+
+  .copy,
+  .stand,
+  .plate,
+  .rows,
+  .refs,
+  .refs li {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .refs li {
+    overflow-wrap: anywhere;
+  }
+
+  .track,
+  .axis,
+  .stand,
+  .paper {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}

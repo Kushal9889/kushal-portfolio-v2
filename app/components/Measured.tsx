@@ -1,5 +1,6 @@
 import evals from "@/content/evals.json";
 import styles from "./Measured.module.css";
+import Compare from "./Compare";
 
 /**
  * The evaluation suite, reporting its own last run.
@@ -59,12 +60,14 @@ const ROWS = [
 
 export default function Measured() {
   const groups = Object.entries(evals.groups ?? {});
-  const cases = evals.cases_detail ?? [];
   const bothRetrievers = evals.denseUsed ?? 0;
   const retrievals = evals.retrievals ?? 0;
 
   return (
-    <div className={styles.wrap}>
+    /* This block is the section's own summary and reads as a caption at half
+       width, so it spans. It says so itself rather than being selected by
+       position: see the note on [data-span] in page.module.css. */
+    <div className={styles.wrap} data-span="full">
       <dl className={styles.grid}>
         {ROWS.map((r) => (
           <div key={r.label} className={styles.row}>
@@ -77,6 +80,10 @@ export default function Measured() {
         ))}
       </dl>
 
+      {/* The breakdown and the two latencies side by side: the cases on the
+          left, how long a visitor waits on the right. Median and tail on one
+          zero-based scale, so the gap between them is the length a reader sees. */}
+      <div className={styles.pair}>
       {groups.length > 0 && (
         <ul className={styles.groups}>
           {groups.map(([name, g]) => (
@@ -97,33 +104,31 @@ export default function Measured() {
           ))}
         </ul>
       )}
-
-      {/* Every assertion, written by the runner from the cases it executes.
-          Behind a disclosure because that many rows is a wall on a page that has
-          to be skimmable, and open in one click because the reader who wants
-          this is the one worth keeping. */}
-      {cases.length > 0 && (
-        <details className={styles.cases}>
-          <summary className={styles.summary}>
-            Read all {cases.length} assertions
-            <span className="label"> written by the runner, not typed here</span>
-          </summary>
-          <ol className={styles.caseList}>
-            {cases.map((c) => (
-              <li key={c.name} className={styles.case} data-pass={c.pass}>
-                <span className={styles.caseQ}>{c.name}</span>
-                <span className={styles.caseA}>{c.asserts}</span>
-              </li>
-            ))}
-          </ol>
-        </details>
+      {evals.p50 > 0 && evals.p95 > 0 && (
+        <Compare
+          title={`Answer latency, ${evals.measured} run`}
+          min={0}
+          max={Math.ceil(evals.p95 / 2000) * 2}
+          ticks={Array.from({ length: Math.ceil(evals.p95 / 2000) + 1 }, (_, i) => i * 2)}
+          unit=" s"
+          rows={[
+            { label: "Median answer", value: evals.p50 / 1000, shown: `${(evals.p50 / 1000).toFixed(1)} s`, lead: true },
+            { label: "95th percentile", value: evals.p95 / 1000, shown: `${(evals.p95 / 1000).toFixed(1)} s` },
+          ]}
+        />
       )}
+      </div>
+
+      {/* Every assertion lives in the eval matrix below, case by case (D52). */}
 
       {/* The limits of the thing above, stated by the thing above.
           A suite that only publishes its score is advertising; one that
           publishes what it cannot see is evidence. */}
-      <div className={styles.limits}>
-        <h3 className={styles.limitHead}>What these {evals.cases} cases cannot catch</h3>
+      <details className={`more ${styles.limits}`}>
+        <summary>
+          <span className="more-open">What these {evals.cases} cases cannot catch</span>
+          <span className="more-close">Show less</span>
+        </summary>
         <ul className={styles.limitList}>
           <li>
             Assertions are substring and route checks. Nothing here grades whether an answer reads
@@ -148,7 +153,7 @@ export default function Measured() {
             </li>
           )}
         </ul>
-      </div>
+      </details>
 
       <p className={styles.foot}>
         Measured <time dateTime={evals.measured}>{evals.measured}</time> by{" "}

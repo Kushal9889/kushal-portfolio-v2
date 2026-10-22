@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Telemetry from "./Telemetry";
-import { TELEMETRY_EVENT, type TelemetryPing } from "./Agent";
+import { SENT_EVENT, TELEMETRY_EVENT, type SentDetail, type TelemetryPing } from "./Agent";
+import BrandMark from "./BrandMark";
+import Paced from "./Paced";
+import WorkLoop from "./WorkLoop";
 import styles from "./Hero.module.css";
+import { reducedMotion } from "@/lib/verbs";
 
 const NODES = ["route", "retrieve", "answer"] as const;
 type NodeName = (typeof NODES)[number];
@@ -18,8 +21,10 @@ type Props = {
   /** Where he works right now. A recruiter scans for employer and title before
    *  anything else, and the hero named neither. */
   current: string;
+  /** The tools he names first (facts.md, Skills). Shown on a phone only,
+   *  where a reader standing beside him has seconds, not minutes. */
+  skills?: string[];
   /** What he builds, in the words a 2026 role is written in. */
-  focus: string;
   /** The least fakeable thing he owns, stated before the first scroll.
    *
    *  Split into a figure and a sentence rather than passed as one string. A
@@ -30,9 +35,13 @@ type Props = {
    *  difference in kind, not in degree, which is what the isolation effect
    *  actually requires. */
   evidence: { figure: string; unit: string; sentence: string; href: string; label: string };
+  /** Three figures a recruiter can check, each one link from its section.
+   *  Taken from the @metric lines in content/facts.md, never typed here. */
+  proof?: { value: string; label: string; href: string }[];
   /** When he can start, and where. The question that gates a reply. */
   available: string;
-  credential: { label: string; url: string };
+  /** The official badges he holds, each linking to its public verification page. */
+  credentials: { label: string; url: string; image?: string }[];
   contactHref: string;
   /** The agent itself, rendered under the graph it just traced. */
   children?: React.ReactNode;
@@ -55,10 +64,11 @@ export default function Hero({
   tagline,
   location,
   current,
-  focus,
+  skills = [],
   evidence,
+  proof = [],
   available,
-  credential,
+  credentials,
   contactHref,
   children,
 }: Props) {
@@ -79,6 +89,23 @@ export default function Hero({
     null,
   );
   const started = useRef(false);
+  // The answer pane has a fixed height (see .saidA). When more text sits below
+  // the fold of the pane, say so with a fade; at the end of the text, drop it.
+  const saidRef = useRef<HTMLParagraphElement>(null);
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    const el = saidRef.current;
+    if (!el) return;
+    const check = () => setMore(el.scrollHeight - el.clientHeight - el.scrollTop > 2);
+    check();
+    el.addEventListener("scroll", check, { passive: true });
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", check);
+      ro.disconnect();
+    };
+  }, [said]);
 
   useEffect(() => {
     if (started.current) return;
@@ -86,11 +113,14 @@ export default function Hero({
 
     // Respect a visitor who has asked for less motion: still fetch, but skip the
     // staged node highlight and settle straight to the final numbers.
-    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const calm = reducedMotion();
     const controller = new AbortController();
 
     (async () => {
       try {
+        window.dispatchEvent(
+          new CustomEvent<SentDetail>(SENT_EVENT, { detail: { question: null, t0: performance.now(), recorded: true } }),
+        );
         const res = await fetch("/api/agent/demo", { signal: controller.signal });
         if (!res.ok) {
           setUnreachable(true);
@@ -104,13 +134,14 @@ export default function Hero({
           total: number;
           usage: { in: number; out: number } | null;
           provider: string | null;
+          ranAt?: number;
         } = await res.json();
         const measured = demo.timings;
-        setSaid({ question: demo.question, answer: demo.answer, sources: demo.sources });
-
-        if (calm) {
-          setTrace(measured);
-          setDone(true);
+        // A recorded model answer can carry markdown bold; this pane prints text,
+        // so the markers came through as raw asterisks while it typed.
+        setSaid({ question: demo.question, answer: demo.answer.replace(/\*\*/g, ""), sources: demo.sources });
+        // A recorded run, not the visitor's: the film labels it with its age.
+        const ping = () =>
           window.dispatchEvent(
             new CustomEvent<TelemetryPing>(TELEMETRY_EVENT, {
               detail: {
@@ -118,9 +149,21 @@ export default function Hero({
                 tokens: (demo.usage?.in ?? 0) + (demo.usage?.out ?? 0),
                 cost: 0,
                 provider: demo.provider,
+                tokensIn: demo.usage?.in,
+                tokensOut: demo.usage?.out,
+                timings: measured,
+                sources: demo.sources,
+                recorded: true,
+                ranAt: demo.ranAt,
+                answerChars: demo.answer.length,
               },
             }),
           );
+
+        if (calm) {
+          setTrace(measured);
+          setDone(true);
+          ping();
           return;
         }
 
@@ -142,16 +185,7 @@ export default function Hero({
         // The request the page made on load is a real request and belongs on
         // the strip. Without it a visitor who asks nothing sees an empty chart
         // under a panel claiming to be live.
-        window.dispatchEvent(
-          new CustomEvent<TelemetryPing>(TELEMETRY_EVENT, {
-            detail: {
-              ms: demo.total,
-              tokens: (demo.usage?.in ?? 0) + (demo.usage?.out ?? 0),
-              cost: 0,
-              provider: demo.provider,
-            },
-          }),
-        );
+        ping();
       } catch (err) {
         // Offline, blocked, or the route is not deployed. The structure above
         // still tells the story; it just does so without numbers. Stated rather
@@ -170,14 +204,14 @@ export default function Hero({
   return (
     <header className={styles.hero}>
       <div className="wrap">
-        <div className={styles.top}>
+        <div className={styles.top} data-film-scrim>
           <span className={styles.name}>{name}</span>
-          <span className="label">{location}</span>
+          <span className={styles.place}>{location}</span>
         </div>
 
         {/* Split on the sentence boundary: the claim leads, the qualifier
             recedes. Falls back to the whole string if the shape ever changes. */}
-        <h1 className={styles.line}>
+        <h1 className={styles.line} data-film-scrim>
           {(() => {
             const cut = tagline.indexOf(". ");
             if (cut === -1) return tagline;
@@ -199,59 +233,120 @@ export default function Hero({
          * top to bottom. Identity reads down the left, the instrument runs on
          * the right, and both finish inside the first screen. */}
         <div className={styles.body}>
-          <div className={styles.identity}>
+          <div className={styles.identity} data-film-scrim>
 
-        {/* What he builds, in the vocabulary the roles are written in.
-            The headline is the voice; this is the scan. Someone deciding in
-            twenty seconds is looking for these words before they read a
-            sentence, and search engines read them too. */}
+        {/* Title and employer, which is the line a reader looks for first and
+            the one the headline above cannot carry.
+
+            The four capability chips that sat under this moved to section 03.
+            They named the same thing this line does, one level more generic,
+            and the first screen can hold about seven blocks before each one
+            costs the others. Nothing was deleted: the terms still render, in
+            the section whose prose already covers them. */}
         <p className={`${styles.current} rise`} style={{ "--rise-n": 0 } as React.CSSProperties}>
           {current}
         </p>
-        <ul className={`${styles.focus} rise`} style={{ "--rise-n": 1 } as React.CSSProperties}>
-          {focus.split(/\s*[·]\s*/).filter(Boolean).map((f) => (
-            <li key={f}>{f}</li>
-          ))}
-        </ul>
 
-        {/* The one object on this page that looks like nothing else on it.
-            Everything else in the hero is a system describing itself; this is
-            the single line where an outside party did something in response to
-            his work, and it is the only claim here that no other candidate can
-            copy. It gets a figure, a border and more surrounding space than
-            anything else, because difference in kind is what a scanning eye
-            stops for. */}
-        <a
-          className={`${styles.evidence} rise`}
+        {skills.length > 0 && (
+          <ul className={`${styles.skills} rise`} style={{ "--rise-n": 1 } as React.CSSProperties} aria-label="Tools">
+            {skills.map((t) => (
+              <li key={t}>
+                <BrandMark name={t} />
+                {t}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {/* The one thing on this page an outside party did in response to his
+            work, and the only claim here no other candidate can copy.
+
+            It was a bordered box with a display figure stacked over a caption,
+            which is the shape every hero on the web uses for a statistic. The
+            shape says "metric" and this is not a metric, it is an event with a
+            date and a name attached. So it is a sentence now, with the figure
+            carrying the weight inside it, and the record it came from sits in
+            the register below rather than as a caption under a number. */}
+        <p
+          className={`${styles.proof} rise`}
           style={{ "--rise-n": 2 } as React.CSSProperties}
-          href={evidence.href}
         >
-          <span className={styles.evidenceFigure}>
-            <span className={`${styles.evidenceNumber} tabular`}>{evidence.figure}</span>
-            <span className={styles.evidenceUnit}>{evidence.unit}</span>
-          </span>
-          <span className={styles.evidenceBody}>
-            <span className={styles.evidenceSentence}>{evidence.sentence}</span>
-            <span className={styles.evidenceLabel}>{evidence.label}</span>
-          </span>
-        </a>
+          {(() => {
+            // The figure steps up inside its own sentence rather than being
+            // lifted out of it. Matched against the corpus value the section
+            // below renders, so the emphasis cannot land on a stale number.
+            const at = evidence.sentence.lastIndexOf(evidence.figure);
+            if (at === -1) return evidence.sentence;
+            const end = at + evidence.figure.length;
+            return (
+              <>
+                {evidence.sentence.slice(0, at)}
+                <a href={evidence.href} aria-label={evidence.label || "the merged fix"} data-pull>
+                  <b className={`${styles.proofFigure} tabular`}>{evidence.figure}</b>
+                </a>
+                {evidence.sentence.slice(end)}
+              </>
+            );
+          })()}
+        </p>
 
-        {/* The two facts that decide whether a recruiter writes at all, kept
-            deliberately quiet. Moved above the graph block: on a 13-inch laptop
-            it sat below three cells and a caption, which put the one number
-            that gates a reply outside the first screen. */}
-        <p className={styles.available}>Available {available}</p>
-
-        {/* In the first screen now, not at 1660px.
-            The one action this page is asking for cannot live below two folds. */}
+        {/* The register.
+         *
+         * Two facts that decide whether a recruiter writes at all: when he can
+         * start, and the credential. They were separate blocks with their own
+         * margins, in three different treatments, spread over 180px of the
+         * first screen. A third row repeated the record named in the sentence
+         * above; the sentence links it now, so the claim and its citation are
+         * one object rather than two.
+         *
+         * As one hairline table they cost 84px and read in a single fixation.
+         * A definition list because that is what they are, and the rules come
+         * from a 1px grid gap over a ruled ground rather than from borders, so
+         * no cell has to know which of its edges is shared. */}
+        {/* In the first screen now, not at 1660px, and above the credential
+            table rather than under it. The three facts wrap to 225px at 320,
+            which put the one action this page asks for at y=849 in a 700px
+            viewport. They are the footnote to the claim; the ask is not. */}
         <div className={styles.actions}>
           <a className={styles.cta} href={contactHref} data-pull>
             Get in touch
           </a>
-          <a className={styles.cred} href={credential.url} target="_blank" rel="noreferrer" data-pull>
-            {credential.label}
-          </a>
         </div>
+
+        <dl className={styles.facts}>
+          {proof.length > 0 && (
+            <div className={styles.fact}>
+              <dt>proof</dt>
+              <dd className={styles.proofStrip}>
+                {proof.map((p) => (
+                  <a key={p.href} href={p.href} data-pull>
+                    <b>{p.value}</b>
+                    <span>{p.label}</span>
+                  </a>
+                ))}
+              </dd>
+            </div>
+          )}
+          <div className={styles.fact}>
+            <dt>available</dt>
+            <dd>{available}</dd>
+          </div>
+          <div className={styles.fact}>
+            <dt>certified</dt>
+            <dd className={styles.badges}>
+              {credentials.map((c) => (
+                <a key={c.url} className={styles.badge} href={c.url} target="_blank" rel="noreferrer" aria-label={`${c.label}, verify`} data-pull>
+                  {c.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- a small static vendor badge
+                    <img src={c.image} alt="" width={56} height={56} loading="eager" />
+                  ) : (
+                    c.label
+                  )}
+                </a>
+              ))}
+            </dd>
+          </div>
+        </dl>
           </div>
 
         {/* One instrument, not two.
@@ -261,6 +356,13 @@ export default function Hero({
             panel shows the request the page made on load, and the input under
             it makes another. The console ground says the whole block is live. */}
         <div className={styles.console} data-surface="console">
+          {/* The racks the answer is served from, running behind the glass. */}
+          <WorkLoop on className={styles.loop} />
+          {/* Framing ticks: the console is an instrument, and an instrument has corners. */}
+          <i className={styles.tick} data-c="tl" aria-hidden="true" />
+          <i className={styles.tick} data-c="tr" aria-hidden="true" />
+          <i className={styles.tick} data-c="bl" aria-hidden="true" />
+          <i className={styles.tick} data-c="br" aria-hidden="true" />
           <div className={styles.consoleHead}>
             <span className={styles.consoleLabel}>agent</span>
             <span className={styles.consoleState} data-state={done ? "done" : unreachable ? "degraded" : "running"}>
@@ -300,13 +402,32 @@ export default function Hero({
            * that nothing here needs to be. This is the actual reply to the
            * actual question, with the sections it was grounded in, produced by
            * the request whose timings are drawn directly above it. */}
-          <div className={styles.said} aria-live="polite">
+          <div
+            className={styles.said}
+            data-state={said ? "done" : unreachable ? "degraded" : "running"}
+            aria-live="polite"
+          >
             {said ? (
               <>
-                <p className={styles.saidQ}>{said.question}</p>
-                <p className={styles.saidA}>{said.answer}</p>
+                <p className={`${styles.saidQ} rise`} style={{ "--rise-n": 0 } as React.CSSProperties}>
+                  {said.question}
+                </p>
+                <p
+                  ref={saidRef}
+                  data-more={more || undefined}
+                  className={`${styles.saidA} ${styles.typed} rise`}
+                  style={{ "--rise-n": 1 } as React.CSSProperties}
+                >
+                  {/* The full text holds the box at its final height from the
+                      first frame (and is what assistive technology reads);
+                      the typed copy sits on top of it. */}
+                  <span className={styles.ghost}>{said.answer}</span>
+                  <span className={styles.type} aria-hidden="true">
+                    <Paced text={said.answer} live={false} once />
+                  </span>
+                </p>
                 {said.sources.length > 0 && (
-                  <p className={styles.saidSrc}>
+                  <p className={`${styles.saidSrc} rise`} style={{ "--rise-n": 2 } as React.CSSProperties}>
                     <span className={styles.saidSrcLabel}>grounded in</span>
                     {said.sources.map((src) => (
                       <span key={src} className={styles.saidChip}>
@@ -322,16 +443,34 @@ export default function Hero({
                 retrieved sections, unsummarised.
               </p>
             ) : (
-              <p className={styles.saidPending}>running the graph against his corpus</p>
+              /* The shape of the answer, before the answer.
+                 A visitor who types nothing watched an empty panel for the
+                 second or two the graph takes, under a head already claiming to
+                 be running. These are the lines the reply will occupy and the
+                 chips it will be grounded in, so the panel states what it is
+                 about to do and nothing moves when the words arrive. */
+              <>
+                <p className={styles.saidPending}>running the graph</p>
+                <div className={styles.skel} aria-hidden="true">
+                  <span className={styles.skelBar} />
+                  <span className={styles.skelBar} style={{ "--skel-n": 1 } as React.CSSProperties} />
+                  <span className={styles.skelBar} style={{ "--skel-n": 2 } as React.CSSProperties} />
+                  <span
+                    className={styles.skelBar}
+                    data-short
+                    style={{ "--skel-n": 3 } as React.CSSProperties}
+                  />
+                </div>
+                <span className={styles.skelChips} aria-hidden="true">
+                  <span className={styles.skelChip} />
+                  <span className={styles.skelChip} data-wide />
+                </span>
+              </>
             )}
           </div>
 
 
           <div className={styles.agentSlot}>{children}</div>
-
-          {/* What this page has done since you opened it. Every bar is one real
-              request, plotted against the median measured across the eval run. */}
-          <Telemetry />
         </div>
 
         </div>

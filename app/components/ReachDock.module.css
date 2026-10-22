@@ -8,8 +8,9 @@
   position: fixed;
   inset-inline: 0;
   bottom: 0;
-  z-index: 40;
+  z-index: var(--z-furniture);
   padding: var(--s-2) var(--s-4);
+  padding-bottom: calc(var(--s-2) + env(safe-area-inset-bottom, 0px));
   background: var(--paper-sunk);
   border-block-start: var(--border-hair) solid var(--rule);
   transition:
@@ -89,6 +90,18 @@
   border-color: var(--rule);
 }
 
+/* The Motion switch: a dock link in every respect but the element. */
+button.side {
+  background: none;
+  font: inherit;
+  font-size: var(--step--1);
+  cursor: pointer;
+}
+
+button.side[aria-pressed="true"] {
+  color: var(--ink);
+}
+
 @media (max-width: 40rem) {
   /* The context phrase is the first thing to go: on a phone the bar has room
      for the action and the two shortcuts, and not for the qualifier. */
@@ -106,8 +119,31 @@
   }
 }
 
+/* Over the film the dock is cut from the same ground the film locks its black
+   to, so its top hairline is the only edge. --paper-sunk would sit a step
+   darker than the film and show as a band. */
+:global(html[data-film="live"]) .dock {
+  background: var(--paper);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .dock {
     transition: none;
+  }
+}
+
+/* The palette's key, printed as a keycap beside the word. */
+.kbd {
+  padding: 1px 0.4em;
+  border: var(--border-hair) solid var(--rule);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  color: var(--ink-faint);
+}
+
+/* No keyboard, no shortcut to advertise. */
+@media (hover: none), (max-width: 47.99rem) {
+  .search {
+    display: none;
   }
 }

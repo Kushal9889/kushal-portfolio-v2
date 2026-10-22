@@ -7,15 +7,15 @@
      the longest opener is wider than a phone. Without this the whole block
      pushes past the viewport and the page scrolls sideways. */
   grid-template-columns: minmax(0, 1fr);
-  gap: 1.25rem;
+  gap: var(--s-3);
 }
 
 .bar {
   display: flex;
-  gap: 0.75rem;
+  gap: var(--s-3);
   align-items: stretch;
-  border: 1px solid var(--ink);
-  padding: 0.35rem 0.35rem 0.35rem 0.9rem;
+  border: var(--border-hair) solid var(--ink);
+  padding: var(--s-2) var(--s-2) var(--s-2) var(--s-4);
 }
 
 .bar:focus-within {
@@ -32,7 +32,7 @@
   color: inherit;
   background: none;
   border: none;
-  padding: 0.6rem 0;
+  padding: var(--s-2) 0;
   /* Height follows the content, so the native handle would fight it. */
   resize: none;
   overflow-y: auto;
@@ -45,6 +45,10 @@
 
 .input::placeholder {
   color: var(--ink-faint);
+  /* One line, cut with an ellipsis, so a narrow field never grows a scrollbar. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .send,
@@ -54,10 +58,37 @@
   min-height: 44px;
   padding: 0.5em 1.1em;
   font-size: var(--step--1);
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   background: var(--ink);
   color: var(--paper);
+  transition:
+    background-color var(--t-fast) var(--ease-out),
+    box-shadow var(--t-fast) var(--ease-out);
+}
+
+/*
+ * Ask is the primary action on this page and now looks like one.
+ *
+ * It was --ink on --paper: the same neutral pair as the surrounding chrome, so
+ * the one control the whole hero exists to get pressed sat at the same weight as
+ * the labels beside it. On a dark ground a neutral fill is not a hierarchy, it
+ * is another surface. The accent is the hierarchy, and this is the single place
+ * on the first screen that gets it as a fill.
+ */
+.send {
+  background: var(--signal);
+  color: var(--on-signal);
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--signal) 45%, transparent);
+}
+
+.send:hover {
+  background: var(--signal-deep);
+}
+
+.send:active {
+  scale: 0.98;
 }
 
 /* Stop is the same weight as Ask on purpose. A control that ends something the
@@ -70,26 +101,33 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  /* Grid rather than wrapping flex: each opener is a full-width row now, so
+     there is nothing left to wrap and flex only invited the two to sit side by
+     side at widths where neither question fits. */
+  display: grid;
+  gap: var(--s-2);
 }
 
 .opener {
-  /* Buttons are inline-flex globally, which made the label below the question
-     into a flex sibling sitting beside it: "What has he shipped on Azure?evals"
-     rendered as one run. Stacking the two is the whole point of the label. */
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.3rem;
+  /* One row, not two. The question reads from the left and what its answer
+     will demonstrate sits at the right edge, legible as a pair without
+     stacking. Stacked they measured 58px each and three of them took a fifth
+     of the first viewport.
+
+     Two rules set this element and the second re-centred what the first had
+     aligned to the start, 377 lines apart. One rule now. */
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  min-height: 44px;
   /* Long questions wrap rather than setting the width of everything above them. */
   white-space: normal;
   text-align: left;
   font-size: var(--step--1);
-  text-align: left;
   color: var(--ink-soft);
-  border: 1px solid var(--rule);
+  border: var(--border-hair) solid var(--rule);
   padding: 0.45em 0.8em;
   transition:
     border-color var(--t-fast) var(--ease-out),
@@ -103,14 +141,14 @@
 
 .thread {
   display: grid;
-  gap: 1.5rem;
+  gap: var(--s-5);
 }
 
 .turn {
   display: grid;
-  gap: 0.6rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--rule);
+  gap: var(--s-2);
+  padding-top: var(--s-5);
+  border-top: var(--border-hair) solid var(--rule);
 }
 
 .question {
@@ -151,7 +189,7 @@
   justify-self: start;
   font-size: var(--step--1);
   color: var(--ink-soft);
-  border-bottom: 1px solid var(--rule);
+  border-bottom: var(--border-hair) solid var(--rule);
   padding-bottom: 2px;
 }
 
@@ -163,7 +201,7 @@
 .trace {
   margin: 0;
   display: grid;
-  gap: 0.3rem;
+  gap: var(--s-1);
   font-size: var(--step--1);
 }
 
@@ -171,7 +209,7 @@
   display: grid;
   grid-template-columns: 5.5rem 4rem 1fr;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--s-3);
 }
 
 .traceRow dt {
@@ -183,28 +221,31 @@
 }
 
 /* Proportional bar. Reading the shape is faster than reading the numbers, and
-   the numbers are right there when the shape raises a question. */
+   the numbers are right there when the shape raises a question.
+
+   Ink, not the accent. A duration is a measurement and not a state, so it has
+   no semantic colour to wear, and the accent is spoken for. */
 .traceBar {
   height: 3px;
-  background: var(--signal);
+  background: var(--ink-soft);
   width: var(--w);
   min-width: 1px;
 }
 
-.conversion {
+.reachRow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--rule);
+  gap: var(--s-4);
+  padding-top: var(--s-5);
+  border-top: var(--border-hair) solid var(--rule);
   font-size: var(--step--1);
 }
 
 .copy {
   font-size: var(--step--1);
   padding: 0.5em 1em;
-  border: 1px solid var(--ink);
+  border: var(--border-hair) solid var(--ink);
   transition:
     background-color var(--t-fast) var(--ease-out),
     color var(--t-fast) var(--ease-out);
@@ -224,7 +265,7 @@
   font-size: var(--step--1);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  border: 1px solid var(--rule);
+  border: var(--border-hair) solid var(--rule);
   transition:
     border-color var(--t-fast) var(--ease-out),
     color var(--t-fast) var(--ease-out);
@@ -234,17 +275,19 @@
   border-color: var(--ink);
 }
 
-/* Listening is live state, so it is the one thing here allowed to take the
-   accent colour. */
-.micOn {
-  border-color: var(--signal);
-  color: var(--signal);
+/* Listening is live state, and --live is the token that means live. This wore
+   the brand accent back when the accent meant "happening now"; under ADR-005 it
+   means "the one thing to press", and a microphone that is already listening is
+   reporting rather than asking. */
+.micLive {
+  border-color: var(--live);
+  color: var(--live);
 }
 
 .voiceToggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--s-2);
   font-size: var(--step--1);
   color: var(--ink-soft);
   cursor: pointer;
@@ -255,7 +298,7 @@
 .selectAsk {
   position: fixed;
   transform: translate(-50%, -100%);
-  z-index: 40;
+  z-index: var(--z-furniture);
   font-size: var(--step--1);
   padding: 0.4em 0.8em;
   background: var(--ink);
@@ -278,7 +321,7 @@
 /* Stated plainly, in body colour rather than an alarm colour: a blocked
    microphone is a limitation to work around, not an error the visitor caused. */
 .micError {
-  margin: 0.6rem 0 0;
+  margin: var(--s-2) 0 0;
   font-size: var(--step--1);
   color: var(--ink-soft);
 }
@@ -290,9 +333,9 @@
   display: block;
   width: 100%;
   text-align: left;
-  padding: 0.5rem 0;
+  padding: var(--s-2) 0;
   border: none;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: var(--border-hair) solid var(--rule);
   background: none;
   font: inherit;
   font-size: var(--step--1);
@@ -320,8 +363,8 @@
 .affordances {
   list-style: none;
   display: grid;
-  gap: 0.55rem;
-  margin: 0.25rem 0 0;
+  gap: var(--s-2);
+  margin: var(--s-1) 0 0;
   padding: 0;
   font-size: var(--step--1);
   color: var(--ink-soft);
@@ -331,7 +374,7 @@
 .affordances li {
   display: grid;
   grid-template-columns: 4.5rem 1fr;
-  gap: 0.75rem;
+  gap: var(--s-3);
   align-items: baseline;
 }
 
@@ -343,7 +386,7 @@
 .keys {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: var(--s-1);
   justify-self: start;
 }
 
@@ -368,8 +411,8 @@
   text-align: center;
   color: var(--ink);
   background: var(--paper);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-md);
   box-shadow: 0 1.5px 0 var(--rule);
   transition:
     transform var(--t-fast) var(--ease-standard),
@@ -447,17 +490,11 @@
  * inline targets, and padding them would break the line rhythm of the prose
  * they sit in for no gain in either compliance or usability.
  */
-.opener {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-}
-
 .traceToggle {
   min-height: 44px;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--s-2);
 }
 
 /* The checkbox itself stays visually small; the label around it becomes the
@@ -465,7 +502,7 @@
 .voiceToggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.55rem;
+  gap: var(--s-2);
   min-height: 44px;
   cursor: pointer;
 }
@@ -482,9 +519,10 @@
   accent-color: var(--signal);
 }
 
-/* What an opener demonstrates, set under the question it belongs to. */
+/* What an opener demonstrates, set at the end of the row it belongs to. */
 .shows {
-  font-size: 0.68rem;
+  flex: none;
+  font-size: var(--step--2);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-soft);
@@ -497,9 +535,9 @@
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.3rem;
+  gap: var(--s-1);
   justify-self: start;
-  margin-block-start: 0.9rem;
+  margin-block-start: var(--s-4);
   text-align: left;
   font-size: var(--step--1);
   color: var(--ink-soft);
@@ -537,10 +575,10 @@
 }
 
 .policy {
-  margin: 0.6rem 0 0;
-  padding: 0.8rem 0.9rem;
+  margin: var(--s-2) 0 0;
+  padding: var(--s-3) var(--s-4);
   background: var(--paper-sunk);
-  border-radius: 3px;
+  border-radius: var(--r-sm);
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--step-code);
   line-height: 1.6;
@@ -611,11 +649,11 @@
 
 /* Listening is a live state, so it takes the accent and it breathes. Border
    colour alone did not read as "the microphone is open right now". */
-.micOn::after {
+.micLive::after {
   content: "";
   position: absolute;
   inset: -3px;
-  border: var(--border-hair) solid var(--signal);
+  border: var(--border-hair) solid var(--live);
   border-radius: inherit;
   animation: mic-listening 1.6s var(--ease-out) infinite;
   pointer-events: none;
@@ -639,7 +677,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .copy[data-copied]::before,
-  .micOn::after {
+  .micLive::after {
     animation: none;
   }
 }
@@ -658,7 +696,7 @@
   letter-spacing: var(--track-wide);
   padding: 0.15em 0.5em;
   border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-sm);
   color: var(--ink-faint);
 }
 
@@ -707,7 +745,7 @@
   color: var(--ink-soft);
   background: transparent;
   border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   padding: 0.3em 0.8em;
   cursor: pointer;
   text-decoration: none;
@@ -761,7 +799,7 @@
   color: var(--paper);
   background: var(--ink);
   border: var(--border-hair) solid var(--ink);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   padding: 0.4em 1em;
   text-decoration: none;
   cursor: pointer;
@@ -779,7 +817,7 @@
   color: var(--ink-soft);
   background: transparent;
   border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   padding: 0.4em 1em;
   cursor: pointer;
 }
@@ -814,10 +852,10 @@
  * to run it in front of someone. */
 .evalResult {
   display: grid;
-  gap: 2px;
+  gap: var(--s-1);
   margin: var(--s-3) 0 0;
   padding-inline-start: var(--s-3);
-  border-inline-start: var(--border-emphasis) solid var(--rule);
+  border-inline-start: var(--border-hair) solid var(--rule);
 }
 
 .evalResult[data-outcome="pass"] {
@@ -837,4 +875,600 @@
   font-size: var(--step--2);
   color: var(--ink-faint);
   font-variant-numeric: tabular-nums;
+}
+
+/* The tool registry, made visible.
+ *
+ * A capability nobody can see is a capability nobody uses: the agent has been
+ * able to open a merged pull request, either publication, the source for this
+ * page or a written email since it was built, and the only way to find that
+ * out was to guess the right sentence. Closed by default because it is an
+ * offer rather than the main event, and the count in the summary is what makes
+ * it worth opening.
+ */
+.toolkit {
+  margin-top: var(--s-4);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-sm);
+}
+
+.toolkitSummary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-2) var(--s-3);
+  cursor: pointer;
+  /* "8 things it can open for you" is a sentence. */
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: var(--step--1);
+  color: var(--ink);
+}
+
+.toolkitSummary::-webkit-details-marker {
+  display: none;
+}
+
+/* Says it is clickable in words as well as in shape. A row of links inside a
+   dark console reads as output until something tells the reader otherwise. */
+/* A sentence, so it is set in the sentence face. Mono here was the face
+   standing in for "technical" on ordinary words, which is the one thing mono
+   is not for; it is for code, identifiers, and figures. */
+.toolkitHint {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  color: var(--ink-faint);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-size: var(--step--1);
+}
+
+.toolkit[open] .toolkitHint {
+  opacity: 0;
+}
+
+/* Hover says it opens: the frame and the hint lift to the ink a link uses. */
+.toolkit:has(> .toolkitSummary:hover) {
+  border-color: var(--ink-soft);
+}
+
+.toolkitSummary:hover .toolkitHint {
+  color: var(--ink-soft);
+}
+
+.tools {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--s-3) var(--s-2);
+  display: grid;
+  gap: var(--s-1);
+}
+
+.tool {
+  display: grid;
+  gap: var(--s-1);
+  padding: var(--s-2) var(--s-2);
+  border-radius: var(--r-sm);
+  text-decoration: none;
+  color: inherit;
+  border: var(--border-hair) solid transparent;
+}
+
+.tool:hover,
+.tool:focus-visible {
+  border-color: var(--rule);
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
+}
+
+/* Same split as the artifact rows: a repository reference is an identifier and
+   a paper title is a name. `data-id` marks the first, set from the label. */
+.toolLabel {
+  font-size: var(--step--1);
+  /* Underlined rather than coloured: the accent on this page means "live", and
+     a link that is merely available has not earned it. */
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-color: var(--rule);
+}
+
+.toolAbout {
+  font-size: var(--step--1);
+  line-height: 1.4;
+  color: var(--ink-faint);
+}
+
+.toolLabel[data-id] {
+  font-family: var(--font-mono), monospace;
+  overflow-wrap: anywhere;
+}
+
+/* Inside the stage drawer the labels read in sentence case, like every other
+   label on that page. The classic page keeps its small capitals. */
+/* Inside the drawer the shortcut opens this panel, so the line telling the
+   reader it jumps anywhere is describing the page it replaced. */
+:global([data-stage]) .hints li:first-child {
+  display: none;
+}
+
+/* One filled control per screen and no glow behind it: on the stage the send
+   button keeps the accent and drops the ring and the shouting. */
+:global([data-stage]) .send {
+  box-shadow: none;
+}
+
+:global([data-stage]) .send,
+:global([data-stage]) .stop,
+:global([data-stage]) .mic,
+:global([data-stage]) .gesture,
+:global([data-stage]) .shows {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* ---- Typed messages ------------------------------------------------------ */
+
+/*
+ * Every exchange in the drawer is a message with a header that names who is
+ * speaking and, for the agent, what the answer cost. The numbers come from the
+ * response; a turn that carries no timing prints no timing.
+ */
+.msgHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  margin-bottom: 6px;
+  font: 400 0.6875rem/1 var(--font-mono);
+  color: var(--ink-soft);
+  text-transform: lowercase;
+}
+
+.msgHead b {
+  white-space: nowrap;
+  font-weight: 400;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* An answer served without a model keeps its warn rule, so the reader can tell
+   the two kinds of answer apart at a glance. */
+.answer[data-degraded] {
+  padding-top: 10px;
+  border-top: 2px solid var(--warn);
+}
+
+.msgHead i {
+  font-style: normal;
+  color: var(--warn);
+}
+
+/* How sure the answer is. Said in words, coloured by the state token that
+   already means it: live for sure, warn for partly, muted for don't know. */
+.band {
+  white-space: nowrap;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+  color: var(--ink-soft);
+  letter-spacing: 0.06em;
+}
+
+.band[data-band="answer"] {
+  color: var(--live);
+}
+
+.band[data-band="partial"] {
+  color: var(--warn);
+}
+
+/* A figure or name the answer's context does not contain (lib/agent/ground.ts).
+   Marked in the text and named in the header, so colour is never the only signal. */
+.unsupported {
+  text-decoration: underline dashed var(--warn) 1px;
+  text-underline-offset: 3px;
+}
+
+/* An observation is a result with a header that says what was observed and how
+   much of it there was; the body below it is the observation itself. */
+.sources .msgHead,
+.evalResult .msgHead {
+  margin-bottom: 4px;
+}
+
+.evalResult[data-outcome="pass"] .msgHead b {
+  color: var(--live);
+}
+
+.evalResult[data-outcome="fail"] .msgHead b {
+  color: var(--fail);
+}
+
+/* The trace as an observation: a header naming what was traced, then one row
+   per node with the slowest one named rather than left to be compared. */
+.traceHead {
+  grid-column: 1 / -1;
+}
+
+.traceBar {
+  transform-origin: left center;
+  animation: traceBar 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.traceRow[data-slowest] .traceBar {
+  background: var(--ink);
+}
+
+.traceRow dt em {
+  margin-left: 8px;
+  font-style: normal;
+  font-size: 0.6875rem;
+  color: var(--ink-soft);
+}
+
+@keyframes traceBar {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .traceBar {
+    animation: none;
+  }
+}
+
+/* The published system prompt is a record, so it is set as a system message:
+   a perforated top edge, its own scroll, and the header naming what was
+   elided from it. */
+.policyBlock {
+  position: relative;
+  margin-top: var(--s-2);
+  padding-top: 10px;
+}
+
+.policyBlock::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-top: 1px dotted var(--rule);
+}
+
+.policyBlock .policy {
+  max-height: 280px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+/* A provider chip carries its own state square: live when the provider answered
+   for this request, warn while it is cooling off. */
+.provider {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.provider i {
+  width: 5px;
+  height: 5px;
+  background: currentColor;
+}
+
+/* The draft the tool built, set as an envelope: the subject row is the flap,
+   closed by a shallow chevron, and the body is prose rather than code, because
+   what is in it is a message a person will send. */
+.draftHead {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  margin: var(--s-3) 0 0;
+  padding: 10px 14px 16px;
+  background: var(--paper-sunk);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), 50% 100%, 0 calc(100% - 8px));
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  color: var(--ink);
+}
+
+.draftHead span {
+  color: var(--ink-faint);
+}
+
+.draft .draftText {
+  margin-top: 0;
+  font-family: inherit;
+  font-size: var(--step--1);
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+/* Keyboard, drag and trace hints need a keyboard or a pointer; a phone has
+   neither, so the console keeps only what a thumb can use. */
+@media (max-width: 767px) {
+  .hints {
+    display: none;
+  }
+}
+
+/* While an answer streams it holds room for four lines, so the box does not
+   grow a line at a time under the reader's eye. */
+.answer[data-live] {
+  min-height: 7.5em;
+}
+
+/* The work loop sits under everything in the console and fades in only
+   while an answer streams; dim enough that the text keeps AAA. */
+.agent {
+  position: relative;
+  isolation: isolate;
+}
+
+.workLoop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-slow, 0.6s) var(--ease-out);
+}
+
+.workLoop[data-on] {
+  opacity: 0.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workLoop {
+    display: none;
+  }
+}
+
+/* route › retrieve › answer, the running step lit; on every width, so a
+   phone (where the pipeline graph is hidden) still sees the graph move. */
+.steps {
+  display: inline-flex;
+  gap: 0.5em;
+  margin-inline-start: var(--s-3);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.steps [data-on] {
+  color: var(--signal);
+}
+
+/* Sources arrive one after another, in the order they ranked. */
+@media (prefers-reduced-motion: no-preference) {
+  .source {
+    animation: source-in 320ms var(--ease-out, ease-out) both;
+    animation-delay: calc(var(--n, 0) * 70ms);
+  }
+}
+
+@keyframes source-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
+/* One line of everything the agent can open, for a thumb. The desktop list
+   above is a disclosure; this row is the same offer without the extra tap. */
+.dock {
+  display: none;
+  list-style: none;
+  margin: var(--s-3) 0 0;
+  padding: 0 0 var(--s-1);
+  gap: var(--s-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, var(--ink) calc(100% - 2rem), transparent);
+  mask-image: linear-gradient(to right, var(--ink) calc(100% - 2rem), transparent);
+}
+
+.dock::-webkit-scrollbar {
+  display: none;
+}
+
+.dockLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 44px;
+  padding: 0 var(--s-3);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+  font-family: var(--font-mono), monospace;
+  font-size: var(--step--1);
+}
+
+.dockLink:hover,
+.dockLink:focus-visible {
+  border-color: var(--ink-soft);
+}
+
+/* The dock scrolls sideways, so it clips anything drawn outside a chip: the
+   global 2px offset ring vanished there. Drawn inside the chip instead. */
+.dockLink:focus-visible {
+  outline-offset: -2px;
+}
+
+.dockLink svg {
+  flex: none;
+}
+
+@media (max-width: 767px) {
+  .toolkit {
+    display: none;
+  }
+
+  .dock {
+    display: flex;
+  }
+}
+
+/* Chips arrive one after another, and the icon nudges toward the link it
+   opens when pressed. Off under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .dock li {
+    animation: dock-in var(--t-slow, 0.6s) var(--ease-out) both;
+    animation-delay: calc(var(--n) * 45ms);
+  }
+
+  .dockLink svg {
+    transition: transform 0.18s var(--ease-out);
+  }
+
+  .dockLink:hover svg,
+  .dockLink:active svg {
+    transform: translate(2px, -2px);
+  }
+}
+
+@keyframes dock-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+}
+
+/* Where the answers come from, and the one outside link. */
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+}
+
+.kb {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.kb b {
+  white-space: nowrap;
+  /* The same chip as the stack tags: mono, ink, a hairline. Underline would
+     read as a link. */
+  padding: 2px var(--s-2);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-sm);
+  font: 500 var(--step--2) var(--font-mono), monospace;
+  color: var(--ink);
+}
+
+.social {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -6px -10px -6px 0;
+  color: var(--ink-soft);
+  transition: color 0.18s var(--ease-out);
+}
+
+.social:hover,
+.social:focus-visible {
+  color: var(--ink);
+}
+
+/* A thumb has no use for the word, only the icon, and the field needs the room. */
+.mic {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+/* In person, with a room around the phone, nobody dictates a question, and the
+   mic would take a third of the field. The typed path stays. */
+@media (max-width: 767px) {
+  .mic {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .kb svg {
+    display: none;
+  }
+}
+
+/* Screen-reader-only status line: the single live region of the console. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* A 1px track under the "working" line with a packet moving along it: the box is
+   busy, and it says so without taking layout space (the track replaces nothing). */
+.sweep {
+  display: block;
+  position: relative;
+  height: 1px;
+  margin-block-start: var(--s-2);
+  background: var(--rule);
+  overflow: hidden;
+}
+
+.sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 30%;
+  background: var(--signal);
+  transform: translateX(-100%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sweep::after {
+    animation: sweep 1.2s var(--ease-out, ease-out) infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sweep::after {
+    width: 100%;
+    opacity: 0.5;
+    transform: none;
+  }
+}
+
+@keyframes sweep {
+  to {
+    transform: translateX(340%);
+  }
+}
+
+/* One line per answer sentence, numbered by the list itself: which section it
+   came from (lib/agent/ground.ts cite). "no source" is said, not coloured. */
+.cites {
+  margin: 4px 0 0;
+  padding-left: 2.4ch;
+}
+
+.cites li[data-none] {
+  color: var(--warn);
 }

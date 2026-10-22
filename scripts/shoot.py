@@ -69,7 +69,7 @@ def main() -> int:
     tag = f"-{args.tag}" if args.tag else ""
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(channel="chrome", headless=True)
         for name, (w, h) in VIEWPORTS.items():
             page = browser.new_page(viewport={"width": w, "height": h},
                                     color_scheme=scheme,

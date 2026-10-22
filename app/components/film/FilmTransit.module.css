@@ -1,0 +1,307 @@
+.transit {
+  position: relative;
+  /* The window is film ground, not a control. Pinned section content can sit
+     over it while the page scrolls, and a transparent box that takes pointer
+     events would swallow every click on that content. Only the card is live. */
+  pointer-events: none;
+  height: calc(var(--transit-vh, 0.6) * 100vh);
+  display: grid;
+  align-items: end;
+  padding: 0 clamp(1rem, 4vw, 3rem);
+}
+
+@media (max-width: 767px) {
+  .transit {
+    height: 38vh;
+  }
+}
+
+/* Without the live film the windows would be empty ground, so they collapse
+   to a hairline gap and the page reads as the classic document. */
+:global(html:not([data-film="live"])) .transit {
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* The transit card (plan C5.3): an instrument bay pinned to the bottom left
+   of its window, x 48 to 619 at 1440. Compartments are divided by hairlines;
+   the header strip is the raised film tone. Opaque, so no scrim sits under it. */
+.card {
+  pointer-events: auto;
+  position: sticky;
+  bottom: 80px;
+  width: min(571px, 100%);
+  display: grid;
+  color: var(--ink);
+  background: var(--film-black);
+}
+
+.card > * + * {
+  border-top: var(--border-hair) solid var(--rule);
+}
+
+/* Outer edges, drawn clockwise on arrival: top, right, bottom, left. */
+.card::after,
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.card::after {
+  background:
+    linear-gradient(var(--rule) 0 0) left top / 100% 1px no-repeat,
+    linear-gradient(var(--rule) 0 0) right top / 1px 100% no-repeat,
+    linear-gradient(var(--rule) 0 0) right bottom / 100% 1px no-repeat,
+    linear-gradient(var(--rule) 0 0) left bottom / 1px 100% no-repeat;
+}
+
+/* 8 px corner brackets, outside the edge by one pixel. */
+.card::before {
+  inset: -1px;
+  --bracket: var(--ink-faint);
+  background:
+    linear-gradient(var(--bracket) 0 0) left top / 8px 1px no-repeat,
+    linear-gradient(var(--bracket) 0 0) left top / 1px 8px no-repeat,
+    linear-gradient(var(--bracket) 0 0) right top / 8px 1px no-repeat,
+    linear-gradient(var(--bracket) 0 0) right top / 1px 8px no-repeat,
+    linear-gradient(var(--bracket) 0 0) left bottom / 8px 1px no-repeat,
+    linear-gradient(var(--bracket) 0 0) left bottom / 1px 8px no-repeat,
+    linear-gradient(var(--bracket) 0 0) right bottom / 8px 1px no-repeat,
+    linear-gradient(var(--bracket) 0 0) right bottom / 1px 8px no-repeat;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0;
+  padding: 8px 16px;
+  background: var(--film-raised);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.head {
+  align-items: center;
+}
+
+.ticks {
+  display: flex;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ticks li {
+  width: 12px;
+  height: 2px;
+  background: var(--rule);
+}
+
+.ticks li[data-at="past"] {
+  background: var(--ink-faint);
+}
+
+.ticks li[data-at="here"] {
+  background: var(--ink);
+}
+
+/* ILLUSTRATION carries no marker (plan K2): only the visitor's run is filled. */
+.chip {
+  color: var(--ink-faint);
+}
+
+.body {
+  display: grid;
+  padding: 16px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.line {
+  margin: 4px 0 0;
+  max-width: 48ch;
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--ink-soft);
+}
+
+/* T3's acts share one cell; the one the camera is in shows. Swap 140 ms out,
+   240 ms in (plan 14.4). */
+.act {
+  grid-area: 1 / 1;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition:
+    opacity 140ms ease-in,
+    transform 140ms ease-in,
+    visibility 0s linear 140ms;
+}
+
+:global(html:not([data-film-act])) .act[data-act="0"],
+:global(html[data-film-act="0"]) .act[data-act="0"],
+:global(html[data-film-act="1"]) .act[data-act="1"],
+:global(html[data-film-act="2"]) .act[data-act="2"] {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 240ms ease-out 140ms,
+    transform 240ms ease-out 140ms,
+    visibility 0s linear 140ms;
+}
+
+.values {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 12px 16px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.values > div {
+  display: grid;
+  grid-template-columns: 16ch 1fr;
+  gap: 12px;
+}
+
+.values dt {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Value left, where it comes from in its own right-hand column. */
+.values dd {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  margin: 0;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.tag {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Arrival (plan C5.7): shell and brackets fade in, edges draw clockwise,
+   content rises 12 px from 60 ms; about 300 ms in all. */
+/* Opacity too: an act sets its own visibility, which would show through a
+   card that was never scrolled into (a jump to an anchor). */
+.card[data-state="idle"] {
+  visibility: hidden;
+  opacity: 0;
+}
+
+/* The opaque shell arrives with its words: shown alone it read as an empty
+   black slab for the 420 ms the content used to wait (6 percent of a scroll). */
+.card[data-state="in"] {
+  animation: shell 180ms ease-out both;
+}
+
+.card[data-state="in"]::before {
+  animation: brackets 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.card[data-state="in"]::after {
+  animation: edges 200ms linear 100ms both;
+}
+
+.card[data-state="in"] > * {
+  animation: rise 200ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both;
+}
+
+.card[data-state="out"] {
+  animation: leave 260ms ease-in both;
+}
+
+@keyframes brackets {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes edges {
+  0% {
+    background-size: 0 1px, 1px 0, 0 1px, 1px 0;
+  }
+  25% {
+    background-size: 100% 1px, 1px 0, 0 1px, 1px 0;
+  }
+  50% {
+    background-size: 100% 1px, 1px 100%, 0 1px, 1px 0;
+  }
+  75% {
+    background-size: 100% 1px, 1px 100%, 100% 1px, 1px 0;
+  }
+  100% {
+    background-size: 100% 1px, 1px 100%, 100% 1px, 1px 100%;
+  }
+}
+
+@keyframes shell {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes leave {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card::before,
+  .card::after,
+  .card > *,
+  .act {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .card[data-state="out"] {
+    visibility: hidden;
+  }
+}
+
+/* On a phone the window is the film: the stage card and its size table
+   covered most of it and wrapped into one-word columns. */
+@media (max-width: 767px) {
+  .card {
+    display: none;
+  }
+}

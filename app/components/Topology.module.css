@@ -1,63 +1,119 @@
-.wrap {
-  margin: 0 0 1.4rem;
+.topo {
+  margin: var(--s-5) 0 var(--s-4);
+  display: grid;
+  justify-items: center;
+  --line: color-mix(in oklch, var(--tone, var(--ink)) 60%, transparent);
+  --gap: var(--s-5);
 }
 
-.svg {
-  width: 100%;
-  height: auto;
-  max-width: 40rem;
-  display: block;
+.node {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: var(--s-2) var(--s-4);
+  border: var(--border-hair) solid var(--line);
+  background: var(--paper);
+  text-align: center;
+  min-inline-size: 8rem;
 }
 
-.box {
-  fill: none;
-  stroke: var(--rule);
-  stroke-width: 1;
-  transition:
-    stroke var(--t-mid) var(--ease-out),
-    fill var(--t-mid) var(--ease-out);
+.node[data-root] {
+  border-color: var(--tone, var(--ink));
+  position: relative;
 }
 
-.text {
+.name {
+  overflow-wrap: anywhere;
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  fill: var(--ink-soft);
-  transition: fill var(--t-mid) var(--ease-out);
-}
-
-.edge {
-  fill: none;
-  stroke: var(--rule);
-  stroke-width: 1;
-  transition: stroke var(--t-mid) var(--ease-out);
-}
-
-/* The two edges that make this a graph rather than a pipeline. Dashed so the
-   difference is visible without colour, which is the only encoding that
-   survives both themes and a reader who cannot distinguish them. */
-.edge[data-conditional] {
-  stroke-dasharray: 4 3;
-}
-
-/* Live state is the one thing on this page allowed to use the accent. */
-.node[data-live] .box {
-  stroke: var(--signal);
-}
-
-.node[data-live] .text {
-  fill: var(--ink);
-}
-
-.edge[data-live] {
-  stroke: var(--signal);
-  stroke-width: 1.5;
-}
-
-.caption {
-  margin-block-start: 0.7rem;
   font-size: var(--step--1);
-  line-height: 1.6;
-  color: var(--ink-soft);
-  max-width: var(--measure);
+  color: var(--ink);
+}
+
+.node[data-root] .name {
+  font-weight: 700;
+}
+
+.note,
+.leafNote {
+  font-size: var(--step--2);
+  color: var(--ink-faint);
+}
+
+.leafNote {
+  margin: var(--s-2) 0 var(--gap);
+  text-align: center;
+}
+
+/* The fan: a stem from the router, a rail across the agents, a stub into each. */
+.leaves {
+  list-style: none;
+  margin: 0;
+  padding: var(--gap) 0 0;
+  display: grid;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  gap: var(--s-3);
+  inline-size: 100%;
+  position: relative;
+}
+
+.leaves::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 50%;
+  block-size: calc(var(--gap) / 2);
+  border-inline-start: var(--border-hair) solid var(--line);
+}
+
+.leaves::after {
+  content: "";
+  position: absolute;
+  inset-block-start: calc(var(--gap) / 2);
+  inset-inline: calc(50% / var(--n));
+  border-block-start: var(--border-hair) solid var(--line);
+}
+
+.leaves > .node {
+  position: relative;
+  min-inline-size: 0;
+  padding-inline: var(--s-2);
+}
+
+.leaves > .node::before {
+  content: "";
+  position: absolute;
+  inset-block-end: 100%;
+  inset-inline-start: 50%;
+  block-size: calc(var(--gap) / 2);
+  border-inline-start: var(--border-hair) solid var(--line);
+}
+
+.node[data-store] {
+  position: relative;
+  border-style: dashed;
+}
+
+.node[data-store]::before {
+  content: "";
+  position: absolute;
+  inset-block-end: 100%;
+  inset-inline-start: 50%;
+  block-size: var(--gap);
+  border-inline-start: var(--border-hair) dashed var(--line);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .leaves > .node {
+    transition: border-color var(--t-fast) ease;
+  }
+  .leaves > .node:hover {
+    border-color: var(--tone, var(--ink));
+  }
+}
+
+/* Increase Contrast: the fan and the store link draw at full tone. */
+@media (prefers-contrast: more) {
+  .topo {
+    --line: var(--tone, var(--ink));
+  }
 }
