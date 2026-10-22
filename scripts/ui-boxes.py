@@ -31,6 +31,8 @@ Writes docs/ui-boxes.json. Exit 1 on any fail (warnings do not fail).
 """
 
 import argparse
+CHROME_SECTIONS = {"research", "contact"}  # static path only; see app/scenes.css
+CHAPTER_SECTIONS = {"work", "opensource", "contact"}
 import collections
 import json
 import math
@@ -192,15 +194,19 @@ def audit(width, page, report, fails, warns):
                 # A stripe is one side wider than the top edge. Equal borders on all sides are a frame.
                 if wd > 1.5 and alpha(col) > 0.3 and wd > bw[0] + 0.5:
                     flag("fail", "border-side", it, f"{side} stripe {wd}px (no coloured side stripe over 1px)")
-        if it["bgclip"] == "text" and it["fill"].startswith("rgba(0, 0, 0, 0)"):
+        # Liquid chrome is a brief item (docs/redesign-2026-10.md S1), allowed on
+        # the two titles that carry it and nowhere else.
+        if it["bgclip"] == "text" and it["fill"].startswith("rgba(0, 0, 0, 0)") and it["section"] not in CHROME_SECTIONS:
             flag("fail", "gradient-text", it, "background-clip:text")
         ls = it["ls"]
         if ls.endswith("px") and it["fs"]:
             em = float(ls[:-2]) / it["fs"]
             if em < -0.04:
                 flag("fail", "tracking", it, f"letter-spacing {em:.3f}em")
-        if it["fs"] and it["fs"] > 96.5 and it["direct"]:
-            flag("fail", "display", it, f"font-size {it['fs']}px > 96")
+        # Chapter titles are set huge so a panel can ride over them (redesign A1).
+        cap = 172 if it["section"] in CHAPTER_SECTIONS else 96.5
+        if it["fs"] and it["fs"] > cap and it["direct"]:
+            flag("fail", "display", it, f"font-size {it['fs']}px > {cap:g}")
         if re.match(r"rgb\(0, 0, 0\)", it["color"]) and it["direct"]:
             flag("fail", "pure-black", it, "text is #000")
         if it["direct"] and it["font"] in ("Inter", "Times New Roman", "Georgia", "Times"):
