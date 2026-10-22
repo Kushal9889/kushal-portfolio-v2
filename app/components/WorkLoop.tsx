@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { reducedMotion } from "@/lib/verbs";
 
 /**
  * The racks at work, behind an instrument. Plays while `on` and on screen,
@@ -13,7 +14,7 @@ export default function WorkLoop({ on, className }: { on: boolean; className?: s
 
   useEffect(() => {
     const v = ref.current;
-    if (!v || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!v || reducedMotion()) return;
     const sync = () => {
       if (on && visible.current) {
         if (!v.src) v.src = window.innerWidth < 768 ? "/film/agent/loop-p.mp4" : "/film/agent/loop.mp4";

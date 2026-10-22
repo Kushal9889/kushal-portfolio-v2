@@ -6,6 +6,7 @@ import { createPost, SCRIM_MAX } from "./post";
 import { getRequest, subscribe as onRequest } from "./request";
 import clipList from "@/content/film-clips.json";
 import frameCounts from "@/content/film-frames.json";
+import { reducedMotion } from "@/lib/verbs";
 
 /** Scroll ranges of every page element the route names, measured now. */
 function measure(): Span[] {
@@ -146,7 +147,7 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers, onSlow?: () =>
   const ground = cssColour(getComputedStyle(document.body).getPropertyValue("--paper").trim() || getComputedStyle(document.body).backgroundColor);
   const post = createPost(ground);
   // The fluid needs float render targets and stays off under reduced motion.
-  const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const calm = reducedMotion();
   const fluid = !calm && renderer.capabilities.isWebGL2 && renderer.extensions.has("EXT_color_buffer_float") ? createFluid() : null;
   post.setFlow(fluid ? fluid.velocity : null);
   // Reduced motion: dissolves stay (they carry the change) but do not push, and
@@ -320,6 +321,11 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers, onSlow?: () =>
   // from its entry frame onward. `gen` retires the requests of a released
   // clip so a late reply never counts toward its next load.
   let inflight = 0;
+  // Requests on the wire right now. Separate from `inflight`, which also holds
+  // requests sleeping before a retry: counting that sleep as link time made 40
+  // percent of 503s read as a slow link and sent a healthy desktop to the still
+  // (film-link flaky-503 inside bench:film, 2026-10-10).
+  let active = 0;
   // The link, measured rather than guessed from navigator.connection (a slow
   // "4g" never reports 3g): bytes over the time the queue was busy. Once 12
   // frames have arrived over at least a second, a link that cannot carry the
@@ -332,7 +338,7 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers, onSlow?: () =>
     link.bytes += bytes;
     link.frames++;
     if (link.decided || link.frames < 12) return;
-    const busy = (link.busy + (inflight > 0 ? now - link.since : 0)) / 1000;
+    const busy = (link.busy + (active > 0 ? now - link.since : 0)) / 1000;
     if (busy < 1) return;
     link.decided = true;
     const need = (link.bytes / link.frames) * tierFps;
@@ -359,10 +365,15 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers, onSlow?: () =>
   const fetchFrame = async (url: string): Promise<Blob> => {
     for (let attempt = 0; ; attempt++) {
       try {
-        const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
-        if (!r.ok) throw new Error(String(r.status));
-        breaker.fails = 0;
-        return await r.blob();
+        if (active++ === 0) link.since = performance.now();
+        try {
+          const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+          if (!r.ok) throw new Error(String(r.status));
+          breaker.fails = 0;
+          return await r.blob();
+        } finally {
+          if (--active === 0) link.busy += performance.now() - link.since;
+        }
       } catch (e) {
         if (++breaker.fails >= 6) breaker.openUntil = performance.now() + 5000;
         // A missing file will not appear on a retry.
@@ -384,7 +395,7 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers, onSlow?: () =>
       const c = l;
       const g = c.gen;
       const i = c.order[c.next++];
-      if (inflight++ === 0) link.since = performance.now();
+      inflight++;
       fetchFrame(`/film/frames/${c.tier}/${c.base}/${String(i + 1).padStart(4, "0")}.webp`)
         .then((b) => {
           meter(b.size);
@@ -393,7 +404,7 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers, onSlow?: () =>
         // A missing frame is held over by its neighbour rather than blanking.
         .catch(() => {})
         .finally(() => {
-          if (--inflight === 0) link.busy += performance.now() - link.since;
+          inflight--;
           if (c.gen === g && ++c.loaded >= c.n && c.a.i < 0) {
             // Parked on its entry frame while it waits off screen, so the
             // frame it enters on is already decoded (D44).

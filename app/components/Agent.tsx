@@ -14,6 +14,7 @@ import WorkLoop from "./WorkLoop";
 import Paced from "./Paced";
 import type { GlyphKey } from "@/lib/ui-icons";
 import styles from "./Agent.module.css";
+import { reducedMotion } from "@/lib/verbs";
 
 type Result = {
   answer: string;
@@ -272,7 +273,7 @@ export default function Agent({
     const offscreen = box.top < 0 || box.top > window.innerHeight * 0.6;
     if (!offscreen) return;
 
-    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const calm = reducedMotion();
     root.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "center" });
 
     /*

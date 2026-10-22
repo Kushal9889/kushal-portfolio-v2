@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import styles from "./ProofWall.module.css";
+import { reducedMotion } from "@/lib/verbs";
 
 /** Medallions boot one at a time and each step on its own frame, so building two
  *  WebGL scenes never lands as a single long frame in the middle of a scroll. */
@@ -44,7 +45,7 @@ export default function Medallion({
   useEffect(() => {
     const el = host.current;
     const cv = canvas.current;
-    if (!el || !cv || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!el || !cv || reducedMotion()) return;
     let stop = false;
     let started = false;
     let cleanup = () => {};
