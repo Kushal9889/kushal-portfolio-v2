@@ -1840,6 +1840,12 @@ main > section[data-register="chapter"] > .wrap h2 {
   text-wrap: balance;
 }
 
+/* The open-source heading is a six-word sentence, not a label: set in sentence
+   case so the uppercase rule above stays on headings of one to three words. */
+main > section[data-register="chapter"][data-lead="artifact"] > .wrap h2 {
+  text-transform: none;
+}
+
 /* Declaring the ground back to paper, for a written block sitting inside a live
    one. A console nested in a console is harmless -- these values are absolute,
    not relative, so the inner scope simply restates what it already inherited --
@@ -2197,7 +2203,7 @@ button {
 button,
 [role="button"],
 summary,
-a[data-pull] {
+a {
   /* Press depth, not a colour change. The surface goes down and its cast edge
      collapses, which is what a physical control does and what a reader reads as
      "that registered" without having to notice a hue. */
@@ -2209,7 +2215,7 @@ a[data-pull] {
 button:active,
 [role="button"]:active,
 summary:active,
-a[data-pull]:active {
+a:active {
   transform: translateY(1px);
 }
 
@@ -2274,7 +2280,7 @@ button[class*="seed"]::before {
   button:active,
   [role="button"]:active,
   summary:active,
-  a[data-pull]:active {
+  a:active {
     transform: none;
   }
 
@@ -2568,10 +2574,21 @@ main a[class*="primary"]:hover {
   transform: translateX(3px);
 }
 
+/* Pressed: the nudge stays and the row goes down 1px, so the press is not
+   swallowed by the hover rule above it (same specificity, later wins). */
+main a[class*="link"]:active,
+main a[class*="item"]:active,
+main a[class*="primary"]:active {
+  transform: translate(3px, 1px);
+}
+
 @media (prefers-reduced-motion: reduce) {
   main a[class*="link"]:hover,
   main a[class*="item"]:hover,
-  main a[class*="primary"]:hover {
+  main a[class*="primary"]:hover,
+  main a[class*="link"]:active,
+  main a[class*="item"]:active,
+  main a[class*="primary"]:active {
     transform: none;
   }
 }

@@ -263,3 +263,21 @@ a.source:hover {
 .value[data-numeric] {
   white-space: nowrap;
 }
+
+/* The ranking stamp on a lead figure: a small seal under the number, in the
+   figure face so it reads as part of the reading, never over its digits. */
+.seal {
+  display: block;
+  width: fit-content;
+  margin-block: 0 var(--s-2);
+  padding: 0.32em 0.6em 0.26em;
+  border-radius: 999px;
+  font-family: var(--font-plate, inherit);
+  font-size: var(--step--1);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--on-signal);
+  background: var(--ink);
+}
