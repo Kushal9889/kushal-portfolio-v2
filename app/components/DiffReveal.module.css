@@ -8,16 +8,21 @@
   padding: var(--s-6);
   border: var(--border-hair) solid var(--rule);
   background: var(--paper-sunk);
-  /* This panel paints its own recessed ground, so it owes the same ink
-     compensation the [data-tone="sunk"] scope gives section 06. Without it the
-     credit line measured Lc 70.8 against a 75 floor. */
+}
+
+:global(html[data-film="live"]) .sticky {
+  background: color-mix(in oklab, var(--paper-sunk) 55%, transparent);
+}
+
+/* This panel paints its own recessed ground, so on the light theme it owes the
+   same ink compensation the [data-tone="sunk"] scope gives section 06: without
+   it the credit line measured Lc 70.8 against a 75 floor. Light only. These
+   are light-ground inks, and unscoped they put the caption and the code on the
+   dark recessed ground at 1.9:1. The dark ramp gains contrast on a darker
+   ground and needs no restatement. Hue 250 matches the rest of the page (the
+   old hue-62 soft ink painted ten diff elements cream). */
+:global(:root[data-theme="light"]) .sticky {
   --ink-faint: oklch(0.455 0.007 250);
-  /* Hue 62 is yellow-brown. This one token kept the pre-ADR-005 warm
-     substrate and painted ten elements of the diff -- the code lines, the
-     verdict, the credit and the pull-request link -- in a cream-family ink on
-     an otherwise achromatic hue-250 page. The line above it had been moved and
-     this one had not. Lightness is unchanged, so the contrast compensation the
-     comment describes still holds. */
   --ink-soft: oklch(0.375 0.006 250);
 }
 
@@ -234,4 +239,27 @@
   .sticky[data-step="3"] .bad {
     --strike: 1;
   }
+}
+
+/* Phone: code keeps its lines (a wrapped identifier reads as a typo), set
+   one step smaller, and scrolls sideways; the right edge fades so the cut
+   reads as more to the right, not as a broken line. */
+@media (max-width: 767px) {
+  .code,
+  .code * {
+    font-size: var(--step--2);
+  }
+
+  .code {
+    overflow-x: auto;
+    mask-image: linear-gradient(to right, var(--ink) 82%, transparent);
+    -webkit-mask-image: linear-gradient(to right, var(--ink) 82%, transparent);
+    padding-right: var(--s-6);
+  }
+}
+
+/* Same box grammar as every other evidence box: the product hue (LangChain)
+   down the left edge. */
+.sticky {
+  border-left: 1px solid var(--brand-langchain);
 }

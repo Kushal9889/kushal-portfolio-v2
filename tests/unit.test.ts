@@ -1042,3 +1042,54 @@ describe("merged patch", () => {
     );
   });
 });
+
+describe("sourceTitles", () => {
+  test("folds a section into its more specific sibling, keeps distinct sections", async () => {
+    const { sourceTitles } = await import("../lib/agent/retrieve");
+    const lab = "Boston University, Questrom Computational Lab";
+    assert.deepEqual(
+      sourceTitles([{ title: `${lab}, backend` }, { title: lab }, { title: "IMG Systems" }, { title: "IMG Systems" }]),
+      [`${lab}, backend`, "IMG Systems"],
+    );
+    // A shared word is not a shared section.
+    assert.deepEqual(sourceTitles([{ title: "Growaza" }, { title: "Growaza Labs" }]), ["Growaza", "Growaza Labs"]);
+  });
+});
+
+describe("ground: claim-level groundedness", async () => {
+  const { ground } = await import("../lib/agent/ground");
+  const ctx = "Apache Tika pipeline, extraction accuracy **+20%**, **5,000+** profiles/month. Docker, PostgreSQL. LangGraph-based agent on Azure.";
+
+  test("a figure written differently from the source still counts as found", () => {
+    const r = ground("At IMG Systems he raised extraction accuracy by 20% across 5000 profiles with Docker.", ctx, "What did he do at IMG Systems?");
+    assert.equal(r.g, 1);
+  });
+
+  test("an invented figure and an invented name are both caught", () => {
+    const r = ground("He cut latency by 40% on Kubernetes.", ctx);
+    assert.deepEqual(r.unsupported, ["40%", "Kubernetes"]);
+    assert.equal(r.g, 0);
+  });
+
+  test("list markers and sentence-opening words are not claims", () => {
+    const r = ground("1. He used PostgreSQL.\n2. Both ran on Azure's cloud.", ctx);
+    assert.equal(r.claims, 2);
+    assert.equal(r.g, 1);
+  });
+
+  test("an answer with nothing checkable is not penalised", () => {
+    assert.equal(ground("He knows the work well.", ctx).g, 1);
+  });
+});
+
+describe("cite: per-sentence source", async () => {
+  const { cite } = await import("../lib/agent/ground");
+  const sections = [
+    { title: "IMG Systems", body: "Role: SWE Intern\n\nBuilt an Apache Tika extraction pipeline handling 5,000+ profiles a month with Docker and PostgreSQL." },
+    { title: "Growaza", body: "Cut API response time 30% and raised engagement 22% with a MySQL dashboard." },
+  ];
+  test("each sentence maps to the section whose passage holds most of its words", () => {
+    const c = cite("He built an Apache Tika pipeline for 5,000+ profiles a month. He cut API response time 30% at Growaza. He enjoys hiking.", sections);
+    assert.deepEqual(c.map((x) => x.source), ["IMG Systems", "Growaza", null]);
+  });
+});

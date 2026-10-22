@@ -28,6 +28,11 @@ const ALLOWED = new Set([
   // logo. Exempt because they are not design tokens and must never be
   // retuned to match the page.
   "app/components/Mark.tsx",
+  // The film's world as data: the material library and the state hues are the
+  // one place its colours are written (plan C1 acceptance), and every mesh
+  // reads them from there.
+  "app/components/film/sources.ts",
+  "app/components/film/hues.ts",
 ]);
 
 /**

@@ -89,8 +89,8 @@
   /* Set explicitly rather than mixed, so the three steps stay three steps.
      Chroma rises slightly as they lighten, which keeps a pale tone from
      drifting toward grey and reading as disabled rather than as secondary. */
-  --ink-soft: oklch(0.855 0.005 258);
-  --ink-faint: oklch(0.740 0.008 258);
+  --ink-soft: oklch(0.884 0.005 258);
+  --ink-faint: oklch(0.800 0.008 258);
 
   /* The one accent. Every interactive target wears it and nothing else does.
    *
@@ -115,7 +115,7 @@
    * with an accent and a page with a palette. Red is released to --fail, where
    * it is unambiguous, and nothing else on the page is chromatic except two
    * strictly semantic states. */
-  --signal: oklch(0.700 0.135 258);
+  --signal: oklch(0.830 0.085 205);
   --signal-deep: oklch(0.780 0.115 258);
   --on-signal: oklch(0.150 0.020 258);
   --signal-wash: color-mix(in oklch, var(--signal) 10%, var(--paper));
@@ -498,7 +498,7 @@
   --rule: oklch(0.885 0.002 250);
   --edge: oklch(1 0 0 / 0.72);
 
-  --signal: oklch(0.485 0.205 258);
+  --signal: oklch(0.480 0.120 205);
   --signal-deep: oklch(0.40 0.19 258);
   --on-signal: oklch(0.99 0.001 250);
   --signal-wash: color-mix(in oklch, var(--signal) 10%, var(--paper));
@@ -768,7 +768,7 @@
 @media (prefers-reduced-motion: no-preference) {
   [data-tier="housing"]::before,
   [data-tier="housing"]::after {
-    animation: mark-register var(--t-slow) var(--ease-spring) both;
+    animation: mark-register var(--t-slow) var(--ease-out) both;
   }
 
   [data-tier="housing"]::before {
@@ -1303,6 +1303,12 @@ main :is(p, dd, li, blockquote):not([data-wide]) {
   color: var(--ink-soft);
 }
 
+@media (max-width: 767px) {
+  .prose {
+    line-height: 1.5;
+  }
+}
+
 .prose .lead {
   color: var(--ink);
   /* An explicit step, not 1.06em. As a multiplier it compounded with the one
@@ -1406,6 +1412,26 @@ pre {
   text-decoration-thickness: 1px;
   text-underline-offset: 0.28em;
   text-decoration-skip-ink: auto;
+}
+
+.prose strong a {
+  /* A linked claim is one mark: the claim colour with a 2px underline, as every
+     link here. The wash behind plain bold is dropped for it so the two do not
+     stack. */
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--mark);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.25em;
+}
+
+.prose strong a:hover,
+.prose strong a:focus-visible {
+  text-decoration-color: var(--ink);
+}
+
+.prose strong:has(> a)::after {
+  display: none;
 }
 
 .prose strong::after {
@@ -1687,7 +1713,7 @@ html {
   /* Restated rather than mixed. The light values are tuned against a light
      ground; the same chroma at these lightnesses reads muddy on charcoal, and
      color-mix against a dark paper produces a different result than intended. */
-  --signal: oklch(0.72 0.18 258);
+  --signal: oklch(0.83 0.09 205);
   --signal-wash: color-mix(in oklch, var(--signal) 16%, var(--paper));
   --mark: var(--signal);
   --mark-wash: color-mix(in oklch, var(--mark) 16%, var(--paper));
@@ -1831,8 +1857,12 @@ main > section[data-register="chapter"] > .wrap h2 {
  * same way the console ground restates it, so no component has to know it is
  * sitting on a darker surface.
  */
-[data-tone="sunk"],
-[data-surface="sunk"] {
+/* Light only. Written when light was the default; left unscoped after dark
+   became the root theme, it put these light-ground inks on the dark sunk
+   ground at 1.95:1 in Education, Proof and Open source. The dark ramp already
+   gains contrast on a darker ground and needs no restatement. */
+:root[data-theme="light"] [data-tone="sunk"],
+:root[data-theme="light"] [data-surface="sunk"] {
   --ink-faint: oklch(0.455 0.007 250);
   --ink-soft: oklch(0.385 0.006 250);
 }
@@ -1852,11 +1882,11 @@ main > section[data-register="chapter"] > .wrap h2 {
     --paper: white;
     --ink: black;
     --rule: oklch(0.885 0.002 250);
-    --signal: oklch(0.485 0.205 258);
+    --signal: oklch(0.480 0.120 205);
     /* Pinned like the accent above it. Only --signal was, so a page printed
        from the dark theme carried a lifted --mark onto white paper along with
        every semantic colour that had no print value at all. */
-    --mark: oklch(0.435 0.185 258);
+    --mark: oklch(0.430 0.110 205);
     --mark-wash: color-mix(in oklch, var(--mark) 12%, white);
     --mark-rule: color-mix(in oklch, var(--mark) 38%, white);
     --live: oklch(0.52 0.14 152);
@@ -2260,6 +2290,11 @@ body {
   padding-block-end: 4rem;
 }
 
+/* Focus and anchors never land under the fixed dock (WCAG 2.4.11). */
+html {
+  scroll-padding-bottom: 4rem;
+}
+
 @media print {
   body {
     padding-block-end: 0;
@@ -2313,5 +2348,632 @@ body {
   to {
     opacity: 1;
     transform: scaleX(1);
+  }
+}
+
+/* ---- Film layer --------------------------------------------------------
+ * The film's darkest pixel is --paper (engine.ts locks it), so any block that
+ * paints --paper meets the film with no seam. Text never sits on raw film:
+ *
+ * - Sections stop painting full-bleed grounds. From 56rem the reading column
+ *   of each section is one glass panel, at most 62vw wide and left-aligned where the
+ *   text already starts, and the right-hand lane is film.
+ * - Below 56rem the panel spans the width as denser glass, so the film shows
+ *   behind every section on a phone too. (At 56rem, 62vw is still about 65
+ *   characters of body text.)
+ * - The hero's text is protected by the film itself (a scrim under its rects).
+ *
+ * Glass, not solid (D40): each panel is a tint of --paper mixed in oklab
+ * over a blurred copy of the film. Mixing with `transparent` in oklch drops the
+ * hue to `none` (hue 0, faintly warm against the blue-black film), so the mix
+ * stays in oklab.
+ */
+/* Film state hues (plan C2.1). One computed meaning each: --film-live is the
+   request the orange light is drawing, and nothing else is orange. On :root
+   rather than the live selector because the renderer reads it while starting,
+   before it marks the page live. */
+:root {
+  /* Product hues for phrase figures in Work, lifted for a dark ground so each
+     clears 4.5:1 as large text over the glass. */
+  /* Product hues, all at one lightness and chroma so no one box shouts:
+     the film's own range (steel, rack-LED cyan, copper) sets the band; only
+     the hue tells the products apart. */
+  --brand-azure: oklch(0.82 0.09 245);
+  /* The certificate frame is printed paper. */
+  --cert-paper: oklch(0.985 0.002 258);
+  --brand-django: oklch(0.82 0.10 160);
+  --brand-docker: oklch(0.82 0.09 222);
+  --brand-aws: oklch(0.82 0.11 70);
+  --brand-nvidia: oklch(0.82 0.13 130);
+  --brand-claude: oklch(0.76 0.11 42);
+  --brand-bu: oklch(0.74 0.13 25);
+  --brand-langchain: oklch(0.82 0.09 178);
+  --brand-ieee: oklch(0.82 0.08 265);
+  --film-black: #0d1013;
+  --film-raised: #171a1e;
+  --film-live: #ff4f00;
+  --film-retrieve: #679ff1;
+  --film-memory: #49b8b8;
+  --film-supply: #4077a3;
+  --film-return: #a45953;
+  --film-light: #f2f3f5;
+}
+
+html[data-film="live"] body > header,
+html[data-film="live"] body > footer,
+html[data-film="live"] main > section {
+  background: transparent;
+  border-bottom: 0;
+}
+
+/* Each reading panel is an instrument bay (plan C5.1): a 6 px raised lid with
+   a hairline under it, and 8 px corner brackets, all drawn as backgrounds so no
+   element is added. The four section heads keep their own shapes; a uniform
+   header strip across them would flatten the rail, banner, rule and bank into
+   one (docs/film-deviations.md, D17). */
+html[data-film="live"] main > section > .wrap {
+  --bracket: var(--ink-faint);
+  background:
+    linear-gradient(var(--bracket) 0 0) left top / 8px 1px no-repeat,
+    linear-gradient(var(--bracket) 0 0) left top / 1px 8px no-repeat,
+    linear-gradient(var(--bracket) 0 0) right top / 8px 1px no-repeat,
+    linear-gradient(var(--bracket) 0 0) right top / 1px 8px no-repeat,
+    linear-gradient(var(--bracket) 0 0) left bottom / 8px 1px no-repeat,
+    linear-gradient(var(--bracket) 0 0) left bottom / 1px 8px no-repeat,
+    linear-gradient(var(--bracket) 0 0) right bottom / 8px 1px no-repeat,
+    linear-gradient(var(--bracket) 0 0) right bottom / 1px 8px no-repeat,
+    linear-gradient(var(--rule) 0 0) 0 6px / 100% 1px no-repeat,
+    linear-gradient(var(--paper-raised) 0 0) top / 100% 6px no-repeat,
+    var(--panel-tint);
+  padding-block: var(--s-6);
+}
+
+/* Panel grounds are photographs (plan section 16, U1 and U2): brushed bay
+   metal under every panel, the operator desk under each console. Each sits
+   under a paper tint so text keeps the contrast measured on the flat ground
+   (scripts/film-contrast.py). The test bench (U3) is the measurements' plate
+   behind the panel instead. */
+html[data-film="live"] main > section > .wrap {
+  /* Frosted glass over the film (D40): the footage stays visible through
+     every panel, blurred so its detail never competes with the text. Panels
+     alternate dense and clear, so the page breathes between reading and
+     watching. Mixed in oklab, never oklch (see above). */
+  --panel-alpha: 60%;
+  --panel-tint: linear-gradient(color-mix(in oklab, var(--paper) var(--panel-alpha), transparent) 0 0);
+  --panel-feather: 0 0 0 transparent;
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+}
+
+html[data-film="live"] main > section:nth-of-type(even) > .wrap {
+  --panel-alpha: 52%;
+}
+
+/* No glass for readers who ask for less transparency or more contrast. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  html[data-film="live"] main > section > .wrap {
+    --panel-alpha: 100%;
+  }
+}
+
+/* The console is the one raised instrument in the hero. Its grounds keep their
+   lightness and take the film's hue (258), so console, panels and film read as
+   one blue-black family (plan C2.2 item 4). */
+html[data-film="live"] [data-surface="console"] {
+  --paper: oklch(0.192 0.004 258);
+  --paper-raised: oklch(0.238 0.005 258);
+  --paper-sunk: oklch(0.155 0.003 258);
+  --rule: oklch(0.352 0.005 258);
+  background:
+    linear-gradient(color-mix(in oklab, var(--paper) 96%, transparent) 0 0),
+    url("/film/ui/console.webp") center / cover no-repeat,
+    var(--paper);
+}
+
+/* A reader who asks for more contrast gets every panel line in full ink
+   (plan C6.4). */
+@media (prefers-contrast: more) {
+  html[data-film="live"] main > section > .wrap,
+  html[data-film="live"] body > header,
+  html[data-film="live"] body > footer {
+    --ink-soft: var(--ink);
+    --ink-faint: var(--ink);
+  }
+}
+
+@media (min-width: 56rem) {
+  html[data-film="live"] main > section > .wrap,
+  html[data-film="live"] main > section[data-register="chapter"] > .wrap {
+    max-width: 62vw;
+    margin-left: max(0px, calc((100vw - 76rem) / 2));
+    margin-right: auto;
+    /* No hard edge: the glass thins out over its last 8rem into the film, so
+       the reading column never stands as a dark band down the page. The text
+       stops before the feather starts. */
+    padding-right: max(var(--s-6), 6rem);
+    --panel-tint: linear-gradient(
+      to right,
+      color-mix(in oklab, var(--paper) var(--panel-alpha), transparent) calc(100% - 8rem),
+      transparent 100%
+    );
+  }
+}
+
+/* The closing section holds the proof wall: its glass ran under the seals and
+   ended in a hard edge across the film at the wrap's bottom. Opaque seals and
+   their caption plates need no ground, and the text above them keeps the film
+   veil (engine.ts scrims, luminance capped behind every text box). */
+@media (min-width: 56rem) {
+  html[data-film="live"] main > section > .wrap:has(ul[data-scrim-skip]) {
+    --panel-tint: none;
+  }
+}
+
+/* Below 56rem each section's reading panel spans the width as the same glass,
+   a little denser, so the film stays visible behind every section on a phone
+   and the text keeps its contrast. */
+@media (max-width: 55.99rem) {
+  html[data-film="live"] main > section > .wrap {
+    --panel-alpha: 78%;
+  }
+
+  html[data-film="live"] main > section:nth-of-type(even) > .wrap {
+    --panel-alpha: 76%;
+  }
+}
+
+
+/* A coloured brand mark sits on the text line at the size of the text. */
+.brand-mark {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+  flex: none;
+}
+
+/* Every plain text link reads as one: the same colour and 2px rule the prose
+   links carry, so a certificate, a DOI and a pull request are spotted the same
+   way. Row links keep their own styling. */
+:where(main, footer) a:not([class]),
+:where(main, footer) a[class*="source"],
+:where(main, footer) a[class*="repo"] {
+  color: var(--mark);
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--mark-rule);
+  text-underline-offset: 0.18em;
+  transition:
+    text-decoration-color var(--t-fast) var(--ease-out),
+    text-underline-offset var(--t-fast) var(--ease-out);
+}
+
+:where(main, footer) a:not([class]):hover,
+:where(main, footer) a[class*="source"]:hover,
+:where(main, footer) a[class*="repo"]:hover {
+  text-decoration-color: var(--mark);
+  text-underline-offset: 0.28em;
+}
+
+/* Row links (papers, issues, contact routes) answer the pointer the same way:
+   the row steps right by a hair, which says "this opens" without a new colour. */
+main a[class*="link"],
+main a[class*="item"],
+main a[class*="primary"] {
+  transition: transform var(--t-fast) var(--ease-out);
+}
+
+main a[class*="link"]:hover,
+main a[class*="item"]:hover,
+main a[class*="primary"]:hover {
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main a[class*="link"]:hover,
+  main a[class*="item"]:hover,
+  main a[class*="primary"]:hover {
+    transform: none;
+  }
+}
+
+/* Every disclosure opens the same way: the content grows to its height and
+   fades in, so a fold reads as one motion wherever it sits. Browsers without
+   ::details-content open it instantly, as before. */
+@supports selector(::details-content) {
+  .more {
+    interpolate-size: allow-keywords;
+  }
+
+  .more::details-content {
+    block-size: 0;
+    opacity: 0;
+    overflow: clip;
+    transition:
+      block-size var(--t-base) var(--ease-out),
+      opacity var(--t-base) var(--ease-out),
+      content-visibility var(--t-base) allow-discrete;
+  }
+
+  .more[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .more::details-content {
+      transition: none;
+    }
+  }
+}
+
+@media print {
+  @supports selector(::details-content) {
+    .more::details-content {
+      block-size: auto;
+      opacity: 1;
+      content-visibility: visible;
+    }
+  }
+}
+
+/* Sections a phone reader can skip. Desktop keeps them. */
+@media (max-width: 767px) {
+  section[data-phone="hide"] {
+    display: none;
+  }
+}
+
+/* Small standalone links (a metric's SOURCE, the vCard) get a 44px tall hit
+   area on touch screens without moving the layout. Inline links inside a
+   sentence keep the sentence's line height (WCAG 2.5.8 inline exception). */
+@media (pointer: coarse) {
+  a[class*="source"],
+  a[href$=".vcf"] {
+    display: inline-block;
+    padding-block: 13px;
+    margin-block: -13px;
+  }
+  /* The padding would push a border underline 13px off the text; draw it
+     on the glyphs instead. */
+  a[class*="source"][href] {
+    border-bottom: 0;
+    padding-block: 14px;
+    margin-block: -14px;
+    text-decoration: underline 2px;
+    text-underline-offset: 3px;
+  }
+}
+
+/* Phone: the engraved band above each chapter heading is ornament; it gives
+   its height back to the content. */
+@media (max-width: 767px) {
+  [data-register="chapter"] > .wrap::before {
+    height: 1.25rem;
+    margin-block-end: var(--s-3);
+  }
+}
+
+/* Phone: the film takes a third of the screen, between the boxes rather than
+   behind them. The section stops being one glass sheet; each block inside it
+   becomes its own glass box, with a clear window of film between blocks and
+   between roles, so the footage is seen outright, not through frosting. */
+@media (max-width: 767px) {
+  html[data-film="live"] main > section > .wrap {
+    background: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  html[data-film="live"] main > section > .wrap > :not([class*="roles"]) {
+    background: color-mix(in oklab, var(--paper) 84%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: var(--s-3);
+    margin-inline: calc(-1 * var(--s-3));
+  }
+
+  html[data-film="live"] main > section > .wrap > * + * {
+    margin-top: 9vh;
+  }
+
+  html[data-film="live"] main > section > .wrap > [class*="roles"] {
+    display: grid;
+    gap: 9vh;
+  }
+}
+
+/* ---- One glass, not three (investigated 2026-10-01) ----------------------
+ * Root cause of the black boxes over the film: the components were built for
+ * a solid page ground and each paints its own near-black fill (console panels
+ * at paper plus a photo, panel header strips, the metric compartment grid
+ * whose dividers are a solid ground showing through 1px gaps, the diff card,
+ * folds, code lines). With the film live, the section already carries one
+ * glass sheet that the contrast gate measures, so every inner fill stacked a
+ * second and third dark layer on top of it. Inside a section the inner
+ * surfaces now go clear and keep only their hairlines; the section glass is
+ * the one ground. The hero agent console keeps a lighter glass of its own,
+ * because it is the one thing on the page that asks to be used. */
+html[data-film="live"] main [data-tier="housing"],
+html[data-film="live"] main [data-surface="console"],
+html[data-film="live"] main [data-tier="housing"] > :first-child,
+html[data-film="live"] main details,
+html[data-film="live"] main pre,
+html[data-film="live"] main code {
+  background: transparent;
+}
+
+html[data-film="live"] main [data-tier="housing"] {
+  box-shadow: none;
+  border: var(--border-hair) solid var(--rule);
+}
+
+html[data-film="live"] main [data-tier="housing"]::before,
+html[data-film="live"] main [data-tier="housing"]::after {
+  display: none;
+}
+
+/* The metric compartments: dividers drawn as hairlines on the cells instead
+   of a solid ground showing through gaps. */
+html[data-film="live"] main [data-surface="console"] dl {
+  background: transparent;
+  gap: 0;
+}
+
+html[data-film="live"] main [data-surface="console"] dl > div {
+  background: transparent;
+}
+
+html[data-film="live"] main [data-surface="console"] dl > div + div {
+  border-left: var(--border-hair) solid var(--rule);
+}
+
+html[data-film="live"] body > header [data-surface="console"] {
+  background: color-mix(in oklab, var(--paper) 74%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* The hero's two fact rows lose their compartment ground. */
+html[data-film="live"] body > header dl,
+html[data-film="live"] body > header dl > div {
+  background: transparent;
+}
+
+html[data-film="live"] body > header dl > div + div {
+  border-top: var(--border-hair) solid var(--rule);
+}
+
+/* ---- No black boxes (2026-10-01) ------------------------------------------
+ * Text is protected by the film itself: under every section's text the
+ * renderer caps the footage's luminance (post.ts scrim, feathered over 72px),
+ * so the film dims softly where words sit and stays bright everywhere else.
+ * With that in place no panel, section or block needs a fill. What is left is
+ * hairlines and type; the one exception is the role strip, which keeps a
+ * light glass because the role scrolls under it. */
+html[data-film="live"] main > section,
+html[data-film="live"] main > section[data-tone] {
+  background: transparent;
+}
+
+html[data-film="live"] main > section > .wrap,
+html[data-film="live"] main > section:nth-of-type(even) > .wrap {
+  --panel-tint: linear-gradient(transparent, transparent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html[data-film="live"] main > section > .wrap > * {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+@media (max-width: 767px) {
+  html[data-film="live"] main > section > .wrap > :not([class*="roles"]),
+  html[data-film="live"] main [data-kind="rack"] {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* Over the film the role strip scrolls with its role. A see-through strip that
+   sticks lets the paragraph under it show through the title (two texts on one
+   line); folds start closed, so a role is short enough not to need it. */
+html[data-film="live"] main [data-kind="rack"] > :first-child {
+  position: static;
+  background: transparent;
+}
+
+html[data-film="live"] body > header [data-surface="console"] {
+  background: color-mix(in oklab, var(--paper) 76%, transparent);
+}
+
+/* ---- Subtitle outline (2026-10-01) ----------------------------------------
+ * Text over the film carries its own contrast the way film subtitles do: a
+ * hard one-pixel dark outline drawn with zero-blur shadows, so every glyph is
+ * edged against whatever frame is behind it. No blur, no glow, no box; the
+ * film itself is only lightly lowered (post.ts VEIL_K) and stays sharp. */
+html[data-film="live"] main,
+html[data-film="live"] body > header,
+html[data-film="live"] body > footer {
+  --edge: color-mix(in oklab, var(--paper) 92%, transparent);
+  text-shadow:
+    1px 0 0 var(--edge), -1px 0 0 var(--edge), 0 1px 0 var(--edge), 0 -1px 0 var(--edge),
+    1px 1px 0 var(--edge), -1px -1px 0 var(--edge), 1px -1px 0 var(--edge), -1px 1px 0 var(--edge),
+    2px 0 0 var(--edge), -2px 0 0 var(--edge), 0 2px 0 var(--edge), 0 -2px 0 var(--edge);
+}
+
+/* Inside the white certificate plates and the code card there is no film. */
+html[data-film="live"] main pre,
+html[data-film="live"] main code,
+html[data-film="live"] main [class*="frame"] {
+  text-shadow: none;
+}
+
+/* Buttons reset text-shadow in the browser's own stylesheet; the halo has to
+   be handed to them explicitly. */
+html[data-film="live"] main button,
+html[data-film="live"] body > header button {
+  text-shadow: inherit;
+}
+
+/* A filled control is its own ground: the outline is for text on the film,
+   and on the light hero button it smeared the label. */
+html[data-film="live"] body > header [class*="cta"],
+html[data-film="live"] main [class*="cta"],
+html[data-film="live"] body > header button[class*="send"],
+html[data-film="live"] main button[class*="send"],
+html[data-film="live"] body > header button[class*="stop"],
+html[data-film="live"] main button[class*="stop"] {
+  text-shadow: none;
+}
+
+/* ---- One box grammar (2026-10-01) ----------------------------------------
+ * Every content box is told apart by one hue, always in the same three
+ * places: a 1px rule down its left edge (the craft floor allows a coloured side
+ * edge at 1px and no wider), the hairline under its head, and its dates and
+ * phrase figures. Roles set it as --role-tint (page.module.css);
+ * every other panel takes it from Panel's `hue`. */
+[data-hue] {
+  border-left: 1px solid var(--box-hue) !important;
+}
+
+[data-hue] > header {
+  border-bottom: var(--border-hair) solid color-mix(in oklab, var(--box-hue) 45%, transparent);
+}
+
+[data-hue] > header [class*="status"] {
+  color: var(--box-hue);
+}
+
+
+/* The still. Devices that do not run the live film (data saver, a slow link, a
+   small machine, no WebGL2, reduced motion) get one frame of the racks behind
+   the page, under a flat veil dark enough for the text on top to keep AAA. */
+html[data-film="still"] body::before,
+html[data-film="still"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+html[data-film="still"] body::before {
+  background: url("/film/still.jpg") center / cover no-repeat;
+}
+
+html[data-film="still"] body::after {
+  /* 84, not 82: at 82 the footer date label measured 6.96:1 on the still's
+     brightest band (scripts/film-still-contrast.py), under the 7:1 bar. */
+  background: color-mix(in oklab, var(--paper) 84%, transparent);
+}
+
+/* Prose with a phone seam (Prose `phoneOpen`): one copy of the folded
+   paragraphs per view, never both. */
+@media (max-width: 767px) {
+  .prose [data-desk-only] {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .prose [data-phone-only] {
+    display: none;
+  }
+}
+
+/* The scan (PageMotion.tsx): a figure is read the moment it enters. One hard
+   2 px beam in the signal colour crosses it once, left to right, and the
+   figure is revealed exactly behind it. No glow, no blur, 520 ms, once. */
+@media (prefers-reduced-motion: no-preference) {
+  /* Sized to the glyphs: a block-wide dt sent the beam 300 px past "+20%"
+     into empty space and the figure was fully lit by 130 ms. */
+  main dt.tabular {
+    width: fit-content;
+  }
+
+  main dt.tabular[data-scan] {
+    position: relative;
+    animation: scan-reveal 520ms cubic-bezier(0.3, 0, 0.2, 1) both;
+  }
+
+  /* The ::after is as wide as the figure and draws only its trailing 2 px edge,
+     so a transform of its own width carries the beam across (animating left
+     would lay the page out on every frame). */
+  main dt.tabular[data-scan]::after {
+    content: "";
+    position: absolute;
+    inset-block: -0.12em;
+    inset-inline-start: 0;
+    inline-size: 100%;
+    box-sizing: border-box;
+    border-inline-end: 2px solid var(--signal);
+    pointer-events: none;
+    animation: scan-beam 520ms cubic-bezier(0.3, 0, 0.2, 1) both;
+  }
+}
+
+@keyframes scan-reveal {
+  from {
+    clip-path: inset(-0.2em 100% -0.2em 0);
+  }
+  to {
+    clip-path: inset(-0.2em -2px -0.2em 0);
+  }
+}
+
+@keyframes scan-beam {
+  from {
+    transform: translateX(calc(-100% + 2px));
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  to {
+    transform: translateX(2px);
+    opacity: 0;
+  }
+}
+
+/* Section arrival (PageMotion.tsx, [data-sweep]): one 1px beam crosses the top
+   rule of the section once. It is 30% wide, so 233% of its own width puts its
+   right edge on the section edge (330% ran 29% past it and widened the page). Transform and opacity only, no glow, once. Under
+   reduced motion the rule simply stays as drawn: the arrival is still marked by
+   the section's own entrance, and nothing is lost that carried meaning. */
+@media (prefers-reduced-motion: no-preference) {
+  main > section[data-sweep] {
+    position: relative;
+  }
+
+  main > section[data-sweep][data-arrive]::before {
+    content: "";
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    z-index: 1;
+    width: 30%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--signal) 50%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    animation: section-beam 1.3s var(--ease-out, ease-out) 1 both;
+  }
+}
+
+@keyframes section-beam {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  12%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(233%);
   }
 }

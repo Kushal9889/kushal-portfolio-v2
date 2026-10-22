@@ -1,4 +1,5 @@
 ## How retrieval on this page works
+@source https://github.com/Kushal9889/kushal-portfolio-v2
 
 **The agent answering questions here runs hybrid retrieval: BM25 over the corpus
 and dense cosine over precomputed embeddings, fused with reciprocal rank fusion

@@ -1,17 +1,14 @@
 /**
  * Brand marks, generated from the corpus rather than curated by hand.
  *
- * Four marks, and the shortness of that list is the whole design.
- *
- * The first pass generated twenty-six, one for every product the stack lines
- * name. A mark against every entry is a decorated list: when Redis, Netlify and
- * Render all carry a logo, the logo stops meaning anything and the row reads as
- * a badge wall. These four are the ones a reader already recognises and already
- * assigns weight to, so they are the only ones that buy attention rather than
- * spend it. Everything else keeps the text it had.
+ * One mark for every stack entry a licensed library can draw, in the brand's
+ * own colours: devicon's original artwork (MIT) where it exists, else the
+ * simple-icons path (CC0) in the brand hex. A brand whose hex is too dark to
+ * read on the dark ground (GitHub, Next.js, LangChain) keeps the path in the
+ * text colour instead. Coloured marks ship as files in public/brand/.
  *
  * simple-icons is a devDependency and stays one. Importing it at runtime would
- * ship 3,457 paths to read four, so this emits only what is used, as a generated
+ * ship thousands of paths to read a few, so this emits only what is used, as a generated
  * module with no dependency of its own.
  *
  * Brands the corpus names that could not be drawn even if they were wanted:
@@ -20,35 +17,71 @@
  * it redistributed is not a workaround, it is the thing they asked nobody to
  * do.
  */
-import { writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import * as icons from "simple-icons";
 
+type Si = { title: string; path: string; hex: string };
+const registry = icons as unknown as Record<string, Si>;
+
 /**
- * Ordered, and the order is the rule: the first alias found in a name wins, so
- * anything that is a substring of another entry has to come first. "Neon
- * Postgres" is Neon, not Postgres, and only this ordering says so.
+ * Ordered, and the order is the rule: the first needle found in a name wins,
+ * so anything that is a substring of another entry comes first ("github
+ * actions" before "github", "neon" before "postgres").
+ * `dev` names a devicon file; without it the simple-icons path is used.
  */
-const ALIASES: [needle: string, slug: string][] = [
-  ["langgraph", "siLanggraph"],
-  ["langsmith", "siLangchain"],
-  ["langchain", "siLangchain"],
-  ["nvidia", "siNvidia"],
-  ["github", "siGithub"],
+const ALIASES: { needle: string; si?: string; dev?: string; mono?: boolean }[] = [
+  { needle: "langgraph", si: "siLanggraph", mono: true },
+  { needle: "langchain", si: "siLangchain", mono: true },
+  { needle: "claude", si: "siClaude" },
+  { needle: "model context protocol", si: "siModelcontextprotocol", mono: true },
+  { needle: "vllm", si: "siVllm" },
+  { needle: "ieee", si: "siIeee", mono: true },
+  { needle: "codechef", si: "siCodechef", mono: true },
+  { needle: "nvidia", si: "siNvidia" },
+  { needle: "github actions", si: "siGithubactions", dev: "githubactions/githubactions-original" },
+  { needle: "github", si: "siGithub", mono: true },
+  { needle: "neon", si: "siNeon" },
+  { needle: "postgres", si: "siPostgresql", dev: "postgresql/postgresql-original" },
+  { needle: "fastapi", si: "siFastapi", dev: "fastapi/fastapi-original" },
+  { needle: "next.js", si: "siNextdotjs", mono: true },
+  { needle: "node.js", si: "siNodedotjs", dev: "nodejs/nodejs-original" },
+  { needle: "typescript", si: "siTypescript", dev: "typescript/typescript-original" },
+  { needle: "redux", si: "siRedux", dev: "redux/redux-original" },
+  { needle: "react", si: "siReact", dev: "react/react-original" },
+  { needle: "python", si: "siPython", dev: "python/python-original" },
+  { needle: "pydantic", si: "siPydantic" },
+  { needle: "redis", si: "siRedis" },
+  { needle: "docker", si: "siDocker" },
+  { needle: "mysql", si: "siMysql" },
+  { needle: "jwt", si: "siJsonwebtokens", mono: true },
+  { needle: "azure", dev: "azure/azure-original" },
 ];
 
-const registry = icons as unknown as Record<string, { title: string; path: string }>;
-
+mkdirSync("public/brand", { recursive: true });
 const out: string[] = [];
 const missing: string[] = [];
 
-for (const [needle, key] of ALIASES) {
-  const icon = registry[key];
-  if (!icon) {
-    missing.push(`${needle} -> ${key}`);
+for (const a of ALIASES) {
+  const icon = a.si ? registry[a.si] : undefined;
+  if (a.si && !icon) {
+    missing.push(`${a.needle} -> ${a.si}`);
     continue;
   }
+  const slug = a.needle.replace(/[^a-z0-9]+/g, "-");
+  let src: string | undefined;
+  if (a.dev) {
+    writeFileSync(`public/brand/${slug}.svg`, readFileSync(`node_modules/devicon/icons/${a.dev}.svg`));
+    src = `/brand/${slug}.svg`;
+  } else if (icon && !a.mono) {
+    writeFileSync(
+      `public/brand/${slug}.svg`,
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#${icon.hex}" d="${icon.path}"/></svg>`,
+    );
+    src = `/brand/${slug}.svg`;
+  }
+  const title = icon?.title ?? a.needle.replace(/\b\w/g, (c) => c.toUpperCase());
   out.push(
-    `  [${JSON.stringify(needle)}, { title: ${JSON.stringify(icon.title)}, path: ${JSON.stringify(icon.path)} }],`,
+    `  [${JSON.stringify(a.needle)}, { title: ${JSON.stringify(title)}, path: ${JSON.stringify(icon?.path ?? "")}${src ? `, src: ${JSON.stringify(src)}` : ""} }],`,
   );
 }
 
@@ -60,10 +93,10 @@ if (missing.length > 0) {
 const file = `// Generated by scripts/build-icons.ts. Do not edit.
 //
 // Marks for the products the corpus names, in match order: the first needle
-// found in a name wins, so anything that is a substring of another entry sits
-// above it. Paths are simple-icons' own, on their 24x24 grid.
+// found in a name wins. \`path\` is simple-icons' 24x24 path (empty when only
+// devicon has the mark); \`src\` is the coloured file, when there is one.
 
-export type BrandIcon = { title: string; path: string };
+export type BrandIcon = { title: string; path: string; src?: string };
 
 export const BRAND_ICONS: [needle: string, icon: BrandIcon][] = [
 ${out.join("\n")}
@@ -79,5 +112,5 @@ export function brandIcon(name: string): BrandIcon | null {
 }
 `;
 
-writeFileSync(new URL("../lib/brand-icons.ts", import.meta.url), file);
+writeFileSync("lib/brand-icons.ts", file);
 console.log(`brand marks: ${out.length} generated`);

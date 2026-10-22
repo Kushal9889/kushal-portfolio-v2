@@ -24,7 +24,7 @@
     "decision-matrix": "tsx scripts/decision-matrix.ts",
     "audit": "tsx scripts/audit.ts",
     "build:graph": "tsx scripts/build-graph.ts",
-    "test:unit": "tsx --test tests/unit.test.ts tests/grammar.test.ts",
+    "test:unit": "tsx --test tests/unit.test.ts tests/grammar.test.ts tests/film.test.ts tests/serving.test.ts tests/redact.test.ts tests/claims.test.ts",
     "test:integration": "tsx --test tests/integration.test.ts",
     "test:system": "npm run build && tsx --test --test-timeout=120000 tests/system.test.ts",
     "test": "npm run test:unit && npm run test:integration",
@@ -38,18 +38,24 @@
     "bench:retrieval": "tsx scripts/bench-retrieval.ts",
     "sync:vectors": "tsx scripts/sync-vectors.ts",
     "bench:models": "tsx scripts/bench-models.ts",
-    "build:guilloche": "tsx scripts/build-guilloche.ts"
+    "build:guilloche": "tsx scripts/build-guilloche.ts",
+    "bench:film": "python3 scripts/bench-film.py",
+    "test:agent": "tsx scripts/agent-scenarios.ts --split test --gate"
   },
   "dependencies": {
     "@langchain/core": "^1.2.5",
     "@langchain/langgraph": "^1.4.9",
     "@langchain/openai": "^1.5.6",
     "@neondatabase/serverless": "^1.1.0",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/sdk-trace-base": "^2.12.0",
+    "@vercel/otel": "^2.1.3",
     "gsap": "^3.15.0",
     "kokoro-js": "^1.2.1",
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@fontsource-variable/hubot-sans": "^5.3.0",
@@ -62,9 +68,11 @@
     "@types/opentype.js": "^1.3.10",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.186.0",
     "culori": "^4.0.2",
+    "devicon": "^2.17.0",
     "opentype.js": "^2.0.0",
-    "simple-icons": "^16.29.0",
+    "simple-icons": "^16.33.0",
     "tsx": "^4.19.2",
     "typescript": "^5",
     "wawoff2": "^2.0.1"

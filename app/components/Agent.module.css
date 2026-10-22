@@ -45,6 +45,10 @@
 
 .input::placeholder {
   color: var(--ink-faint);
+  /* One line, cut with an ellipsis, so a narrow field never grows a scrollbar. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .send,
@@ -692,7 +696,7 @@
   letter-spacing: var(--track-wide);
   padding: 0.15em 0.5em;
   border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-sm);
   color: var(--ink-faint);
 }
 
@@ -741,7 +745,7 @@
   color: var(--ink-soft);
   background: transparent;
   border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   padding: 0.3em 0.8em;
   cursor: pointer;
   text-decoration: none;
@@ -795,7 +799,7 @@
   color: var(--paper);
   background: var(--ink);
   border: var(--border-hair) solid var(--ink);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   padding: 0.4em 1em;
   text-decoration: none;
   cursor: pointer;
@@ -813,7 +817,7 @@
   color: var(--ink-soft);
   background: transparent;
   border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   padding: 0.4em 1em;
   cursor: pointer;
 }
@@ -851,7 +855,7 @@
   gap: var(--s-1);
   margin: var(--s-3) 0 0;
   padding-inline-start: var(--s-3);
-  border-inline-start: var(--border-emphasis) solid var(--rule);
+  border-inline-start: var(--border-hair) solid var(--rule);
 }
 
 .evalResult[data-outcome="pass"] {
@@ -920,6 +924,15 @@
 
 .toolkit[open] .toolkitHint {
   opacity: 0;
+}
+
+/* Hover says it opens: the frame and the hint lift to the ink a link uses. */
+.toolkit:has(> .toolkitSummary:hover) {
+  border-color: var(--ink-soft);
+}
+
+.toolkitSummary:hover .toolkitHint {
+  color: var(--ink-soft);
 }
 
 .tools {
@@ -1000,8 +1013,9 @@
  */
 .msgHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 10px;
+  gap: 6px 10px;
   margin-bottom: 6px;
   font: 400 0.6875rem/1 var(--font-mono);
   color: var(--ink-soft);
@@ -1009,30 +1023,10 @@
 }
 
 .msgHead b {
+  white-space: nowrap;
   font-weight: 400;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
-}
-
-/* Leads to the chapter the top source is rendered in, and marks it on arrival. */
-.showMe {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: 10px 0 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--ink);
-  font: 500 0.875rem/1.3 var(--font-display), sans-serif;
-  text-decoration: underline;
-  text-underline-offset: 0.18em;
-  cursor: pointer;
-}
-
-.showMe:focus-visible {
-  outline: 2px solid var(--signal);
-  outline-offset: 3px;
 }
 
 /* An answer served without a model keeps its warn rule, so the reader can tell
@@ -1045,6 +1039,31 @@
 .msgHead i {
   font-style: normal;
   color: var(--warn);
+}
+
+/* How sure the answer is. Said in words, coloured by the state token that
+   already means it: live for sure, warn for partly, muted for don't know. */
+.band {
+  white-space: nowrap;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+  color: var(--ink-soft);
+  letter-spacing: 0.06em;
+}
+
+.band[data-band="answer"] {
+  color: var(--live);
+}
+
+.band[data-band="partial"] {
+  color: var(--warn);
+}
+
+/* A figure or name the answer's context does not contain (lib/agent/ground.ts).
+   Marked in the text and named in the header, so colour is never the only signal. */
+.unsupported {
+  text-decoration: underline dashed var(--warn) 1px;
+  text-underline-offset: 3px;
 }
 
 /* An observation is a result with a header that says what was observed and how
@@ -1163,4 +1182,293 @@
   font-size: var(--step--1);
   line-height: 1.55;
   color: var(--ink);
+}
+
+/* Keyboard, drag and trace hints need a keyboard or a pointer; a phone has
+   neither, so the console keeps only what a thumb can use. */
+@media (max-width: 767px) {
+  .hints {
+    display: none;
+  }
+}
+
+/* While an answer streams it holds room for four lines, so the box does not
+   grow a line at a time under the reader's eye. */
+.answer[data-live] {
+  min-height: 7.5em;
+}
+
+/* The work loop sits under everything in the console and fades in only
+   while an answer streams; dim enough that the text keeps AAA. */
+.agent {
+  position: relative;
+  isolation: isolate;
+}
+
+.workLoop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-slow, 0.6s) var(--ease-out);
+}
+
+.workLoop[data-on] {
+  opacity: 0.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workLoop {
+    display: none;
+  }
+}
+
+/* route › retrieve › answer, the running step lit; on every width, so a
+   phone (where the pipeline graph is hidden) still sees the graph move. */
+.steps {
+  display: inline-flex;
+  gap: 0.5em;
+  margin-inline-start: var(--s-3);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.steps [data-on] {
+  color: var(--signal);
+}
+
+/* Sources arrive one after another, in the order they ranked. */
+@media (prefers-reduced-motion: no-preference) {
+  .source {
+    animation: source-in 320ms var(--ease-out, ease-out) both;
+    animation-delay: calc(var(--n, 0) * 70ms);
+  }
+}
+
+@keyframes source-in {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
+/* One line of everything the agent can open, for a thumb. The desktop list
+   above is a disclosure; this row is the same offer without the extra tap. */
+.dock {
+  display: none;
+  list-style: none;
+  margin: var(--s-3) 0 0;
+  padding: 0 0 var(--s-1);
+  gap: var(--s-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, var(--ink) calc(100% - 2rem), transparent);
+  mask-image: linear-gradient(to right, var(--ink) calc(100% - 2rem), transparent);
+}
+
+.dock::-webkit-scrollbar {
+  display: none;
+}
+
+.dockLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 44px;
+  padding: 0 var(--s-3);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+  font-family: var(--font-mono), monospace;
+  font-size: var(--step--1);
+}
+
+.dockLink:hover,
+.dockLink:focus-visible {
+  border-color: var(--ink-soft);
+}
+
+/* The dock scrolls sideways, so it clips anything drawn outside a chip: the
+   global 2px offset ring vanished there. Drawn inside the chip instead. */
+.dockLink:focus-visible {
+  outline-offset: -2px;
+}
+
+.dockLink svg {
+  flex: none;
+}
+
+@media (max-width: 767px) {
+  .toolkit {
+    display: none;
+  }
+
+  .dock {
+    display: flex;
+  }
+}
+
+/* Chips arrive one after another, and the icon nudges toward the link it
+   opens when pressed. Off under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .dock li {
+    animation: dock-in var(--t-slow, 0.6s) var(--ease-out) both;
+    animation-delay: calc(var(--n) * 45ms);
+  }
+
+  .dockLink svg {
+    transition: transform 0.18s var(--ease-out);
+  }
+
+  .dockLink:hover svg,
+  .dockLink:active svg {
+    transform: translate(2px, -2px);
+  }
+}
+
+@keyframes dock-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+}
+
+/* Where the answers come from, and the one outside link. */
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+}
+
+.kb {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.kb b {
+  white-space: nowrap;
+  /* The same chip as the stack tags: mono, ink, a hairline. Underline would
+     read as a link. */
+  padding: 2px var(--s-2);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-sm);
+  font: 500 var(--step--2) var(--font-mono), monospace;
+  color: var(--ink);
+}
+
+.social {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -6px -10px -6px 0;
+  color: var(--ink-soft);
+  transition: color 0.18s var(--ease-out);
+}
+
+.social:hover,
+.social:focus-visible {
+  color: var(--ink);
+}
+
+/* A thumb has no use for the word, only the icon, and the field needs the room. */
+.mic {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+/* In person, with a room around the phone, nobody dictates a question, and the
+   mic would take a third of the field. The typed path stays. */
+@media (max-width: 767px) {
+  .mic {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .kb svg {
+    display: none;
+  }
+}
+
+/* Screen-reader-only status line: the single live region of the console. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* A 1px track under the "working" line with a packet moving along it: the box is
+   busy, and it says so without taking layout space (the track replaces nothing). */
+.sweep {
+  display: block;
+  position: relative;
+  height: 1px;
+  margin-block-start: var(--s-2);
+  background: var(--rule);
+  overflow: hidden;
+}
+
+.sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 30%;
+  background: var(--signal);
+  transform: translateX(-100%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sweep::after {
+    animation: sweep 1.2s var(--ease-out, ease-out) infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sweep::after {
+    width: 100%;
+    opacity: 0.5;
+    transform: none;
+  }
+}
+
+@keyframes sweep {
+  to {
+    transform: translateX(340%);
+  }
+}
+
+/* One line per answer sentence, numbered by the list itself: which section it
+   came from (lib/agent/ground.ts cite). "no source" is said, not coloured. */
+.cites {
+  margin: 4px 0 0;
+  padding-left: 2.4ch;
+}
+
+.cites li[data-none] {
+  color: var(--warn);
 }

@@ -5,6 +5,8 @@ const config: NextConfig = {
   // That is also why GitHub Pages cannot host this app.
   reactStrictMode: true,
   poweredByHeader: false,
+  // The round N in the corner is Next's own dev tool, not part of the site; it sat on top of the contact dock.
+  devIndicators: false,
   headers: async () => [
     {
       source: "/:path*",

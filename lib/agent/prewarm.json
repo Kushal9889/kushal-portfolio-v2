@@ -1,21 +1,20 @@
 {
   "what has he shipped on azure?": {
-    "answer": "He built a document intelligence assistant on Azure for an enterprise consulting client, owned from ingestion through deployment.",
+    "answer": "He shipped a Docker image across Azure environments.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 629,
-      "answer": 2219
+      "retrieve": 351,
+      "answer": 1865
     },
-    "total": 2867,
+    "total": 2234,
     "sources": [
-      "Boston University, Questrom Computational Lab",
-      "IMG Systems",
-      "BU Life AI"
+      "Boston University, Questrom Computational Lab, backend",
+      "Boston University, Questrom Computational Lab"
     ],
     "usage": {
-      "in": 2067,
-      "out": 22
+      "in": 1440,
+      "out": 11
     },
     "action": null,
     "trace": {
@@ -35,150 +34,166 @@
           "deploy"
         ]
       ],
-      "passages": 65,
+      "passages": 82,
       "rows": [
         {
           "title": "Who he is",
-          "lexicalScore": 34.4721,
-          "lexicalRank": 2,
+          "lexicalScore": 26.6098,
+          "lexicalRank": 7,
           "denseRank": 1,
-          "fused": 0.032522,
+          "fused": 0.031319,
           "selected": false
         },
         {
           "title": "What he is good at",
-          "lexicalScore": 7.6282,
-          "lexicalRank": 18,
-          "denseRank": 18,
-          "fused": 0.025641,
+          "lexicalScore": 19.002,
+          "lexicalRank": 17,
+          "denseRank": 12,
+          "fused": 0.026876,
           "selected": false
         },
         {
           "title": "What he does not do",
-          "lexicalScore": 8.3316,
-          "lexicalRank": 17,
-          "denseRank": 16,
-          "fused": 0.026145,
+          "lexicalScore": 17.8626,
+          "lexicalRank": 19,
+          "denseRank": 20,
+          "fused": 0.025158,
           "selected": false
         },
         {
-          "title": "Boston University, Questrom Computational Lab",
-          "lexicalScore": 38.2105,
+          "title": "Boston University, Questrom Computational Lab, backend",
+          "lexicalScore": 34.869,
           "lexicalRank": 1,
+          "denseRank": 6,
+          "fused": 0.058358,
+          "selected": true
+        },
+        {
+          "title": "Boston University, Questrom Computational Lab",
+          "lexicalScore": 32.5925,
+          "lexicalRank": 2,
           "denseRank": 2,
-          "fused": 0.060167,
+          "fused": 0.057395,
           "selected": true
         },
         {
           "title": "IMG Systems",
-          "lexicalScore": 2.0339,
-          "lexicalRank": 43,
-          "denseRank": 20,
-          "fused": 0.033761,
-          "selected": true
+          "lexicalScore": 2.2594,
+          "lexicalRank": 56,
+          "denseRank": 34,
+          "fused": 0.029089,
+          "selected": false
         },
         {
           "title": "Growaza",
-          "lexicalScore": 5.0074,
-          "lexicalRank": 30,
-          "denseRank": 40,
-          "fused": 0.031667,
+          "lexicalScore": 6.5816,
+          "lexicalRank": 34,
+          "denseRank": 43,
+          "fused": 0.030381,
           "selected": false
         },
         {
           "title": "BU Life AI",
-          "lexicalScore": 11.2147,
-          "lexicalRank": 12,
-          "denseRank": 12,
-          "fused": 0.033333,
-          "selected": true
+          "lexicalScore": 9.8802,
+          "lexicalRank": 25,
+          "denseRank": 25,
+          "fused": 0.028235,
+          "selected": false
         },
         {
           "title": "Open source, LangChain deepagents",
-          "lexicalScore": 0,
-          "lexicalRank": null,
-          "denseRank": 36,
-          "fused": 0.013542,
+          "lexicalScore": 2.4101,
+          "lexicalRank": 47,
+          "denseRank": 40,
+          "fused": 0.023615,
           "selected": false
         },
         {
           "title": "Certifications",
-          "lexicalScore": 18.7456,
-          "lexicalRank": 9,
-          "denseRank": 7,
-          "fused": 0.029418,
+          "lexicalScore": 13.6198,
+          "lexicalRank": 22,
+          "denseRank": 22,
+          "fused": 0.024243,
           "selected": false
         },
         {
           "title": "Education",
-          "lexicalScore": 13.0207,
-          "lexicalRank": 11,
-          "denseRank": 9,
-          "fused": 0.028577,
+          "lexicalScore": 11.0228,
+          "lexicalRank": 24,
+          "denseRank": 19,
+          "fused": 0.029476,
           "selected": false
         },
         {
           "title": "Publications",
-          "lexicalScore": 5.066,
-          "lexicalRank": 28,
-          "denseRank": 29,
-          "fused": 0.029217,
+          "lexicalScore": 4.8283,
+          "lexicalRank": 41,
+          "denseRank": 46,
+          "fused": 0.025135,
           "selected": false
         },
         {
           "title": "Skills",
-          "lexicalScore": 27.6067,
-          "lexicalRank": 5,
-          "denseRank": 5,
-          "fused": 0.030769,
+          "lexicalScore": 20.381,
+          "lexicalRank": 16,
+          "denseRank": 4,
+          "fused": 0.028125,
           "selected": false
         },
         {
           "title": "Achievements",
           "lexicalScore": 0,
           "lexicalRank": null,
-          "denseRank": 61,
-          "fused": 0.009917,
+          "denseRank": 67,
+          "fused": 0.009449,
+          "selected": false
+        },
+        {
+          "title": "Proof wall",
+          "lexicalScore": 5.806,
+          "lexicalRank": 35,
+          "denseRank": 56,
+          "fused": 0.019147,
           "selected": false
         },
         {
           "title": "Availability",
-          "lexicalScore": 25.0445,
-          "lexicalRank": 8,
-          "denseRank": 8,
-          "fused": 0.029412,
+          "lexicalScore": 24.1269,
+          "lexicalRank": 13,
+          "denseRank": 23,
+          "fused": 0.025747,
           "selected": false
         },
         {
           "title": "Work authorisation",
           "lexicalScore": 0,
           "lexicalRank": null,
-          "denseRank": 64,
-          "fused": 0.008065,
+          "denseRank": 82,
+          "fused": 0.007042,
           "selected": false
         },
         {
           "title": "This site",
-          "lexicalScore": 6.4493,
-          "lexicalRank": 20,
-          "denseRank": 17,
-          "fused": 0.025158,
+          "lexicalScore": 5.7889,
+          "lexicalRank": 36,
+          "denseRank": 32,
+          "fused": 0.020943,
           "selected": false
         },
         {
           "title": "Defects this page shipped and then fixed",
-          "lexicalScore": 9.6727,
-          "lexicalRank": 14,
-          "denseRank": 50,
-          "fused": 0.01464,
+          "lexicalScore": 8.4521,
+          "lexicalRank": 28,
+          "denseRank": 70,
+          "fused": 0.012386,
           "selected": false
         },
         {
           "title": "How retrieval on this page works",
-          "lexicalScore": 5.2634,
-          "lexicalRank": 25,
-          "denseRank": 28,
-          "fused": 0.014019,
+          "lexicalScore": 5.7085,
+          "lexicalRank": 37,
+          "denseRank": 54,
+          "fused": 0.011791,
           "selected": false
         }
       ]
@@ -186,23 +201,23 @@
     "provider": "nvidia"
   },
   "what broke in production and how did he find it?": {
-    "answer": "The LangChain defect broke in production with a silent failure that reported success while discarding an error. He found it by tracing the system closely enough to see where it contradicted itself, identifying a code path that reported success while discarding an error.",
+    "answer": "The LangChain defect in the deepagents SDK broke in production with a silent failure that showed success while discarding an error, and he found it by reading the system closely enough to see where it contradicted itself.",
     "route": "answer",
     "timings": {
       "route": 1,
-      "retrieve": 243,
-      "answer": 3182
+      "retrieve": 142,
+      "answer": 1116
     },
-    "total": 3431,
+    "total": 1263,
     "sources": [
       "Publications",
       "What he is good at",
       "Who he is",
-      "How retrieval on this page works"
+      "What he does not do"
     ],
     "usage": {
-      "in": 2126,
-      "out": 52
+      "in": 1741,
+      "out": 45
     },
     "action": null,
     "trace": {
@@ -214,19 +229,19 @@
           "finding"
         ]
       ],
-      "passages": 65,
+      "passages": 82,
       "rows": [
         {
           "title": "Who he is",
-          "lexicalScore": 2.5116,
-          "lexicalRank": 6,
-          "denseRank": 8,
-          "fused": 0.029857,
+          "lexicalScore": 2.3939,
+          "lexicalRank": 7,
+          "denseRank": 10,
+          "fused": 0.029211,
           "selected": true
         },
         {
           "title": "What he is good at",
-          "lexicalScore": 2.5658,
+          "lexicalScore": 2.9907,
           "lexicalRank": 5,
           "denseRank": 1,
           "fused": 0.031778,
@@ -234,18 +249,26 @@
         },
         {
           "title": "What he does not do",
+          "lexicalScore": 2.8629,
+          "lexicalRank": 6,
+          "denseRank": 14,
+          "fused": 0.028665,
+          "selected": true
+        },
+        {
+          "title": "Boston University, Questrom Computational Lab, backend",
           "lexicalScore": 0,
           "lexicalRank": null,
-          "denseRank": 22,
-          "fused": 0.012195,
+          "denseRank": 34,
+          "fused": 0.010638,
           "selected": false
         },
         {
           "title": "Boston University, Questrom Computational Lab",
-          "lexicalScore": 0,
-          "lexicalRank": null,
-          "denseRank": 48,
-          "fused": 0.009259,
+          "lexicalScore": 2.2974,
+          "lexicalRank": 8,
+          "denseRank": 27,
+          "fused": 0.0262,
           "selected": false
         },
         {
@@ -260,56 +283,56 @@
           "title": "Growaza",
           "lexicalScore": 0,
           "lexicalRank": null,
-          "denseRank": 24,
-          "fused": 0.011905,
+          "denseRank": 28,
+          "fused": 0.011364,
           "selected": false
         },
         {
           "title": "BU Life AI",
           "lexicalScore": 0,
           "lexicalRank": null,
-          "denseRank": 9,
-          "fused": 0.014493,
+          "denseRank": 8,
+          "fused": 0.014706,
           "selected": false
         },
         {
           "title": "Open source, LangChain deepagents",
           "lexicalScore": 0,
           "lexicalRank": null,
-          "denseRank": 12,
-          "fused": 0.013889,
+          "denseRank": 15,
+          "fused": 0.013333,
           "selected": false
         },
         {
           "title": "Certifications",
           "lexicalScore": 0,
           "lexicalRank": null,
-          "denseRank": 53,
-          "fused": 0.00885,
+          "denseRank": 68,
+          "fused": 0.007813,
           "selected": false
         },
         {
           "title": "Education",
           "lexicalScore": 0,
           "lexicalRank": null,
-          "denseRank": 40,
-          "fused": 0.01,
+          "denseRank": 52,
+          "fused": 0.008929,
           "selected": false
         },
         {
           "title": "Publications",
-          "lexicalScore": 5.066,
+          "lexicalScore": 5.1768,
           "lexicalRank": 1,
           "denseRank": 4,
-          "fused": 0.032018,
+          "fused": 0.031778,
           "selected": true
         },
         {
           "title": "Skills",
           "lexicalScore": 0,
           "lexicalRank": null,
-          "denseRank": 32,
-          "fused": 0.01087,
+          "denseRank": 41,
+          "fused": 0.009901,
           "selected": false
         },
         {
@@ -321,27 +344,35 @@
           "selected": false
         },
         {
+          "title": "Proof wall",
+          "lexicalScore": 0,
+          "lexicalRank": null,
+          "denseRank": 13,
+          "fused": 0.013699,
+          "selected": false
+        },
+        {
           "title": "Availability",
           "lexicalScore": 0,
           "lexicalRank": null,
-          "denseRank": 64,
-          "fused": 0.008065,
+          "denseRank": 80,
+          "fused": 0.007143,
           "selected": false
         },
         {
           "title": "Work authorisation",
           "lexicalScore": 0,
           "lexicalRank": null,
-          "denseRank": 49,
-          "fused": 0.009174,
+          "denseRank": 69,
+          "fused": 0.007752,
           "selected": false
         },
         {
           "title": "This site",
           "lexicalScore": 0,
           "lexicalRank": null,
-          "denseRank": 11,
-          "fused": 0.014085,
+          "denseRank": 16,
+          "fused": 0.013158,
           "selected": false
         },
         {
@@ -354,32 +385,34 @@
         },
         {
           "title": "How retrieval on this page works",
-          "lexicalScore": 3.6311,
+          "lexicalScore": 3.8695,
           "lexicalRank": 4,
-          "denseRank": 14,
-          "fused": 0.029139,
-          "selected": true
+          "denseRank": 19,
+          "fused": 0.028283,
+          "selected": false
         }
       ]
     },
     "provider": "nvidia"
   },
   "how does he know the retrieval is actually working?": {
-    "answer": "He knows the retrieval is actually working by finding the place a system is wrong before it fails loudly.",
+    "answer": "He knows the retrieval is working because the evaluation suite runs 25 cases with known correct behavior, using substring and route checks instead of LLM judges, and the retrieval scored precision@1 0.857 and MRR 0.929 over 35 scored retrievals with a median answer time of 1,155 milliseconds on 80 runs.",
     "route": "answer",
     "timings": {
       "route": 0,
-      "retrieve": 237,
-      "answer": 711
+      "retrieve": 234,
+      "answer": 2663
     },
-    "total": 953,
+    "total": 2904,
     "sources": [
       "How retrieval on this page works",
-      "What he is good at"
+      "Who he is",
+      "What he is good at",
+      "This site"
     ],
     "usage": {
-      "in": 1422,
-      "out": 22
+      "in": 2946,
+      "out": 81
     },
     "action": null,
     "trace": {
@@ -391,138 +424,26 @@
           "known"
         ]
       ],
-      "passages": 65,
+      "passages": 82,
       "rows": [
         {
           "title": "Who he is",
-          "lexicalScore": 1.0064,
-          "lexicalRank": 26,
-          "denseRank": 14,
-          "fused": 0.025141,
-          "selected": false
+          "lexicalScore": 3.2486,
+          "lexicalRank": 4,
+          "denseRank": 7,
+          "fused": 0.02782,
+          "selected": true
         },
         {
           "title": "What he is good at",
-          "lexicalScore": 1.0281,
-          "lexicalRank": 25,
+          "lexicalScore": 1.2109,
+          "lexicalRank": 24,
           "denseRank": 3,
-          "fused": 0.027638,
+          "fused": 0.027778,
           "selected": true
         },
         {
           "title": "What he does not do",
-          "lexicalScore": 0,
-          "lexicalRank": null,
-          "denseRank": 18,
-          "fused": 0.012821,
-          "selected": false
-        },
-        {
-          "title": "Boston University, Questrom Computational Lab",
-          "lexicalScore": 1.7188,
-          "lexicalRank": 16,
-          "denseRank": 16,
-          "fused": 0.025816,
-          "selected": false
-        },
-        {
-          "title": "IMG Systems",
-          "lexicalScore": 0,
-          "lexicalRank": null,
-          "denseRank": 28,
-          "fused": 0.011364,
-          "selected": false
-        },
-        {
-          "title": "Growaza",
-          "lexicalScore": 0,
-          "lexicalRank": null,
-          "denseRank": 49,
-          "fused": 0.009174,
-          "selected": false
-        },
-        {
-          "title": "BU Life AI",
-          "lexicalScore": 1.0794,
-          "lexicalRank": 23,
-          "denseRank": 19,
-          "fused": 0.024563,
-          "selected": false
-        },
-        {
-          "title": "Open source, LangChain deepagents",
-          "lexicalScore": 0,
-          "lexicalRank": null,
-          "denseRank": 24,
-          "fused": 0.011905,
-          "selected": false
-        },
-        {
-          "title": "Certifications",
-          "lexicalScore": 2.2572,
-          "lexicalRank": 6,
-          "denseRank": 43,
-          "fused": 0.023555,
-          "selected": false
-        },
-        {
-          "title": "Education",
-          "lexicalScore": 0,
-          "lexicalRank": null,
-          "denseRank": 61,
-          "fused": 0.008264,
-          "selected": false
-        },
-        {
-          "title": "Publications",
-          "lexicalScore": 0,
-          "lexicalRank": null,
-          "denseRank": 50,
-          "fused": 0.009091,
-          "selected": false
-        },
-        {
-          "title": "Skills",
-          "lexicalScore": 1.1694,
-          "lexicalRank": 21,
-          "denseRank": 22,
-          "fused": 0.024541,
-          "selected": false
-        },
-        {
-          "title": "Achievements",
-          "lexicalScore": 0,
-          "lexicalRank": null,
-          "denseRank": 51,
-          "fused": 0.009009,
-          "selected": false
-        },
-        {
-          "title": "Availability",
-          "lexicalScore": 0,
-          "lexicalRank": null,
-          "denseRank": 65,
-          "fused": 0.008,
-          "selected": false
-        },
-        {
-          "title": "Work authorisation",
-          "lexicalScore": 0,
-          "lexicalRank": null,
-          "denseRank": 64,
-          "fused": 0.008065,
-          "selected": false
-        },
-        {
-          "title": "This site",
-          "lexicalScore": 5.6728,
-          "lexicalRank": 1,
-          "denseRank": 8,
-          "fused": 0.027206,
-          "selected": false
-        },
-        {
-          "title": "Defects this page shipped and then fixed",
           "lexicalScore": 0,
           "lexicalRank": null,
           "denseRank": 30,
@@ -530,11 +451,139 @@
           "selected": false
         },
         {
+          "title": "Boston University, Questrom Computational Lab, backend",
+          "lexicalScore": 0,
+          "lexicalRank": null,
+          "denseRank": 42,
+          "fused": 0.009804,
+          "selected": false
+        },
+        {
+          "title": "Boston University, Questrom Computational Lab",
+          "lexicalScore": 1.842,
+          "lexicalRank": 17,
+          "denseRank": 19,
+          "fused": 0.025158,
+          "selected": false
+        },
+        {
+          "title": "IMG Systems",
+          "lexicalScore": 0,
+          "lexicalRank": null,
+          "denseRank": 35,
+          "fused": 0.010526,
+          "selected": false
+        },
+        {
+          "title": "Growaza",
+          "lexicalScore": 0,
+          "lexicalRank": null,
+          "denseRank": 56,
+          "fused": 0.008621,
+          "selected": false
+        },
+        {
+          "title": "BU Life AI",
+          "lexicalScore": 1.1891,
+          "lexicalRank": 25,
+          "denseRank": 24,
+          "fused": 0.023268,
+          "selected": false
+        },
+        {
+          "title": "Open source, LangChain deepagents",
+          "lexicalScore": 0,
+          "lexicalRank": null,
+          "denseRank": 31,
+          "fused": 0.010989,
+          "selected": false
+        },
+        {
+          "title": "Certifications",
+          "lexicalScore": 2.5087,
+          "lexicalRank": 7,
+          "denseRank": 62,
+          "fused": 0.022559,
+          "selected": false
+        },
+        {
+          "title": "Education",
+          "lexicalScore": 0,
+          "lexicalRank": null,
+          "denseRank": 70,
+          "fused": 0.007692,
+          "selected": false
+        },
+        {
+          "title": "Publications",
+          "lexicalScore": 0,
+          "lexicalRank": null,
+          "denseRank": 61,
+          "fused": 0.008264,
+          "selected": false
+        },
+        {
+          "title": "Skills",
+          "lexicalScore": 1.2877,
+          "lexicalRank": 21,
+          "denseRank": 13,
+          "fused": 0.024935,
+          "selected": false
+        },
+        {
+          "title": "Achievements",
+          "lexicalScore": 0,
+          "lexicalRank": null,
+          "denseRank": 58,
+          "fused": 0.008475,
+          "selected": false
+        },
+        {
+          "title": "Proof wall",
+          "lexicalScore": 0,
+          "lexicalRank": null,
+          "denseRank": 11,
+          "fused": 0.014085,
+          "selected": false
+        },
+        {
+          "title": "Availability",
+          "lexicalScore": 0,
+          "lexicalRank": null,
+          "denseRank": 82,
+          "fused": 0.007042,
+          "selected": false
+        },
+        {
+          "title": "Work authorisation",
+          "lexicalScore": 0,
+          "lexicalRank": null,
+          "denseRank": 80,
+          "fused": 0.007143,
+          "selected": false
+        },
+        {
+          "title": "This site",
+          "lexicalScore": 5.8199,
+          "lexicalRank": 1,
+          "denseRank": 5,
+          "fused": 0.027433,
+          "selected": true
+        },
+        {
+          "title": "Defects this page shipped and then fixed",
+          "lexicalScore": 0,
+          "lexicalRank": null,
+          "denseRank": 38,
+          "fused": 0.010204,
+          "selected": false
+        },
+        {
           "title": "How retrieval on this page works",
-          "lexicalScore": 4.3518,
+          "lexicalScore": 4.7791,
           "lexicalRank": 2,
           "denseRank": 1,
-          "fused": 0.031054,
+          "fused": 0.030835,
           "selected": true
         }
       ]

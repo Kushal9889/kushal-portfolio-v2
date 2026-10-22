@@ -75,7 +75,7 @@ export default function Palette({
      * reach the section holding the eval suite or the one holding the compiled
      * graph. The labels match the headings, because a reader who has seen the
      * page is looking for the words they saw. */
-    { kind: "jump", label: "A bug in LangChain", hint: "section", run: go("opensource") },
+    { kind: "jump", label: "The bug that looked like success", hint: "section", run: go("opensource") },
     { kind: "jump", label: "How this is measured", hint: "section", run: go("measured") },
     { kind: "jump", label: "How he works", hint: "section", run: go("approach") },
     { kind: "jump", label: "Work", hint: "section", run: go("work") },

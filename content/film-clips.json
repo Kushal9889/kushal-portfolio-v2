@@ -1,0 +1,851 @@
+{
+  "note": "Written by scripts/film-pace.py (D40): clips spread over each run of beats by weighted scroll distance. Edit RUNS there, not this file.",
+  "clips": [
+    {
+      "beat": "hero",
+      "file": "o1-wake",
+      "span": [
+        0.0,
+        0.93
+      ],
+      "time": [
+        0.0065,
+        0.9958
+      ],
+      "fadeIn": false,
+      "gain": 1.2,
+      "time0": [
+        0.2,
+        1.0
+      ]
+    },
+    {
+      "beat": "hero",
+      "file": "v1-now-hall",
+      "span": [
+        0.587,
+        1.0
+      ],
+      "time": [
+        0,
+        0.0601
+      ],
+      "fadeIn": false,
+      "gain": 1.2,
+      "time0": [
+        0,
+        0.06
+      ]
+    },
+    {
+      "beat": "T1",
+      "file": "v1-now-hall",
+      "span": [
+        0.0,
+        0.446
+      ],
+      "time": [
+        0.0601,
+        0.999
+      ],
+      "fadeIn": false,
+      "gain": 1.2,
+      "time0": [
+        0.06,
+        0.998
+      ]
+    },
+    {
+      "beat": "T1",
+      "file": "bridge-b1",
+      "span": [
+        0.306,
+        0.71
+      ],
+      "time": [
+        0,
+        0.9995
+      ],
+      "fadeIn": false,
+      "gain": 1.2,
+      "time0": [
+        0,
+        0.766
+      ]
+    },
+    {
+      "beat": "T1",
+      "file": "gap-g4",
+      "span": [
+        0.57,
+        0.872
+      ],
+      "time": [
+        0.0082,
+        0.9978
+      ],
+      "fadeIn": false,
+      "gain": 1.2,
+      "time0": [
+        0.483,
+        0.992
+      ]
+    },
+    {
+      "beat": "T1",
+      "file": "hall-fabric",
+      "span": [
+        0.732,
+        1.0
+      ],
+      "time": [
+        0,
+        0.4115
+      ],
+      "fadeIn": false,
+      "gain": 1.2,
+      "time0": [
+        0,
+        0.288
+      ]
+    },
+    {
+      "beat": "work",
+      "file": "hall-fabric",
+      "span": [
+        0.0,
+        0.147
+      ],
+      "time": [
+        0.4115,
+        0.9988
+      ],
+      "fadeIn": false,
+      "gain": 1.2,
+      "time0": [
+        0.288,
+        0.699
+      ]
+    },
+    {
+      "beat": "work",
+      "file": "w1-work-racks",
+      "span": [
+        0.057,
+        0.528
+      ],
+      "time": [
+        0,
+        0.999
+      ],
+      "fadeIn": false,
+      "gain": 1.2,
+      "time0": [
+        0,
+        0.998
+      ]
+    },
+    {
+      "beat": "work",
+      "file": "bridge-b2",
+      "span": [
+        0.438,
+        0.792
+      ],
+      "time": [
+        0.0056,
+        0.9986
+      ],
+      "fadeIn": false,
+      "gain": 1.2,
+      "time0": [
+        0.063,
+        0.992
+      ]
+    },
+    {
+      "beat": "work",
+      "file": "gap-g1",
+      "span": [
+        0.702,
+        1.0
+      ],
+      "time": [
+        0,
+        0.4382
+      ],
+      "fadeIn": false,
+      "gain": 1.2,
+      "time0": [
+        0,
+        0.436
+      ]
+    },
+    {
+      "beat": "T2",
+      "file": "gap-g1",
+      "span": [
+        0.0,
+        0.689
+      ],
+      "time": [
+        0.4382,
+        0.997
+      ],
+      "fadeIn": false,
+      "gain": 1.2,
+      "time0": [
+        0.436,
+        0.992
+      ]
+    },
+    {
+      "beat": "T2",
+      "file": "fabric-corpus",
+      "span": [
+        0.397,
+        1.0
+      ],
+      "time": [
+        0,
+        0.3229
+      ],
+      "fadeIn": false,
+      "gain": 1.2,
+      "time0": [
+        0,
+        0.324
+      ]
+    },
+    {
+      "beat": "opensource",
+      "file": "fabric-corpus",
+      "span": [
+        0.0,
+        0.417
+      ],
+      "time": [
+        0.3229,
+        0.9966
+      ],
+      "fadeIn": false,
+      "gain": 1.2,
+      "time0": [
+        0.324,
+        1.0
+      ]
+    },
+    {
+      "beat": "opensource",
+      "file": "gap-g5",
+      "span": [
+        0.301,
+        1.0
+      ],
+      "time": [
+        0,
+        0.9988
+      ],
+      "fadeIn": false,
+      "gain": 1.2,
+      "time0": [
+        0,
+        0.998
+      ]
+    },
+    {
+      "beat": "opensource",
+      "file": "v7-tray2",
+      "span": [
+        0.884,
+        1.0
+      ],
+      "time": [
+        0.0054,
+        0.2805
+      ],
+      "fadeIn": false,
+      "gain": 0.873,
+      "time0": [
+        0.03,
+        0.299
+      ]
+    },
+    {
+      "beat": "T3",
+      "file": "v7-tray2",
+      "span": [
+        0.0,
+        0.179
+      ],
+      "time": [
+        0.2805,
+        0.9974
+      ],
+      "fadeIn": false,
+      "gain": 0.873,
+      "time0": [
+        0.299,
+        1.0
+      ]
+    },
+    {
+      "beat": "T3",
+      "file": "bridge-b3",
+      "span": [
+        0.11,
+        0.411
+      ],
+      "time": [
+        0,
+        0.9955
+      ],
+      "fadeIn": false,
+      "gain": 0.85,
+      "time0": [
+        0,
+        0.905
+      ]
+    },
+    {
+      "beat": "T3",
+      "file": "v8-door",
+      "span": [
+        0.342,
+        0.569
+      ],
+      "time": [
+        0,
+        0.9956
+      ],
+      "fadeIn": false,
+      "gain": 0.93,
+      "time0": [
+        0,
+        0.842
+      ]
+    },
+    {
+      "beat": "T3",
+      "file": "gap-g6",
+      "span": [
+        0.5,
+        0.874
+      ],
+      "time": [
+        0,
+        0.9966
+      ],
+      "fadeIn": false,
+      "gain": 0.917,
+      "time0": [
+        0,
+        1.0
+      ]
+    },
+    {
+      "beat": "T3",
+      "file": "v9-board",
+      "span": [
+        0.805,
+        0.966
+      ],
+      "time": [
+        0.0083,
+        1
+      ],
+      "fadeIn": false,
+      "gain": 0.915,
+      "time0": [
+        0.215,
+        0.844
+      ]
+    },
+    {
+      "beat": "T3",
+      "file": "gap-g7",
+      "span": [
+        0.897,
+        1.0
+      ],
+      "time": [
+        0,
+        0.2711
+      ],
+      "fadeIn": false,
+      "gain": 0.947,
+      "time0": [
+        0,
+        0.272
+      ]
+    },
+    {
+      "beat": "research",
+      "file": "gap-g7",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.2711,
+        0.6309
+      ],
+      "fadeIn": false,
+      "gain": 0.947,
+      "time0": [
+        0.272,
+        0.633
+      ]
+    },
+    {
+      "beat": "T4",
+      "file": "gap-g7",
+      "span": [
+        0.0,
+        0.316
+      ],
+      "time": [
+        0.6309,
+        0.9966
+      ],
+      "fadeIn": false,
+      "gain": 0.947,
+      "time0": [
+        0.633,
+        1.0
+      ]
+    },
+    {
+      "beat": "T4",
+      "file": "v3-prefill",
+      "span": [
+        0.132,
+        1.0
+      ],
+      "time": [
+        0,
+        0.9968
+      ],
+      "fadeIn": false,
+      "gain": 0.85,
+      "time0": [
+        0,
+        1.0
+      ]
+    },
+    {
+      "beat": "T4",
+      "file": "r1-memory",
+      "span": [
+        0.816,
+        1.0
+      ],
+      "time": [
+        0,
+        0.136
+      ],
+      "fadeIn": false,
+      "gain": 0.924,
+      "time0": [
+        0.0,
+        0.128
+      ]
+    },
+    {
+      "beat": "approach",
+      "file": "r1-memory",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.136,
+        0.558
+      ],
+      "fadeIn": false,
+      "gain": 0.924,
+      "time0": [
+        0.128,
+        0.525
+      ]
+    },
+    {
+      "beat": "T5",
+      "file": "r1-memory",
+      "span": [
+        0.0,
+        0.698
+      ],
+      "time": [
+        0.558,
+        0.998
+      ],
+      "fadeIn": false,
+      "gain": 0.924,
+      "time0": [
+        0.525,
+        0.939
+      ]
+    },
+    {
+      "beat": "T5",
+      "file": "gap-g2",
+      "span": [
+        0.429,
+        1.0
+      ],
+      "time": [
+        0,
+        0.1425
+      ],
+      "fadeIn": false,
+      "gain": 1.151,
+      "time0": [
+        0,
+        0.143
+      ]
+    },
+    {
+      "beat": "measured",
+      "file": "gap-g2",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.1425,
+        0.5581
+      ],
+      "fadeIn": false,
+      "gain": 1.151,
+      "time0": [
+        0.143,
+        0.56
+      ]
+    },
+    {
+      "beat": "T6",
+      "file": "gap-g2",
+      "span": [
+        0.0,
+        0.923
+      ],
+      "time": [
+        0.5581,
+        0.9946
+      ],
+      "fadeIn": false,
+      "gain": 1.151,
+      "time0": [
+        0.56,
+        0.998
+      ]
+    },
+    {
+      "beat": "T6",
+      "file": "v5-ring2",
+      "span": [
+        0.654,
+        1.0
+      ],
+      "time": [
+        0,
+        0.046
+      ],
+      "fadeIn": false,
+      "gain": 0.85,
+      "time0": [
+        0,
+        0.046
+      ]
+    },
+    {
+      "beat": "running",
+      "file": "v5-ring2",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.046,
+        0.8128
+      ],
+      "fadeIn": false,
+      "gain": 0.85,
+      "time0": [
+        0.046,
+        0.812
+      ]
+    },
+    {
+      "beat": "T7",
+      "file": "v5-ring2",
+      "span": [
+        0.0,
+        0.307
+      ],
+      "time": [
+        0.8128,
+        0.995
+      ],
+      "fadeIn": false,
+      "gain": 0.85,
+      "time0": [
+        0.812,
+        0.994
+      ]
+    },
+    {
+      "beat": "T7",
+      "file": "r2-tiers",
+      "span": [
+        0.038,
+        1.0
+      ],
+      "time": [
+        0,
+        0.4254
+      ],
+      "fadeIn": false,
+      "gain": 0.864,
+      "time0": [
+        0,
+        0.425
+      ]
+    },
+    {
+      "beat": "proof",
+      "file": "r2-tiers",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.4254,
+        0.999
+      ],
+      "fadeIn": false,
+      "gain": 0.864,
+      "time0": [
+        0.425,
+        0.998
+      ]
+    },
+    {
+      "beat": "proof",
+      "file": "v10-exit",
+      "span": [
+        0.777,
+        1.0
+      ],
+      "time": [
+        0,
+        0.1522
+      ],
+      "fadeIn": false,
+      "gain": 0.85,
+      "time0": [
+        0.0,
+        0.152
+      ]
+    },
+    {
+      "beat": "T8",
+      "file": "v10-exit",
+      "span": [
+        0.0,
+        1.0
+      ],
+      "time": [
+        0.1522,
+        0.999
+      ],
+      "fadeIn": false,
+      "gain": 0.85,
+      "time0": [
+        0.152,
+        0.998
+      ]
+    },
+    {
+      "beat": "T8",
+      "file": "v11-cooling",
+      "span": [
+        0.848,
+        1.0
+      ],
+      "time": [
+        0.0116,
+        0.6907
+      ],
+      "fadeIn": false,
+      "gain": 1.003,
+      "time0": [
+        0.548,
+        0.858
+      ]
+    },
+    {
+      "beat": "education",
+      "file": "v11-cooling",
+      "span": [
+        0.0,
+        0.138
+      ],
+      "time": [
+        0.6907,
+        0.9974
+      ],
+      "fadeIn": false,
+      "gain": 1.003,
+      "time0": [
+        0.858,
+        0.998
+      ]
+    },
+    {
+      "beat": "education",
+      "file": "ed1-campus-river",
+      "span": [
+        0,
+        0.44
+      ],
+      "time": [
+        0.0085,
+        0.9961
+      ],
+      "fadeIn": false,
+      "gain": 1.158,
+      "time0": [
+        0.336,
+        0.952
+      ]
+    },
+    {
+      "beat": "education",
+      "file": "gap-g3",
+      "span": [
+        0.135,
+        1.0
+      ],
+      "time": [
+        0.0055,
+        0.9165
+      ],
+      "fadeIn": false,
+      "gain": 1.06,
+      "time0": [
+        0.212,
+        0.911
+      ]
+    },
+    {
+      "beat": "T9",
+      "file": "gap-g3",
+      "span": [
+        0.0,
+        0.04
+      ],
+      "time": [
+        0.9165,
+        1
+      ],
+      "fadeIn": false,
+      "gain": 1.06,
+      "time0": [
+        0.911,
+        0.978
+      ]
+    },
+    {
+      "beat": "T9",
+      "file": "v2a-future-alone",
+      "span": [
+        0,
+        0.159
+      ],
+      "time": [
+        0.0082,
+        1
+      ],
+      "fadeIn": false,
+      "gain": 0.92,
+      "time0": [
+        0.36,
+        1.0
+      ]
+    },
+    {
+      "beat": "T9",
+      "file": "e1-call",
+      "span": [
+        0,
+        0.503
+      ],
+      "time": [
+        0,
+        0.9981
+      ],
+      "fadeIn": false,
+      "gain": 0.884,
+      "time0": [
+        0,
+        0.728
+      ]
+    },
+    {
+      "beat": "T9",
+      "file": "v2b-flow",
+      "span": [
+        0.319,
+        1.0
+      ],
+      "time": [
+        0,
+        0.8402
+      ],
+      "fadeIn": false,
+      "gain": 0.952,
+      "time0": [
+        0,
+        0.836
+      ]
+    },
+    {
+      "beat": "contact",
+      "file": "v2b-flow",
+      "span": [
+        0.0,
+        0.164
+      ],
+      "time": [
+        0.8402,
+        0.998
+      ],
+      "fadeIn": false,
+      "gain": 0.952,
+      "time0": [
+        0.836,
+        0.993
+      ]
+    },
+    {
+      "beat": "contact",
+      "file": "e2-campus",
+      "span": [
+        0,
+        1.0
+      ],
+      "time": [
+        0.0106,
+        1
+      ],
+      "fadeIn": false,
+      "gain": 1.0,
+      "time0": [
+        0.508,
+        1.0
+      ]
+    }
+  ]
+}

@@ -152,6 +152,26 @@ if (index.parents.length !== sections.length) {
 }
 
 /**
+ * Same count is not same text. A section edited after the last build:index
+ * leaves the counts equal and the index quoting words the page no longer has,
+ * so compare every section body with the body the index holds. This warns and
+ * never fails: the index belongs to the agent track, and a stale one is fixed
+ * by rebuilding it there.
+ */
+const flat = (x: string) => x.replace(/\s+/g, " ").trim();
+const staleSections = sections
+  .filter((s, i) => {
+    // The index puts Role, Stack and Measured lines ahead of the prose, so
+    // match paragraph by paragraph rather than the whole body.
+    const held = flat(index.parents[i]?.body ?? "");
+    return s.body.split(/\n\s*\n/).map(flat).some((para) => para.length > 40 && !held.includes(para));
+  })
+  .map((s) => s.title);
+if (staleSections.length) {
+  console.warn(`  note: index text differs from the corpus in ${staleSections.length} section(s): ${staleSections.slice(0, 4).join(", ")}; run \`npm run build:index\``);
+}
+
+/**
  * The resume and the corpus have to carry the same vocabulary.
  *
  * A screener matches the resume; a person reads the page; an assistant reads the

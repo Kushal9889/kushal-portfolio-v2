@@ -54,6 +54,16 @@
   border-width: var(--border-emphasis);
 }
 
+/* One icon column for every row: the PDF glyph is wider than the drawn marks,
+   and with each row sizing its own icon the Résumé title started 21px to the
+   right of the titles above it. An SVG given a wider box keeps its aspect and
+   centres its drawing, so the marks stay the same size. */
+.item > :first-child,
+.primary > :first-child {
+  flex: 0 0 2.5rem;
+  text-align: center;
+}
+
 .item strong,
 .primary strong {
   display: block;
@@ -127,4 +137,18 @@
 .item[data-copied] {
   border-color: var(--ink);
   background: var(--paper-sunk);
+}
+
+/* On a phone, met in person: email, LinkedIn, resume and the contact card.
+   The source link and the forwarding note are for the desktop reader. */
+@media (max-width: 767px) {
+  .links > li:nth-child(4),
+  .forward {
+    display: none;
+  }
+}
+
+/* A phone number never breaks inside itself. */
+a.address {
+  white-space: nowrap;
 }

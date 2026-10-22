@@ -57,8 +57,7 @@ function namesASection(question: string): boolean {
  *
  * No amount of prompt wording fixes that, because the right section never
  * reaches the prompt. So the question is classified first, expanded into the
- * vocabulary the corpus actually uses, and the ranking is then weighted by what
- * kind of section can answer that kind of question. Each of the three is cheap,
+ * vocabulary the corpus actually uses. Both are cheap,
  * deterministic, and costs no network call.
  */
 export type Intent = "identity" | "shipped" | "limitation" | "system" | "specific";
@@ -77,8 +76,6 @@ export type Analysis = {
   intent: Intent;
   /** What the retrievers score. May be wider than what the reader typed. */
   query: string;
-  /** Multiplier on a chunk's fused score. 1 leaves the ranking untouched. */
-  weight: (meta: ChunkMeta | undefined) => number;
   /**
    * The question as the model should receive it.
    *
@@ -133,73 +130,14 @@ const SYSTEM =
 const LIMITATION =
   /\b(?:does|can|has|did) (?:he|kushal) (?:know|use[sd]?|used|work(?:ed)? with|have any|ever)\b|\bis (?:he|kushal) (?:a|an) \w+/i;
 
-const NEUTRAL = () => 1;
-
-/**
- * Ranking weights, one set per intent.
- *
- * Deliberately gentle. These multiply a fused rank score, so a strong lexical
- * or dense match still wins; the weights break ties and demote sections that
- * are structurally wrong for the question. A weight large enough to override
- * the retrievers would be a hand-written ranking wearing a retriever's clothes.
+/*
+ * There were ranking weights here, one set per intent, multiplying the fused
+ * score. Removed 2026-10-10: with the cross-encoder deciding the top five they
+ * changed nothing on the held-out test split (nDCG@5 0.877 with and without;
+ * dev 0.884 to 0.869), and with the reranker down they reordered the keyword
+ * ranking so far that "Why does this site run without a checkpointer?" fell to
+ * "don't know". A hand prior that cannot be measured to help is a liability.
  */
-const WEIGHTS: Record<Intent, (m: ChunkMeta | undefined) => number> = {
-  /*
-   * Work questions want dated roles and measured outcomes, most recent first,
-   * and they do not want the page describing itself. The current role is
-   * boosted hardest because "what does he do" is present tense: a reader asking
-   * it is asking what he is doing now, not what he did in 2024.
-   */
-  shipped: (m) => {
-    if (!m) return 1;
-    let w = 1;
-    if (m.dated) w += 0.3;
-    if (m.current) w += 0.35;
-    else if (m.year >= 2025) w += 0.15;
-    if (m.metrics > 0) w += 0.2;
-    if (m.artifacts > 0) w += 0.1;
-    if (m.fromNotes) w -= 0.35;
-    return w;
-  },
-
-  /* The mirror image: a question about this page wants the pages about it. */
-  system: (m) => (!m ? 1 : m.fromNotes ? 1.45 : m.dated ? 0.75 : 1),
-
-  /*
-   * A limitation question needs both halves in context, and needs no reranking
-   * at all to get them.
-   *
-   * Asked "Does he know PyTorch?" retrieval returned one chunk -- the section
-   * listing what he does not do -- and the model, told to answer No and then
-   * name the nearest thing he has done, invented one from the other half of the
-   * sentence denying PyTorch. The fix was to admit more context, and the first
-   * attempt did it twice: it lowered the relevance floor *and* weighted
-   * capability sections up by 1.15.
-   *
-   * The weight was wrong and measurably so. "What he does not do" ranks first
-   * in both retrievers on that question -- lexical rank 1, dense rank 1, which
-   * is as unambiguous as this corpus gets -- and the multiplier promoted IMG
-   * Systems past it from lexical rank 9. Precision@1 across the benchmark fell
-   * from 1.00 to 0.87, both losses on limitation questions.
-   *
-   * The floor alone does the whole job: with no weight at all, the answer
-   * section leads and "What he is good at" arrives at rank 2 on its own merits.
-   * A weight that can overrule both retrievers is a hand-written ranking
-   * wearing a retriever's clothes, which is the thing this file is not allowed
-   * to become.
-   */
-  limitation: NEUTRAL,
-
-  identity: (m) => {
-    if (!m) return 1;
-    if (m.fromNotes) return 0.6;
-    if (!m.dated && m.metrics === 0) return 1.35;
-    if (m.current) return 1.15;
-    return 1;
-  },
-
-  specific: NEUTRAL,
-};
 
 export function analyze(question: string): Analysis {
   // A named section beats every heuristic below it. The reader has already said
@@ -244,5 +182,5 @@ export function analyze(question: string): Analysis {
           .replace(/\byour\b/gi, "his")
       : question;
 
-  return { intent, query, weight: WEIGHTS[intent], asked, floor: intent === "limitation" ? 0.4 : undefined };
+  return { intent, query, asked, floor: intent === "limitation" ? 0.4 : undefined };
 }

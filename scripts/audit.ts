@@ -75,8 +75,9 @@ const facts = read("content/facts.md");
  *
  * Every content check below greps source files, which meant a binary in public/
  * was invisible to all of them. The resume named the consulting client that
- * check 1.3 exists to keep out, and shipped, because a blocking rule cannot
- * block what it cannot read. Extraction is best-effort: without pdftotext this
+ * check 1.3 then kept out, and shipped, because a blocking rule cannot block
+ * what it cannot read. (Since October 2026 the resume names the client by
+ * choice, and 1.3 checks that the site and the PDF agree.) Extraction is best-effort: without pdftotext this
  * returns empty and the checks fall back to source-only rather than failing the
  * build on a missing local tool.
  */
@@ -117,7 +118,7 @@ const domains: Domain[] = [
     checks: [
       { id: "1.1", need: "single source of truth exists", pass: facts.length > 1000 },
       { id: "1.2", need: "fabricated telemetry removed", pass: !/agents_active|cache_hit_rate/.test(codeOnly) },
-      { id: "1.3", need: "consulting client unnamed, including in shipped PDFs", pass: !/sikich/i.test(facts + allSource + shippedPdfText) },
+      { id: "1.3", need: "consulting client named as the resume names it", pass: /sikich/i.test(facts) && (shippedPdfText === "" || /sikich/i.test(shippedPdfText)) },
       { id: "1.4", need: "EST excluded", pass: !/\bEST\b.*Zuper|Zuper/i.test(facts) },
       { id: "1.5", need: "LLM Mesh excluded", pass: !/llm\s*mesh/i.test(facts) },
       { id: "1.6", need: "deepagents issue + PR cited", pass: /issues\/4846/.test(facts) && /pull\/4925/.test(facts) },

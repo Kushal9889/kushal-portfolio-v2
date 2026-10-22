@@ -62,12 +62,24 @@ function leadEnd(para: string) {
   return para.length;
 }
 
-function render(text: string, keyPrefix: string) {
+function render(text: string, keyPrefix: string, claimHref?: string) {
   return text.split(new RegExp(TOKEN, "g")).map((part, j) => {
     const key = `${keyPrefix}-${j}`;
 
     const bold = part.match(BOLD);
-    if (bold) return <strong key={key}>{bold[1]}</strong>;
+    if (bold) {
+      // A claim is a link when its section names a witness: the one mark here
+      // that says "check this".
+      return claimHref ? (
+        <strong key={key}>
+          <a href={claimHref} target="_blank" rel="noreferrer">
+            {bold[1]}
+          </a>
+        </strong>
+      ) : (
+        <strong key={key}>{bold[1]}</strong>
+      );
+    }
 
     const code = part.match(CODE);
     if (code) return <code key={key}>{code[1]}</code>;
@@ -102,10 +114,10 @@ function render(text: string, keyPrefix: string) {
  * themselves -- the browser already remembers that across a resize; no
  * effect, no ref, no width check needed.
  */
-function Foldable({ children, label }: { children: React.ReactNode; label: string }) {
+function Foldable({ children, label, topic }: { children: React.ReactNode; label: string; topic?: string }) {
   return (
     <details className="more">
-      <summary>
+      <summary aria-label={topic ? `${label} about ${topic}` : undefined}>
         <span className="more-open">{label}</span>
         <span className="more-close">Show less</span>
       </summary>
@@ -124,9 +136,17 @@ const OPEN = 2;
 export default function Prose({
   body,
   className,
+  claimHref,
+  phoneOpen,
+  topic,
 }: {
   body: string;
   className?: string;
+  claimHref?: string;
+  /** Paragraphs left open on a phone, where the seam moves up. Desktop keeps OPEN. */
+  phoneOpen?: number;
+  /** Names the folded text for assistive tech, so several folds do not all read "Read more". */
+  topic?: string;
 }) {
   const paras = body.split(/\n{2,}/);
 
@@ -136,13 +156,38 @@ export default function Prose({
     const rest = para.slice(cut);
     return (
       <p key={i}>
-        <span className="lead">{render(lead, `l${i}`)}</span>
-        {rest && render(rest, `r${i}`)}
+        <span className="lead">{render(lead, `l${i}`, claimHref)}</span>
+        {rest && render(rest, `r${i}`, claimHref)}
       </p>
     );
   };
 
   const root = className ? `prose ${className}` : "prose";
+
+  // A phone seam above the desktop one. The paragraphs between the two seams
+  // render twice: open for the desktop, inside the fold for the phone, and
+  // CSS shows exactly one copy, so neither reader loses a sentence.
+  if (phoneOpen !== undefined && paras.length > phoneOpen && phoneOpen < OPEN) {
+    const seam = Math.min(OPEN, paras.length);
+    const between = paras.slice(phoneOpen, seam);
+    const after = paras.slice(seam);
+    return (
+      <div className={root}>
+        {paras.slice(0, phoneOpen).map(render_)}
+        <div data-desk-only>{between.map((p, i) => render_(p, i + phoneOpen))}</div>
+        {after.length > 0 && (
+          <div data-desk-only>
+            <Foldable label="Read more" topic={topic}>{after.map((p, i) => render_(p, i + seam))}</Foldable>
+          </div>
+        )}
+        <div data-phone-only>
+          <Foldable label="Read more" topic={topic}>
+            {paras.slice(phoneOpen).map((p, i) => render_(p, i + phoneOpen))}
+          </Foldable>
+        </div>
+      </div>
+    );
+  }
 
   // Two paragraphs or fewer have no seam worth folding at.
   if (paras.length <= OPEN) {
@@ -169,7 +214,7 @@ export default function Prose({
   return (
     <div className={root}>
       {open.map(render_)}
-      <Foldable label="Read more">
+      <Foldable label="Read more" topic={topic}>
         {folded.map((p, i) => render_(p, i + OPEN))}
       </Foldable>
     </div>

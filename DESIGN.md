@@ -324,7 +324,7 @@ exactly 390.
 - No second accent. Vendor marks take the ink on the orange ground.
 - No shadows for elevation. Hairlines and one surface step only.
 - No corner radius on components. The flood disc is a ground, not a component.
-- No em dashes or en dashes in visible text. None of the vocabulary banned in `CLAUDE.md`.
+- No em dashes or en dashes in visible text. None of the banned vocabulary.
 - No comparison bars on filled tracks. Bars start at a true zero, with the value beside them.
 - No split headers with a sentence floating in the far corner.
 - No chains of middle dots. Stacks are lists.

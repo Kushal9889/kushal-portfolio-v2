@@ -8,8 +8,12 @@
 .mark {
   position: absolute;
   inset-inline-start: 100%;
-  margin-inline-start: 0.4em;
-  top: 0.14em;
+  /* The visible mark is 11px by 13px. The target is padded to 24px or more (WCAG
+     2.5.8) and pulled back with the negative margin and offset, so the mark sits
+     exactly where it did and the hit area is real, not a pseudo-element. */
+  padding: 0.55em 0.6em;
+  margin-inline-start: -0.2em;
+  top: -0.41em;
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--step--1);
   font-weight: 400;
@@ -33,8 +37,8 @@
   color: var(--signal);
 }
 
-/* Narrow screens have no pointer to reveal it and no room to put it. */
-@media (max-width: 48rem) {
+/* Narrow screens and touch screens have no pointer to reveal it and no room to put it. */
+@media (max-width: 48rem), (hover: none) {
   .mark {
     display: none;
   }

@@ -115,7 +115,7 @@ export default function Reach({
               PDF
             </span>
             <span>
-              <strong>Resume</strong>
+              <strong>Résumé</strong>
               <span className={styles.sub}>opens in the browser, one page, real text layer</span>
             </span>
           </a>

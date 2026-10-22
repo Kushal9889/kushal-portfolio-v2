@@ -116,6 +116,7 @@ export default function ReachDock({
           href={linkedin}
           target="_blank"
           rel="noreferrer"
+          aria-label="LinkedIn profile"
           onClick={() => track("contact", "dock-linkedin")}
         >
           <LinkedInMark size={14} />

@@ -32,7 +32,8 @@
 .mark {
   flex: none;
   font-size: var(--step--2);
-  letter-spacing: 0.12em;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
