@@ -5,12 +5,11 @@ import Medallion from "./Medallion";
 import styles from "./ProofWall.module.css";
 
 /** Logos for issuers whose course certificates have no badge image of their own:
- *  the issuer's own artwork in its own colours (IBM's 8-bar file from Wikimedia
- *  Commons). */
+ *  the issuer's own artwork in its own colours. An issuer with no file here
+ *  stands as type. */
 const LOGO: Record<string, string> = {
   "Amazon Web Services": "/brand/aws.svg",
   "Google Cloud": "/brand/googlecloud.svg",
-  IBM: "/brand/ibm.svg",
 };
 
 /** Badges whose original mark is a file, not a simple-icons glyph. */

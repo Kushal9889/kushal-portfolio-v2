@@ -376,7 +376,7 @@ Frontend: React, Redux, Next.js.
 @metric 64 | CodeChef global rank, February 2022 Long Challenge | resume
 @metric $12K | raised for Tarang Fest 2023, which he led | resume
 
-JEE Mains 2020: 99.1 percentile, top 0.9 percent nationally.
+JEE Mains 2020: 99.1 percentile, top 1% of 860K+ candidates.
 
 CodeChef global rank 64, February 2022 Long Challenge. Third place, Code Rumble 2023.
 
