@@ -6,6 +6,7 @@ import BrandMark from "./BrandMark";
 import Paced from "./Paced";
 import WorkLoop from "./WorkLoop";
 import styles from "./Hero.module.css";
+import { reducedMotion } from "@/lib/verbs";
 
 const NODES = ["route", "retrieve", "answer"] as const;
 type NodeName = (typeof NODES)[number];
@@ -34,6 +35,9 @@ type Props = {
    *  difference in kind, not in degree, which is what the isolation effect
    *  actually requires. */
   evidence: { figure: string; unit: string; sentence: string; href: string; label: string };
+  /** Three figures a recruiter can check, each one link from its section.
+   *  Taken from the @metric lines in content/facts.md, never typed here. */
+  proof?: { value: string; label: string; href: string }[];
   /** When he can start, and where. The question that gates a reply. */
   available: string;
   /** The official badges he holds, each linking to its public verification page. */
@@ -62,6 +66,7 @@ export default function Hero({
   current,
   skills = [],
   evidence,
+  proof = [],
   available,
   credentials,
   contactHref,
@@ -108,7 +113,7 @@ export default function Hero({
 
     // Respect a visitor who has asked for less motion: still fetch, but skip the
     // staged node highlight and settle straight to the final numbers.
-    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const calm = reducedMotion();
     const controller = new AbortController();
 
     (async () => {
@@ -132,7 +137,9 @@ export default function Hero({
           ranAt?: number;
         } = await res.json();
         const measured = demo.timings;
-        setSaid({ question: demo.question, answer: demo.answer, sources: demo.sources });
+        // A recorded model answer can carry markdown bold; this pane prints text,
+        // so the markers came through as raw asterisks while it typed.
+        setSaid({ question: demo.question, answer: demo.answer.replace(/\*\*/g, ""), sources: demo.sources });
         // A recorded run, not the visitor's: the film labels it with its age.
         const ping = () =>
           window.dispatchEvent(
@@ -307,6 +314,19 @@ export default function Hero({
         </div>
 
         <dl className={styles.facts}>
+          {proof.length > 0 && (
+            <div className={styles.fact}>
+              <dt>proof</dt>
+              <dd className={styles.proofStrip}>
+                {proof.map((p) => (
+                  <a key={p.href} href={p.href} data-pull>
+                    <b>{p.value}</b>
+                    <span>{p.label}</span>
+                  </a>
+                ))}
+              </dd>
+            </div>
+          )}
           <div className={styles.fact}>
             <dt>available</dt>
             <dd>{available}</dd>
