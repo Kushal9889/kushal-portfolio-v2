@@ -1,5 +1,6 @@
 import evals from "@/content/evals.json";
 import styles from "./Measured.module.css";
+import Compare from "./Compare";
 
 /**
  * The evaluation suite, reporting its own last run.
@@ -79,6 +80,10 @@ export default function Measured() {
         ))}
       </dl>
 
+      {/* The breakdown and the two latencies side by side: the cases on the
+          left, how long a visitor waits on the right. Median and tail on one
+          zero-based scale, so the gap between them is the length a reader sees. */}
+      <div className={styles.pair}>
       {groups.length > 0 && (
         <ul className={styles.groups}>
           {groups.map(([name, g]) => (
@@ -99,6 +104,20 @@ export default function Measured() {
           ))}
         </ul>
       )}
+      {evals.p50 > 0 && evals.p95 > 0 && (
+        <Compare
+          title={`Answer latency, ${evals.measured} run`}
+          min={0}
+          max={Math.ceil(evals.p95 / 2000) * 2}
+          ticks={Array.from({ length: Math.ceil(evals.p95 / 2000) + 1 }, (_, i) => i * 2)}
+          unit=" s"
+          rows={[
+            { label: "Median answer", value: evals.p50 / 1000, shown: `${(evals.p50 / 1000).toFixed(1)} s`, lead: true },
+            { label: "95th percentile", value: evals.p95 / 1000, shown: `${(evals.p95 / 1000).toFixed(1)} s` },
+          ]}
+        />
+      )}
+      </div>
 
       {/* Every assertion lives in the eval matrix below, case by case (D52). */}
 

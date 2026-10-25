@@ -1,5 +1,5 @@
 #!/bin/sh
-# ADR-002 option B (Kushal approved 2026-10-03): new delivery tiers built beside
+# ADR-002 option B (approved 2026-10-03): new delivery tiers built beside
 # the originals, which are never touched.
 #
 #   sh scripts/film-recode.sh [clip names...]     default: every clip

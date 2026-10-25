@@ -3,7 +3,7 @@ import styles from "./FilmTransit.module.css";
 
 /**
  * The film's opening question and its closing answer (the five-year arc),
- * in the transit card's frame. Kushal writes both lines in content/film.json
+ * in the transit card's frame. Both lines are written in content/film.json
  * arc; while a line is empty nothing renders, so the page keeps its length.
  */
 export default function FilmLine({ which }: { which: "hook" | "closing" }) {

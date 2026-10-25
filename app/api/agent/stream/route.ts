@@ -16,6 +16,7 @@ export const maxDuration = 30;
  * because EventSource cannot send a request body.
  */
 export async function GET(req: Request) {
+  const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
   const url = new URL(req.url);
   // 2000 to match the textarea, so a pasted job description is not truncated
@@ -69,15 +70,28 @@ export async function GET(req: Request) {
             // dead route behind. The reason ships with the limit: a public LLM
             // endpoint with no ceiling is a stranger spending someone else's
             // credit, and saying so turns a wall into a decision.
-            text: `That is the token ceiling for this demo. It is capped on purpose: this endpoint is public and uncapped inference on a free tier is a stranger spending his credit. He answers faster than the agent anyway, at ${profile.email}.`,
+            text: `That is the token ceiling for this demo. It is capped on purpose: this endpoint is public and uncapped inference on a free tier is a stranger spending someone else's credit. Email is faster anyway: ${profile.email}.`,
           });
           send({ type: "done", total: 0, usage: null });
           return;
         }
 
-        for await (const event of runStream(question, history)) send(event);
-      } catch {
-        send({ type: "error", message: "Stream failed. Reach him directly by email." });
+        // One structured line per request, keyed by the id in the response
+        // header, so a reader's report maps to the run that produced it.
+        const log: Record<string, unknown> = { level: "info", requestId, at: new Date().toISOString() };
+        const failed: string[] = [];
+        for await (const event of runStream(question, history)) {
+          send(event);
+          if (event.type === "route") log.route = event.route;
+          else if (event.type === "sources") Object.assign(log, { band: event.trace?.band, tier: event.trace?.confidence?.tier, store: event.trace?.store });
+          else if (event.type === "step" && event.state === "failed") failed.push(event.name);
+          else if (event.type === "done") Object.assign(log, { provider: event.provider, total: event.total, degraded: !!event.degraded, prompt: event.promptVersion });
+        }
+        if (failed.length || log.degraded) Object.assign(log, { level: "warn", failed });
+        console.log(JSON.stringify(log));
+      } catch (err) {
+        console.error(JSON.stringify({ level: "critical", requestId, error: String(err).slice(0, 300) }));
+        send({ type: "error", message: `Stream failed (request ${requestId.slice(0, 8)}). Email ${profile.email} directly.` });
       } finally {
         controller.close();
       }
@@ -86,6 +100,7 @@ export async function GET(req: Request) {
 
   return new Response(body, {
     headers: {
+      "x-request-id": requestId,
       "content-type": "text/event-stream; charset=utf-8",
       "cache-control": "no-cache, no-transform",
       connection: "keep-alive",

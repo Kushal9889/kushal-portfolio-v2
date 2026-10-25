@@ -33,8 +33,8 @@
 const TOKENS_PER_WORD = 1.4;
 
 export const TARGET_TOKENS = 125;
-export const MAX_TOKENS = 150;
-export const MIN_TOKENS = 100;
+export const MAX_TOKENS = Number(process.env.CHUNK_MAX_TOKENS ?? 150);
+export const MIN_TOKENS = Number(process.env.CHUNK_MIN_TOKENS ?? 100);
 
 export function estimateTokens(text: string): number {
   const words = text.trim().split(/\s+/).filter(Boolean).length;
@@ -70,6 +70,8 @@ export type Passage = {
   ordinal: number;
   text: string;
   tokens: number;
+  /** One situating line from the semantic chunker (scripts/llm-chunk.ts); ranking only, never shown to the model as fact. */
+  context?: string;
 };
 
 function cosine(a: number[], b: number[]): number {

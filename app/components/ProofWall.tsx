@@ -1,13 +1,33 @@
 import type { Badge, Certification } from "@/lib/content";
+import { siCodechef, siIeee, siLangchain, siModelcontextprotocol, siVllm } from "simple-icons";
 import BrandMark from "./BrandMark";
 import Medallion from "./Medallion";
 import styles from "./ProofWall.module.css";
 
-/** Logos for issuers whose course certificates have no badge image of their own. */
+/** Logos for issuers whose course certificates have no badge image of their own:
+ *  the issuer's own artwork in its own colours. An issuer with no file here
+ *  stands as type. */
 const LOGO: Record<string, string> = {
   "Amazon Web Services": "/brand/aws.svg",
   "Google Cloud": "/brand/googlecloud.svg",
 };
+
+/** Badges whose original mark is a file, not a simple-icons glyph. */
+const BADGE_LOGO: Record<string, string> = {
+  "IGI 2024": "/brand/igi.webp",
+};
+
+/** A glyph mark takes its brand's own colour on the light disc. */
+const HEX: Record<string, string> = Object.fromEntries(
+  [siLangchain, siVllm, siModelcontextprotocol, siIeee, siCodechef].map((i) => [i.title, `#${i.hex}`]),
+);
+
+/** A ranking with no logo of its own shows its figure as the seal ("Top 1%", "70+"). */
+export function seal(label: string) {
+  const top = label.match(/top \d+%/i)?.[0];
+  if (top) return top[0].toUpperCase() + top.slice(1);
+  return label.match(/\d+\+/)?.[0] ?? label;
+}
 
 /** Per-bubble vertical offsets, cycled, so the cloud is not a grid. */
 const LIFT = ["0rem", "1.6rem", "-0.8rem", "2.4rem", "0.4rem", "2rem"];
@@ -84,21 +104,42 @@ export default function ProofWall({ certs, badges }: { certs: Certification[]; b
           <a href={b.href} target="_blank" rel="noreferrer" aria-label={`${b.name}, verify`}>
             <span className={styles.disc}>
               {b.mark ? (
-                <span className={styles.mark}>
+                <span className={styles.mark} style={{ color: HEX[b.mark] }}>
                   <BrandMark name={b.mark} />
                 </span>
+              ) : BADGE_LOGO[b.label] ? (
+                // eslint-disable-next-line @next/next/no-img-element -- a static brand mark
+                <img className={styles.logo} src={BADGE_LOGO[b.label]} alt="" width={64} height={15} loading="lazy" />
               ) : (
-                <span className={styles.text}>{b.label}</span>
+                <span className={styles.seal}>{seal(b.label)}</span>
               )}
             </span>
-            {b.mark && <span className={styles.cap}>{b.label}</span>}
+            <span className={styles.cap}>{b.label}</span>
           </a>
         ),
       });
     }
   }
 
+  // What the wall holds, counted before it is shown: a reader gets the shape
+  // of the record first, then the seals. Issuers rather than certificates,
+  // because one IBM tile stands for several courses.
+  const issuers = new Set(certs.filter((c) => c.url || c.components?.some((x) => x.url)).map((c) => c.issuer)).size;
+  const legend = [
+    { n: issuers, label: issuers === 1 ? "certifying issuer" : "certifying issuers" },
+    ...groups.map((g) => ({ n: badges.filter((b) => b.group === g).length, label: g.toLowerCase() })),
+  ].filter((l) => l.n > 0);
+
   return (
+    <>
+    <ul className={styles.legend} aria-label="What the wall holds">
+      {legend.map((l) => (
+        <li key={l.label}>
+          <b>{l.n}</b>
+          {l.label}
+        </li>
+      ))}
+    </ul>
     <ul className={styles.stage} aria-label="What he can prove" data-scrim-skip>
       {items.map((it, i) => (
         <li
@@ -111,5 +152,6 @@ export default function ProofWall({ certs, badges }: { certs: Certification[]; b
         </li>
       ))}
     </ul>
+    </>
   );
 }

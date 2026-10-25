@@ -1,4 +1,5 @@
 import { streamWithFailover, listPrice, failoverState, chooseTool, BUDGET_MS } from "./model";
+import { aside, ASIDE_VERSION } from "./aside";
 import {
   toolSchemas,
   openEvidence,
@@ -8,7 +9,7 @@ import {
   type ToolResult,
 } from "./tools";
 import type { RetrievalTrace } from "./retrieve";
-import { retrieve, sourceTitles } from "./retrieve";
+import { coverage, passagesOf, retrieve, sourceTitles } from "./retrieve";
 import {
   classify,
   systemPrompt,
@@ -18,7 +19,10 @@ import {
   AUTHORISATION_ANSWER,
   POLICY_PREVIEW,
   NOT_IN_PROFILE,
+  PROMPT_VERSION,
+  isJobDescription,
   PARTIAL_NOTE,
+  AGGREGATE_NOTE,
 } from "./policy";
 import { analyze } from "./query";
 import { offersFor } from "./followups";
@@ -59,6 +63,15 @@ export type StreamEvent =
    * answers it.
    */
   | { type: "offers"; offers: Offer[] }
+  /** One guarded, fact-free line in a lighter voice (aside.ts); absent when it fails its guard. */
+  | { type: "aside"; text: string; version: string }
+  /**
+   * One pipeline stage as it finishes: what ran, how long it took, and the
+   * numbers it decided on. The page draws these as the run's live trace.
+   */
+  | { type: "step"; name: string; state: "done" | "failed" | "skipped"; ms: number; detail: string }
+  /** Per-requirement coverage when the question is a pasted job description (retrieve.ts coverage). */
+  | { type: "coverage"; rows: { req: string; status: "covered" | "partial" | "missing"; section: string | null }[] }
   /**
    * Something the agent did, rather than said.
    *
@@ -89,6 +102,10 @@ export type StreamEvent =
       grounding?: Grounding;
       /** The section each answer sentence came from, or null (ground.ts cite). */
       citations?: Citation[];
+      /** System prompt version (policy.ts PROMPT_VERSION). */
+      promptVersion?: string;
+      /** Time left in the 8 s budget after retrieval and at the first token. */
+      budget?: { afterRetrieveMs: number; firstTokenMs: number | null };
     }
   | { type: "error"; message: string };
 
@@ -221,6 +238,7 @@ export async function* runStream(
 
   const route = classify(question);
   yield { type: "route", route, ms: Date.now() - started };
+  yield { type: "step", name: "route", state: "done", ms: Date.now() - started, detail: route };
 
   /*
    * An instruction, not a question.
@@ -314,7 +332,8 @@ export async function* runStream(
 
   const retrieveStart = Date.now();
   const { intent, query, asked, floor } = retrievalQuery(question, history);
-  const { chunks, trace, best } = await retrieve(query, { floor, deadline });
+  const { chunks, trace, best } = await retrieve(query, { floor, deadline, question });
+  const leftAfterRetrieve = deadline - Date.now();
   yield {
     type: "sources",
     titles: sourceTitles(chunks),
@@ -323,6 +342,16 @@ export async function* runStream(
     // happened rather than an illustration of it.
     trace,
   };
+  {
+    const c = trace.confidence;
+    yield {
+      type: "step",
+      name: "retrieve",
+      state: "done",
+      ms: Date.now() - retrieveStart,
+      detail: `${trace.store ?? "memory"} ${trace.storeMs ?? 0} ms · ${chunks.length} sections · band ${trace.band}${c ? ` · tier ${c.tier} (cos ${c.signals.cosine ?? "-"} vs ${c.floors.cosine}, logit ${c.signals.logit ?? "-"} vs ${c.floors.logit})` : ""}${trace.missing?.length ? ` · missing ${trace.missing.join(", ")}` : ""}`,
+    };
+  }
 
   // Unknown band: fixed text, no model call. Partial: one instruction more.
   if (trace.band === "unknown") {
@@ -330,8 +359,17 @@ export async function* runStream(
     yield { type: "done", total: Date.now() - started, usage: null, policy: POLICY_PREVIEW };
     return;
   }
-  const context = chunks.map((c) => `## ${c.title}\n${c.body}`).join("\n\n") + (trace.band === "partial" ? PARTIAL_NOTE : "");
+  // A name the corpus never uses is stated by code, not left to the model.
+  const missing = trace.missing?.length ? `The profile does not mention ${trace.missing.join(" or ")}.` : "";
+  if (missing) yield { type: "token", text: `${missing} ` };
+  const context =
+    chunks.map((c) => `## ${c.title}\n${c.body}`).join("\n\n") +
+    (missing ? `\n\nThe reader has been told: "${missing}" Do not claim it. Continue with the closest fact the sections above do state.` : "") +
+    (trace.band === "partial" ? PARTIAL_NOTE : "") +
+    (trace.graph?.length ? AGGREGATE_NOTE : "");
 
+  // Outside the try: the catch must know whether the reader already has an answer.
+  let emitted = 0;
   try {
     /**
      * Nothing is held back any more, because nothing arrives that needs holding.
@@ -353,7 +391,7 @@ export async function* runStream(
      * the next one may not honour the flag.
      */
     let buffer = "";
-    let emitted = 0;
+    let firstTokenLeft: number | null = null;
     let usage: { in: number; out: number } | null = null;
     let served: { provider: string; model: string } | null = null;
 
@@ -375,6 +413,7 @@ export async function* runStream(
       deadline,
     )) {
       buffer += token;
+      firstTokenLeft ??= deadline - Date.now();
 
       // The one case a post-hoc clean cannot cover.
       //
@@ -413,6 +452,15 @@ export async function* runStream(
     }
 
     yield { type: "offers", offers: offersFor(chunks) };
+    if (isJobDescription(question)) yield { type: "coverage", rows: coverage(question) };
+    const g = ground(cleaned, context, question);
+    yield { type: "step", name: "generate", state: "done", ms: Date.now() - retrieveStart, detail: `${(served as { provider?: string } | null)?.provider ?? "?"} · prompt ${PROMPT_VERSION}` };
+    yield { type: "step", name: "ground", state: g.g === 1 ? "done" : "failed", ms: 0, detail: `G ${g.g} over ${g.claims} claims${g.unsupported.length ? ` · unsupported ${g.unsupported.join(", ")}` : ""}` };
+    // Only answered questions reach here: refusals and deflections returned above.
+    const asideStart = Date.now();
+    const line = await aside(cleaned, deadline - Date.now());
+    if (line) yield { type: "aside", text: line, version: ASIDE_VERSION };
+    yield { type: "step", name: "aside", state: line ? "done" : "skipped", ms: Date.now() - asideStart, detail: line ? `guard passed · temp ${process.env.ASIDE_TEMPERATURE ?? 0.6}` : "no key, no time, or guard rejected" };
 
     const settled = served as { provider: string; model: string } | null;
     yield {
@@ -424,11 +472,22 @@ export async function* runStream(
       listPrice: usage && settled ? listPrice(settled.model, usage) : null,
       failover: failoverState(),
       policy: POLICY_PREVIEW,
+      promptVersion: PROMPT_VERSION,
       // The model's text only: the handoff close is fixed copy, not a claim.
-      grounding: ground(cleaned, context, question),
-      citations: cite(cleaned, chunks),
+      grounding: g,
+      citations: cite(cleaned, chunks, 0.5, passagesOf(chunks.map((c) => c.title))),
+      budget: { afterRetrieveMs: leftAfterRetrieve, firstTokenMs: firstTokenLeft },
     };
-  } catch {
+  } catch (e) {
+    // A throw after the answer streamed is a bug in the code after the model
+    // (offersFor once threw for a profile with no repo), not a provider outage.
+    // Appending the source text under it doubled the answer and told the
+    // reader every provider was rate-limited when none was.
+    if (emitted > 0) {
+      console.error(JSON.stringify({ level: "error", where: "stream.after-answer", error: String((e as Error)?.stack ?? e) }));
+      yield { type: "done", total: Date.now() - started, usage: null, failover: failoverState(), policy: POLICY_PREVIEW, promptVersion: PROMPT_VERSION };
+      return;
+    }
     /**
      * Every provider is down, and the answer degrades rather than erroring.
      *

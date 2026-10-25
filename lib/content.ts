@@ -1,7 +1,14 @@
 import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 
-const CONTENT_DIR = join(process.cwd(), "content");
+/**
+ * The corpus folder. `AGENT_CORPUS` points the whole agent at another person's
+ * facts (a folder holding facts.md, optional certifications.json and its own
+ * index.json), which is how the fixtures in tests/fixtures prove the retrieval
+ * code holds nothing specific to this corpus.
+ */
+export const CONTENT_DIR = join(process.cwd(), process.env.AGENT_CORPUS ?? "content");
 
 export type Metric = { value: string; label: string; source?: string };
 
@@ -58,6 +65,12 @@ export type Section = {
   claim?: string;
   /** Tiles for the evidence wall, from `@badge` lines. */
   badges: Badge[];
+  /** Stable id from `@id`, else a slug of the title. Evals reference this, so a renamed heading does not break them. */
+  id: string;
+  /** From `@kind` (docs/facts-format.md). `private` sections are answered by a fixed route and never retrieved. */
+  kind?: string;
+  /** Other names a reader may type for this section's subject, from `@alias a, b`. */
+  aliases: string[];
 };
 
 export type Profile = Record<string, string>;
@@ -134,6 +147,9 @@ function splitSections(body: string, source: string): Section[] {
       let role = "";
       let claim: string | undefined;
       const badges: Badge[] = [];
+      let id: string | undefined;
+      let kind: string | undefined;
+      const aliases: string[] = [];
 
       // Line-oriented directives are pulled out before the prose is assembled.
       // Stack and Role wrap in the source, so a continuation line is any line
@@ -211,6 +227,14 @@ function splitSections(body: string, source: string): Section[] {
           continue;
         }
 
+        const tag = line.match(/^@(id|kind|alias)\s+(.+?)\s*$/);
+        if (tag) {
+          if (tag[1] === "id") id = tag[2];
+          else if (tag[1] === "kind") kind = tag[2].toLowerCase();
+          else aliases.push(...tag[2].split(",").map((a) => a.trim()).filter(Boolean));
+          continue;
+        }
+
         const directive = line.match(/^(Stack|Role):\s*(.+)$/);
         if (directive) {
           let value = directive[2];
@@ -233,9 +257,13 @@ function splitSections(body: string, source: string): Section[] {
       }
 
       const body = kept.join("\n");
+      const title = block.slice(0, nl).trim();
 
       return {
-        title: block.slice(0, nl).trim(),
+        title,
+        id: id ?? title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+        ...(kind ? { kind } : {}),
+        aliases,
         body: body.trim(),
         source,
         metrics,
@@ -317,8 +345,9 @@ export function progress(c: Certification) {
 }
 
 export function loadCertifications(): Certification[] {
-  const raw = readFileSync(join(CONTENT_DIR, "certifications.json"), "utf8");
-  return JSON.parse(raw).certifications;
+  const path = join(CONTENT_DIR, "certifications.json");
+  if (!existsSync(path)) return [];
+  return JSON.parse(readFileSync(path, "utf8")).certifications;
 }
 
 /** Every external URL the site renders, for the link checker. */
@@ -342,4 +371,15 @@ export function allLinks(): string[] {
     for (const comp of c.components ?? []) if (comp.url) found.add(comp.url);
   }
   return [...found];
+}
+
+/**
+ * One hash for everything the retrieval index is built from. build-index stores
+ * it and verify:facts compares, so an edit to facts.md or a note without a
+ * rebuilt index fails the check instead of serving stale passages.
+ */
+export function corpusHash(): string {
+  return createHash("sha256")
+    .update(JSON.stringify(loadContent().sections.map((s) => [s.title, s.body])))
+    .digest("hex");
 }

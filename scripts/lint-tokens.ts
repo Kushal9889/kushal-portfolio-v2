@@ -18,6 +18,8 @@ import { join, extname } from "node:path";
  */
 const ALLOWED = new Set([
   "app/globals.css",
+  // Per-section scene grades for /classic (docs/redesign-2026-10.md).
+  "app/scenes.css",
   // Satori renders the share card with no access to the stylesheet and does not
   // resolve custom properties, so the tokens have to be written literally. The
   // route replaced app/opengraph-image.tsx when the card started carrying the

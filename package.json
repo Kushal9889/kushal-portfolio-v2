@@ -40,7 +40,9 @@
     "bench:models": "tsx scripts/bench-models.ts",
     "build:guilloche": "tsx scripts/build-guilloche.ts",
     "bench:film": "python3 scripts/bench-film.py",
-    "test:agent": "tsx scripts/agent-scenarios.ts --split test --gate"
+    "test:agent": "tsx scripts/agent-scenarios.ts --split test --gate",
+    "test:agent:faults": "for f in outage 429 timeout chat embed rerank neon; do echo \"== AGENT_FAULT=$f\"; AGENT_FAULT=$f tsx scripts/agent-scenarios.ts --split test --gate | grep -E '^test |GATE|^FAIL' || exit 1; done",
+    "bench": "tsx scripts/bench-all.ts"
   },
   "dependencies": {
     "@langchain/core": "^1.2.5",

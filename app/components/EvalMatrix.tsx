@@ -4,6 +4,7 @@ import { useState } from "react";
 import evals from "@/content/evals.json";
 import Panel from "./Panel";
 import styles from "./EvalMatrix.module.css";
+import { reducedMotion } from "@/lib/verbs";
 
 /**
  * The eval suite, as sixteen objects rather than one score.
@@ -69,7 +70,7 @@ type Case = {
  */
 /**
  * Questions typed wrong on purpose: the suite checks that retrieval survives a
- * misspelt company or word (lib/agent/evals.ts). Shown as a typo on the page
+ * misspelt company or word (content/eval-cases.json). Shown as a typo on the page
  * they read as carelessness, so the detail and the label say so.
  */
 const MISSPELT: Record<string, string> = {
@@ -157,7 +158,7 @@ export default function EvalMatrix() {
                            just without the fade. */
                         if (
                           typeof document.startViewTransition === "function" &&
-                          !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                          !reducedMotion()
                         ) {
                           document.startViewTransition(() => setOpen(next));
                         } else {

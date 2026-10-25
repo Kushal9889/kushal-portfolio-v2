@@ -1,8 +1,9 @@
 // The classic document's full system. The root layout ships only the shared
 // base, so this page brings the rest with it.
 import "./globals.css";
+import "./scenes.css";
 import Hero from "./components/Hero";
-import ProofWall from "./components/ProofWall";
+import ProofWall, { seal } from "./components/ProofWall";
 import Prose from "./components/Prose";
 import Certifications from "./components/Certifications";
 import DiffReveal from "./components/DiffReveal";
@@ -16,6 +17,7 @@ import Reach from "./components/Reach";
 import ReachDock from "./components/ReachDock";
 import SectionLink from "./components/SectionLink";
 import PageMotion from "./components/PageMotion";
+import SceneFx from "./components/SceneFx";
 import AskSeeds from "./components/AskSeeds";
 import ModelChoice from "./components/ModelChoice";
 import Defects from "./components/Defects";
@@ -36,6 +38,27 @@ import FilmTransit from "./components/film/FilmTransit";
 import FilmChip from "./components/film/FilmChip";
 import FilmBoot from "./components/film/FilmBoot";
 import FilmMount from "./components/film/FilmMount";
+import Timeline, { startOf } from "./components/Timeline";
+import Compare from "./components/Compare";
+import Topology from "./components/Topology";
+import CopyText from "./components/CopyText";
+import Countdown from "./components/Countdown";
+
+/** The section headings verbatim, for the rail and the footer index alike. */
+const CHAPTERS = [
+  { id: "work", label: "Work" },
+  { id: "opensource", label: "The bug that looked like success" },
+  { id: "running", label: "Also running" },
+  { id: "research", label: "Research" },
+  { id: "proof", label: "What else checks out" },
+  { id: "approach", label: "How he works" },
+  { id: "measured", label: "How this is measured" },
+  { id: "education", label: "Education" },
+  { id: "contact", label: "Get in touch" },
+];
+
+/** A corpus body with its line wrapping and bold markers taken out, for quoting. */
+const flat = (body: string) => body.replace(/\*\*/g, "").replace(/\s+/g, " ");
 
 function Section({
   id,
@@ -146,6 +169,7 @@ function RoleContent({
 
   return (
     <article
+      id={`role-${row}`}
       className={styles.roleContent}
       data-role-content
       data-past={past || undefined}
@@ -268,6 +292,23 @@ export default function Page() {
     { section: growaza, past: true },
   ];
 
+  // Figures drawn beside the prose that states them. Every value is read from
+  // the corpus sentence or eval file it comes from; none is typed here.
+  const pub = section("Publications");
+  const pubText = flat(pub.body);
+  const pct = (v?: string) => parseFloat(v ?? "");
+  const gnn = parseFloat(pubText.match(/graph network alone ([\d.]+)%/)?.[1] ?? "");
+  const fixS = parseFloat(pub.metrics[2]?.value ?? "");
+  const staticS = parseFloat(pub.metrics[2]?.label.match(/against ([\d.]+)s/)?.[1] ?? "");
+  const doi = pub.artifacts.find((a) => a.url.includes("doi.org"))?.url;
+  const life = flat(section("BU Life AI").body);
+  const edu = flat(section("Education").body);
+  const after = (needle: string) => (edu.includes(needle) ? edu.slice(edu.indexOf(needle)) : "");
+  const courses = edu.match(/Coursework: (.+?)\./)?.[1].split(", ") ?? [];
+  const habit = flat(section("Who he is").body).split(/(?<=\.) /).find((s) => s.includes("working habit"));
+  const start = startOf(section("Availability").body);
+  const filed = os.artifacts.find((a) => a.state === "closed" && a.url.includes("deepagents"));
+
   return (
     <>
       <FilmBoot />
@@ -283,25 +324,14 @@ export default function Page() {
         resumeHref="/kushal-gaddamwar-resume.pdf"
       />
       <PageMotion />
+      <SceneFx />
       <FilmMount />
       <FilmChip />
       {/* Navigation the page did not have. The labels are the section headings
           verbatim, not a second set of names for the same things: two vocabularies
           for one page is how a reader ends up unsure whether "Proof" and "What
           else checks out" are the same section. */}
-      <SectionRail
-        items={[
-          { id: "work", label: "Work" },
-          { id: "opensource", label: "The bug that looked like success" },
-          { id: "running", label: "Also running" },
-          { id: "research", label: "Research" },
-          { id: "proof", label: "What else checks out" },
-          { id: "approach", label: "How he works" },
-          { id: "measured", label: "How this is measured" },
-          { id: "education", label: "Education" },
-          { id: "contact", label: "Get in touch" },
-        ]}
-      />
+      <SectionRail items={CHAPTERS} />
       {/* Scroll progress. Purely decorative, so it is hidden from assistive tech
           and disappears entirely under reduced-motion. */}
       <div className={styles.progress} aria-hidden="true" />
@@ -312,6 +342,13 @@ export default function Page() {
         current={profile.current}
         skills={section("Skills").stack}
         evidence={evidence}
+        proof={[
+          { m: section("Open source, LangChain deepagents").metrics[0], label: "to a merged fix", href: "#opensource" },
+          { m: section("Publications").metrics[0], label: "paper accuracy", href: "#research" },
+          { m: section("BU Life AI").metrics[0], label: "redundant LLM calls", href: "#running" },
+        ]
+          .filter((p) => p.m)
+          .map((p) => ({ value: p.m.value, label: p.label, href: p.href }))}
         available={profile.available}
         credentials={certs
           .filter((c) => c.pinned && c.url)
@@ -342,6 +379,18 @@ export default function Page() {
               <RoleContent key={s.title} section={s} past={past} row={i + 1} />
             ))}
           </div>
+          {/* The four racks on one axis, after them: which roles overlap, which
+              followed which. Each bar returns to its rack. */}
+          <Timeline
+            label="His roles over time"
+            items={roles.map(({ section: s }, i) => ({
+              label: s.roleParts.title,
+              sub: s.title.replace(/, backend$/, ""),
+              when: s.roleParts.dates,
+              href: `#role-${i + 1}`,
+              tint: ROLE_TINT[s.title],
+            }))}
+          />
         </Section>
 
         <FilmTransit id="T2" />
@@ -365,7 +414,32 @@ export default function Page() {
           <div className={styles.roleFigures} style={{ "--figure-tint": "var(--brand-langchain)" } as React.CSSProperties}>
             <Metrics items={os.metrics} />
           </div>
-          <Prose body={section("Open source, LangChain deepagents").body} topic="the LangChain deepagents fix" claimHref={section("Open source, LangChain deepagents").claim} />
+          <div className={styles.beside}>
+            <Prose body={section("Open source, LangChain deepagents").body} topic="the LangChain deepagents fix" claimHref={section("Open source, LangChain deepagents").claim} />
+            {/* The two public records and the time between them, as a path a
+                reader can walk: the report, then the merged fix. */}
+            {filed && merged && hours && (
+              <ol className={styles.chain} aria-label="From his report to the merged fix">
+                <li>
+                  <a className={styles.chainNode} href={filed.url} target="_blank" rel="noreferrer">
+                    <span className={styles.chainKind}>{filed.kind}</span>
+                    <span className={styles.chainLabel}>{filed.label}</span>
+                    <span className={styles.chainState}>{filed.state}</span>
+                  </a>
+                </li>
+                <li className={styles.chainGap}>
+                  <span className={styles.chainHours}>{hours.value}</span> {hours.label}
+                </li>
+                <li>
+                  <a className={styles.chainNode} href={merged.url} target="_blank" rel="noreferrer">
+                    <span className={styles.chainKind}>{merged.kind}</span>
+                    <span className={styles.chainLabel}>{merged.label}</span>
+                    <span className={styles.chainState}>{merged.state}</span>
+                  </a>
+                </li>
+              </ol>
+            )}
+          </div>
           <details className="more" data-phone-fold>
             <summary>
               <span className="more-open">The issue, the pull request and questions to ask</span>
@@ -397,12 +471,21 @@ export default function Page() {
             >
               <Metrics items={section("BU Life AI").metrics} />
             </div>
+            {/* What the three agents are and how a question reaches one, drawn
+                from the sentence that says so, then whether it is up right now. */}
+            <Topology
+              root={life.match(/a (\w+ supervisor)/)?.[1] ?? "Supervisor"}
+              rootNote="classifies intent and routes"
+              leaves={life.match(/agents for (\w+), (\w+) and (\w+)/)?.slice(1) ?? []}
+              leafNote="ReAct agents, each on its own thread"
+              store={/pgvector/.test(life) && /BM25/.test(life) ? "pgvector, fused with BM25" : undefined}
+            />
+            <LiveStatus url="https://bulife-ai.netlify.app/" label="bulife-ai.netlify.app" />
             <details className="more">
               <summary>
-                <span className="more-open">Stack and live status</span>
+                <span className="more-open">Stack and how it works</span>
                 <span className="more-close">Show less</span>
               </summary>
-              <LiveStatus url="https://bulife-ai.netlify.app/" label="bulife-ai.netlify.app" />
               <Prose body={section("BU Life AI").body} topic="BU Life AI" claimHref={section("BU Life AI").claim} />
               <ul className={styles.stack}>
                 {section("BU Life AI").stack.map((t) => (
@@ -443,7 +526,40 @@ export default function Page() {
             >
               <Metrics items={section("Publications").metrics} />
             </div>
-            <Prose body={section("Publications").body} topic="publications" claimHref={section("Publications").claim} phoneOpen={1} />
+            <div className={styles.beside}>
+              <Prose body={section("Publications").body} topic="publications" claimHref={section("Publications").claim} phoneOpen={1} />
+              <div className={styles.figures}>
+                {gnn > 0 && (
+                  <Compare
+                    title="Bug detection accuracy"
+                    min={80}
+                    max={95}
+                    ticks={[80, 85, 90, 95]}
+                    unit="%"
+                    rows={[
+                      { label: "Graph network alone", value: gnn, shown: `${gnn}%` },
+                      { label: "Transformer alone", value: pct(pub.metrics[1]?.value), shown: pub.metrics[1]?.value ?? "" },
+                      { label: "Combined", value: pct(pub.metrics[0]?.value), shown: pub.metrics[0]?.value ?? "", lead: true },
+                    ]}
+                    note="Dots, not bars: the scale starts at 80%."
+                  />
+                )}
+                {staticS > 0 && fixS > 0 && (
+                  <Compare
+                    title="Detect and fix, seconds"
+                    min={0}
+                    max={30}
+                    ticks={[0, 10, 20, 30]}
+                    unit=" s"
+                    rows={[
+                      { label: "Static analysis", value: staticS, shown: `${staticS} s` },
+                      { label: "The paper's model", value: fixS, shown: `${fixS} s`, lead: true },
+                    ]}
+                  />
+                )}
+                {doi && <CopyText text={doi} label="Copy the DOI link" what="doi" />}
+              </div>
+            </div>
             {/* Both papers as rows a reader can open, rather than as two links
                 inside a paragraph. The DOI resolves; the link checker proves it. */}
             <details className="more" data-phone-fold>
@@ -483,13 +599,25 @@ export default function Page() {
             the scope limits are here rather than buried because stating them
             early is what makes the rest of the page readable as fact. */}
         <Section id="approach" beat="running" data-phone="hide" title="How he works" data-layout="rule" data-register="instrument">
-          <Prose body={section("Who he is").body} topic="who he is" claimHref={section("Who he is").claim} />
-          <Prose body={section("What he is good at").body} topic="what he is good at" claimHref={section("What he is good at").claim} />
-          {/* Condensed mode keeps only the first paragraph of a prose block,
-              which took two thirds of the scope limits with it. This is the one
-              section whose whole value is that it narrows the claim. */}
-          <div data-keep="all">
-            <Prose body={section("What he does not do").body} />
+          <div className={styles.beside}>
+            <div>
+              <Prose body={section("Who he is").body} topic="who he is" claimHref={section("Who he is").claim} />
+              <Prose body={section("What he is good at").body} topic="what he is good at" claimHref={section("What he is good at").claim} />
+              {/* Condensed mode keeps only the first paragraph of a prose block,
+                  which took two thirds of the scope limits with it. This is the one
+                  section whose whole value is that it narrows the claim. */}
+              <div data-keep="all">
+                <Prose body={section("What he does not do").body} />
+              </div>
+            </div>
+            {/* The section's thesis, set as display type in the column the
+                measure leaves empty. A copy of a sentence already in the prose,
+                so it is hidden from assistive technology. */}
+            {habit && (
+              <blockquote className={styles.pull} aria-hidden="true">
+                <p>{habit}</p>
+              </blockquote>
+            )}
           </div>
           <details className="more" data-phone-fold>
             <summary>
@@ -552,11 +680,33 @@ export default function Page() {
               <div className={styles.eduFigures}>
                 <Metrics items={section("Education").metrics} />
               </div>
-              <Prose body={section("Education").body} topic="education" phoneOpen={1} />
+              <div className={styles.beside}>
+                <Prose body={section("Education").body} topic="education" phoneOpen={1} />
+                <div className={styles.figures}>
+                  <Timeline
+                    label="Degrees and teaching over time"
+                    items={[
+                      { label: "B.Tech, Computer Science", sub: "IIIT Jabalpur", when: after("IIIT") },
+                      { label: "M.S., Computer Science", sub: "Boston University", when: after("M.S.") },
+                      { label: "Teaching Assistant", sub: "MET CS 664", when: after("Teaching Assistant") },
+                    ]}
+                  />
+                  {courses.length > 0 && (
+                    <ul className={styles.stack} aria-label="Coursework">
+                      {courses.map((c) => (
+                        <li key={c}>{c}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
             </Panel>
             <Panel className={styles.alsoBuilt} hue="var(--brand-bu)" kind="instrument" surface="console" heading={3} label="Before this" state="done" status="2020 to 2024">
               <div className={styles.eduFigures}>
-                <Metrics items={section("Achievements").metrics} />
+                <Metrics
+                  items={section("Achievements").metrics}
+                  seal={section("Proof wall").badges.filter((b) => /top \d+%/i.test(b.label)).map((b) => seal(b.label))[0]}
+                />
               </div>
               <Prose body={section("Achievements").body} topic="achievements" phoneOpen={1} />
             </Panel>
@@ -578,22 +728,44 @@ export default function Page() {
           {/* Every path from "decided to write" to "message sent", with the
               draft already composed. The bare mailto that was here opened an
               empty window at the exact moment the reader had chosen to act. */}
-          <Reach
-            email={profile.email}
-            phone={profile.phone}
-            linkedin={profile.linkedin}
-            github={profile.github}
-            repo={profile.repo}
-            site={profile.site.replace("https://", "")}
-            resumeHref="/kushal-gaddamwar-resume.pdf"
-            forward={{
-              name: profile.name,
-              current: profile.current,
-              proof: profile.proof,
-              site: profile.site,
-              evals,
-            }}
-          />
+          <div className={styles.beside}>
+            <Reach
+              email={profile.email}
+              phone={profile.phone}
+              linkedin={profile.linkedin}
+              github={profile.github}
+              repo={profile.repo}
+              site={profile.site.replace("https://", "")}
+              resumeHref="/kushal-gaddamwar-resume.pdf"
+              forward={{
+                name: profile.name,
+                current: profile.current,
+                proof: profile.proof,
+                site: profile.site,
+                evals,
+              }}
+            />
+            {/* The two things a reader checks before writing: when he can start,
+                and the one page they will forward. The preview opens at the
+                summary; the full file is one press away. */}
+            <aside className={styles.resume} aria-label="Start date and résumé">
+              {start && (
+                <p className={styles.start}>
+                  <span className={styles.startLabel}>Full-time from</span>
+                  <span className={styles.startDate}>{start.label}</span>
+                  <Countdown until={start.iso} className={styles.startCount} />
+                </p>
+              )}
+              <a className={styles.sheet} href="/kushal-gaddamwar-resume.pdf" target="_blank" rel="noreferrer">
+                {/* eslint-disable-next-line @next/next/no-img-element -- a static preview of a static file */}
+                <img src="/resume-preview.webp" alt="The summary and experience on his résumé" width={560} height={411} loading="lazy" />
+                <span className={styles.sheetCap}>
+                  Open the résumé
+                  <span className={styles.sheetMeta}>PDF, one page</span>
+                </span>
+              </a>
+            </aside>
+          </div>
           {/* The record, last: what he can prove, as badges, each one a link. */}
           <ProofWall certs={certs} badges={section("Proof wall").badges} />
           <FilmLine which="closing" />
@@ -601,6 +773,20 @@ export default function Page() {
       </main>
 
       <footer className={styles.footer}>
+        {/* Where a reader can go from the end of the page: every section by
+            its heading, and back to the top. */}
+        <nav className={`wrap ${styles.footIndex}`} aria-label="Sections" data-film-scrim>
+          <ol>
+            {CHAPTERS.map((c) => (
+              <li key={c.id}>
+                <a href={`#${c.id}`}>{c.label}</a>
+              </li>
+            ))}
+          </ol>
+          <a className={styles.top} href="#top">
+            Back to top
+          </a>
+        </nav>
         {/* The wordmark, oversized and outlined.
             `aria-hidden`, and that is not an oversight: the name is already the
             h1 at the top of this page, and a screen reader meeting it a second

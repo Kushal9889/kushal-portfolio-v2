@@ -8,6 +8,7 @@ import { loadContent, loadCertifications, section } from "@/lib/content";
 // system is imported by the routes that render it, so the home page no longer
 // ships 68KB of CSS it never matches.
 import "./base.css";
+import Rum from "./Rum";
 
 // Self-hosted by next/font at build time. The previous site loaded two of its
 // three families through a render-blocking <link> to fonts.googleapis.com, which
@@ -288,6 +289,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         {children}
+        {process.env.NEXT_PUBLIC_RUM === "1" && <Rum />}
       </body>
     </html>
   );

@@ -217,8 +217,10 @@ def run(width, url, only, dump=None):
                 if r["film"]:
                     scrim_worst = max(scrim_worst, lmax)
                     # Text with a halo is protected by the halo, not by a dark
-                    # film; only bare text still needs the dimmed backdrop.
-                    if lmax > 0.09 and not r.get("edge"):
+                    # film; only bare light text still needs the dimmed
+                    # backdrop. Dark text on the paper sections (scenes.css)
+                    # needs the opposite, and the ratio above already holds it.
+                    if lmax > 0.09 and not r.get("edge") and lum([cr, cg, cb]) >= 0.2:
                         fails.append(f"{width} {stop}: scrim backdrop luminance {lmax:.4f} > 0.09 under '{r['text']}'")
         browser.close()
     print(f"== {width}px: {count} text runs, worst {worst[0]:.2f}:1 (needs {worst[1]}) at {worst[2]} '{worst[3]}', worst scrim backdrop {scrim_worst:.4f}")

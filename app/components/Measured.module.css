@@ -161,3 +161,20 @@
     grid-column: 1 / -1;
   }
 }
+
+/* The case breakdown and the latency scale share one row where there is room. */
+.pair {
+  display: grid;
+  gap: var(--s-6);
+  align-items: start;
+}
+
+@media (min-width: 62rem) {
+  .pair {
+    grid-template-columns: minmax(0, 1.4fr) minmax(15rem, 1fr);
+    column-gap: var(--s-7);
+  }
+  .pair > figure {
+    margin-block-start: var(--s-4);
+  }
+}

@@ -3,8 +3,8 @@ the canvas by scroll, the Apple product-page technique.
 
     python3 scripts/film-frames.py [clip ...] [--remap]
 
-Per clip: the sharpest source (the Real-ESRGAN 4K master for a 720p Veo clip,
-the 1080p source otherwise), the same start, direction and Gemini-mark crop
+Per clip: the sharpest source (the Real-ESRGAN 4K master for a 720p clip,
+the 1080p source otherwise), the same start, direction and corner-mark crop
 the old MP4 masters used (recovered by frame correlation, 2026-10-07), trimmed
 to the span content/film-clips.json actually scrolls through, 24 fps; phones get every second frame.
 Writes public/film/frames/d/<clip>/0001.webp (desktop 1920x1080) and
@@ -29,17 +29,17 @@ K4 = [os.path.join(ROOT, ".playwright-mcp", "film", "clips", d) for d in ("4k2",
 OUT = os.path.join(V2, "public", "film", "frames")
 CLIPS = os.path.join(V2, "content", "film-clips.json")
 FPS = 24
-# The old masters' cut of each source: start second, played reversed, Gemini
+# The old masters' cut of each source: start second, played reversed, corner
 # mark cropped (x 4-96 percent, y 3-95 percent). Everything else starts at 0,
 # forward, uncropped.
 START = {"hall-fabric": 1.0}
 REVERSE = {"o1-wake", "gap-g6", "gap-g2"}
 # A second crop where a source carries a mark the standard crop misses
-# (gap-g4: the Gemini sparkle sits at 92 by 87 percent of the cropped frame).
+# (gap-g4: the mark sits at 92 by 87 percent of the cropped frame).
 # Taken from the 4K master, so the 1080p frames lose no detail.
 EXTRA = {"gap-g4": "crop=iw*0.86:ih*0.86:iw*0.02:0"}
 CROP = {"gap-g4", "bridge-b2", "gap-g1", "gap-g5", "v7-tray2", "bridge-b3", "gap-g7", "v5-ring2", "v10-exit", "gap-g3", "w1-work-racks", "gap-g6", "gap-g2"}
-# The 1280x720 Veo sources, each with a verified 4K upscale of the same take.
+# The 1280x720 sources, each with a verified 4K upscale of the same take.
 UPSCALED = {"o1-wake", "gap-g4", "hall-fabric", "bridge-b2", "gap-g1", "fabric-corpus", "gap-g5", "bridge-b3", "gap-g6", "gap-g7",
             "gap-g2", "v5-ring2", "v10-exit", "gap-g3", "e1-call", "e2-campus", "ed1-campus-river"}
 GRADE = "eq=contrast=1.06:brightness=-0.012:saturation=0.98"

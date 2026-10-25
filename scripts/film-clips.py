@@ -1,4 +1,4 @@
-"""Encode a Gemini clip for the film: 1920 by 1080, a keyframe every 8 frames
+"""Encode a source clip for the film: 1920 by 1080, a keyframe every 8 frames
 at CRF 27, so scrolling seeks to any frame fast while the page stays light
 (D39).
 

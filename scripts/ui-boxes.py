@@ -9,28 +9,30 @@ Boxes are grouped by their CSS-module component name. Each group reports its
 modal radius, border and font role; an element that differs from its group's
 mode is an outlier. Rules checked (source in brackets):
 
-  radius        only from the page scale 0 / 2 / 4 / 8 / 12 px / pill  [globals.css:291, design-taste 4.4 shape lock]
-  glow          no zero-offset coloured halo, no hard offset block shadow  [impeccable craft-floor Refuse, brutalist 4]
-  border-side   no coloured border-left/right wider than 1px  [impeccable craft-floor Refuse]
-  gradient-text no background-clip:text on text  [impeccable craft-floor Refuse, design-taste 9.A]
-  tracking      letter-spacing not tighter than -0.04em  [impeccable craft-floor Verify]
-  display       font-size at most 6rem (96 px)  [impeccable craft-floor Verify]
-  pure-black    no #000 text or ground  [design-taste 9.A, stitch 2]
-  font          no Inter / Times / Georgia as the used face  [design-taste 4.1, stitch 3]
-  caps          uppercase text only in mono or in labels of 1 to 4 words  [brutalist 3.2]
-  eyebrow       small uppercase label directly above a heading: counted, limit ceil(sections / 3)  [design-taste 4.7, impeccable craft-floor]
-  em-dash       no em or en dash in visible text  [design-taste 9.G]
-  measure       body paragraphs 45 to 80 characters per line  [impeccable craft-floor Verify]
+  radius        only from the page scale 0 / 2 / 4 / 8 / 12 px / pill  [globals.css:291]
+  glow          no zero-offset coloured halo, no hard offset block shadow
+  border-side   no coloured border-left/right wider than 1px
+  gradient-text no background-clip:text on text
+  tracking      letter-spacing not tighter than -0.04em
+  display       font-size at most 6rem (96 px)
+  pure-black    no #000 text or ground
+  font          no Inter / Times / Georgia as the used face
+  caps          uppercase text only in mono or in labels of 1 to 4 words
+  eyebrow       small uppercase label directly above a heading: counted, limit ceil(sections / 3)
+  em-dash       no em or en dash in visible text
+  measure       body paragraphs 45 to 80 characters per line
   focus         every interactive element shows a focus ring (outline or ring shadow) on :focus-visible
-  target        interactive elements at least 24 px (fail) and 44 px (warn) on a phone  [WCAG 2.5.8, impeccable audit]
-  hover         every control kind changes on pointer hover (computed style, children, pseudo-elements or pixels), desktop only  [impeccable craft-floor, design-taste 6]
-  active        every control kind answers a press (warn)  [stitch 4, design-taste 6 tactile feedback]
-  timing        a control that changes state does it over 100 to 400 ms, never instantly (warn)  [ui-ux-pro-max ux, impeccable animate.md]
+  target        interactive elements at least 24 px (fail) and 44 px (warn) on a phone  [WCAG 2.5.8]
+  hover         every control kind changes on pointer hover (computed style, children, pseudo-elements or pixels), desktop only
+  active        every control kind answers a press (warn)
+  timing        a control that changes state does it over 100 to 400 ms, never instantly (warn)
 
 Writes docs/ui-boxes.json. Exit 1 on any fail (warnings do not fail).
 """
 
 import argparse
+CHROME_SECTIONS = {"research", "contact"}  # static path only; see app/scenes.css
+CHAPTER_SECTIONS = {"work", "opensource", "contact"}
 import collections
 import json
 import math
@@ -191,16 +193,20 @@ def audit(width, page, report, fails, warns):
             for side, wd, col in (("left", bw[3], it["blc"]), ("right", bw[1], it["brc"])):
                 # A stripe is one side wider than the top edge. Equal borders on all sides are a frame.
                 if wd > 1.5 and alpha(col) > 0.3 and wd > bw[0] + 0.5:
-                    flag("fail", "border-side", it, f"{side} stripe {wd}px (impeccable craft-floor: no coloured side stripe over 1px)")
-        if it["bgclip"] == "text" and it["fill"].startswith("rgba(0, 0, 0, 0)"):
+                    flag("fail", "border-side", it, f"{side} stripe {wd}px (no coloured side stripe over 1px)")
+        # Liquid chrome is a brief item (docs/redesign-2026-10.md S1), allowed on
+        # the two titles that carry it and nowhere else.
+        if it["bgclip"] == "text" and it["fill"].startswith("rgba(0, 0, 0, 0)") and it["section"] not in CHROME_SECTIONS:
             flag("fail", "gradient-text", it, "background-clip:text")
         ls = it["ls"]
         if ls.endswith("px") and it["fs"]:
             em = float(ls[:-2]) / it["fs"]
             if em < -0.04:
                 flag("fail", "tracking", it, f"letter-spacing {em:.3f}em")
-        if it["fs"] and it["fs"] > 96.5 and it["direct"]:
-            flag("fail", "display", it, f"font-size {it['fs']}px > 96")
+        # Chapter titles are set huge so a panel can ride over them (redesign A1).
+        cap = 172 if it["section"] in CHAPTER_SECTIONS else 96.5
+        if it["fs"] and it["fs"] > cap and it["direct"]:
+            flag("fail", "display", it, f"font-size {it['fs']}px > {cap:g}")
         if re.match(r"rgb\(0, 0, 0\)", it["color"]) and it["direct"]:
             flag("fail", "pure-black", it, "text is #000")
         if it["direct"] and it["font"] in ("Inter", "Times New Roman", "Georgia", "Times"):

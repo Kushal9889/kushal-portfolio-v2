@@ -82,23 +82,58 @@ export function ground(answer: string, ...context: string[]): Grounding {
  * on 93 answer sentences from the held-out suite (2026-10-10): C >= 0.5 labels
  * 86, Jaccard >= 0.2 labels 58. Kushal chose C.
  */
-const STOP = new Set(["the", "and", "for", "with", "his", "has", "was", "that", "this", "from", "are", "into", "not", "but", "who", "its", "than", "then", "also", "which"]);
+const STOP = new Set(["the", "and", "for", "with", "his", "her", "their", "has", "was", "that", "this", "from", "are", "into", "not", "but", "who", "its", "than", "then", "also", "which"]);
 const words = (s: string) => new Set(s.toLowerCase().replace(/\*\*/g, "").split(/[^a-z0-9+#%]+/).filter((w) => w.length > 2 && !STOP.has(w)));
 
-export type Citation = { sentence: string; source: string | null };
+/**
+ * `id` is the indexed passage (`${section}#${ordinal}`) when the caller passes
+ * the index passages, and `n` numbers distinct sources in order of first use,
+ * so the answer can carry an inline marker per sentence and the marker links
+ * to the one passage it came from.
+ */
+export type Citation = { sentence: string; source: string | null; id?: string; n?: number };
 
-export function cite(answer: string, sections: { title: string; body: string }[], min = 0.5): Citation[] {
-  const passages = sections.flatMap((s) => s.body.split(/\n\n+/).map((p) => ({ title: s.title, w: words(p) })));
+export const SENTENCE = /(?<=[.!?])\s+/;
+
+export function cite(
+  answer: string,
+  sections: { title: string; body: string }[],
+  min = 0.5,
+  indexed?: { title: string; ordinal: number; text: string }[],
+): Citation[] {
+  const passages = indexed?.length
+    ? indexed.map((p) => ({ title: p.title, id: `${p.title}#${p.ordinal}`, w: words(p.text) }))
+    : sections.flatMap((s) => s.body.split(/\n\n+/).map((p) => ({ title: s.title, id: undefined as string | undefined, w: words(p) })));
+  const order = new Map<string, number>();
   return answer
-    .split(/(?<=[.!?])\s+/)
+    .split(SENTENCE)
     .filter((s) => s.trim())
     .map((sentence) => {
       const w = words(sentence);
-      let best = { c: 0, title: null as string | null };
+      let best = { c: 0, title: null as string | null, id: undefined as string | undefined };
       for (const p of passages) {
         const c = w.size ? [...w].filter((x) => p.w.has(x)).length / w.size : 0;
-        if (c > best.c) best = { c, title: p.title };
+        if (c > best.c) best = { c, title: p.title, id: p.id };
       }
-      return { sentence, source: best.c >= min ? best.title : null };
+      if (best.c < min) return { sentence, source: null };
+      const key = best.id ?? best.title!;
+      if (!order.has(key)) order.set(key, order.size + 1);
+      return { sentence, source: best.title, id: best.id, n: order.get(key) };
     });
+}
+
+/**
+ * One number for how far an answer can be trusted (Kushal 2026-10-10):
+ *
+ *   score = 40% source match + 40% facts found + 20% sentences sourced
+ *   source match = 1.0 for "sure", 0.6 for "partly sure" (the band after the G check)
+ *   facts found = G above; sentences sourced = share of sentences cite() labelled
+ *
+ * Null for "don't know": that answer makes no claim, so there is nothing to score.
+ */
+export function answerScore(band: string | undefined, g?: Grounding, cites?: Citation[]): number | null {
+  if (band !== "answer" && band !== "partial") return null;
+  const match = band === "answer" ? 1 : 0.6;
+  const sourced = cites?.length ? cites.filter((c) => c.source).length / cites.length : 0;
+  return Math.round(100 * (0.4 * match + 0.4 * (g?.g ?? 1) + 0.2 * sourced));
 }

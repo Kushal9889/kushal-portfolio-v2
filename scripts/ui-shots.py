@@ -3,6 +3,7 @@
     python3 scripts/ui-shots.py                 all sections at 390 and 1440, one sheet per width
     python3 scripts/ui-shots.py --only agent    one named target, full size
     python3 scripts/ui-shots.py --width 1440
+    python3 scripts/ui-shots.py --full --motion both   every section at full height, calm and moving
 
 Files land in docs/shots/<build>/: <name>-<width>.jpg per target and
 sheet-<width>.jpg (all targets, scaled). Read a sheet to judge render, images,
@@ -85,7 +86,11 @@ def main():
     ap.add_argument("--width", type=int, nargs="*", default=[390, 1440])
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--force", action="store_true")
+    ap.add_argument("--full", action="store_true", help="each section at full height instead of one viewport")
+    ap.add_argument("--motion", choices=["reduce", "no-preference", "both"], default="no-preference")
     a = ap.parse_args()
+    if a.full:
+        return full(a)
     out_dir = os.path.join(V2, "docs", "shots", _cache.build_id())
     os.makedirs(out_dir, exist_ok=True)
     names = a.only or list(TARGETS)
@@ -113,6 +118,39 @@ def main():
                 print(f"sheet {s}")
             else:
                 print("shots", [os.path.basename(p) for p in paths])
+
+
+def full(a):
+    """Every section (and the footer) as one full-height picture per width and motion mode."""
+    out_dir = os.path.join(V2, "docs", "shots", _cache.build_id(), "full")
+    os.makedirs(out_dir, exist_ok=True)
+    motions = ["reduce", "no-preference"] if a.motion == "both" else [a.motion]
+    with sync_playwright() as pw:
+        br = pw.chromium.launch(channel="chrome")
+        for w in a.width:
+            for m in motions:
+                ctx = br.new_context(viewport={"width": w, "height": 900 if w > 700 else 844}, device_scale_factor=1,
+                                     has_touch=w < 700, is_mobile=w < 700, reduced_motion=m)
+                page = ctx.new_page()
+                page.goto(f"{ORIGIN}/", wait_until="networkidle")
+                page.wait_for_timeout(2500)
+                h = page.evaluate("document.documentElement.scrollHeight")
+                for y in range(0, h, 600):
+                    page.evaluate(f"window.scrollTo(0, {y})")
+                    page.wait_for_timeout(120)
+                tag = "calm" if m == "reduce" else "motion"
+                for sel in ["body > header"] + [f"main > section#{t}" for t in TARGETS if not t.startswith(("hero", "agent"))] + ["footer"]:
+                    loc = page.locator(sel).first
+                    if not loc.count() or not loc.bounding_box() or loc.bounding_box()["height"] < 4:
+                        continue
+                    loc.scroll_into_view_if_needed()
+                    page.wait_for_timeout(1200)
+                    name = sel.split("#")[-1].split(" ")[-1]
+                    loc.screenshot(path=os.path.join(out_dir, f"{name}-{w}-{tag}.jpg"), type="jpeg", quality=78)
+                    print(f"  {name}-{w}-{tag}")
+                ctx.close()
+        br.close()
+    print(out_dir)
 
 
 if __name__ == "__main__":

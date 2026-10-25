@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useMotion } from "@/lib/motion";
 import styles from "./Film.module.css";
+import { reducedMotion } from "@/lib/verbs";
 
 /**
  * "off" is the page without the film (an explicit ?film=off). "still" is a device
@@ -83,7 +84,7 @@ export default function Film() {
   // the one thing those readers see of it.
   useEffect(() => {
     if (new URLSearchParams(location.search).get("film") === "off") return;
-    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!reducedMotion()) return;
     setStill(true);
     return () => setStill(false);
   }, []);

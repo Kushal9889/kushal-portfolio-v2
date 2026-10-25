@@ -17,6 +17,7 @@ lastVerified: 2026-10-02
 ---
 
 ## Who he is
+@kind profile
 @source resume
 
 **Kushal Gaddamwar builds AI agents, then makes them answer to the same rules as the engineers
@@ -39,6 +40,7 @@ research. His training work is coursework: the assignments in Advanced Machine L
 Networks at Boston University. He builds systems that stay correct under load.
 
 ## What he is good at
+@kind profile
 @source resume
 
 **Finding the place a system is wrong before it fails loudly.**
@@ -56,6 +58,7 @@ audit logs, and an idempotent recurrence engine. He did the same kind of work at
 Growaza.
 
 ## What he does not do
+@kind limits
 
 Model training in production or research. He has no PyTorch or TensorFlow project there. His
 training work is the coursework assignments in Advanced Machine Learning and Neural Networks at
@@ -64,6 +67,7 @@ Boston University, and he does not present himself as an ML engineer.
 Data science and statistical modeling.
 
 ## Boston University, Questrom Computational Lab, backend
+@kind role
 @source resume
 
 Role: Lead Backend Engineer. August 2026 to present. Boston, MA.
@@ -92,6 +96,7 @@ PostgreSQL at constant memory.
 Stack: Claude Code, Model Context Protocol, Django REST Framework, PostgreSQL, Docker, Azure, React.
 
 ## Boston University, Questrom Computational Lab
+@kind role
 @source resume
 
 Role: AI Engineer, Graduate Researcher. May 2026 to present. Boston, MA.
@@ -131,6 +136,7 @@ embeddings compress meaning and lose surface form, so they miss exact terms, and
 corpus the exact terms are client names, project codes, and document titles. The cost was worth it.
 
 ## IMG Systems
+@kind role
 @source resume
 
 Role: Software Engineering Intern. August 2024 to April 2025. Remote.
@@ -170,6 +176,7 @@ turned silent data loss into a visible signal.
 Stack: Python, Apache Tika, Pydantic, JSON Schema, PostgreSQL, Redis, Docker, GitHub Actions, Node.js.
 
 ## Growaza
+@kind role
 @source resume
 
 Role: Associate Software Engineer Intern. January 2024 to July 2024. Remote.
@@ -191,6 +198,7 @@ resume line said "led".
 Stack: React, Redux, MySQL, Redis, Node.js, JWT, RBAC, AWS EC2 and S3.
 
 ## BU Life AI
+@kind project
 @source https://github.com/Kushal9889/BU-Life-AI
 
 **A live multi-agent campus assistant for Boston University students, running since January
@@ -233,6 +241,7 @@ Neon connection limits are second. The fix is a paid tier with persistent worker
 pooling. He has not needed it yet and has not pretended otherwise.
 
 ## Open source, LangChain deepagents
+@kind project
 @source https://github.com/langchain-ai/deepagents/issues/4846
 
 **He found and root-caused a silent error-swallowing bug in LangChain's deepagents SDK, and a
@@ -274,6 +283,7 @@ the issue to write the patch himself. The maintainer wrote it instead, which is 
 when the report is good enough that fixing it takes twenty minutes.
 
 ## Certifications
+@kind credential
 
 Claude Certified Developer - Foundations, Anthropic, earned 2026. Verifiable on Credly.
 https://www.credly.com/badges/54ca4478-339e-496c-a4c4-2ae6c4c339ca/public_url
@@ -299,6 +309,7 @@ AI agents, agentic AI with LangChain and LangGraph, agentic AI with CrewAI, Auto
 building agents with the Model Context Protocol, and a capstone project.
 
 ## Education
+@kind education
 @source resume
 @metric 3.5 | GPA out of 4.0, M.S. in Computer Science at Boston University | resume
 @metric ~40 | graduate students in MET CS 664, where he is Teaching Assistant | resume
@@ -311,6 +322,7 @@ IIIT Design and Manufacturing Jabalpur, B.Tech Computer Science and Engineering.
 June 2024. India.
 
 ## Publications
+@kind publication
 @source https://doi.org/10.1109/ICAICCIT64383.2024.10912101
 
 @metric 91.4% | combined transformer and GNN accuracy | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
@@ -339,6 +351,7 @@ IGI Global 2024, co-author. Cyber-Physical Systems: Security and Optimization St
 [Read the chapter and code](https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities)
 
 ## Skills
+@kind skills
 
 Stack: LangGraph, Claude Code, Model Context Protocol, RAG, LangChain, FastAPI, pgvector, NVIDIA NIM
 
@@ -369,6 +382,7 @@ Cloud: AWS EC2, S3, Lambda, API Gateway. Microsoft Azure. Google Cloud Platform.
 Frontend: React, Redux, Next.js.
 
 ## Achievements
+@kind award
 
 @metric 99.1 | percentile in JEE Mains 2020, top 1 percent of candidates | resume
 @metric 70+ | members in the coding community he co-founded | resume
@@ -376,7 +390,7 @@ Frontend: React, Redux, Next.js.
 @metric 64 | CodeChef global rank, February 2022 Long Challenge | resume
 @metric $12K | raised for Tarang Fest 2023, which he led | resume
 
-JEE Mains 2020: 99.1 percentile, top 0.9 percent nationally.
+JEE Mains 2020: 99.1 percentile, top 1% of 860K+ candidates.
 
 CodeChef global rank 64, February 2022 Long Challenge. Third place, Code Rumble 2023.
 
@@ -393,11 +407,12 @@ The public record behind the claims on this page, shown as badges: what he shipp
 @badge Shipped | MCP #3490 | Issue he filed in the Model Context Protocol Python SDK, open | https://github.com/modelcontextprotocol/python-sdk/issues/3490 | Model Context Protocol
 @badge Published | IEEE 2024 | First author, IEEE ICAICCIT 2024 | https://doi.org/10.1109/ICAICCIT64383.2024.10912101 | IEEE
 @badge Published | IGI 2024 | Co-author, IGI Global 2024 | https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities
-@badge Ranked | JEE top 1% | JEE Main 2020, 99.1 percentile | resume
+@badge Ranked | JEE top 1% of 860K+ | JEE Main 2020, 99.1 percentile, top 1% of 860K+ candidates | resume
 @badge Ranked | CodeChef 64 | CodeChef global rank 64, February 2022 | resume | CodeChef
 @badge Ranked | BITBYTE 70+ | Co-founded the BITBYTE coding community, 70+ members | resume
 
 ## Availability
+@kind availability
 
 Available full-time from January 2027, earlier for the right team. Remote, hybrid or on-site anywhere
 in the United States. Based in Boston.
@@ -406,6 +421,7 @@ Target roles: Agentic AI Engineer, Applied AI Engineer, LLM Engineer, AI Platfor
 Engineer.
 
 ## Work authorisation
+@kind private
 
 F-1 student visa. OPT-eligible on graduation in December 2026, with the three-year STEM extension
 available. That is roughly three years of work authorisation before H-1B sponsorship is required.
@@ -413,6 +429,7 @@ available. That is roughly three years of work authorisation before H-1B sponsor
 This is answered only when asked. It is not raised otherwise.
 
 ## This site
+@kind meta
 @source https://github.com/Kushal9889/kushal-portfolio-v2
 
 Two decisions on this page are worth asking about, and both went the opposite way

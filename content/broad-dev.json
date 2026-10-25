@@ -1,0 +1,99 @@
+{
+ "note": "Dev-only broad-topic probe (2026-10-25). Tuned on; never a report set.",
+ "sections": {
+  "BU Life AI": "BU Life AI",
+  "Boston University, Questrom Computational Lab": "Boston University, Questrom Computational Lab",
+  "Skills": "Skills",
+  "Boston University, Questrom Computational Lab, backend": "Boston University, Questrom Computational Lab, backend",
+  "This site": "This site",
+  "Who he is": "Who he is",
+  "What he is good at": "What he is good at"
+ },
+ "cases": [
+  {
+   "id": 1,
+   "kind": "broad",
+   "q": "What has he done with multi-agent systems?",
+   "expect": "answer",
+   "rel": {
+    "BU Life AI": 2,
+    "Boston University, Questrom Computational Lab": 2,
+    "Skills": 1
+   }
+  },
+  {
+   "id": 2,
+   "kind": "broad",
+   "q": "How does he approach evals?",
+   "expect": "answer",
+   "rel": {
+    "Boston University, Questrom Computational Lab": 2,
+    "Boston University, Questrom Computational Lab, backend": 1,
+    "This site": 1
+   }
+  },
+  {
+   "id": 3,
+   "kind": "broad",
+   "q": "How would he design a production RAG system?",
+   "expect": "answer",
+   "rel": {
+    "Boston University, Questrom Computational Lab": 2,
+    "BU Life AI": 2,
+    "Skills": 1
+   }
+  },
+  {
+   "id": 4,
+   "kind": "broad",
+   "q": "What does he know about context engineering?",
+   "expect": "answer",
+   "rel": {
+    "Who he is": 2,
+    "Skills": 1,
+    "What he is good at": 1
+   }
+  },
+  {
+   "id": 5,
+   "kind": "broad",
+   "q": "Tell me about his experience with agents and evaluation",
+   "expect": "answer",
+   "rel": {
+    "Boston University, Questrom Computational Lab": 2,
+    "BU Life AI": 1,
+    "Boston University, Questrom Computational Lab, backend": 1
+   }
+  },
+  {
+   "id": 6,
+   "kind": "broad",
+   "q": "What is his experience with LLM evaluation?",
+   "expect": "answer",
+   "rel": {
+    "Boston University, Questrom Computational Lab": 2,
+    "Skills": 1
+   }
+  },
+  {
+   "id": 7,
+   "kind": "broad",
+   "q": "How has he used LangGraph?",
+   "expect": "answer",
+   "rel": {
+    "Boston University, Questrom Computational Lab": 2,
+    "BU Life AI": 2
+   }
+  },
+  {
+   "id": 8,
+   "kind": "broad",
+   "q": "What has he built with retrieval and reranking?",
+   "expect": "answer",
+   "rel": {
+    "Boston University, Questrom Computational Lab": 2,
+    "BU Life AI": 2
+   }
+  }
+ ]
+}

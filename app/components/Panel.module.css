@@ -22,7 +22,7 @@
   background: var(--paper-sunk);
 }
 
-/* Uppercase metadata is set in the data voice (brutalist 3.2: micro type is
+/* Uppercase metadata is set in the data voice (micro type is
    mono, caps, wide-tracked). A 6 to 7 word caps line in the display face read as
    shouting; in mono it reads as a plate. */
 .label {

@@ -1,4 +1,4 @@
-"""AI-upscale a Gemini clip to 4K with Real-ESRGAN (compact general x4v3), on the
+"""Upscale a source clip to 4K with Real-ESRGAN (compact general x4v3), on the
 Mac GPU, before scripts/film-clips.py encodes it.
 
     ~/.cache/film-upscale/bin/python scripts/film-upscale.py <in.mp4> <out.mp4> [--time-one]
@@ -104,7 +104,7 @@ def main():
     ap.add_argument("src")
     ap.add_argument("dst")
     ap.add_argument("--time-one", action="store_true")
-    ap.add_argument("--hd", action="store_true", help="540p in, Gemini mark cropped, 1080p out (the size the site ships)")
+    ap.add_argument("--hd", action="store_true", help="540p in, corner mark cropped, 1080p out (the size the site ships)")
     a = ap.parse_args()
     w, h = (960, 540) if a.hd else (1280, 720)
     ow, oh = (1920, 1080) if a.hd else (3840, 2160)

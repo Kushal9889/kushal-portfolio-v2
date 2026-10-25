@@ -29,3 +29,7 @@ NOTES.private.md
 CLAUDE.md
 HANDOFF.md
 __pycache__/
+.data/
+
+# Eval-only provider cache (ADR-010)
+.cache/

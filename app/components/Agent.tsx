@@ -4,18 +4,28 @@ import { useEffect, useRef, useState } from "react";
 import type { RetrievalTrace } from "@/lib/agent/retrieve";
 import { isAcceptance, type Offer } from "@/lib/agent/offers";
 import type { ToolResult } from "@/lib/agent/tools";
-import type { Grounding, Citation } from "@/lib/agent/ground";
+import { answerScore, SENTENCE, type Grounding, type Citation } from "@/lib/agent/ground";
+import tested from "@/lib/agent/test-score.json";
 import { listen, speak, silence, speechSupported, synthesisSupported, warmNeural } from "@/lib/voice/speech";
 import { track, trackOnce } from "@/lib/analytics";
 import { mailtoLink } from "@/lib/reach";
 import Glyph from "./stage/Glyph";
-import DockDrift from "./DockDrift";
 import WorkLoop from "./WorkLoop";
 import Paced from "./Paced";
 import type { GlyphKey } from "@/lib/ui-icons";
 import styles from "./Agent.module.css";
+import { reducedMotion } from "@/lib/verbs";
+
+type Step = { name: string; state: "done" | "failed" | "skipped"; ms: number; detail: string };
+type Coverage = { req: string; status: "covered" | "partial" | "missing"; section: string | null; share: number };
 
 type Result = {
+  /** The run's stages as they finished (stream.ts "step" events). */
+  steps?: Step[];
+  /** One guarded, fact-free line in a lighter voice (aside.ts). */
+  aside?: string;
+  /** Per-requirement coverage for a pasted job description. */
+  coverage?: Coverage[];
   answer: string;
   route: string;
   timings: Record<string, number>;
@@ -46,6 +56,8 @@ type Result = {
   offers?: Offer[];
   /** Something the agent did rather than said. */
   action?: ToolResult;
+  /** Which version of the system prompt wrote this answer. */
+  promptVersion?: string;
 };
 
 type Turn = { question: string; result: Result | null };
@@ -118,6 +130,29 @@ const BAND_LABEL: Record<NonNullable<RetrievalTrace["band"]>, string> = {
   unknown: "don't know",
 };
 
+/**
+ * Why an answer is only partly sure, from numbers the answer already carries.
+ * Order is the order the pipeline decides: no reranker, then a weak match,
+ * then a broad question admitted by kind, then a figure the sources lack.
+ */
+type Why = { label: string; detail: string };
+function partlyWhy(r: Result): Why | null {
+  const t = r.trace;
+  const c = t?.confidence;
+  const logit = c?.signals.logit ?? null;
+  const g = r.grounding;
+  if (t && t.relevance == null && logit === null)
+    return { label: "no reranker", detail: "The reranker did not answer, so the order is fused BM25 and dense only, and that can never be sure." };
+  if (t?.band === "partial" && logit !== null && c?.floors.logitMax != null)
+    return {
+      label: "weak match",
+      detail: `Best reranker score ${logit.toFixed(2)}; sure needs more than ${c.floors.logitMax.toFixed(2)}, the highest score any off-topic question reached on this profile.`,
+    };
+  if (t?.band === "partial") return { label: "broad question", detail: "Read by the kind of section asked about, not one direct match." };
+  if (g && g.g < 1) return { label: "unverified figure", detail: `${g.found} of ${g.claims} figures and names were found in the sources${g.unsupported.length ? `; not found: ${g.unsupported.join(", ")}` : ""}.` };
+  return null;
+}
+
 const STATUS = {
   routing: "Classifying the question",
   retrieving: "Searching the corpus",
@@ -185,6 +220,13 @@ export default function Agent({
    */
   useEffect(() => {
     document.documentElement.dataset.streaming = pending ? "yes" : "no";
+    if (!pending) return;
+    // Escape ends a run from anywhere, the same as the Stop button.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") stop();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [pending]);
 
   // Capability is read after mount: it differs per browser, and rendering a
@@ -272,7 +314,7 @@ export default function Agent({
     const offscreen = box.top < 0 || box.top > window.innerHeight * 0.6;
     if (!offscreen) return;
 
-    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const calm = reducedMotion();
     root.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "center" });
 
     /*
@@ -307,7 +349,13 @@ export default function Agent({
   }
 
   async function submit(question: string) {
-    if (!question.trim() || pending) return;
+    if (pending) return;
+    // An empty or blank question used to do nothing at all. The caret goes
+    // back to the field instead, so the press still answers.
+    if (!question.trim()) {
+      inputRef.current?.focus();
+      return;
+    }
 
     /*
      * "yes", answered where it was asked.
@@ -377,6 +425,9 @@ export default function Agent({
     let trace: RetrievalTrace | null = null;
     let offers: Offer[] = [];
     let action: ToolResult | undefined;
+    const steps: Step[] = [];
+    let asideLine: string | undefined;
+    let coverageRows: Coverage[] | undefined;
     const timings: Record<string, number> = {};
     const startedAt = performance.now();
 
@@ -395,6 +446,9 @@ export default function Agent({
                   trace,
                   offers,
                   action,
+                  steps: [...steps],
+                  aside: asideLine,
+                  coverage: coverageRows,
                   ...extra,
                 },
               }
@@ -450,6 +504,15 @@ export default function Agent({
           if (opened) track("contact", `tool-${action.label}`);
         }
         settle();
+      } else if (data.type === "step") {
+        steps.push(data as Step);
+        settle();
+      } else if (data.type === "aside") {
+        asideLine = data.text;
+        settle();
+      } else if (data.type === "coverage") {
+        coverageRows = data.rows;
+        settle();
       } else if (data.type === "offers") {
         offers = data.offers ?? [];
         // Remembered so a bare "yes" in the input resolves to the same thing
@@ -476,6 +539,7 @@ export default function Agent({
           policy: data.policy,
           grounding: data.grounding,
           citations: data.citations,
+          promptVersion: data.promptVersion,
         });
         window.dispatchEvent(
           new CustomEvent<TelemetryPing>(TELEMETRY_EVENT, {
@@ -551,19 +615,16 @@ export default function Agent({
     }
   }
 
-  /**
-   * Copies the opening line and opens the profile in a new tab, because
-   * LinkedIn accepts no URL-prefilled connection note. The same line works for
-   * email or any other thread the reader would rather write in.
-   */
-  async function copyOpener(turn: Turn) {
-    const line = `Saw your agent answer "${turn.question}" on your site. Wanted to ask about it.`;
+  /** The answer as plain text, so it can be pasted into a note or a thread. */
+  async function copyAnswer(turn: Turn) {
+    if (!turn.result) return;
     try {
-      await navigator.clipboard.writeText(line);
+      await navigator.clipboard.writeText(`${turn.question}\n\n${turn.result.answer}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2400);
+      track("contact", "copy-answer");
     } catch {
-      // Clipboard blocked. The contact links below are unaffected.
+      // Clipboard blocked; the answer stays selectable on screen.
     }
   }
 
@@ -582,23 +643,31 @@ export default function Agent({
   }
 
   const last = turns[turns.length - 1];
-  const showConversion = last?.result && !last.result.limited && last.result.route === "answer";
+
+  /** Puts the caret back in the field for a follow-up, with the page scrolled to it. */
+  function followUp() {
+    const el = inputRef.current;
+    if (!el) return;
+    el.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
+    el.focus({ preventScroll: true });
+  }
+
+  /** Opens the details for one answer and brings them, or one cited passage, into view. */
+  function openDetails(i: number, target = `agent-details-${i}`) {
+    setOpenTrace(i);
+    requestAnimationFrame(() =>
+      document.getElementById(target)?.scrollIntoView({
+        behavior: reducedMotion() ? "auto" : "smooth",
+        block: "nearest",
+      }),
+    );
+  }
 
   return (
-    // id="agent" is load-bearing, not decoration. Two code paths already
-    // depended on it and both failed silently: the select-to-ask button called
-    // getElementById("agent")?.scrollIntoView(), and shareTurn() builds a URL
-    // ending in #agent. Neither element existed, and optional chaining meant
-    // there was no error to notice. Asking from further down the page therefore
-    // answered off-screen at the top and looked like nothing had happened.
-    // data-surface="console" is the encoding, not a style choice. Dark means
-    // live on this page: everything inside this box changes at runtime, and the
-    // ground says so before a reader has parsed a single label. The scope
-    // redefines --paper and --ink rather than introducing new names, so every
-    // child stylesheet works here without knowing it is on a dark surface.
-    <div className={styles.agent} id="agent" ref={rootRef} data-surface="console">
-      {/* Racks at work behind the glass, only while an answer is being
-          written: the motion is the request being served. */}
+    // id="agent" is load-bearing: shareTurn() builds a URL ending in #agent and
+    // the select-to-ask path scrolls to it. data-surface="console" scopes the
+    // dark tokens, because everything inside this box changes at runtime.
+    <div className={styles.agent} id="agent" ref={rootRef} data-surface="console" data-state={pending ? "busy" : turns.length ? "answered" : "idle"}>
       {loop && <WorkLoop on={pending} className={styles.workLoop} />}
       {selection && (
         <button
@@ -609,15 +678,8 @@ export default function Agent({
             const text = selection.text;
             setSelection(null);
             window.getSelection()?.removeAllRanges();
-            // Carry where the phrase came from.
-            //
-            // This sent the bare phrase wrapped in "What does this mean", with
-            // no section and no history, so retrieval saw a bag of words and
-            // the model answered generically. The one interaction that proves
-            // the agent is reading THIS page behaved like a search box.
-            //
-            // The nearest section heading is the context a person would have
-            // given out loud, so it travels with the question.
+            // The nearest section heading travels with the phrase, so retrieval
+            // sees where it came from rather than a bag of words.
             const section = (event.target as HTMLElement)
               ?.closest?.("section")
               ?.querySelector("h2")?.textContent?.trim();
@@ -631,8 +693,9 @@ export default function Agent({
           Ask about this
         </button>
       )}
+
       <form
-        className={styles.bar}
+        className={styles.composer}
         onSubmit={(e) => {
           e.preventDefault();
           const value = inputRef.current?.value ?? "";
@@ -643,23 +706,18 @@ export default function Agent({
           submit(value);
         }}
       >
-        {/* A textarea rather than an input, and 2000 characters rather than 500.
-            The single highest-value thing a hiring manager can do here is paste
-            the job description and watch the retriever map it against the
-            corpus, and a one-line box that truncates at 500 characters made
-            that physically impossible. Enter still submits; Shift+Enter breaks
-            a line, which is what a pasted block needs. */}
+        {/* A textarea, 2000 characters: a pasted job description is the
+            longest useful input. Enter submits, Shift+Enter breaks a line. */}
         <textarea
           id="ask"
           ref={inputRef}
           className={styles.input}
           rows={1}
-          placeholder="Ask about his work"
+          placeholder={turns.length ? "Ask a follow-up" : "Ask about his work, or paste a job description"}
           aria-label="Ask about his work"
           maxLength={2000}
           disabled={pending}
-          // The demo endpoint is cached for sixty seconds and shares the cold
-          // start with the stream, so touching it on intent moves the wait off
+          // Touching the cached demo endpoint on focus moves the cold start off
           // the answer the reader is waiting on.
           onFocus={() => {
             void fetch("/api/agent/demo").catch(() => {});
@@ -671,719 +729,623 @@ export default function Agent({
             }
           }}
           onInput={(e) => {
-            // Grows with a pasted block instead of scrolling inside two lines.
             const el = e.currentTarget;
             el.style.height = "auto";
             el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
           }}
         />
-        {canVoice && !pending && (
-          <button
-            type="button"
-            className={listening ? `${styles.mic} ${styles.micLive}` : styles.mic}
-            onClick={startListening}
-            aria-pressed={listening}
-            aria-label={listening ? "Stop listening" : "Ask by voice"}
-          >
-            <Glyph name="Microphone:regular" size={18} />
-            <span>{listening ? "Listening" : "Speak"}</span>
-          </button>
-        )}
-        {pending || listening ? (
-          <button type="button" className={styles.stop} onClick={stop}>
-            Stop
-          </button>
-        ) : (
-          <button type="submit" className={styles.send}>
-            Ask
-          </button>
-        )}
+        <div className={styles.controls}>
+          {canVoice && !pending && (
+            <button
+              type="button"
+              className={styles.iconBtn}
+              data-on={listening || undefined}
+              onClick={startListening}
+              aria-pressed={listening}
+              aria-label={listening ? "Stop listening" : "Ask by voice"}
+            >
+              <Glyph name="Microphone:regular" size={18} />
+            </button>
+          )}
+          {pending || listening ? (
+            <button type="button" className={styles.go} data-kind="stop" onClick={stop}>
+              Stop
+            </button>
+          ) : (
+            <button type="submit" className={styles.go}>
+              Ask
+              <Glyph name="ArrowUp:bold" size={16} />
+            </button>
+          )}
+        </div>
       </form>
 
       {micError && (
-        <p className={styles.micError} role="status">
+        <p className={styles.note} data-tone="warn" role="status">
           {micError}
         </p>
       )}
 
-      {/* What this page can do, said once, where the agent is.
-          Select-to-ask, the trace, the command palette and the share link were
-          all reachable and none of them were named, which meant a visitor had to
-          guess they existed. */}
-      {/* Written for someone who has never used a command palette and does not
-          know what a trace is. Each line says what to do first and what happens
-          because of it, in that order, because an instruction a reader has to
-          decode is one they skip. */}
-      {/* Four rows of instructions cost 190px of the first screen.
-       *
-       * They were correct and nobody was reading them: a recruiter does not
-       * want a manual, and the engineer who does will find ⌘K without being
-       * told twice. One line, three affordances, and the keycaps still depress
-       * when the real shortcut fires so the hint demonstrates itself. */}
-      <ul className={styles.hints}>
-        <li>
-          <span className={styles.gesture} aria-hidden="true">
-            drag
-          </span>
-          <span>select text to ask</span>
-        </li>
-        <li>
-          <span className={styles.gesture} aria-hidden="true">
-            trace
-          </span>
-          {/* It sits under every answer as a control; it does not open itself. */}
-          <span>under every answer</span>
-        </li>
-      </ul>
-
-      {/* The registry, as controls rather than as a capability the reader has
-          to discover by guessing.
-          
-          These are the exact targets `open_evidence` routes over, and the
-          draft `compose_intro` writes. Both were reachable only by asking for
-          them in words -- the agent would open a merged pull request on
-          request and nothing on screen said so, which makes a working tool
-          layer indistinguishable from an absent one. Rendered as real links,
-          so they are visibly clickable, open without spending a model call,
-          and cannot offer anything the tool itself could not. */}
-      <details className={styles.toolkit}>
-        <summary className={styles.toolkitSummary}>
-          <span>{openable.length + 1} things it can open for you</span>
-          <span className={styles.toolkitHint}>click any of them</span>
-        </summary>
-        <ul className={styles.tools}>
-          {openable.map((t) => (
-            <li key={t.key}>
-              <a
-                className={styles.tool}
-                href={t.url}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => track("contact", `toolkit-${t.key}`)}
-              >
-                <span className={styles.toolLabel} data-id={/\s/.test(t.label) ? undefined : ""}>
-                  {t.label}
-                </span>
-                {/* What it is, in the words the registry uses to route on it. */}
-                <span className={styles.toolAbout}>{t.about}</span>
-              </a>
-            </li>
-          ))}
-          <li>
-            <a
-              className={styles.tool}
-              href={mailtoLink(email, site, "general")}
-              onClick={() => track("contact", "toolkit-draft")}
-            >
-              <span className={styles.toolLabel}>A written email to him</span>
-              <span className={styles.toolAbout}>
-                Opens your mail app with the message already drafted. Nothing is sent by this
-                site, and you can edit every word.
-              </span>
-            </a>
-          </li>
-        </ul>
-      </details>
-
-      {/* The same targets on a phone: one line, thumb-scrolled, icon first. The
-          list above needs a tap to open and then a screen to read; this is the
-          whole offer in one row. Two renderings, one shown per width. */}
-      <DockDrift className={styles.dock} label={`${openable.length + 1} things it can open for you`}>
-        {openable.map((t, n) => (
-          <li key={t.key} style={{ "--n": n } as React.CSSProperties}>
-            <a
-              className={styles.dockLink}
-              href={t.url}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={t.label}
-              onClick={() => track("contact", `toolkit-${t.key}`)}
-            >
-              <ToolIcon id={t.key} />
-              <span>{toolTag(t)}</span>
-            </a>
-          </li>
-        ))}
-        <li style={{ "--n": openable.length } as React.CSSProperties}>
-          <a
-            className={styles.dockLink}
-            href={mailtoLink(email, site, "general")}
-            aria-label="A written email to him"
-            onClick={() => track("contact", "toolkit-draft")}
-          >
-            <Glyph name="EnvelopeSimple:regular" size={18} />
-            <span>Draft</span>
-          </a>
-        </li>
-      </DockDrift>
-
-
-      {/* Suggestions, until there is something better to look at.
-          They rendered unconditionally before, so the same four cards sat above
-          every answer and the block read as though it kept repeating itself. A
-          suggestion is only useful while the reader has not asked anything; once
-          they have, the answer is the point and the past questions below it are
-          the way back. */}
+      {/* Suggestions only while nothing has been asked. Once there is an answer,
+          its own follow-ups replace them. */}
       {turns.length === 0 && (
-        <ul className={styles.openers}>
+        <ul className={styles.openers} aria-label="Suggested questions">
           {OPENERS.map((o) => (
             <li key={o.q}>
-              <button className={styles.opener} onClick={() => submit(o.q)}>
+              <button className={styles.chip} onClick={() => submit(o.q)}>
                 {o.q}
-                {/* What the answer will demonstrate, not only what is asked.
-                    A reader choosing between three questions is choosing
-                    blind otherwise. */}
-                <span className={styles.shows}>{o.shows}</span>
               </button>
             </li>
           ))}
         </ul>
       )}
 
-      {/* What the answers come from, named where they appear, and the one link
-          a reader most often wants next. The mark is the logo alone. */}
-      <div className={styles.meta}>
-        <p className={styles.kb}>
-          <Glyph name="BookOpenText:light" size={16} />
-          <span>
-            Grounded in <b>his Obsidian knowledge base</b>
-          </span>
-        </p>
-        <a
-          className={styles.social}
-          href={linkedin}
-          target="_blank"
-          rel="noreferrer"
-          aria-label="His LinkedIn profile"
-          onClick={() => track("contact", "linkedin")}
-        >
-          <LinkedInMark />
-        </a>
-      </div>
-
-      {/* Held back until an answer exists above it. */}
-      {turns.length > 0 && !pending && (
-        <button
-          className={styles.adversarial}
-          onClick={() => submit(ADVERSARIAL.q)}
-          title="The policy layer classifies this before any model sees it"
-        >
-          Try to break it
-          <span className={styles.shows}>{ADVERSARIAL.q}</span>
-        </button>
-      )}
-
-      {/* One atomic status line for assistive technology (ui-ux-pro-max: no
-          competing live regions). The thread itself is not live: a streaming
-          answer would be re-read on every token. */}
+      {/* One atomic status line for assistive technology. The thread itself is
+          not live: a streaming answer would be re-read on every token. */}
       <div className={styles.thread} aria-live="off" aria-busy={pending}>
         <p role="status" className={styles.srOnly}>
-          {pending
-            ? STATUS[stage]
-            : turns.length > 0 && turns[turns.length - 1].result
-              ? "Answer ready"
-              : ""}
+          {pending ? STATUS[stage] : last?.result ? "Answer ready" : ""}
         </p>
-        {turns.map((turn, i) => {
-          // Only the newest exchange stays open. Earlier ones collapse to the
-          // question, which keeps the history reachable without letting a third
-          // answer push the rest of the page out of view.
-          const latest = i === turns.length - 1;
-          if (!latest)
-            return (
-              <button
-                key={i}
-                className={styles.past}
-                onClick={() => submit(turn.question)}
-                title="Ask again"
-              >
-                {turn.question}
-              </button>
-            );
+
+        {turns.length > 1 && (
+          <ul className={styles.history} aria-label="Earlier questions, select to ask again">
+            {turns.slice(0, -1).map((turn, i) => (
+              <li key={i}>
+                <button className={styles.past} onClick={() => submit(turn.question)} title="Ask again">
+                  {turn.question}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {last && (() => {
+          const i = turns.length - 1;
+          const turn = last;
+          const r = turn.result;
+          const live = pending;
+          // "sure" is about the sources; an answer with a figure the sources do
+          // not hold is at most partly sure (ground.ts).
+          const band = r?.trace?.band
+            ? r.trace.band === "answer" && (r.grounding?.g ?? 1) < 1
+              ? "partial"
+              : r.trace.band
+            : null;
+          const score = band && r ? answerScore(band, r.grounding, r.citations) : null;
+          const why = band === "partial" && r ? partlyWhy(r) : null;
+          // The three parts of the score, as the reader sees them added up.
+          const parts = band && r && score !== null
+            ? {
+                match: band === "answer" ? 40 : 24,
+                facts: Math.round(40 * (r.grounding?.g ?? 1)),
+                sourced: Math.round(20 * (r.citations?.length ? r.citations.filter((c) => c.source).length / r.citations.length : 0)),
+              }
+            : null;
+          const covered = r?.coverage?.filter((c) => c.status === "covered").length ?? 0;
+          const open = openTrace === i;
           return (
-          <article key={i} className={styles.turn}>
-            {/* The exchange as typed messages: who spoke, what the graph did,
-                then the answer with the time it actually took. */}
-            <p className={styles.question}>
-              <span className={styles.msgHead}>you</span>
-              {turn.question}
-            </p>
+            <article className={styles.sheet} aria-labelledby={`agent-q-${i}`}>
+              <h3 className={styles.question} id={`agent-q-${i}`}>
+                {turn.question}
+              </h3>
 
-            {!turn.result ? (
-              // "running the graph" sat unchanged for the whole wait, which on
-              // a slow provider is five seconds of a sentence that stops being
-              // information after the first one. The events that drive this
-              // already arrive separately, so the label follows them.
-              <p className={styles.thinking} data-stage={stage}>
-                <span className="live-dot" data-state="running" />{" "}
-                <span className="live">
-                  {fromLink && i === 0
-                    ? "re-asking this against the live corpus"
-                    : stage === "routing"
-                      ? "classifying the question"
-                      : stage === "retrieving"
-                        ? "searching the corpus"
-                        : "writing the answer"}
-                </span>
-                <span className={styles.sweep} aria-hidden="true" />
-                {/* Where the graph is, step by step: the step running now is lit. */}
-                <span className={styles.steps} aria-hidden="true">
-                  {(["routing", "retrieving", "answering"] as const).map((k, n) => (
-                    <span key={k} data-on={stage === k || undefined}>
-                      {n > 0 && "› "}
-                      {["route", "retrieve", "answer"][n]}
-                    </span>
-                  ))}
-                </span>
-              </p>
-            ) : (
-              <>
-                {/* Answer first, complete on its own. Evidence and trace are
-                    below it, so a reader who only wants the answer is done. */}
-                <p className={styles.answer} data-degraded={turn.result.degraded || undefined} data-live={(latest && pending) || undefined}>
-                  <span className={styles.msgHead}>
-                    {turn.result.route ?? "answer"}
-                    {turn.result.trace?.band && (() => {
-                      // "sure" is about the sources; an answer with a figure the
-                      // sources do not hold is at most partly sure (ground.ts).
-                      const band = turn.result.trace.band === "answer" && (turn.result.grounding?.g ?? 1) < 1 ? "partial" : turn.result.trace.band;
-                      return (
-                        <span className={styles.band} data-band={band} role="status" aria-atomic="true">
-                          {BAND_LABEL[band]}
-                        </span>
-                      );
-                    })()}
-                    {turn.result.total > 0 && <b>{turn.result.total.toLocaleString("en-US")} ms</b>}
-                    {/* Said on the answer itself, not only in the trace: a
-                        reader who never opens the trace still knows which of
-                        the two kinds of answer they are reading. */}
-                    {turn.result.degraded && <i>no model reachable, showing the passage ranked first</i>}
-                    {!!turn.result.grounding?.unsupported.length && (
-                      <i>
-                        {turn.result.grounding.unsupported.length === 1 ? "1 figure or name" : `${turn.result.grounding.unsupported.length} figures or names`} not found in his facts:{" "}
-                        {turn.result.grounding.unsupported.join(", ")}
-                      </i>
-                    )}
-                  </span>
-                  <Paced text={turn.result.answer} live={latest && pending} marks={turn.result.grounding?.unsupported} markClass={styles.unsupported} />
-                  {/* The cursor is the only thing that told a reader the box was
-                      thinking before the first token; once text started arriving
-                      it fell silent for however long the rest of the answer took,
-                      which reads as done, not as still writing. Reuses the same
-                      --signal pulse .live-dot already marks work in flight with,
-                      rather than a new colour or a new motion. */}
-                  {latest && pending && (
-                    <span className={`${styles.cursor} live-dot`} data-state="running" aria-hidden="true" />
-                  )}
-                </p>
-
-                {/* Each retrieved section is its own element rather than one
-                    joined string, so they can arrive one after another as the
-                    retrieval did. The stagger is not decoration: four sources
-                    landing in sequence is the difference between the answer
-                    looking generated and looking fetched. Safe to animate from
-                    nothing because these nodes did not exist a moment ago. */}
-                {turn.result.sources.length > 0 && (
-                  <p className={styles.sources}>
-                    <span className={styles.msgHead}>
-                      result
-                      <b>
-                        {turn.result.sources.length} {turn.result.sources.length === 1 ? "source" : "sources"}
-                      </b>
-                    </span>
-                    <span className="label">grounded in</span>{" "}
-                    {turn.result.sources.map((s, n) => (
-                      <span
-                        key={s}
-                        className={styles.source}
-                        style={{ "--n": n } as React.CSSProperties}
-                      >
-                        {s}
-                      </span>
+              {!r ? (
+                <div className={styles.wait} data-stage={stage}>
+                  <p className={styles.island}>
+                    <span className="live-dot" data-state="running" />{" "}
+                    {fromLink && i === 0 ? "Re-asking this against the live corpus" : STATUS[stage]}
+                  </p>
+                  <ol className={styles.waitSteps} aria-hidden="true">
+                    {(["routing", "retrieving", "answering"] as const).map((k, n) => (
+                      <li key={k} data-on={stage === k || undefined} data-done={["routing", "retrieving", "answering"].indexOf(stage) > n || undefined}>
+                        {["route", "retrieve", "answer"][n]}
+                      </li>
                     ))}
-                    {/* The two next-best chunks by fused rank. A retriever that
-                        only ever shows its winners is indistinguishable from a
-                        lookup table; the near misses are what demonstrate that
-                        a ranking happened at all. */}
-                    {(() => {
-                      const rejected = (turn.result?.trace?.rows ?? [])
-                        .filter((r) => !r.selected)
-                        .sort((a, b) => b.fused - a.fused)
-                        .slice(0, 2);
-                      if (rejected.length === 0) return null;
-                      return (
-                        <>
-                          {" "}
-                          <span className="label">considered</span>{" "}
-                          {rejected.map((r) => (
-                            <span key={r.title} className={styles.rejected}>
-                              {r.title}
-                            </span>
-                          ))}
-                        </>
-                      );
-                    })()}
-                  </p>
-                )}
-
-                {/* What the agent did, as something the reader can still do.
-                    The attempt above is blocked by every popup blocker,
-                    because it happens after a network round trip rather than
-                    inside the click that caused it. So the action is always
-                    also a control: one press, no ambiguity about whether
-                    anything happened. */}
-                {latest && turn.result.action?.ok && turn.result.action.kind === "open" && (
-                  <a
-                    className={styles.actionBtn}
-                    href={turn.result.action.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() => track("contact", `tool-${(turn.result!.action as { label: string }).label}`)}
-                  >
-                    Open {turn.result.action.label}
-                  </a>
-                )}
-
-                {latest && turn.result.action?.ok && turn.result.action.kind === "draft" && (
-                  <div className={styles.draft}>
-                    {/* The draft as an envelope: its subject is the flap, the
-                        body the sheet inside. Both strings are the ones the
-                        mail client receives. */}
-                    <p className={styles.draftHead}>
-                      <span>Subject</span>
-                      {turn.result.action.subject}
-                    </p>
-                    <a
-                      className={styles.actionBtn}
-                      href={turn.result.action.mailto}
-                      onClick={() => track("contact", "tool-mailto")}
-                    >
-                      Open the draft in your mail app
-                    </a>
-                    {/* mailto: does nothing on a machine with no mail client
-                        and nothing in webmail, and there is no event for that
-                        failure. So the same text is here to copy. */}
-                    <button
-                      className={styles.actionGhost}
-                      data-copied={copied || undefined}
-                      onClick={async () => {
-                        const draft = turn.result!.action as { subject: string; body: string };
-                        try {
-                          await navigator.clipboard.writeText(`${draft.subject}\n\n${draft.body}`);
-                          setCopied(true);
-                          setTimeout(() => setCopied(false), 2400);
-                        } catch {
-                          // Clipboard blocked; the text is visible below either way.
-                        }
-                      }}
-                    >
-                      {copied ? "Copied" : "Copy it instead"}
-                    </button>
-                    <pre className={styles.draftText}>{turn.result.action.body}</pre>
+                  </ol>
+                  <span className={styles.skeleton} aria-hidden="true" />
+                  <span className={styles.skeleton} data-short aria-hidden="true" />
+                </div>
+              ) : (
+                <>
+                  <div className={styles.answer} data-degraded={r.degraded || undefined} data-live={live || undefined}>
+                    {!live && !r.answer.trim() ? (
+                      <p className={styles.dim}>Stopped before any answer was written.</p>
+                    ) : live ? (
+                      <Paced text={r.answer} live marks={r.grounding?.unsupported} markClass={styles.unsupported} />
+                    ) : (
+                      <Highlighted text={r.answer} unsupported={r.grounding?.unsupported} cites={r.citations} onCite={(n) => openDetails(i, `agent-cite-${i}-${n}`)} />
+                    )}
+                    {live && <span className={`${styles.cursor} live-dot`} data-state="running" aria-hidden="true" />}
                   </div>
-                )}
 
-                {latest && turn.result.action?.ok && turn.result.action.kind === "eval" && (
-                  <p
-                    className={styles.evalResult}
-                    data-outcome={turn.result.action.passed ? "pass" : "fail"}
-                  >
-                    <span className={styles.msgHead}>
-                      check
-                      <b>{turn.result.action.passed ? "passed" : "failed"}</b>
-                    </span>
-                    <span className={styles.evalCase}>{turn.result.action.question}</span>
-                    <span className={styles.evalAsserts}>{turn.result.action.asserts}</span>
-                  </p>
-                )}
+                  {(r.degraded || !!r.grounding?.unsupported.length) && (
+                    <p className={styles.note} data-tone="warn">
+                      {r.degraded
+                        ? "No model reachable. Showing the passage ranked first."
+                        : `${r.grounding!.unsupported.length === 1 ? "1 figure or name" : `${r.grounding!.unsupported.length} figures or names`} not found in his facts: ${r.grounding!.unsupported.join(", ")}`}
+                    </p>
+                  )}
 
-                {/* What to do next, offered where the answer ends.
-                    Computed from the sections this answer was grounded in, not
-                    generated: an `open` is a URL the build's link checker
-                    resolved, an `ask` is a question written beside the section
-                    that answers it. Neither can point somewhere that is not
-                    there, which is the failure that makes suggested follow-ups
-                    worse than none. */}
-                {latest && (turn.result.offers?.length ?? 0) > 0 && (
-                  <ul className={styles.offers}>
-                    {turn.result.offers!.map((o, n) =>
-                      o.kind === "open" ? (
-                        <li key={o.url}>
-                          <a
-                            className={styles.offer}
-                            data-kind="open"
-                            href={o.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{ "--n": n } as React.CSSProperties}
-                            onClick={() => {
-                              pendingOpen.current = null;
-                              track("contact", `offer-${o.what}`);
-                            }}
-                          >
-                            {o.label}
-                          </a>
-                        </li>
-                      ) : (
-                        <li key={o.question}>
-                          <button
-                            className={styles.offer}
-                            data-kind="ask"
-                            style={{ "--n": n } as React.CSSProperties}
-                            onClick={() => submit(o.question)}
-                          >
-                            {o.label}
+                  {r.aside && <p className={styles.aside}>{r.aside}</p>}
+
+                  {/* What the agent did, always also a control: the automatic
+                      attempt is usually blocked as a popup. */}
+                  {r.action?.ok && r.action.kind === "open" && (
+                    <a
+                      className={styles.lead}
+                      href={r.action.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => track("contact", `tool-${(r.action as { label: string }).label}`)}
+                    >
+                      Open {r.action.label}
+                    </a>
+                  )}
+
+                  {r.action?.ok && r.action.kind === "draft" && (
+                    <div className={styles.draft}>
+                      <p className={styles.draftHead}>
+                        <span>Subject</span>
+                        {r.action.subject}
+                      </p>
+                      <pre className={styles.draftText}>{r.action.body}</pre>
+                      <div className={styles.actions}>
+                        <a className={styles.lead} href={r.action.mailto} onClick={() => track("contact", "tool-mailto")}>
+                          Open in your mail app
+                        </a>
+                        {/* mailto: fails silently without a mail client, so the text is copyable too. */}
+                        <button
+                          className={styles.ghost}
+                          data-done={copied || undefined}
+                          onClick={async () => {
+                            const draft = r.action as { subject: string; body: string };
+                            try {
+                              await navigator.clipboard.writeText(`${draft.subject}\n\n${draft.body}`);
+                              setCopied(true);
+                              setTimeout(() => setCopied(false), 2400);
+                            } catch {
+                              // Clipboard blocked; the text is visible above.
+                            }
+                          }}
+                        >
+                          {copied ? "Copied" : "Copy draft"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {r.action?.ok && r.action.kind === "eval" && (
+                    <p className={styles.note} data-tone={r.action.passed ? "live" : "fail"}>
+                      <b>Check {r.action.passed ? "passed" : "failed"}.</b> {r.action.question} {r.action.asserts}
+                    </p>
+                  )}
+
+                  {/* The proof, one scannable line: how sure, what ran, what it read. */}
+                  {!live && (
+                    <div className={styles.proof}>
+                      <ul className={styles.proofList} aria-label="How this answer was produced">
+                        {band && (
+                          <li className={styles.band} data-band={band}>
+                            {BAND_LABEL[band]}
+                            {why && <span className={styles.why} title={why.detail}> · {why.label}</span>}
+                            {score !== null && <span className="tabular" title="40% source match, 40% facts found in the record, 20% sentences with a source"> {score}%</span>}
+                          </li>
+                        )}
+                        {(r.steps ?? []).map((st, n) => (
+                          <li key={n} className={styles.step} data-stage="" data-state={st.state} title={st.detail}>
+                            <span aria-hidden="true">{st.state === "done" ? "✓" : st.state === "failed" ? "✗" : "–"}</span>
+                            {st.name}
+                            <span className="tabular">{st.ms}ms</span>
+                            <span className={styles.srOnly}>{st.state}</span>
+                          </li>
+                        ))}
+                        {(r.steps?.length ?? 0) > 0 && (
+                          <li className={`${styles.step} ${styles.stepSum}`} data-state={r.steps!.some((x) => x.state === "failed") ? "failed" : "done"}>
+                            <span aria-hidden="true">{r.steps!.some((x) => x.state === "failed") ? "\u2717" : "\u2713"}</span>
+                            {r.steps!.filter((x) => x.state === "done").length}/{r.steps!.length} steps
+                          </li>
+                        )}
+                        {r.sources.length > 0 && (
+                          <li className={styles.step}>
+                            <span className="tabular">{r.sources.length}</span> {r.sources.length === 1 ? "source" : "sources"}
+                          </li>
+                        )}
+                        {(r.coverage?.length ?? 0) > 0 && (
+                          <li className={styles.step} data-state={covered === r.coverage!.length ? "done" : "partial"}>
+                            <span className="tabular">{covered}/{r.coverage!.length}</span> requirements covered
+                          </li>
+                        )}
+                        {r.promptVersion && <li className={styles.step}>prompt {r.promptVersion}</li>}
+                        {r.total > 0 && (
+                          <li className={styles.step}>
+                            <span className="tabular">{r.total.toLocaleString("en-US")}ms</span> total
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+
+                  {!live && (
+                    <div className={styles.actions}>
+                      <button className={styles.lead} onClick={followUp}>
+                        <Glyph name="ChatText:regular" size={18} />
+                        Follow up
+                      </button>
+                      <button className={styles.ghost} data-done={copied || undefined} onClick={() => copyAnswer(turn)}>
+                        <Glyph name={copied ? "CheckCircle:regular" : "Copy:regular"} size={18} />
+                        {copied ? "Copied" : "Copy"}
+                      </button>
+                      <button
+                        className={styles.ghost}
+                        aria-expanded={open}
+                        aria-controls={`agent-details-${i}`}
+                        onClick={() => (open ? setOpenTrace(null) : openDetails(i))}
+                      >
+                        <Glyph name="MagnifyingGlass:regular" size={18} />
+                        {open ? "Hide" : r.sources.length ? "Sources" : "Trace"}
+                      </button>
+                      <a className={styles.ghost} href={`mailto:${email}`} onClick={() => track("contact", "email")}>
+                        <Glyph name="EnvelopeSimple:regular" size={18} />
+                        Contact
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Next questions, computed from the sections this answer
+                      was grounded in, so none can point somewhere absent. */}
+                  {!live && ((r.offers?.length ?? 0) > 0 || r.route === "answer") && (
+                    <ul className={styles.offers} aria-label="Next">
+                      {(r.offers ?? []).map((o, n) =>
+                        o.kind === "open" ? (
+                          <li key={o.url}>
+                            <a
+                              className={styles.chip}
+                              data-kind="open"
+                              href={o.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ "--n": n } as React.CSSProperties}
+                              onClick={() => {
+                                pendingOpen.current = null;
+                                track("contact", `offer-${o.what}`);
+                              }}
+                            >
+                              {o.label}
+                            </a>
+                          </li>
+                        ) : (
+                          <li key={o.question}>
+                            <button className={styles.chip} style={{ "--n": n } as React.CSSProperties} onClick={() => submit(o.question)}>
+                              {o.label}
+                            </button>
+                          </li>
+                        ),
+                      )}
+                      {/* A run with no finished steps ended early: offer it again. */}
+                      {!r.steps?.length && r.route === "answer" && (
+                        <li>
+                          <button className={styles.chip} onClick={() => submit(turn.question)}>
+                            <Glyph name="ArrowCounterClockwise:regular" size={18} />
+                            Ask again
                           </button>
                         </li>
-                      ),
-                    )}
-                  </ul>
-                )}
+                      )}
+                      {/* The policy check, offered once an answer exists above it. */}
+                      {turns.length < 3 && (
+                        <li>
+                          <button className={styles.chip} data-kind="probe" onClick={() => submit(ADVERSARIAL.q)} title="The policy layer classifies this before any model sees it">
+                            Try to break it
+                          </button>
+                        </li>
+                      )}
+                    </ul>
+                  )}
 
-                {Object.keys(turn.result.timings).length > 0 && (
-                  <>
-                    <button
-                      className={styles.traceToggle}
-                      aria-expanded={openTrace === i}
-                      onClick={() => setOpenTrace(openTrace === i ? null : i)}
-                    >
-                      {openTrace === i
-                        ? "hide trace"
-                        : `trace: ${turn.result.sources.length} sources, ${Object.keys(turn.result.timings).length} nodes`}{" "}
-                      <span className="tabular">{turn.result.total}ms</span>
-                      {turn.result.usage && (
-                        <>
-                          {" \u00b7 "}
-                          <span className="tabular">
-                            {turn.result.usage.in + turn.result.usage.out} tokens
-                          </span>
-                        </>
-                      )}
-                      {turn.result.route !== "answer" && (
-                        <>
-                          {" \u00b7 "}
-                          <span>{turn.result.route}</span>
-                        </>
-                      )}
-                      {turn.result.warm && (
-                        <>
-                          {" \u00b7 "}
-                          <span>cached at build</span>
-                        </>
-                      )}
-                      {turn.result.degraded && (
-                        <>
-                          {" \u00b7 "}
-                          <span>degraded, no provider reachable</span>
-                        </>
-                      )}
-                    </button>
-
-                    {openTrace === i && (
-                      <dl className={styles.trace}>
-                        <div className={styles.traceHead}>
-                          <span className={styles.msgHead}>
-                            trace
-                            <b>
-                              {Object.keys(turn.result.timings).length} nodes, {turn.result.total.toLocaleString("en-US")} ms
-                            </b>
-                          </span>
-                        </div>
-                        {(() => {
-                          // Which node actually cost the answer its time. Named
-                          // rather than left for the reader to compare bars.
-                          const entries = Object.entries(turn.result!.timings);
-                          const slowest = entries.reduce((a, b) => (b[1] > a[1] ? b : a), entries[0] ?? ["", 0])[0];
-                          return entries.map(([node, ms]) => (
-                            <div key={node} className={styles.traceRow} data-slowest={node === slowest || undefined}>
-                              <dt>
-                                {node}
-                                {node === slowest && entries.length > 1 && <em>slowest</em>}
-                              </dt>
-                              <dd className="tabular">{ms}ms</dd>
-                              <dd
-                                className={styles.traceBar}
-                                style={{ ["--w" as string]: `${(ms / turn.result!.total) * 100}%` }}
-                              />
-                            </div>
-                          ));
-                        })()}
-                        {turn.result.usage && (
-                          <div className={styles.traceRow}>
-                            <dt>tokens</dt>
-                            <dd className="tabular">
-                              {turn.result.usage.in + turn.result.usage.out}
-                            </dd>
-                            <dd className={styles.usage}>
-                              {turn.result.usage.in} in · {turn.result.usage.out} out
-                              {/* "$0.00 on a free tier" was true and said nothing.
-                                  What the same tokens cost at the model's published
-                                  rate is the number that makes the free tier a
-                                  decision instead of an absence. */}
-                              {typeof turn.result.listPrice === "number" && (
-                                <>
-                                  {" · $0.00 billed, "}
-                                  <span className="tabular">
-                                    ${turn.result.listPrice < 0.00001 ? "<0.00001" : turn.result.listPrice.toFixed(5)}
-                                  </span>{" "}
-                                  at list rate
-                                </>
+                  {open && !live && (
+                    <section id={`agent-details-${i}`} className={styles.drawer} aria-label="Sources and trace">
+                      {(() => {
+                        const t = r.trace;
+                        // The next-best chunks show a ranking happened at all.
+                        const rejected = (t?.rows ?? []).filter((x) => !x.selected).sort((a, b) => b.fused - a.fused).slice(0, 2);
+                        const cited = [...new Map((r.citations ?? []).filter((c) => c.n).map((c) => [c.n!, c])).values()];
+                        const unsourced = (r.citations ?? []).filter((c) => !c.source).length;
+                        const max = Math.max(...(r.steps ?? []).map((x) => x.ms), 1);
+                        let cell = 0;
+                        const at = () => ({ "--i": cell++ }) as React.CSSProperties;
+                        return (
+                          <div className={styles.board}>
+                            <section className={styles.card} data-span="wide" style={at()} aria-label="Retrieval">
+                              <header className={styles.cardHead}>
+                                <h4>Retrieval</h4>
+                                {t?.store && (
+                                  <span className={styles.badge} data-store={t.store}>
+                                    {t.store === "neon" ? "Neon pgvector" : "in-memory index"}
+                                    {typeof t.storeMs === "number" && <span className="tabular"> · {t.storeMs}ms</span>}
+                                  </span>
+                                )}
+                              </header>
+                              {t && (
+                                <dl className={styles.stats}>
+                                  <div><dt>Searched</dt><dd className="tabular">{t.passages ?? t.rows.length} passages</dd></div>
+                                  <div><dt>Kept</dt><dd className="tabular">{r.sources.length} sections</dd></div>
+                                  <div><dt>Legs</dt><dd>{t.denseUsed ? "BM25 + dense" : "BM25 only"}</dd></div>
+                                  {t.confidence && <div><dt>Confidence</dt><dd className="tabular">tier {t.confidence.tier} of 3</dd></div>}
+                                </dl>
                               )}
-                            </dd>
-                          </div>
-                        )}
+                              {r.sources.length > 0 && (
+                                <ul className={styles.reads}>
+                                  {r.sources.map((s, n) => (
+                                    <li key={s} style={{ "--n": n } as React.CSSProperties}>{s}</li>
+                                  ))}
+                                </ul>
+                              )}
+                              {rejected.length > 0 && <p className={styles.dim}>Considered, not used: {rejected.map((x) => x.title).join(", ")}</p>}
+                              {(t?.kgPaths?.length ?? 0) > 0 && (
+                                <ul className={styles.paths} aria-label="Knowledge graph paths">
+                                  {t!.kgPaths!.slice(0, 3).map((pth) => <li key={pth}>{pth}</li>)}
+                                </ul>
+                              )}
+                            </section>
 
-                        {/* Failover is the most production-shaped thing here and
-                            it has been completely invisible: the reader gets an
-                            answer whether the primary served it or the third
-                            fallback did. */}
-                        {turn.result.provider && (
-                          <div className={styles.traceRow}>
-                            <dt>served by</dt>
-                            <dd>{turn.result.provider}</dd>
-                            <dd className={styles.usage}>
-                              <code>{turn.result.model}</code>
-                            </dd>
-                          </div>
-                        )}
+                            {parts && (
+                              <section className={styles.card} style={at()} aria-label="Confidence">
+                                <header className={styles.cardHead}>
+                                  <h4>Confidence</h4>
+                                  <span className={`${styles.badge} tabular`} data-band={band ?? undefined}>{BAND_LABEL[band!]}{why ? ` · ${why.label}` : ""} {score}%</span>
+                                </header>
+                                <dl className={styles.stats} data-fit="narrow">
+                                  <div><dt>Source match</dt><dd className="tabular">{parts.match}/40</dd></div>
+                                  <div><dt>Facts found</dt><dd className="tabular">{parts.facts}/40</dd></div>
+                                  <div><dt>Sentences sourced</dt><dd className="tabular">{parts.sourced}/20</dd></div>
+                                </dl>
+                                <p className={styles.dim}>{why ? why.detail : band === "answer" ? "Strong match and every figure found in the sources." : "Nothing in the profile matched closely enough."}</p>
+                              </section>
+                            )}
 
-                        {/* The answer read back against its sources: how many of
-                            its figures and names the context holds, and which
-                            section each sentence came from. */}
-                        {turn.result.grounding && turn.result.grounding.claims > 0 && (
-                          <div className={styles.traceRow}>
-                            <dt>grounded</dt>
-                            <dd className="tabular">
-                              {turn.result.grounding.found}/{turn.result.grounding.claims}
-                            </dd>
-                            <dd className={styles.usage}>
-                              figures and names found in the sources
-                              {turn.result.citations?.length ? (
-                                <ol className={styles.cites}>
-                                  {turn.result.citations.map((c, k) => (
-                                    <li key={k} data-none={c.source ? undefined : true}>
-                                      {c.source ?? "no source"}
+                            <section className={styles.card} data-span="wide" style={at()} aria-label="Generation">
+                              <header className={styles.cardHead}>
+                                <h4>Generation</h4>
+                                {r.promptVersion && <span className={styles.badge}>prompt {r.promptVersion}</span>}
+                              </header>
+                              <dl className={styles.stats} data-cols="1">
+                                {r.provider && (
+                                  <div>
+                                    <dt>Served by</dt>
+                                    <dd>{r.provider} <code>{r.model}</code>{r.warm && <span className={styles.dim}> cached at build</span>}</dd>
+                                  </div>
+                                )}
+                                {r.usage && (
+                                  <div>
+                                    <dt>Tokens</dt>
+                                    <dd>
+                                      <span className="tabular">{r.usage.in} in, {r.usage.out} out</span>
+                                      {typeof r.listPrice === "number" && (
+                                        <span className={styles.dim}> · $0.00 billed, ${r.listPrice < 0.00001 ? "<0.00001" : r.listPrice.toFixed(5)} at list rate</span>
+                                      )}
+                                    </dd>
+                                  </div>
+                                )}
+                                {r.grounding && r.grounding.claims > 0 && (
+                                  <div>
+                                    <dt>Grounded</dt>
+                                    <dd><span className="tabular">{r.grounding.found}/{r.grounding.claims}</span> figures and names found in the sources</dd>
+                                  </div>
+                                )}
+                                <div>
+                                  <dt>Tested</dt>
+                                  {/* Written by the last run of the held-out split, never by hand. */}
+                                  <dd className="tabular">{tested.pass}/{tested.cases} held-out questions pass, {tested.at}</dd>
+                                </div>
+                              </dl>
+                            </section>
+
+                            {(r.failover ?? []).length > 0 && (
+                              <section className={styles.card} style={at()} aria-label="Providers">
+                                <header className={styles.cardHead}>
+                                  <h4>Providers</h4>
+                                </header>
+                                <p className={styles.providers}>
+                                  {r.failover!.map((f) => (
+                                    <span key={f.name} data-health={f.coolingOffFor > 0 ? "benched" : "ready"}>
+                                      {f.name}
+                                      {f.coolingOffFor > 0 ? `, benched ${Math.ceil(f.coolingOffFor / 60)}m` : ""}
+                                    </span>
+                                  ))}
+                                </p>
+                              </section>
+                            )}
+
+                            {(r.steps?.length ?? 0) > 0 && (
+                              <section className={styles.card} data-span="full" style={at()} aria-label="Timeline">
+                                <header className={styles.cardHead}>
+                                  <h4>Timeline</h4>
+                                  <span className={`${styles.badge} tabular`}>{r.total}ms total</span>
+                                </header>
+                                <ol className={styles.stepList}>
+                                  {r.steps!.map((st, n) => (
+                                    <li key={n} data-state={st.state} style={{ "--n": n } as React.CSSProperties}>
+                                      <span className={styles.stepName}>{st.name}</span>
+                                      <span className={styles.dim}>{st.state}</span>
+                                      <span className="tabular">{st.ms}ms</span>
+                                      <span className={styles.bar} style={{ ["--w" as string]: `${(st.ms / max) * 100}%` }} aria-hidden="true" />
+                                      {st.detail && <span className={styles.stepNote}>{st.detail}</span>}
                                     </li>
                                   ))}
                                 </ol>
-                              ) : null}
-                            </dd>
-                          </div>
-                        )}
+                              </section>
+                            )}
 
-                        {/* The whole roster, not only the benched half.
-                            failoverState() returns every configured provider
-                            and this filtered to the ones cooling off, so a
-                            reader saw failover exactly when it had already
-                            gone wrong and never saw the four-provider chain
-                            standing behind a normal answer. */}
-                        {(turn.result.failover ?? []).length > 0 && (
-                          <div className={styles.traceRow}>
-                            <dt>providers</dt>
-                            <dd>{turn.result.failover!.length} configured</dd>
-                            <dd className={styles.providers}>
-                              {turn.result.failover!.map((f) => (
-                                <span
-                                  key={f.name}
-                                  className={styles.provider}
-                                  data-health={f.coolingOffFor > 0 ? "benched" : "ready"}
-                                >
-                                  {/* The square is allowed to be live here: this
-                                      is the failover state the server reported
-                                      for this request, not a claim about now. */}
-                                  <i aria-hidden="true" />
-                                  {f.name}
-                                  {f.coolingOffFor > 0
-                                    ? ` · benched ${Math.ceil(f.coolingOffFor / 60)}m`
-                                    : ""}
-                                </span>
-                              ))}
-                            </dd>
-                          </div>
-                        )}
+                            {cited.length > 0 && (
+                              <section className={styles.card} data-span="full" style={at()} aria-label="Cited passages">
+                                <header className={styles.cardHead}>
+                                  <h4>Cited passages</h4>
+                                  <span className={`${styles.badge} tabular`}>{cited.length} of {r.citations!.length} sentences sourced</span>
+                                </header>
+                                <ol className={styles.cites}>
+                                  {/* One row per cited passage, numbered as the markers in the answer. */}
+                                  {cited.map((c) => (
+                                    <li key={c.n} id={`agent-cite-${i}-${c.n}`} value={c.n}>
+                                      {c.source} <code className={styles.dim}>{c.id ?? ""}</code>
+                                    </li>
+                                  ))}
+                                  {unsourced > 0 && <li data-none>{unsourced} sentence(s) with no source</li>}
+                                </ol>
+                              </section>
+                            )}
 
-                        {/* Refusing to reveal it on request and publishing it
-                            deliberately are different acts. The agent does the
-                            first; this is the second. */}
-                        {turn.result.policy && (
-                          <div className={styles.traceRow}>
-                            <dt>policy</dt>
-                            <dd>
-                              <button
-                                className={styles.policyToggle}
-                                aria-expanded={openPolicy === i}
-                                onClick={() => setOpenPolicy(openPolicy === i ? null : i)}
-                              >
-                                {openPolicy === i ? "hide system prompt" : "read the system prompt"}
-                              </button>
-                            </dd>
-                            <dd className={styles.usage}>
-                              the agent refuses to reveal this when asked; it is published here
-                              instead
-                            </dd>
-                          </div>
-                        )}
-                      </dl>
-                    )}
 
-                    {openTrace === i && openPolicy === i && turn.result.policy && (
-                      <div className={styles.policyBlock}>
-                        <p className={styles.msgHead}>
-                          system
-                          <b>context elided</b>
-                        </p>
-                        <pre className={styles.policy}>{turn.result.policy}</pre>
+                            {(r.coverage?.length ?? 0) > 0 && (
+                              <section className={styles.card} data-span="full" style={at()} aria-label="Job description coverage">
+                                <header className={styles.cardHead}>
+                                  <h4>Job description coverage</h4>
+                                </header>
+                                <ul className={styles.coverage}>
+                                  {r.coverage!.map((c, n) => (
+                                    <li key={n} data-status={c.status}>
+                                      <b>{c.status}</b>
+                                      <span>{c.req}</span>
+                                      <span className={styles.dim}>{c.section ?? "not in profile"}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </section>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      {r.policy && (
+                        <div className={styles.group}>
+                          <button
+                            className={styles.textBtn}
+                            aria-expanded={openPolicy === i}
+                            onClick={() => setOpenPolicy(openPolicy === i ? null : i)}
+                          >
+                            {openPolicy === i ? "Hide the system prompt" : "Read the system prompt"}
+                          </button>
+                          <p className={styles.dim}>It refuses to reveal this when asked; it is published here instead.</p>
+                          {openPolicy === i && <pre className={styles.policy}>{r.policy}</pre>}
+                        </div>
+                      )}
+
+                      <div className={styles.group}>
+                        <p className={styles.groupHead}>Opens directly</p>
+                        <ul className={styles.tools}>
+                          {openable.map((t) => (
+                            <li key={t.key}>
+                              <a href={t.url} target="_blank" rel="noreferrer" title={t.about} onClick={() => track("contact", `toolkit-${t.key}`)}>
+                                <ToolIcon id={t.key} />
+                                {toolTag(t)}
+                              </a>
+                            </li>
+                          ))}
+                          <li>
+                            <a href={mailtoLink(email, site, "general")} onClick={() => track("contact", "toolkit-draft")}>
+                              <Glyph name="EnvelopeSimple:regular" size={18} />
+                              Drafted email
+                            </a>
+                          </li>
+                          {!openable.some((t) => t.key === "linkedin") && (
+                          <li>
+                            <a href={linkedin} target="_blank" rel="noreferrer" onClick={() => track("contact", "linkedin")}>
+                              <LinkedInMark />
+                              LinkedIn
+                            </a>
+                          </li>
+                          )}
+                        </ul>
                       </div>
-                    )}
-                  </>
-                )}
-              </>
-            )}
-          </article>
+
+                      <div className={styles.drawerFoot}>
+                        <button className={styles.textBtn} data-done={shared || undefined} onClick={() => shareTurn(turn)}>
+                          {shared ? "Link copied" : "Copy a link to this question"}
+                        </button>
+                        {canVoice && (
+                          <label className={styles.toggle}>
+                            <input
+                              type="checkbox"
+                              checked={voiceOn}
+                              onChange={(e) => {
+                                setVoiceOn(e.target.checked);
+                                // Starts the neural voice download on opt-in, so the
+                                // next answer is usually spoken with it.
+                                if (e.target.checked) warmNeural();
+                                else silence();
+                              }}
+                            />
+                            Read answers aloud
+                          </label>
+                        )}
+                      </div>
+                    </section>
+                  )}
+                </>
+              )}
+            </article>
           );
-        })}
+        })()}
       </div>
-
-      {/* A preference, so it sits after the conversation rather than inside it,
-          and only once there is a conversation: before the first answer there
-          is nothing to read aloud, and the control spent 44px of the first
-          screen offering to speak silence. */}
-      {canVoice && turns.length > 0 && (
-        <label className={styles.voiceToggle}>
-          <input
-            type="checkbox"
-            checked={voiceOn}
-            onChange={(e) => {
-              setVoiceOn(e.target.checked);
-              if (e.target.checked) {
-                // Start the model download the moment someone opts in, rather
-                // than on the first answer. By the time a question is typed and
-                // answered it is usually ready, so the first spoken reply gets
-                // the neural voice instead of the built-in one.
-                warmNeural();
-              } else {
-                silence();
-              }
-            }}
-          />
-          Read answers aloud
-        </label>
-      )}
-
-      {showConversion && (
-        <div className={styles.reachRow}>
-          <button className={styles.copy} data-copied={copied || undefined} onClick={() => copyOpener(last)}>
-            {copied ? "Copied. Paste it anywhere." : "Copy an opening line"}
-          </button>
-          <button className={styles.copy} data-copied={shared || undefined} onClick={() => shareTurn(last)}>
-            {shared ? "Link copied" : "Share this answer"}
-          </button>
-          <a href={`mailto:${email}`} onClick={() => track("contact", "email")}>
-            {email}
-          </a>
-        </div>
-      )}
     </div>
+  );
+}
+
+/**
+ * The finished answer with its figures set in bold, and any figure or name its
+ * sources do not hold marked instead. Plain text otherwise, so a copied answer
+ * reads the same as the rendered one.
+ */
+function Highlighted({
+  text,
+  unsupported = [],
+  cites = [],
+  onCite,
+}: {
+  text: string;
+  unsupported?: string[];
+  cites?: Citation[];
+  onCite?: (n: number) => void;
+}) {
+  const esc = unsupported.filter(Boolean).map((u) => u.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const figure = String.raw`(?<![A-Za-z0-9])\$?\d[\d,.]*\d?(?:\s?(?:%|ms|x|×|\+|k|K|M|hours|percent)(?![a-z]))?`;
+  // Technology names by shape (LangGraph, FastAPI, BM25, AWS), not by a list,
+  // so no fact lives in this component.
+  const tech = String.raw`\b(?:[A-Z][a-z]+[A-Z][A-Za-z]*|[A-Z]{2,}[0-9]*)\b`;
+  const re = new RegExp(`(${[...esc, tech, figure].join("|")})`, "g");
+  const mark = (chunk: string) =>
+    chunk.split(re).map((part, n) => {
+      if (n % 2 === 0) return part;
+      if (unsupported.includes(part)) return <mark key={n} className={styles.unsupported}>{part}</mark>;
+      // A bare year is a date, not a result.
+      if (/^(19|20)\d\d$/.test(part)) return part;
+      if (/^[A-Z]/.test(part)) return <b key={n} className={styles.skill}>{part}</b>;
+      return <strong key={n} className={styles.fact}>{part}</strong>;
+    });
+  // Citations come from the same sentence split (ground.ts SENTENCE), in order,
+  // so the k-th sentence on the page is the k-th citation.
+  let k = 0;
+  return (
+    <>
+      {text.split(/\n{2,}/).map((para, p) => (
+        <p key={p}>
+          {para.split(SENTENCE).filter((x) => x.trim()).map((sentence, j) => {
+            const c = cites[k]?.sentence.trim() === sentence.trim() ? cites[k++] : undefined;
+            return (
+              <span key={j}>
+                {j > 0 && " "}
+                {mark(sentence)}
+                {c?.n && (
+                  <sup className={styles.cite}>
+                    <button type="button" onClick={() => onCite?.(c.n!)} aria-label={`Source ${c.n}: ${c.source}`} title={c.id ?? c.source ?? undefined}>
+                      {c.n}
+                    </button>
+                  </sup>
+                )}
+              </span>
+            );
+          })}
+        </p>
+      ))}
+    </>
   );
 }
 

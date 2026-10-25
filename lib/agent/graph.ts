@@ -14,6 +14,7 @@ import {
   AUTHORISATION_ANSWER,
   NOT_IN_PROFILE,
   PARTIAL_NOTE,
+  AGGREGATE_NOTE,
 } from "./policy";
 
 /**
@@ -158,12 +159,15 @@ const route = timed("route", async (state) => ({
 
 const retrieveNode = timed("retrieve", async (state) => {
   const { query, asked, floor } = analyze(state.question);
-  const { chunks, trace, best } = await retrieve(query, { floor, deadline: Date.now() + BUDGET_MS });
+  const { chunks, trace, best } = await retrieve(query, { floor, deadline: Date.now() + BUDGET_MS, question: state.question });
   return { chunks, trace, asked, best: best ?? "" };
 });
 
 const answer = timed("answer", async (state) => {
-  const context = state.chunks.map((c) => `## ${c.title}\n${c.body}`).join("\n\n") + (state.trace?.band === "partial" ? PARTIAL_NOTE : "");
+  const context =
+    state.chunks.map((c) => `## ${c.title}\n${c.body}`).join("\n\n") +
+    (state.trace?.band === "partial" ? PARTIAL_NOTE : "") +
+    (state.trace?.graph?.length ? AGGREGATE_NOTE : "");
 
   // No provider configured, or every one of them failed. Returning the retrieved
   // source beats an error: the visitor still gets the grounded material, just

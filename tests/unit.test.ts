@@ -278,7 +278,10 @@ describe("published artifacts", () => {
     assert.ok(topology.nodes.includes("deflect"));
     // Three conditional edges out of route (deflect, act, retrieve) are the reason
     // this is a routed graph rather than a single pipeline.
-    assert.equal(topology.conditional, 3, "route must branch, or the policy layer is decorative");
+    // Counted out of route only: retrieve's answer/unknown branch is a second,
+    // separate decision and made the graph-wide total 5.
+    const fromRoute = topology.edges.filter((e: { from: string; conditional: boolean }) => e.from === "route" && e.conditional).length;
+    assert.equal(fromRoute, 3, "route must branch, or the policy layer is decorative");
   });
 
   test("the eval file carries groups that sum to the total", () => {
@@ -588,6 +591,11 @@ test("cuts at the first meta sentence that follows real content", () => {
     'So first word should be the answer itself. Could be "He shipped a document assistant."';
   const out = cleanAnswer(leaked);
   assert.equal(out, "He shipped a document intelligence assistant (document QA system) on Azure.");
+});
+
+test("keeps an address that ends the answer whole", () => {
+  assert.equal(cleanAnswer("That is not in the profile. It records X. sam@example.com"), "That is not in the profile. It records X. sam@example.com");
+  assert.equal(cleanAnswer("It records X. Reach them at sam@example.com"), "It records X. Reach them at sam@example.com");
 });
 
 test("keeps a genuine multi-sentence answer whole", () => {
@@ -1091,5 +1099,78 @@ describe("cite: per-sentence source", async () => {
   test("each sentence maps to the section whose passage holds most of its words", () => {
     const c = cite("He built an Apache Tika pipeline for 5,000+ profiles a month. He cut API response time 30% at Growaza. He enjoys hiking.", sections);
     assert.deepEqual(c.map((x) => x.source), ["IMG Systems", "Growaza", null]);
+  });
+  test("with index passages, each cite names the passage and numbers distinct sources", () => {
+    const passages = [
+      { title: "IMG Systems", ordinal: 0, text: "Built an Apache Tika extraction pipeline handling 5,000+ profiles a month." },
+      { title: "Growaza", ordinal: 1, text: "Cut API response time 30% and raised engagement 22%." },
+    ];
+    const c = cite("He built an Apache Tika pipeline for 5,000+ profiles a month. He cut API response time 30%. Tika handled 5,000+ profiles a month. He enjoys hiking.", [], 0.5, passages);
+    assert.deepEqual(c.map((x) => [x.id, x.n]), [["IMG Systems#0", 1], ["Growaza#1", 2], ["IMG Systems#0", 1], [undefined, undefined]]);
+  });
+});
+
+describe("graph route", async () => {
+  const { graphSections, AGGREGATE } = await import("../lib/agent/retrieve");
+
+  test("aggregation wording is recognised, a single-employer question is not", () => {
+    for (const q of ["Where has he used Docker, across all his jobs?", "Which of his projects use LangGraph?", "List his measured results with Redis."]) {
+      assert.ok(AGGREGATE.test(q), q);
+    }
+    assert.ok(!AGGREGATE.test("What did he do at IMG Systems?"));
+  });
+
+  test("an entity links every section that names it, and only those", () => {
+    assert.deepEqual(
+      new Set(graphSections("where has he used docker")),
+      new Set(["Boston University, Questrom Computational Lab, backend", "Boston University, Questrom Computational Lab", "IMG Systems"]),
+    );
+  });
+});
+
+describe("rum beacon schema", async () => {
+  const { parseRum, RUM_MAX_BYTES } = await import("../lib/rum");
+
+  test("keeps the known fields, drops the rest, strips query strings", () => {
+    const out = parseRum({
+      inp: 123.456, viewport: "phone", cores: 8, net: "4g", userAgent: "x", ip: "1.2.3.4",
+      loaf: [{ file: "https://a.test/app.js?token=1#x", fn: "tick", invoker: "user-callback", ms: 90, extra: 1 }],
+      film: { droppedPct: 0.2, tier: "d", secret: "x" },
+    });
+    assert.ok(out);
+    assert.equal(out.inp, 123.5);
+    assert.equal(out.loaf[0].file, "/app.js");
+    assert.deepEqual(Object.keys(out).sort(), ["cores", "film", "inp", "loaf", "net", "viewport"]);
+    assert.equal(out.film.tier, "d");
+    assert.equal(out.film.heldPct, null);
+  });
+
+  test("rejects a body with no viewport and out-of-range numbers", () => {
+    assert.equal(parseRum({ inp: 5 }), null);
+    assert.equal(parseRum("x"), null);
+    assert.equal(parseRum({ viewport: "desktop", inp: -1, cores: 1e9 })?.inp, null);
+    assert.equal(RUM_MAX_BYTES, 2048);
+  });
+});
+
+describe("answerScore: 40% source match + 40% facts found + 20% sentences sourced", async () => {
+  const { answerScore } = await import("../lib/agent/ground");
+  const g = (v: number) => ({ claims: 4, found: Math.round(v * 4), g: v, unsupported: [] });
+  test("sure, every fact found, every sentence sourced = 100", () => {
+    assert.equal(answerScore("answer", g(1), [{ sentence: "a", source: "IMG Systems" }]), 100);
+  });
+  test("partly sure, half the facts, no sources = 44", () => {
+    assert.equal(answerScore("partial", g(0.5), [{ sentence: "a", source: null }]), 44);
+  });
+  test("don't know has no score", () => {
+    assert.equal(answerScore("unknown", g(1), []), null);
+  });
+});
+
+describe("failover order", async () => {
+  const { benchToBack } = await import("../lib/agent/model");
+  test("a provider cooling off moves to the back, never out of the chain", () => {
+    assert.deepEqual(benchToBack(["nvidia", "groq", "gemini"], (n) => n === "groq"), ["nvidia", "gemini", "groq"]);
+    assert.deepEqual(benchToBack(["nvidia", "groq"], () => true), ["nvidia", "groq"]);
   });
 });

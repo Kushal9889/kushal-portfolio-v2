@@ -3,7 +3,7 @@
     python3 scripts/ui-motion.py               390 and 1440
     python3 scripts/ui-motion.py --force
 
-Rules (impeccable animate.md and craft-floor, design-taste 5.D and 6.A, ui-ux-pro-max):
+Rules:
   layout      animate transform and opacity (plus colour); width, height, top, left, margins,
               padding and font-size animation is a failure.
   shift       cumulative layout shift while scrolling the whole page stays under 0.1, and

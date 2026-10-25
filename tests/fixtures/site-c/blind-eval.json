@@ -1,0 +1,463 @@
+{
+ "note": "Blind set. Generated from the corpus text only by a model that is not the generator or the judge. Report only, never tune. Review once, then lock with --lock.",
+ "written": "2026-10-25",
+ "generator": [
+  "gemini-3.8-flash",
+  "gemini-2.5-flash"
+ ],
+ "sections": {
+  "who-they-are": "Who they are",
+  "what-they-do-not-do": "What they do not do",
+  "fieldline-logistics": "Fieldline Logistics",
+  "corner-market-co-op": "Corner Market Co-op",
+  "career-break": "Career break",
+  "education": "Education",
+  "certifications": "Certifications",
+  "skills": "Skills",
+  "availability": "Availability"
+ },
+ "cases": [
+  {
+   "id": 1,
+   "kind": "paraphrase",
+   "q": "What is Sam's primary professional goal when working with operational information?",
+   "expect": "answer",
+   "rel": {
+    "who-they-are": 2
+   }
+  },
+  {
+   "id": 2,
+   "kind": "paraphrase",
+   "q": "Could you tell me about the positive effects of the shipping delay monitor Sam developed?",
+   "expect": "answer",
+   "rel": {
+    "fieldline-logistics": 2
+   }
+  },
+  {
+   "id": 3,
+   "kind": "paraphrase",
+   "q": "Does Sam supervise other employees?",
+   "expect": "answer",
+   "rel": {
+    "what-they-do-not-do": 2
+   }
+  },
+  {
+   "id": 4,
+   "kind": "paraphrase",
+   "q": "Why did Sam temporarily step away from their career?",
+   "expect": "answer",
+   "rel": {
+    "career-break": 2,
+    "who-they-are": 1
+   }
+  },
+  {
+   "id": 5,
+   "kind": "paraphrase",
+   "q": "Which data manipulation programs is Sam proficient with?",
+   "expect": "answer",
+   "rel": {
+    "skills": 2,
+    "fieldline-logistics": 1,
+    "corner-market-co-op": 1
+   }
+  },
+  {
+   "id": 6,
+   "kind": "paraphrase",
+   "q": "Is Sam Reyes currently seeking new employment opportunities?",
+   "expect": "answer",
+   "rel": {
+    "availability": 2
+   }
+  },
+  {
+   "id": 7,
+   "kind": "recruiter",
+   "q": "sam interested in which job roles",
+   "expect": "answer",
+   "rel": {
+    "availability": 2,
+    "who-they-are": 1,
+    "skills": 1
+   }
+  },
+  {
+   "id": 8,
+   "kind": "recruiter",
+   "q": "sams last paid role before fieldline",
+   "expect": "answer",
+   "rel": {
+    "corner-market-co-op": 2,
+    "career-break": 1,
+    "fieldline-logistics": 1
+   }
+  },
+  {
+   "id": 9,
+   "kind": "recruiter",
+   "q": "sam built ml models in production",
+   "expect": "answer",
+   "rel": {
+    "what-they-do-not-do": 2
+   }
+  },
+  {
+   "id": 10,
+   "kind": "recruiter",
+   "q": "tools for delivery delay dashbord",
+   "expect": "answer",
+   "rel": {
+    "fieldline-logistics": 2,
+    "skills": 1
+   }
+  },
+  {
+   "id": 11,
+   "kind": "recruiter",
+   "q": "sams schooling background",
+   "expect": "answer",
+   "rel": {
+    "education": 2,
+    "certifications": 2,
+    "career-break": 1
+   }
+  },
+  {
+   "id": 12,
+   "kind": "recruiter",
+   "q": "does sam manage team members",
+   "expect": "answer",
+   "rel": {
+    "what-they-do-not-do": 2
+   }
+  },
+  {
+   "id": 13,
+   "kind": "yesno",
+   "q": "Has Sam worked on projects that use data to improve logistics operations?",
+   "expect": "answer",
+   "rel": {
+    "fieldline-logistics": 2,
+    "who-they-are": 1,
+    "corner-market-co-op": 1
+   }
+  },
+  {
+   "id": 14,
+   "kind": "yesno",
+   "q": "Can Sam develop solutions using SQL and Python?",
+   "expect": "answer",
+   "rel": {
+    "skills": 2,
+    "fieldline-logistics": 2,
+    "what-they-do-not-do": 1
+   }
+  },
+  {
+   "id": 15,
+   "kind": "yesno",
+   "q": "Does Sam hold any certifications related to data analytics?",
+   "expect": "answer",
+   "rel": {
+    "certifications": 2,
+    "career-break": 1
+   }
+  },
+  {
+   "id": 16,
+   "kind": "yesno",
+   "q": "Is Sam responsible for leading or supervising other employees?",
+   "expect": "answer",
+   "rel": {
+    "what-they-do-not-do": 2
+   }
+  },
+  {
+   "id": 17,
+   "kind": "yesno",
+   "q": "Does Sam have experience building machine learning models for live deployment?",
+   "expect": "answer",
+   "rel": {
+    "what-they-do-not-do": 2
+   }
+  },
+  {
+   "id": 18,
+   "kind": "yesno",
+   "q": "Has Sam published any scholarly articles or research documents?",
+   "expect": "answer",
+   "rel": {
+    "what-they-do-not-do": 2
+   }
+  },
+  {
+   "id": 19,
+   "kind": "temporal",
+   "q": "Could you tell me what Sam is currently doing for work and where?",
+   "expect": "answer",
+   "rel": {
+    "fieldline-logistics": 2,
+    "who-they-are": 1
+   }
+  },
+  {
+   "id": 20,
+   "kind": "temporal",
+   "q": "What was Sam's primary activity during the year 2022?",
+   "expect": "answer",
+   "rel": {
+    "career-break": 2,
+    "certifications": 2
+   }
+  },
+  {
+   "id": 21,
+   "kind": "temporal",
+   "q": "After Sam finished working at Corner Market Co-op, what did they do next?",
+   "expect": "answer",
+   "rel": {
+    "career-break": 2,
+    "corner-market-co-op": 1
+   }
+  },
+  {
+   "id": 22,
+   "kind": "temporal",
+   "q": "For how long did Sam take time off from their professional career?",
+   "expect": "answer",
+   "rel": {
+    "career-break": 2,
+    "who-they-are": 2
+   }
+  },
+  {
+   "id": 23,
+   "kind": "temporal",
+   "q": "Could you please specify when Sam started their employment at Fieldline Logistics?",
+   "expect": "answer",
+   "rel": {
+    "fieldline-logistics": 2
+   }
+  },
+  {
+   "id": 24,
+   "kind": "temporal",
+   "q": "What was the total length of Sam's tenure at the Corner Market Co-op?",
+   "expect": "answer",
+   "rel": {
+    "corner-market-co-op": 2
+   }
+  },
+  {
+   "id": 25,
+   "kind": "count",
+   "q": "For how many months was Sam out of the workforce as a family caregiver?",
+   "expect": "answer",
+   "rel": {
+    "who-they-are": 2,
+    "career-break": 1
+   }
+  },
+  {
+   "id": 26,
+   "kind": "count",
+   "q": "What was the percentage decrease in late deliveries after Sam's dashboard was implemented?",
+   "expect": "answer",
+   "rel": {
+    "fieldline-logistics": 2
+   }
+  },
+  {
+   "id": 27,
+   "kind": "count",
+   "q": "How much time did they save each week by automating the operations report?",
+   "expect": "answer",
+   "rel": {
+    "fieldline-logistics": 2
+   }
+  },
+  {
+   "id": 28,
+   "kind": "count",
+   "q": "At their previous role, how many store locations did the grocery co-op operate?",
+   "expect": "answer",
+   "rel": {
+    "corner-market-co-op": 2
+   }
+  },
+  {
+   "id": 29,
+   "kind": "count",
+   "q": "How much did Sam's initial data project cut down on produce waste in terms of percentage?",
+   "expect": "answer",
+   "rel": {
+    "corner-market-co-op": 2
+   }
+  },
+  {
+   "id": 30,
+   "kind": "count",
+   "q": "Can you tell me how many professional development certificates Sam holds?",
+   "expect": "answer",
+   "rel": {
+    "certifications": 2
+   }
+  },
+  {
+   "id": 31,
+   "kind": "opinion",
+   "q": "What qualities make Sam a compelling candidate for an analytics role in operations or logistics?",
+   "expect": "answer",
+   "rel": {
+    "who-they-are": 2,
+    "fieldline-logistics": 2,
+    "corner-market-co-op": 1,
+    "skills": 1,
+    "availability": 1
+   }
+  },
+  {
+   "id": 32,
+   "kind": "opinion",
+   "q": "Could you describe Sam's most impactful contributions in their previous positions, particularly where they drove measurable improvements?",
+   "expect": "answer",
+   "rel": {
+    "fieldline-logistics": 2,
+    "corner-market-co-op": 2,
+    "who-they-are": 1
+   }
+  },
+  {
+   "id": 33,
+   "kind": "opinion",
+   "q": "What unique aspects or specialized expertise does Sam bring to the table that might distinguish them from other data professionals?",
+   "expect": "answer",
+   "rel": {
+    "who-they-are": 2,
+    "what-they-do-not-do": 2,
+    "career-break": 1,
+    "fieldline-logistics": 1
+   }
+  },
+  {
+   "id": 34,
+   "kind": "opinion",
+   "q": "Given Sam's background, what indicates their potential to quickly contribute and grow within an operations analytics team?",
+   "expect": "answer",
+   "rel": {
+    "who-they-are": 2,
+    "career-break": 1,
+    "education": 1,
+    "certifications": 1,
+    "availability": 1
+   }
+  },
+  {
+   "id": 35,
+   "kind": "opinion",
+   "q": "How does Sam typically approach a business problem that requires data analysis, and what kind of solutions do they tend to deliver?",
+   "expect": "answer",
+   "rel": {
+    "who-they-are": 2,
+    "fieldline-logistics": 2,
+    "corner-market-co-op": 1,
+    "skills": 1
+   }
+  },
+  {
+   "id": 36,
+   "kind": "opinion",
+   "q": "What demonstrates Sam's strength in developing practical, data-driven tools and insights that directly serve business users, rather than theoretical models?",
+   "expect": "answer",
+   "rel": {
+    "what-they-do-not-do": 2,
+    "who-they-are": 2,
+    "fieldline-logistics": 2,
+    "corner-market-co-op": 1
+   }
+  },
+  {
+   "id": 37,
+   "kind": "aggregate",
+   "q": "Could you detail Sam's experience automating data processes and reports using various tools across their professional journey?",
+   "expect": "answer",
+   "rel": {
+    "fieldline-logistics": 2,
+    "skills": 2,
+    "certifications": 2,
+    "who-they-are": 1
+   }
+  },
+  {
+   "id": 38,
+   "kind": "aggregate",
+   "q": "What's Sam's background and methodology when it comes to predicting future trends?",
+   "expect": "answer",
+   "rel": {
+    "what-they-do-not-do": 2,
+    "corner-market-co-op": 2,
+    "skills": 2,
+    "fieldline-logistics": 1
+   }
+  },
+  {
+   "id": 39,
+   "kind": "aggregate",
+   "q": "Across all their previous roles and learning experiences, which data-related software and languages has Sam employed?",
+   "expect": "answer",
+   "rel": {
+    "skills": 2,
+    "fieldline-logistics": 2,
+    "corner-market-co-op": 2,
+    "education": 1,
+    "certifications": 1
+   }
+  },
+  {
+   "id": 40,
+   "kind": "aggregate",
+   "q": "Can you walk me through Sam's professional journey, highlighting key roles, their career break, and how they acquired new analytical proficiencies?",
+   "expect": "answer",
+   "rel": {
+    "who-they-are": 2,
+    "fieldline-logistics": 2,
+    "corner-market-co-op": 2,
+    "career-break": 2,
+    "education": 2,
+    "certifications": 2,
+    "skills": 1
+   }
+  },
+  {
+   "id": 41,
+   "kind": "aggregate",
+   "q": "Could you outline the tangible benefits and improvements Sam has delivered through their analytical work at different organizations?",
+   "expect": "answer",
+   "rel": {
+    "fieldline-logistics": 2,
+    "corner-market-co-op": 2,
+    "who-they-are": 1
+   }
+  },
+  {
+   "id": 42,
+   "kind": "aggregate",
+   "q": "Beyond just reporting, what specific analytical techniques does Sam employ, and are there any advanced data science areas they do not work with?",
+   "expect": "answer",
+   "rel": {
+    "skills": 2,
+    "what-they-do-not-do": 2,
+    "who-they-are": 1,
+    "fieldline-logistics": 1,
+    "corner-market-co-op": 1
+   }
+  }
+ ],
+ "sha256": "0753d36587b4e9d50c1c71ab260ced0bad915a95bb76d9482f6c84f7a16f8177",
+ "lockedSha256": "0753d36587b4e9d50c1c71ab260ced0bad915a95bb76d9482f6c84f7a16f8177",
+ "lockedAt": "2026-10-25"
+}
