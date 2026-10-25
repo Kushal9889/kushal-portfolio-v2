@@ -3,7 +3,7 @@
     python3 scripts/ui-highlights.py            390 and 1440
     python3 scripts/ui-highlights.py --force    ignore the cache for this build
 
-Kushal's standing brief (85f79028, prompts 938, 5458, 8171, 20535): text colour,
+The standing rule: text colour,
 formatting and contrast must be eye-catching and clearly visible to WCAG; links
 and key phrases are highlighted; numbers take the colour of their product; no
 orange haze over the dark ground; laser-like light sweeps on key sections.

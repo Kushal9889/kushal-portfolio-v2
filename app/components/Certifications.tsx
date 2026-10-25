@@ -99,8 +99,8 @@ export default function Certifications({
   );
 }
 
-/** Brand files for the issuers that have a licensed mark (devicon, simple-icons).
- *  IBM's own mark is not redistributable, so it is set as type. */
+/** Brand files for the issuers: devicon and simple-icons marks, original marks
+ *  only. An issuer with no file here stands as type. */
 const LOGO: Record<string, string> = {
   "Amazon Web Services": "/brand/aws.svg",
   "Google Cloud": "/brand/googlecloud.svg",

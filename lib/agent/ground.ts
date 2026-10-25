@@ -102,3 +102,19 @@ export function cite(answer: string, sections: { title: string; body: string }[]
       return { sentence, source: best.c >= min ? best.title : null };
     });
 }
+
+/**
+ * One number for how far an answer can be trusted (Kushal 2026-10-10):
+ *
+ *   score = 40% source match + 40% facts found + 20% sentences sourced
+ *   source match = 1.0 for "sure", 0.6 for "partly sure" (the band after the G check)
+ *   facts found = G above; sentences sourced = share of sentences cite() labelled
+ *
+ * Null for "don't know": that answer makes no claim, so there is nothing to score.
+ */
+export function answerScore(band: string | undefined, g?: Grounding, cites?: Citation[]): number | null {
+  if (band !== "answer" && band !== "partial") return null;
+  const match = band === "answer" ? 1 : 0.6;
+  const sourced = cites?.length ? cites.filter((c) => c.source).length / cites.length : 0;
+  return Math.round(100 * (0.4 * match + 0.4 * (g?.g ?? 1) + 0.2 * sourced));
+}

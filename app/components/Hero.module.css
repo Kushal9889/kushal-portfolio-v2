@@ -42,6 +42,7 @@
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--ink);
+  text-decoration: none;
 }
 
 .line {
@@ -614,8 +615,23 @@
     /* 23rem put the hero's one written sentence on a 34-character measure,
        which is half the comfortable range and the reason the left column read
        as a narrow strip beside the instrument. */
-    grid-template-columns: minmax(0, 28rem) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 28rem);
     gap: var(--s-7);
+  }
+
+  /* Agent left, call to action right. The console no
+     longer covers the headline, and the right column starts below the GPU
+     picture at the top right so it shows whole. Source order stays identity
+     first, which is the phone order. */
+  .body > .console {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .body > .identity {
+    grid-column: 2;
+    grid-row: 1;
+    padding-block-start: clamp(5rem, 9vw, 8.5rem);
   }
 }
 
@@ -674,6 +690,9 @@
    * jumped 79px and took the ask bar with it. A pane that is always the same
    * size is also what an instrument looks like. */
   height: 5.4rem;
+  /* Three whole lines. 5.4rem was 2.8 of them, so the third line showed cut
+     through its middle above the fade. */
+  height: 3lh;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -816,12 +835,14 @@
     color: var(--ink);
   }
 
+  /* Labels, not controls: a bordered box here read as something to press, and
+     pressing it did nothing. */
   .skills li {
     display: inline-flex;
     align-items: center;
     gap: var(--s-2);
-    padding: 2px var(--s-2);
-    border: var(--border-hair) solid color-mix(in oklab, var(--ink) 30%, transparent);
+    padding: 2px 0;
+    margin-inline-end: var(--s-2);
   }
 }
 
@@ -918,6 +939,13 @@
     min-height: 26rem;
   }
 
+  /* The answer keeps its full height; only the block below it gives way. As a
+     shrinkable flex item it was squeezed to its 7.5rem floor on a short window
+     and its sources row overflowed onto the ask bar (1920x900). */
+  .console .said {
+    flex: none;
+  }
+
   .console .agentSlot {
     flex: 1 1 auto;
     min-height: 0;
@@ -938,11 +966,11 @@
 }
 
 /* ---- Agent console: instrument behaviour (2026-10-08) --------------------
- * Motion thesis (impeccable animate.md): the focal moment is a request being
+ * Motion thesis: the focal moment is a request being
  * served; feedback is the graph lighting node by node; continuity is the
  * lock-in when a node finishes. Budget: transform and opacity on a 1px line
  * and an 11px ring, no blur, no glow, nothing running at rest. Framing ticks
- * and the beam come from the brutalist telemetry archetype (rules 2.2 and 6). */
+ * and the beam come from telemetry instruments. */
 .tick {
   position: absolute;
   z-index: 1;
@@ -1109,6 +1137,36 @@
 
 /* The answer pane is a fixed height, so say when more text waits below. */
 .saidA[data-more] {
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 1.5rem), transparent);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 1.5rem), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, oklch(0 0 0) calc(100% - 1.5rem), transparent);
+  mask-image: linear-gradient(to bottom, oklch(0 0 0) calc(100% - 1.5rem), transparent);
+}
+
+/* Proof: three checkable figures, each a jump to the section that sources it.
+   The figure carries the weight; the label is the footnote. */
+.proofStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+}
+
+.proofStrip a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4em;
+  text-decoration: none;
+  color: var(--ink-soft);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--t-fast) var(--ease-out);
+}
+
+.proofStrip b {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.proofStrip a:hover,
+.proofStrip a:focus-visible {
+  border-bottom-color: var(--signal-deep);
 }

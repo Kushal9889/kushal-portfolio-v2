@@ -21,6 +21,8 @@ type IndexShape = {
   avgLength: number;
   /** Present only when an embedding provider was configured at build time. */
   vectors: number[][] | null;
+  /** Entity -> section titles, built by scripts/build-index.ts (graph route). */
+  graph?: Record<string, string[]>;
 };
 
 // Cast through unknown: TypeScript infers a literal type for every term in the
@@ -208,6 +210,8 @@ export type RetrievalTrace = {
   band?: Band;
   /** The best reranker logit, null when the reranker was unreachable. */
   relevance?: number | null;
+  /** Sections the entity graph linked for an aggregation question. */
+  graph?: string[];
 };
 
 export type Band = "answer" | "partial" | "unknown";
@@ -234,6 +238,21 @@ const MAX_SECTIONS = 3;
  * and served the visa paragraph as the degraded answer (AGENT_FAULT=outage).
  */
 const NEVER_RETRIEVED = new Set(["Work authorisation"]);
+
+/** Aggregation wording: the question wants every place, not the best one. */
+export const AGGREGATE =
+  /\b(across (all|every|his)|which (of his )?(projects|jobs|roles|companies|employers)|list (all|every|his)|every (job|role|project|employer)|all (of )?his (jobs|roles|projects|work)|where (has|did) he (use|used|worked with))\b/i;
+/** Sections handed to the model on the graph route (MAX_SECTIONS is 3 otherwise). */
+const GRAPH_MAX = 5;
+
+/** Sections the entity graph links to any entity named in the question. */
+export function graphSections(question: string): string[] {
+  const text = question.toLowerCase();
+  const titles = Object.entries(idx.graph ?? {})
+    .filter(([entity]) => new RegExp(`(^|[^a-z0-9])${entity.replace(/[.+#*?()[\]]/g, "\\$&")}($|[^a-z0-9])`).test(text))
+    .flatMap(([, t]) => t);
+  return [...new Set(titles)];
+}
 
 /**
  * The part of a question that is actually about the corpus.
@@ -340,7 +359,7 @@ export function sourceTitles(chunks: { title: string }[]): string[] {
 
 export async function retrieve(
   query: string,
-  { topK = 4, floor = RELEVANCE_FLOOR, metric = "cosine" as Metric, deadline = Infinity } = {},
+  { topK = 4, floor = RELEVANCE_FLOOR, metric = "cosine" as Metric, deadline = Infinity, question = "" } = {},
 ) {
   query = core(query);
   // Typos are repaired against the index vocabulary before scoring. BM25
@@ -443,10 +462,28 @@ export async function retrieve(
     });
   }
 
-  const sections = [...bySection.entries()]
+  const reranked = [...bySection.entries()]
     .map(([title, v]) => ({ title, ...v }))
-    .sort((a, b) => b.score - a.score || b.hits - a.hits)
-    .slice(0, Math.min(topK, MAX_SECTIONS));
+    .sort((a, b) => b.score - a.score || b.hits - a.hits);
+
+  // Graph route (A15). An aggregation question that names an entity gets every
+  // section the entity graph links to it, fused with the reranked sections by
+  // RRF: score(t) = sum over the two lists of 1 / (RRF_K + rank), rank 1-based.
+  // The graph list is ordered by each section's best fused passage score.
+  const asked = question || query;
+  const linked = AGGREGATE.test(asked) ? graphSections(asked) : [];
+  const fromGraph = new Set(linked);
+  let sections = reranked.slice(0, Math.min(topK, MAX_SECTIONS));
+  if (linked.length) {
+    const bestFused = (t: string) => Math.max(0, ...fused.filter((r) => r.passage.parent === t).map((r) => r.score));
+    const graphList = [...linked].sort((a, b) => bestFused(b) - bestFused(a));
+    const rrf = (t: string) =>
+      [reranked.findIndex((s) => s.title === t), graphList.indexOf(t)].reduce((sum, r) => sum + (r >= 0 ? 1 / (RRF_K + r + 1) : 0), 0);
+    sections = [...new Set([...reranked.map((s) => s.title), ...graphList])]
+      .sort((a, b) => rrf(b) - rrf(a))
+      .slice(0, GRAPH_MAX)
+      .map((title) => reranked.find((s) => s.title === title) ?? { title, score: -Infinity, lexicalScore: 0, hits: 0 });
+  }
 
   // topK is a ceiling, not a quota. A section scoring far under the leader is
   // not evidence, it is filler, and filler in the context window is how a
@@ -454,7 +491,7 @@ export async function retrieve(
   // always survives: a weak best match is still the best match.
   const lead = sections[0]?.score ?? 0;
   // With logits the floor is absolute (BANDS.partial); with fused scores it stays relative.
-  const kept = sections.filter((s, i) => i === 0 || (relevance !== null ? s.score >= BANDS.partial : s.score >= lead * floor));
+  const kept = sections.filter((s, i) => i === 0 || fromGraph.has(s.title) || (relevance !== null ? s.score >= BANDS.partial : s.score >= lead * floor));
   const chosen = new Set(kept.map((s) => s.title));
 
   const trace: RetrievalTrace = {
@@ -466,6 +503,7 @@ export async function retrieve(
     passages: idx.passages.length,
     band,
     relevance,
+    graph: linked.length ? linked : undefined,
     // Reported per section rather than per passage. Fifty-three rows is a
     // table; eighteen is a figure a reader can actually follow, and the section
     // is the unit the answer is grounded in.

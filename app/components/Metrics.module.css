@@ -62,7 +62,7 @@
 
 a.source {
   /* The visible mark stays a 17px footnote; the target does not. A pseudo
-     element carries the hit area out to 24px without moving the glyph or the
+     element carries the hit area out to 28px without moving the glyph or the
      baseline it is aligned to. */
   position: relative;
   /* Strict rule (2026-10-02): a figure's witness is a link, and a link that
@@ -77,7 +77,7 @@ a.source::after {
   position: absolute;
   inset: 50% 0 auto;
   translate: 0 -50%;
-  min-height: 24px;
+  min-height: 28px;
   height: 100%;
   width: 100%;
 }
@@ -250,8 +250,8 @@ a.source:hover {
   color: var(--figure-tint, var(--ink));
 }
 
-/* Measurements wear the accent. Kushal's brief (2026-10: "numbers can suit a
-   different thing" than the product colours) and the tone test in
+/* Measurements wear the accent. Numbers may wear a colour apart from the
+   product colours; the tone test in
    scripts/ui-highlights.py: a figure that is a number is coloured, in one tone
    across every box, so the eye finds the measurements before the prose. */
 .value[data-numeric] {
@@ -262,4 +262,22 @@ a.source:hover {
    per digit, which gave the browser a break point between "91." and "4%". */
 .value[data-numeric] {
   white-space: nowrap;
+}
+
+/* The ranking stamp on a lead figure: a small seal under the number, in the
+   figure face so it reads as part of the reading, never over its digits. */
+.seal {
+  display: block;
+  width: fit-content;
+  margin-block: 0 var(--s-2);
+  padding: 0.32em 0.6em 0.26em;
+  border-radius: 999px;
+  font-family: var(--font-plate, inherit);
+  font-size: var(--step--1);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--on-signal);
+  background: var(--ink);
 }

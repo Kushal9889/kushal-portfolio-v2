@@ -275,6 +275,11 @@
   border-color: var(--ink);
 }
 
+/* Same press as Ask: the two controls sit side by side and answer alike. */
+.mic:active {
+  scale: 0.98;
+}
+
 /* Listening is live state, and --live is the token that means live. This wore
    the brand accent back when the accent meant "happening now"; under ADR-005 it
    means "the one thing to press", and a microphone that is already listening is
@@ -1268,6 +1273,8 @@
   padding: 0 0 var(--s-1);
   gap: var(--s-2);
   overflow-x: auto;
+  /* A flick comes to rest on a chip's edge, not halfway through a label. */
+  scroll-snap-type: x proximity;
   scrollbar-width: none;
   -webkit-mask-image: linear-gradient(to right, var(--ink) calc(100% - 2rem), transparent);
   mask-image: linear-gradient(to right, var(--ink) calc(100% - 2rem), transparent);
@@ -1278,6 +1285,7 @@
 }
 
 .dockLink {
+  scroll-snap-align: start;
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
@@ -1471,4 +1479,17 @@
 
 .cites li[data-none] {
   color: var(--warn);
+}
+
+/* The answer's score, inside its band tag (lib/agent/ground.ts answerScore). */
+.score {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The held-out test result, one quiet line above the input. */
+.tested {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
 }

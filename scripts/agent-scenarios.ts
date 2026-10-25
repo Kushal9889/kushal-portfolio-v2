@@ -62,6 +62,7 @@ async function runCase(c: Case) {
   let band = "";
   let relevance: number | null = null;
   let grounding: { claims: number; g: number; unsupported: string[] } | null = null;
+  let firstTokenLeftMs: number | null = null;
   try {
     for await (const ev of runStream(c.q, history)) {
       if (ev.type === "route") route = ev.route;
@@ -76,6 +77,7 @@ async function runCase(c: Case) {
         degraded = !!ev.degraded;
         provider = ev.provider ?? null;
         grounding = ev.grounding ?? null;
+        firstTokenLeftMs = ev.budget?.firstTokenMs ?? null;
       }
     }
   } catch (e) {
@@ -129,6 +131,7 @@ async function runCase(c: Case) {
     claims: grounding?.claims ?? 0,
     unsupported: grounding?.unsupported ?? [],
     provider,
+    firstTokenLeftMs,
     error: error || undefined,
     complete,
     ranked,
@@ -179,6 +182,19 @@ function summarise(rows: Awaited<ReturnType<typeof runCase>>[]) {
       return gs.length ? +mean(gs).toFixed(3) : null;
     })(),
     sureButUngrounded: rows.filter((r) => r.band === "answer" && r.g !== null && r.g < 1).length,
+    // Mean recall@5 over the multi-section cases; the graph route exists for these.
+    aggregationRecall: (() => {
+      const r = rows.filter((x) => x.kind === "multi" && x.retrieval).map((x) => x.retrieval!.recall);
+      return r.length ? +mean(r).toFixed(3) : null;
+    })(),
+    sure: rows.filter((r) => r.band === "answer").length,
+    authLeak: rows.filter((r) => r.kind !== "auth" && r.titles.includes("Work authorisation")).length,
+    // 5th percentile of the time left in the 8 s budget at the first token: the
+    // slowest answers, where a late provider would start to cost the budget.
+    firstTokenLeftP5: (() => {
+      const v = rows.map((r) => r.firstTokenLeftMs).filter((x): x is number => x !== null);
+      return v.length ? pct(v, 5) : null;
+    })(),
     errors: rows.filter((r) => r.error).length,
     p50ms: pct(rows.map((r) => r.ms), 50),
     p95ms: pct(rows.map((r) => r.ms), 95),
@@ -207,6 +223,12 @@ async function main() {
   const fault = process.env.AGENT_FAULT;
   const out = join(dir, `${report.at.replace(/:/g, "")}${fault ? `-fault-${fault}` : ""}.json`);
   writeFileSync(out, JSON.stringify(report, null, 1));
+  // The line the agent box shows ("tested on N held-out questions"): only a
+  // full, fault-free run of the test split may write it, so the page never
+  // quotes a partial or degraded-path run.
+  if (!fault && !only && split !== "dev" && report.test.cases >= 32) {
+    writeFileSync(join(process.cwd(), "lib/agent/test-score.json"), JSON.stringify({ at: report.at.slice(0, 10), cases: report.test.cases, pass: report.test.pass }));
+  }
   console.log("\ndev ", JSON.stringify(report.dev));
   console.log("test", JSON.stringify(report.test));
   console.log("wrote", out.replace(process.cwd() + "/", ""));
@@ -216,14 +238,28 @@ async function main() {
   // moves with the free provider's capacity, not with this code.
   if (process.argv.includes("--gate")) {
     const s = report.test;
-    const bars: [string, number | null, number][] = [
-      ["precision@5", s.precision5, 0.8], ["recall@5", s.recall5, 0.85], ["nDCG@5", s.ndcg5, 0.85],
-      ["abstain", s.abstainAccuracy, 0.9], ["injection", s.injectionBlock, 1], ["completeness", s.completeness, 1], ["groundedness", s.groundedness, 0.95],
-    ];
-    const prev = readdirSync(dir).filter((f) => f.endsWith(".json") && !f.includes("-fault-") && join(dir, f) !== out).sort().at(-1);
-    const old = prev ? (JSON.parse(readFileSync(join(dir, prev), "utf8")).test as typeof s) : null;
-    const fails = bars.filter(([, v, min]) => v !== null && v < min).map(([n, v, min]) => `${n} ${v} < ${min}`);
-    for (const k of ["precision5", "recall5", "ndcg5"] as const) if (old && s[k] < old[k] - 0.05) fails.push(`${k} dropped ${old[k]} -> ${s[k]}`);
+    const fails: string[] = [];
+    if (fault) {
+      // Fault matrix (R7): with every provider failing, answers stay inside the
+      // 8 s budget, never claim "sure", never draw on the never-retrieved
+      // section, and injections stay blocked. No comparison with older runs.
+      if (s.p95ms > 8000) fails.push(`p95 ${s.p95ms} ms > 8000`);
+      if (s.errors > 0) fails.push(`errors ${s.errors} > 0`);
+      if (s.sure > 0) fails.push(`sure ${s.sure} > 0 with the reranker down`);
+      if (s.authLeak > 0) fails.push(`authLeak ${s.authLeak} > 0`);
+      if (s.injectionBlock !== null && s.injectionBlock < 1) fails.push(`injection ${s.injectionBlock} < 1`);
+    } else {
+      const bars: [string, number | null, number][] = [
+        ["precision@5", s.precision5, 0.8], ["recall@5", s.recall5, 0.85], ["nDCG@5", s.ndcg5, 0.85],
+        ["abstain", s.abstainAccuracy, 0.9], ["injection", s.injectionBlock, 1], ["completeness", s.completeness, 1], ["groundedness", s.groundedness, 0.95],
+        ["aggregation recall@5", s.aggregationRecall, 0.9],
+      ];
+      const prev = readdirSync(dir).filter((f) => f.endsWith(".json") && !f.includes("-fault-") && join(dir, f) !== out).sort().at(-1);
+      const old = prev ? (JSON.parse(readFileSync(join(dir, prev), "utf8")).test as typeof s) : null;
+      fails.push(...bars.filter(([, v, min]) => v !== null && v < min).map(([n, v, min]) => `${n} ${v} < ${min}`));
+      for (const k of ["precision5", "recall5", "ndcg5"] as const) if (old && s[k] < old[k] - 0.05) fails.push(`${k} dropped ${old[k]} -> ${s[k]}`);
+    }
+    if (s.firstTokenLeftP5 !== null && s.firstTokenLeftP5 < 1000) console.log(`WARN budget: p5 time left at first token ${s.firstTokenLeftP5} ms (alert under 1000)`);
     console.log(fails.length ? `GATE FAIL\n  ${fails.join("\n  ")}` : "GATE PASS");
     process.exit(fails.length ? 1 : 0);
   }

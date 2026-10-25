@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { reducedMotion } from "@/lib/verbs";
 
 const calm = () =>
-  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  typeof window !== "undefined" && reducedMotion();
 
 /**
  * A streamed answer revealed at reading pace.

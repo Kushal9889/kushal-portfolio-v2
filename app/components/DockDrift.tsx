@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { reducedMotion } from "@/lib/verbs";
 
 /**
  * Drifts a horizontally scrolling row to and fro so its overflow is visible
@@ -20,7 +21,7 @@ export default function DockDrift({
   const ref = useRef<HTMLUListElement>(null);
   useEffect(() => {
     const el = ref.current;
-    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!el || reducedMotion()) return;
     const events = ["pointerdown", "pointerenter", "focusin", "touchstart", "wheel"];
     let raf = 0;
     let dir = 1;

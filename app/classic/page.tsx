@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import ClassicPage from "../ClassicPage";
 
-/** The previous page, kept reachable while the stage chapters replace it. */
+/** Old address of the main page, kept so shared links still work. */
 export const metadata: Metadata = {
   title: "Complete record",
   robots: { index: false, follow: false },

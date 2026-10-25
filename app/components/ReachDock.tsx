@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { mailtoLink, type ReachContext } from "@/lib/reach";
 import { track } from "@/lib/analytics";
+import { reducedMotion } from "@/lib/verbs";
 import { MailMark, LinkedInMark } from "./Mark";
 import styles from "./ReachDock.module.css";
 
@@ -102,6 +103,9 @@ export default function ReachDock({
           </span>
         </a>
 
+        <SearchKey />
+        <MotionSwitch />
+
         <a
           className={styles.side}
           href={resumeHref}
@@ -124,5 +128,60 @@ export default function ReachDock({
         </a>
       </nav>
     </div>
+  );
+}
+
+/**
+ * The command palette, findable. It has opened on Cmd/Ctrl+K since it shipped
+ * and nothing on the page said so; a shortcut nobody can see is a feature only
+ * its author uses. The key is shown for the reader's platform after mount (the
+ * server cannot know it). Hidden where there is no keyboard to press it on.
+ */
+function SearchKey() {
+  const [mac, setMac] = useState(true);
+  useEffect(() => setMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)), []);
+
+  return (
+    <button
+      type="button"
+      className={`${styles.side} ${styles.search}`}
+      aria-keyshortcuts={mac ? "Meta+K" : "Control+K"}
+      onClick={() =>
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: mac, ctrlKey: !mac, bubbles: true }))
+      }
+    >
+      Search
+      <kbd className={styles.kbd}>{mac ? "\u2318K" : "Ctrl K"}</kbd>
+    </button>
+  );
+}
+
+/**
+ * The reader's own motion choice. The film, the video loops and every
+ * animation follow the OS reduced-motion setting by default; this flips it for
+ * this site only and remembers it (FilmBoot applies it before the next paint,
+ * so the page reloads once). With Reduce Motion on in macOS nothing moved
+ * and there was no way to see it.
+ */
+function MotionSwitch() {
+  const [moving, setMoving] = useState<boolean | null>(null);
+  useEffect(() => setMoving(!reducedMotion()), []);
+
+  return (
+    <button
+      type="button"
+      className={styles.side}
+      aria-pressed={moving ?? undefined}
+      onClick={() => {
+        try {
+          localStorage.setItem("motion", moving ? "reduced" : "allowed");
+        } catch {
+          return;
+        }
+        location.reload();
+      }}
+    >
+      {moving === false ? "Motion off" : "Motion on"}
+    </button>
   );
 }

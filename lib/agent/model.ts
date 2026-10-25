@@ -1,4 +1,5 @@
 import { AzureChatOpenAI, ChatOpenAI } from "@langchain/openai";
+import { trace } from "@opentelemetry/api";
 
 /**
  * Provider selection.
@@ -405,6 +406,7 @@ function faulted(ms: number): Promise<never> | null {
  * Every path that calls a provider goes through here.
  */
 function withDeadline<T>(work: () => Promise<T>, what: string, ms = FIRST_TOKEN_MS): Promise<T> {
+  trace.getActiveSpan()?.setAttribute(`agent.budget_left_ms.${what.replace(/ /g, "_")}`, ms);
   return Promise.race([
     faulted(ms) ?? work(),
     new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`${what} deadline`)), ms)),

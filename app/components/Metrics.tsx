@@ -35,12 +35,14 @@ function percentPosition(value: string): number | null {
   return n;
 }
 
-export default function Metrics({ items }: { items: Metric[] }) {
+/** `seal` marks the lead figure with a ranking it already carries elsewhere in the
+ *  facts (the JEE badge's "Top 1%"), as a stamp beside the number. */
+export default function Metrics({ items, seal }: { items: Metric[]; seal?: string }) {
   if (items.length === 0) return null;
 
   return (
     <dl className={styles.grid}>
-      {items.map((m) => (
+      {items.map((m, i) => (
         <div
           key={m.label}
           className={styles.cell}
@@ -70,6 +72,7 @@ export default function Metrics({ items }: { items: Metric[] }) {
             {m.value}
           </dt>
           <dd className={styles.label}>
+            {i === 0 && seal && <span className={styles.seal}>{seal}</span>}
             {m.label}
             {/* Where the figure comes from, attached to the figure.
                 A number on a portfolio is worth exactly as much as the reader's

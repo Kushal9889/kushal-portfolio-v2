@@ -1,6 +1,7 @@
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
-import { loadContent } from "../lib/content";
+import { loadContent, corpusHash } from "../lib/content";
 import { chunkSection, sentences, estimateTokens, BREAK_BELOW, type Passage } from "../lib/agent/chunk";
 import { indexTokens } from "../lib/agent/tokenize";
 import { EMBED_MODEL } from "../lib/agent/model";
@@ -208,14 +209,36 @@ async function main() {
    * split happens at a topic boundary rather than at a character count, which
    * is the whole difference between semantic chunking and a text splitter.
    */
+  /*
+   * Incremental: a section whose text and model are unchanged since the last
+   * build keeps its passages and vectors, so an unchanged corpus makes 0
+   * embedding calls. sha256(model + title + body) per section, stored in the
+   * index; `--full` re-embeds everything.
+   */
+  const path = join(process.cwd(), "lib", "agent", "index.json");
+  const hashOf = (p: { title: string; body: string }) =>
+    createHash("sha256").update(`${EMBED_MODEL}\n${p.title}\n${p.body}`).digest("hex");
+  const hashes = Object.fromEntries(parents.map((p) => [p.title, hashOf(p)]));
+  const prev =
+    !process.argv.includes("--full") && existsSync(path)
+      ? (JSON.parse(readFileSync(path, "utf8")) as { hashes?: Record<string, string>; breakBelow?: number; passages: Passage[]; vectors: number[][] | null })
+      : null;
+  const reuse = new Set(
+    prev?.vectors && prev.breakBelow !== undefined ? parents.filter((p) => prev.hashes?.[p.title] === hashes[p.title]).map((p) => p.title) : [],
+  );
+  console.log(`build-index: ${reuse.size} of ${parents.length} sections unchanged, ${parents.length - reuse.size} to embed`);
+
   const sentenceIndex: { parent: number; text: string }[] = [];
   for (const [i, p] of parents.entries()) {
+    if (reuse.has(p.title)) continue;
     for (const text of sentences(p.body)) sentenceIndex.push({ parent: i, text });
   }
   console.log(`build-index: ${sentenceIndex.length} sentences across ${parents.length} sections`);
 
-  let breakBelow = BREAK_BELOW;
-  const sentenceVectors = await embedAll(
+  // The break point is read from the whole corpus on a full build and kept on
+  // an incremental one, so a one-section edit cannot move every boundary.
+  let breakBelow = reuse.size ? prev!.breakBelow! : BREAK_BELOW;
+  const sentenceVectors = !sentenceIndex.length ? [] : await embedAll(
     sentenceIndex.map((s) => s.text),
     "passage",
   );
@@ -248,7 +271,7 @@ async function main() {
     // The break point is this corpus's own p25 under the model that embedded
     // it. A pinned 0.47 was the p25 of an older model; under the current one it
     // sat above the median and split almost every sentence pair.
-    if (sims.length) breakBelow = sims[Math.floor(sims.length * 0.25)];
+    if (sims.length && !reuse.size) breakBelow = sims[Math.floor(sims.length * 0.25)];
     console.log(
       `build-index: adjacent-sentence similarity  p10 ${at(0.1)}  p25 ${at(0.25)} ` +
         `p50 ${at(0.5)}  p90 ${at(0.9)}   (breaking below ${breakBelow.toFixed(3)})`,
@@ -258,8 +281,17 @@ async function main() {
   // Split each section, giving the chunker the sentence vectors for that
   // section only. A boundary is never allowed to cross a heading.
   const passages: Passage[] = [];
+  const kept = new Map<Passage, number[]>();
   let cursor = 0;
-  for (const [i, p] of parents.entries()) {
+  for (const p of parents) {
+    if (reuse.has(p.title)) {
+      prev!.passages.forEach((q, n) => {
+        if (q.parent !== p.title) return;
+        passages.push(q);
+        kept.set(q, prev!.vectors![n]);
+      });
+      continue;
+    }
     const count = sentences(p.body).length;
     const vectors = sentenceVectors ? sentenceVectors.slice(cursor, cursor + count) : undefined;
     cursor += count;
@@ -322,13 +354,34 @@ async function main() {
   // windowing and no mean-pooling. That pooling was averaging three
   // semantically different windows into one vector that represented none of
   // them, on exactly the sections that explain how this page works.
-  const vectors = await embedAll(
-    passages.map((p) => `${p.parent}\n${p.text}`),
-    "passage",
-  );
+  const fresh = passages.filter((p) => !kept.has(p));
+  const embedded = fresh.length ? await embedAll(fresh.map((p) => `${p.parent}\n${p.text}`), "passage") : [];
+  const vectors = embedded ? passages.map((p) => kept.get(p) ?? embedded[fresh.indexOf(p)]) : null;
+  console.log(`build-index: embedded ${fresh.length} passages, reused ${kept.size}`);
 
-  const out = { passages, parents, tf, lengths, df, avgLength, vectors };
-  const path = join(process.cwd(), "lib", "agent", "index.json");
+  /*
+   * Entity graph for aggregation questions (retrieve.ts graphSections). Nodes:
+   * every technology named on a section's Stack line. Edge: entity -> section
+   * when the section's stack lists it or its text names it on a word boundary.
+   * Summary sections are left out: they name everything and answer "where" for
+   * nothing. Measured 2026-10-10: docker -> the 3 jobs labelled for case 46,
+   * langgraph -> the 3 sections labelled for case 47.
+   */
+  const GRAPH_SKIP = new Set([
+    "Skills", "What he is good at", "What he does not do", "Who he is", "Proof wall",
+    "Work authorisation", "Certifications", "Achievements", "Availability",
+  ]);
+  const named = (text: string, term: string) =>
+    new RegExp(`(^|[^a-z0-9])${term.toLowerCase().replace(/[.+#*?()[\]]/g, "\\$&")}($|[^a-z0-9])`).test(text.toLowerCase());
+  const vocab = [...new Set(sections.flatMap((s) => s.stack.map((t) => t.trim())).filter(Boolean))];
+  const graph = Object.fromEntries(
+    vocab
+      .map((t) => [t.toLowerCase(), sections.filter((s) => !GRAPH_SKIP.has(s.title) && (s.stack.includes(t) || named(s.body, t))).map((s) => s.title)] as const)
+      .filter(([, titles]) => titles.length > 0),
+  );
+  console.log(`build-index: entity graph ${Object.keys(graph).length} entities`);
+
+  const out = { passages, parents, tf, lengths, df, avgLength, vectors, hashes, breakBelow, corpus: corpusHash(), graph };
 
   writeFileSync(path, JSON.stringify(out));
 

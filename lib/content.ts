@@ -1,4 +1,5 @@
 import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 
 const CONTENT_DIR = join(process.cwd(), "content");
@@ -342,4 +343,15 @@ export function allLinks(): string[] {
     for (const comp of c.components ?? []) if (comp.url) found.add(comp.url);
   }
   return [...found];
+}
+
+/**
+ * One hash for everything the retrieval index is built from. build-index stores
+ * it and verify:facts compares, so an edit to facts.md or a note without a
+ * rebuilt index fails the check instead of serving stale passages.
+ */
+export function corpusHash(): string {
+  return createHash("sha256")
+    .update(JSON.stringify(loadContent().sections.map((s) => [s.title, s.body])))
+    .digest("hex");
 }

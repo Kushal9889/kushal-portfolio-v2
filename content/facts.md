@@ -376,7 +376,7 @@ Frontend: React, Redux, Next.js.
 @metric 64 | CodeChef global rank, February 2022 Long Challenge | resume
 @metric $12K | raised for Tarang Fest 2023, which he led | resume
 
-JEE Mains 2020: 99.1 percentile, top 0.9 percent nationally.
+JEE Mains 2020: 99.1 percentile, top 1% of 860K+ candidates.
 
 CodeChef global rank 64, February 2022 Long Challenge. Third place, Code Rumble 2023.
 
@@ -393,7 +393,7 @@ The public record behind the claims on this page, shown as badges: what he shipp
 @badge Shipped | MCP #3490 | Issue he filed in the Model Context Protocol Python SDK, open | https://github.com/modelcontextprotocol/python-sdk/issues/3490 | Model Context Protocol
 @badge Published | IEEE 2024 | First author, IEEE ICAICCIT 2024 | https://doi.org/10.1109/ICAICCIT64383.2024.10912101 | IEEE
 @badge Published | IGI 2024 | Co-author, IGI Global 2024 | https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities
-@badge Ranked | JEE top 1% | JEE Main 2020, 99.1 percentile | resume
+@badge Ranked | JEE top 1% of 860K+ | JEE Main 2020, 99.1 percentile, top 1% of 860K+ candidates | resume
 @badge Ranked | CodeChef 64 | CodeChef global rank 64, February 2022 | resume | CodeChef
 @badge Ranked | BITBYTE 70+ | Co-founded the BITBYTE coding community, 70+ members | resume
 

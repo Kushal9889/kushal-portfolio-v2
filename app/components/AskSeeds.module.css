@@ -24,6 +24,18 @@
     border-color var(--t-fast) var(--ease-out);
 }
 
+/* A suggestion is still a tap target: 44px tall on touch, the type unchanged. */
+@media (pointer: coarse) {
+  .seed {
+    min-height: 44px;
+    align-items: center;
+  }
+}
+
+.seed:active {
+  scale: 0.98;
+}
+
 .seed:hover {
   color: var(--ink);
   border-bottom-color: var(--rule);

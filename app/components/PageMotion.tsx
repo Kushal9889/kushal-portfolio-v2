@@ -216,7 +216,7 @@ export default function PageMotion() {
 
     /* --- Section arrival: one light sweep ---------------------------------
      *
-     * Kushal's brief asks for laser-like light sweeps on the key sections. The
+     * The key sections carry laser-like light sweeps. The
      * figures already carry theirs (the scan above); the sections that hold no
      * figures to scan (Measured, Contact) carry one beam along their top rule,
      * once, when they first arrive. CSS in globals.css; this only marks them.
@@ -351,7 +351,11 @@ export default function PageMotion() {
      * reporting.
      */
     const rescue = () => {
-      for (const el of document.querySelectorAll<HTMLElement>("main *")) {
+      // A stranded tween leaves its opacity inline, and clearProps only removes
+      // inline values, so only elements that carry one can need the net. Reading
+      // computed style on every node of main cost 157 to 194 ms in one task at
+      // 390 px (U14); the attribute query is the same set, found natively.
+      for (const el of document.querySelectorAll<HTMLElement>('main [style*="opacity"]')) {
         if (Number(getComputedStyle(el).opacity) < 1 && !el.closest('[data-state="running"]')) {
           gsap.set(el, { clearProps: "opacity,transform" });
         }

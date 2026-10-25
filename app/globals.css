@@ -1840,6 +1840,12 @@ main > section[data-register="chapter"] > .wrap h2 {
   text-wrap: balance;
 }
 
+/* The open-source heading is a six-word sentence, not a label: set in sentence
+   case so the uppercase rule above stays on headings of one to three words. */
+main > section[data-register="chapter"][data-lead="artifact"] > .wrap h2 {
+  text-transform: none;
+}
+
 /* Declaring the ground back to paper, for a written block sitting inside a live
    one. A console nested in a console is harmless -- these values are absolute,
    not relative, so the inner scope simply restates what it already inherited --
@@ -2197,7 +2203,7 @@ button {
 button,
 [role="button"],
 summary,
-a[data-pull] {
+a {
   /* Press depth, not a colour change. The surface goes down and its cast edge
      collapses, which is what a physical control does and what a reader reads as
      "that registered" without having to notice a hue. */
@@ -2209,7 +2215,7 @@ a[data-pull] {
 button:active,
 [role="button"]:active,
 summary:active,
-a[data-pull]:active {
+a:active {
   transform: translateY(1px);
 }
 
@@ -2274,7 +2280,7 @@ button[class*="seed"]::before {
   button:active,
   [role="button"]:active,
   summary:active,
-  a[data-pull]:active {
+  a:active {
     transform: none;
   }
 
@@ -2454,6 +2460,20 @@ html[data-film="live"] main > section:nth-of-type(even) > .wrap {
   html[data-film="live"] main > section > .wrap {
     --panel-alpha: 100%;
   }
+
+  /* Every frosted surface goes solid, not only the section panels: the phone
+     blocks and the hero console blurred the film with no way to turn it off. */
+  html[data-film="live"] main > section > .wrap,
+  html[data-film="live"] main > section > .wrap > *,
+  html[data-film="live"] body > header [data-surface="console"] {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  html[data-film="live"] main > section > .wrap > :not([class*="roles"]),
+  html[data-film="live"] body > header [data-surface="console"] {
+    background: var(--paper);
+  }
 }
 
 /* The console is the one raised instrument in the hero. Its grounds keep their
@@ -2568,10 +2588,21 @@ main a[class*="primary"]:hover {
   transform: translateX(3px);
 }
 
+/* Pressed: the nudge stays and the row goes down 1px, so the press is not
+   swallowed by the hover rule above it (same specificity, later wins). */
+main a[class*="link"]:active,
+main a[class*="item"]:active,
+main a[class*="primary"]:active {
+  transform: translate(3px, 1px);
+}
+
 @media (prefers-reduced-motion: reduce) {
   main a[class*="link"]:hover,
   main a[class*="item"]:hover,
-  main a[class*="primary"]:hover {
+  main a[class*="primary"]:hover,
+  main a[class*="link"]:active,
+  main a[class*="item"]:active,
+  main a[class*="primary"]:active {
     transform: none;
   }
 }
@@ -2628,10 +2659,16 @@ main a[class*="primary"]:hover {
    sentence keep the sentence's line height (WCAG 2.5.8 inline exception). */
 @media (pointer: coarse) {
   a[class*="source"],
-  a[href$=".vcf"] {
+  a[href$=".vcf"],
+  a[href^="tel:"],
+  main > section#running p a {
     display: inline-block;
     padding-block: 13px;
     margin-block: -13px;
+  }
+  /* "Read more" and "What he built" open on a press; 37px was short of it. */
+  summary {
+    min-height: 44px;
   }
   /* The padding would push a border underline 13px off the text; draw it
      on the glyphs instead. */
@@ -2744,7 +2781,16 @@ html[data-film="live"] body > header dl > div + div {
   border-top: var(--border-hair) solid var(--rule);
 }
 
-/* ---- No black boxes (impeccable quieter pass, 2026-10-01) ----------------
+/* On a phone the fact rows sit straight on the footage, outside the console,
+   and bright frames (paper, a lit keyboard) washed the text out. They take the
+   console's own fill there; on desktop the console already sits under them. */
+@media (max-width: 767px) {
+  html[data-film="live"] body > header dl {
+    background: color-mix(in oklab, var(--paper) 74%, transparent);
+  }
+}
+
+/* ---- No black boxes (2026-10-01) ------------------------------------------
  * Text is protected by the film itself: under every section's text the
  * renderer caps the footage's luminance (post.ts scrim, feathered over 72px),
  * so the film dims softly where words sit and stays bright everywhere else.

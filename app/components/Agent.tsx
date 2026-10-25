@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type { RetrievalTrace } from "@/lib/agent/retrieve";
 import { isAcceptance, type Offer } from "@/lib/agent/offers";
 import type { ToolResult } from "@/lib/agent/tools";
-import type { Grounding, Citation } from "@/lib/agent/ground";
+import { answerScore, type Grounding, type Citation } from "@/lib/agent/ground";
+import tested from "@/lib/agent/test-score.json";
 import { listen, speak, silence, speechSupported, synthesisSupported, warmNeural } from "@/lib/voice/speech";
 import { track, trackOnce } from "@/lib/analytics";
 import { mailtoLink } from "@/lib/reach";
@@ -14,6 +15,7 @@ import WorkLoop from "./WorkLoop";
 import Paced from "./Paced";
 import type { GlyphKey } from "@/lib/ui-icons";
 import styles from "./Agent.module.css";
+import { reducedMotion } from "@/lib/verbs";
 
 type Result = {
   answer: string;
@@ -272,7 +274,7 @@ export default function Agent({
     const offscreen = box.top < 0 || box.top > window.innerHeight * 0.6;
     if (!offscreen) return;
 
-    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const calm = reducedMotion();
     root.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "center" });
 
     /*
@@ -307,7 +309,13 @@ export default function Agent({
   }
 
   async function submit(question: string) {
-    if (!question.trim() || pending) return;
+    if (pending) return;
+    // An empty or blank question used to do nothing at all. The caret goes
+    // back to the field instead, so the press still answers.
+    if (!question.trim()) {
+      inputRef.current?.focus();
+      return;
+    }
 
     /*
      * "yes", answered where it was asked.
@@ -631,6 +639,11 @@ export default function Agent({
           Ask about this
         </button>
       )}
+      {/* Measured, not claimed: written by the last full run of the held-out
+          test split (scripts/agent-scenarios.ts), never by hand. */}
+      <p className={styles.tested}>
+        Tested on {tested.cases} held-out questions: {tested.pass} pass ({Math.round((100 * tested.pass) / tested.cases)}%), {tested.at}.
+      </p>
       <form
         className={styles.bar}
         onSubmit={(e) => {
@@ -950,6 +963,14 @@ export default function Agent({
                       return (
                         <span className={styles.band} data-band={band} role="status" aria-atomic="true">
                           {BAND_LABEL[band]}
+                          {(() => {
+                            const score = answerScore(band, turn.result.grounding, turn.result.citations);
+                            return score === null ? null : (
+                              <span className={styles.score} title="40% source match, 40% facts found in his record, 20% sentences with a source">
+                                {" "}{score}%
+                              </span>
+                            );
+                          })()}
                         </span>
                       );
                     })()}

@@ -108,6 +108,10 @@ export const NOT_IN_PROFILE = `That is not in his profile. It covers his work at
 export const PARTIAL_NOTE =
   "\n\nThe sections above are related to the question but may not state exactly what was asked. Say what he has done that is closest, then say plainly that his profile does not say whether he has done exactly that. Do not fill the gap.";
 
+/** Appended to the context on the graph route: the reader asked across his work. */
+export const AGGREGATE_NOTE =
+  "\n\nThe question asks across his work. Name every section above that answers it, one sentence each, with the detail or figure that section records. Do not stop at the first.";
+
 export function deflection(question: string): string {
   if (OVERRIDE.test(question)) {
     return `Not something I can do. Ask me about the work: the agent architecture, the retrieval setup, or what he shipped on Azure.`;

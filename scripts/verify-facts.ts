@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { loadContent, loadCertifications } from "../lib/content";
+import { loadContent, loadCertifications, corpusHash } from "../lib/content";
 import { SUBJECT, OPENER } from "../lib/reach";
 import evals from "../content/evals.json";
 import index from "../lib/agent/index.json";
@@ -245,6 +245,11 @@ if (month) {
       `availability "${availability}" is in the past; update content/facts.md frontmatter`,
     );
   }
+}
+
+// R3: the retrieval index must be built from the corpus as it is now.
+if ((index as { corpus?: string }).corpus !== corpusHash()) {
+  problems.push("lib/agent/index.json is stale: content changed since the last build:index");
 }
 
 if (problems.length) {

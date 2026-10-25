@@ -11,7 +11,8 @@ The gate compares with the previous bench file. A metric regresses only when
 all three hold: it got worse, Welch's t-test says the difference is real
 (p < 0.05), and the change crosses its budget. A single noisy run therefore
 cannot fail the gate, and a real slowdown cannot hide inside the noise. The
-absolute gates fail on their own: contrast under 7:1, film-link failing, or
+absolute gates fail on their own: contrast under the bar its run is held to
+(7:1 body copy, 4.5:1 large type and labels), film-link failing, or
 any scenario dropping more than 0.5 percent of frames on average.
 Exit 1 on any failure.
 """
@@ -64,7 +65,12 @@ def main():
     link = run([sys.executable, "scripts/film-link.py"])
     contrast = run([sys.executable, "scripts/film-contrast.py", "--width", "1440", "390"])
     axe = run([sys.executable, "scripts/ui-axe.py", "--force"])
-    worst = {w: float(r) for w, r in re.findall(r"== (\d+)px: .*?worst ([\d.]+):1", contrast.stdout)}
+    motion = run([sys.executable, "scripts/ui-motion.py", "--force"])
+    # Each width's worst run is printed with the bar that run is held to (7:1 for
+    # body copy, 4.5:1 for large type and labels), so the gate reads both.
+    found = re.findall(r"== (\d+)px: .*?worst ([\d.]+):1 \(needs ([\d.]+)\)", contrast.stdout)
+    worst = {w: float(r) for w, r, _ in found}
+    need = {w: float(n) for w, _, n in found}
     result = {
         "at": datetime.datetime.now().isoformat(timespec="seconds"),
         "load1": round(load, 2),
@@ -80,14 +86,19 @@ def main():
         if result["lag"][s]["dropped_pct"]["mean"] > BUDGET["dropped_pct"][1]:
             fails.append(f"{s} drops {result['lag'][s]['dropped_pct']['mean']}% on average (budget 0.5%)")
     if not result["link_pass"]:
-        fails.append("film-link failed (slow-link handover or backoff)")
+        fails.append("film-link failed (slow-link handover or backoff): " + " | ".join((link.stdout + link.stderr).strip().splitlines()[-4:])[:400])
     for w, ratio in worst.items():
-        if ratio < 7.0:
-            fails.append(f"contrast {ratio}:1 at {w}px (needs 7:1)")
+        if ratio < need[w]:
+            fails.append(f"contrast {ratio}:1 at {w}px (needs {need[w]}:1)")
     if len(worst) < 2:
         fails.append("film-contrast did not report both widths")
     if not result["axe_pass"]:
         fails.append("axe names/contrast: " + (next((l.strip() for l in axe.stdout.splitlines()[::-1] if l.strip().startswith("w")), "see docs/ui-axe.json")))
+    # Layout-shift budget (R5): only [shift] and [layout] fail the bench. [frames]
+    # is the open longest-frame row (U14) and [idle] is reported by ui-motion.py.
+    motion_fails = [f for f in json.load(open("docs/ui-motion.json")).get("fails", []) if "[shift]" in f or "[layout]" in f]
+    result["motion_fails"] = motion_fails
+    fails.extend("motion: " + f for f in motion_fails)
 
     prev = sorted(glob.glob(os.path.join(OUT, "*.json")))
     compared = []

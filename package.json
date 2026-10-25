@@ -40,7 +40,8 @@
     "bench:models": "tsx scripts/bench-models.ts",
     "build:guilloche": "tsx scripts/build-guilloche.ts",
     "bench:film": "python3 scripts/bench-film.py",
-    "test:agent": "tsx scripts/agent-scenarios.ts --split test --gate"
+    "test:agent": "tsx scripts/agent-scenarios.ts --split test --gate",
+    "test:agent:faults": "AGENT_FAULT=outage tsx scripts/agent-scenarios.ts --split test --gate && AGENT_FAULT=429 tsx scripts/agent-scenarios.ts --split test --gate && AGENT_FAULT=timeout tsx scripts/agent-scenarios.ts --split test --gate"
   },
   "dependencies": {
     "@langchain/core": "^1.2.5",

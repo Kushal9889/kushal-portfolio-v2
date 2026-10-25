@@ -19,6 +19,7 @@ import {
   POLICY_PREVIEW,
   NOT_IN_PROFILE,
   PARTIAL_NOTE,
+  AGGREGATE_NOTE,
 } from "./policy";
 import { analyze } from "./query";
 import { offersFor } from "./followups";
@@ -89,6 +90,8 @@ export type StreamEvent =
       grounding?: Grounding;
       /** The section each answer sentence came from, or null (ground.ts cite). */
       citations?: Citation[];
+      /** Time left in the 8 s budget after retrieval and at the first token. */
+      budget?: { afterRetrieveMs: number; firstTokenMs: number | null };
     }
   | { type: "error"; message: string };
 
@@ -314,7 +317,8 @@ export async function* runStream(
 
   const retrieveStart = Date.now();
   const { intent, query, asked, floor } = retrievalQuery(question, history);
-  const { chunks, trace, best } = await retrieve(query, { floor, deadline });
+  const { chunks, trace, best } = await retrieve(query, { floor, deadline, question });
+  const leftAfterRetrieve = deadline - Date.now();
   yield {
     type: "sources",
     titles: sourceTitles(chunks),
@@ -330,7 +334,10 @@ export async function* runStream(
     yield { type: "done", total: Date.now() - started, usage: null, policy: POLICY_PREVIEW };
     return;
   }
-  const context = chunks.map((c) => `## ${c.title}\n${c.body}`).join("\n\n") + (trace.band === "partial" ? PARTIAL_NOTE : "");
+  const context =
+    chunks.map((c) => `## ${c.title}\n${c.body}`).join("\n\n") +
+    (trace.band === "partial" ? PARTIAL_NOTE : "") +
+    (trace.graph?.length ? AGGREGATE_NOTE : "");
 
   try {
     /**
@@ -353,6 +360,7 @@ export async function* runStream(
      * the next one may not honour the flag.
      */
     let buffer = "";
+    let firstTokenLeft: number | null = null;
     let emitted = 0;
     let usage: { in: number; out: number } | null = null;
     let served: { provider: string; model: string } | null = null;
@@ -375,6 +383,7 @@ export async function* runStream(
       deadline,
     )) {
       buffer += token;
+      firstTokenLeft ??= deadline - Date.now();
 
       // The one case a post-hoc clean cannot cover.
       //
@@ -427,6 +436,7 @@ export async function* runStream(
       // The model's text only: the handoff close is fixed copy, not a claim.
       grounding: ground(cleaned, context, question),
       citations: cite(cleaned, chunks),
+      budget: { afterRetrieveMs: leftAfterRetrieve, firstTokenMs: firstTokenLeft },
     };
   } catch {
     /**
