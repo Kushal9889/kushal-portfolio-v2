@@ -86,6 +86,7 @@ invalidates earlier affected results.
 | Surface | Required target | Proof / release behavior |
 | --- | --- | --- |
 | Clean install/build | 100% success on Node 22 + locked npm dependencies | `npm ci`, `build:release`; no API calls to regenerate artifacts |
+| Server packaging | No CDN media/local reports in function traces; trace union <=200 MiB, runtime facts present | `verify-server-bundle.mjs` after every release build |
 | Source/data drift | 0 corpus mismatches; 0 unreviewed generated changes | `verify:facts`, git diff of content/index/media |
 | Functional correctness | 0 failed mandatory tests; every skip explained | `check`, unit/integration/system and gate self-tests |
 | Security | 0 high/critical production dependency findings | `npm audit --omit=dev --audit-level=high`; no blanket exceptions |

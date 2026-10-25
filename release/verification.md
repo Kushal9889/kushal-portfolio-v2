@@ -11,7 +11,7 @@ production or the active sessions' uncommitted changes.
 | Fact verification | Passed: 20 sections, 109 resume keywords, 31 sourced metrics |
 | Unit tests | 156 passed, 2 skipped pending corpus reconciliation |
 | New gate propagation tests | 5 passed |
-| New deployment-smoke self-tests | 3 passed, including corrupt PDF and malformed stream |
+| New deployment-smoke and bundle self-tests | 7 passed, including corrupt PDF, malformed stream, media-in-function and missing trace/facts cases |
 | Local HTTP deployment smoke | 6/6 passed: home, classic, health, PDF, llms, policy SSE |
 | Integration suite | 20 passed, 2 failed retrieval assertions |
 | HTTP system suite | 21 passed, 1 failed availability markup assertion |
@@ -38,6 +38,17 @@ They are interface evidence, never production/model performance evidence.
 Detailed reports remain local in `docs/`, `.claude/ux-evidence/` and the CI
 artifacts. The existing fixture/quality assertions are left failing for the
 owning sessions, per the request to focus this branch on deployment.
+
+## Function packaging repair
+
+The first Netlify preview attempt traced all 11,004 public files into the server
+handler, producing about 2.9 GB of function contents. It was cancelled before
+completion. Dynamic corpus paths allowed overly broad output tracing.
+`next.config.ts` now excludes CDN assets and local/test material from server
+traces and explicitly retains runtime content. The rebuilt trace union contains
+1,437 files / 80,579,109 bytes, below the new 200 MiB ceiling. Public source assets
+remain unchanged. The gate rejects public media in traces or missing runtime
+facts. Adapter-packaged size and preview delivery still require verification.
 
 ## Still required before production
 
