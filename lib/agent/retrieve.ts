@@ -678,8 +678,8 @@ async function retrieveRun(
    * reached the fused order stands and the band is never "answer": nothing has
    * judged relevance, and keyword score alone cannot (on the dev split "What did
    * he build in Rust?" scored BM25 37.5, above most answerable questions at
-   * 2-41). Partial when any keyword matches, unknown when none does (Kushal,
-   * 2026-10-10).
+   * 2-41). Partial when any keyword matches, unknown when none does
+   * (2026-10-10).
    */
   let shortlist = ranked.slice(0, PASSAGE_K);
   let band: Band;

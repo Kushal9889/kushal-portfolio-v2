@@ -1,3 +1,4 @@
+import { CASE_QUESTIONS } from "@/lib/agent/evals";
 import type { Metadata } from "next";
 import { loadContent, section, loadCertifications, progress } from "@/lib/content";
 import evals from "@/content/evals.json";
@@ -46,7 +47,7 @@ export default function VerbsLabPage() {
       }}
       print={{ lines: BEFORE.map((l) => l.text), machine: "retrieve: langchain-ai/deepagents#4846", sentence: profile.proof }}
       dock={{
-        cases: evals.cases_detail.map((c) => ({
+        cases: evals.cases_detail.filter((c) => CASE_QUESTIONS.has(c.name)).map((c) => ({
           name: c.name,
           runs: c.runs,
           passes: Math.round(c.passRate * c.runs),

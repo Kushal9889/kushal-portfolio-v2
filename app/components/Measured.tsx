@@ -47,18 +47,18 @@ const ROWS = [
     note: `Scored apart from the answers, because retrieval and generation fail for different reasons and were being reported as one number. The right section is retrieved every time; precision@1 is ${evals.retrieval?.precision1?.toFixed(2) ?? "0.86"} and MRR ${evals.retrieval?.mrr?.toFixed(2) ?? "0.93"}. Every failure left in this suite is the model summarising a figure away, never the retriever missing it.`,
   },
   {
-    value: `${evals.p50}ms`,
+    value: `${(evals.p50 / 1000).toFixed(1)} s`,
     label: "median answer",
     note: "End to end, retrieval through generation, against a free tier with no warm instance held open.",
   },
   {
-    value: `${evals.p95}ms`,
+    value: `${(evals.p95 / 1000).toFixed(1)} s`,
     label: "95th percentile",
     note: "The slow tail is the honest number. It is what a visitor gets when the provider is busy and the request is not cached.",
   },
 ];
 
-export default function Measured() {
+export default function Measured({ children }: { children?: React.ReactNode }) {
   const groups = Object.entries(evals.groups ?? {});
   const bothRetrievers = evals.denseUsed ?? 0;
   const retrievals = evals.retrievals ?? 0;
@@ -75,10 +75,25 @@ export default function Measured() {
               <span className={`${styles.value} tabular`}>{r.value}</span>
               <span className="label">{r.label}</span>
             </dt>
-            <dd className={styles.note}>{r.note}</dd>
           </div>
         ))}
       </dl>
+
+      {/* The four figures stay in view; what each one means, the case groups,
+          the limits and the full evidence open together. */}
+      <details className={`more ${styles.limits}`}>
+        <summary>
+          <span className="more-open">How each figure is measured, and what the {evals.cases} cases cannot catch</span>
+          <span className="more-close">Show less</span>
+        </summary>
+        <dl className={styles.grid}>
+          {ROWS.map((r) => (
+            <div key={r.label} className={styles.row}>
+              <dt className="label">{r.label}</dt>
+              <dd className={styles.note}>{r.note}</dd>
+            </div>
+          ))}
+        </dl>
 
       {/* The breakdown and the two latencies side by side: the cases on the
           left, how long a visitor waits on the right. Median and tail on one
@@ -124,11 +139,6 @@ export default function Measured() {
       {/* The limits of the thing above, stated by the thing above.
           A suite that only publishes its score is advertising; one that
           publishes what it cannot see is evidence. */}
-      <details className={`more ${styles.limits}`}>
-        <summary>
-          <span className="more-open">What these {evals.cases} cases cannot catch</span>
-          <span className="more-close">Show less</span>
-        </summary>
         <ul className={styles.limitList}>
           <li>
             Assertions are substring and route checks. Nothing here grades whether an answer reads
@@ -153,13 +163,14 @@ export default function Measured() {
             </li>
           )}
         </ul>
-      </details>
 
       <p className={styles.foot}>
         Measured <time dateTime={evals.measured}>{evals.measured}</time> by{" "}
         <code>npm run test:evals</code>, which writes the file this section reads. Nothing here is
         entered by hand, so the figures cannot drift from the run that produced them.
       </p>
+      {children}
+      </details>
     </div>
   );
 }

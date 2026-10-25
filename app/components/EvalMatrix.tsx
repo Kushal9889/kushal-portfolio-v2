@@ -1,5 +1,7 @@
 "use client";
 
+import { CASE_QUESTIONS } from "@/lib/agent/evals";
+
 import { useState } from "react";
 import evals from "@/content/evals.json";
 import Panel from "./Panel";
@@ -84,7 +86,7 @@ function reachedModel(c: Case) {
 }
 
 export default function EvalMatrix() {
-  const cases = (evals.cases_detail ?? []) as Case[];
+  const cases = (evals.cases_detail ?? []).filter((c) => CASE_QUESTIONS.has(c.name)) as Case[];
   const [open, setOpen] = useState<string | null>(null);
   if (cases.length === 0) return null;
 
@@ -114,7 +116,7 @@ export default function EvalMatrix() {
        * model summarising is not, which is the single most useful thing this
        * suite has to say and the one thing a ratio cannot. */}
       <p className={styles.headline}>
-        {cases.length} cases, {runs} runs each (the pass count is above, under How this is measured).
+        {cases.length} current cases shown, {runs} recorded runs each. Aggregate results above are from the full suite measured {evals.measured}.
         Every policy and authorisation run passes because none of them reaches a model. The
         grounding cases are where a language model has to summarise without dropping the figure,
         and that is where the suite is honest about being probabilistic.

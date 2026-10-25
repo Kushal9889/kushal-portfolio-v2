@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { VISITOR_JOURNEYS } from "@/lib/journeys";
 import styles from "./Palette.module.css";
 import { track } from "@/lib/analytics";
 import { ASK_EVENT } from "./Agent";
+import { useReferralTag } from "./Reach";
+import { mailtoLink } from "@/lib/reach";
 
 /**
  * A palette row.
@@ -35,11 +38,15 @@ const GLYPH: Record<Kind, string> = {
  */
 export default function Palette({
   email,
+  site,
+  who,
   github,
   repo,
   asks,
 }: {
   email: string;
+  site: string;
+  who?: string;
   github: string;
   repo: string;
   /** Questions the corpus marks as answerable, for the copy-out command. */
@@ -50,6 +57,7 @@ export default function Palette({
   const [cursor, setCursor] = useState(0);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const inputRef = useRef<HTMLInputElement>(null);
+  const tag = useReferralTag();
   const previous = useRef<HTMLElement | null>(null);
 
   const go = (id: string) => () => {
@@ -57,6 +65,9 @@ export default function Palette({
   };
 
   const commands: Command[] = [
+    ...VISITOR_JOURNEYS.map((journey): Command => ({
+      kind: "jump", label: `${journey.label}: ${journey.promise}`, hint: "on this page", run: () => { location.hash = journey.href; },
+    })),
     // The agent lives in the hero, not in a section of its own. This pointed at
     // an anchor that was removed when it moved.
     {
@@ -65,7 +76,7 @@ export default function Palette({
       hint: "top of page",
       run: () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
-        setTimeout(() => document.querySelector<HTMLInputElement>("#ask")?.focus(), 400);
+        setTimeout(() => document.querySelector<HTMLTextAreaElement>("#ask")?.focus(), 400);
       },
     },
     /* Every section, in the order the page reads them.
@@ -81,7 +92,15 @@ export default function Palette({
     { kind: "jump", label: "Work", hint: "section", run: go("work") },
     { kind: "jump", label: "Research", hint: "section", run: go("research") },
     { kind: "jump", label: "What else checks out", hint: "section", run: go("proof") },
-    { kind: "jump", label: "Get in touch", hint: "section", run: go("contact") },
+    {
+      kind: "open",
+      label: "Email him",
+      hint: "draft written",
+      run: () => {
+        track("contact", "palette-draft");
+        location.href = mailtoLink(email, site, "general", tag, who);
+      },
+    },
     {
       kind: "copy",
       label: "Copy email address",
@@ -102,6 +121,21 @@ export default function Palette({
       label: "Condense this page",
       hint: "headings, metrics and links only",
       run: () => document.documentElement.classList.toggle("condensed"),
+    },
+    {
+      // The reader's own motion choice, kept here and in the footer.
+      kind: "toggle",
+      label: "Turn motion on or off",
+      hint: "remembered on this device",
+      run: () => {
+        try {
+          const reduced = document.documentElement.dataset.motionPref === "reduced" || (!document.documentElement.dataset.motionPref && matchMedia("(prefers-reduced-motion: reduce)").matches);
+          localStorage.setItem("motion", reduced ? "allowed" : "reduced");
+        } catch {
+          return;
+        }
+        location.reload();
+      },
     },
     { kind: "open", label: "Print or save as PDF", hint: "uses the print stylesheet", run: () => window.print() },
     { kind: "open", label: "Open the source for this page", hint: "repo", run: () => window.open(repo, "_blank") },

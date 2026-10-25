@@ -7,7 +7,7 @@ import { trackOnce } from "@/lib/analytics";
 type State = { up: boolean; ms: number; at: Date } | "checking" | "unknown";
 
 /**
- * Reachability check against the deployed BU Life AI system.
+ * Reachability check against a deployed system.
  *
  * The previous version of this site rendered a hardcoded `agents_active: 3` and
  * `cache_hit_rate: 67` as though they were live telemetry, which is the easiest

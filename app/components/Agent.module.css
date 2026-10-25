@@ -1100,14 +1100,27 @@
 
 /* Filled actions keep their fill inside the hero console, whose scene paints
    every other button as a graphite plate, and drop the film's text halo. */
-.agent.agent :is(.lead, .go:not([data-kind="stop"])) {
+.agent.agent .lead {
   color: var(--paper);
   background: var(--signal);
   text-shadow: none;
 }
 
-.agent.agent :is(.lead, .go:not([data-kind="stop"])):hover {
+.agent.agent .lead:hover {
   background: color-mix(in oklch, var(--signal) 86%, var(--ink));
+}
+
+/* Ask is a neutral outline: the hero's "Email him" is the one filled accent on
+   the first screen, and a second fill beside it split the first choice. */
+.agent.agent .go:not([data-kind="stop"]) {
+  color: var(--ink);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--ink-faint);
+  text-shadow: none;
+}
+
+.agent.agent .go:not([data-kind="stop"]):hover {
+  background: var(--paper-sunk);
 }
 
 /* Phone: the five stage pills fold into one count; the full list is in the drawer. */
@@ -1324,4 +1337,37 @@
   .card .bar {
     animation: none;
   }
+}
+
+/* What the composer refused, or why a run ended, in plain words. */
+.inputNotice {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--ink);
+}
+
+.inputNotice:empty {
+  display: none;
+}
+
+.retry {
+  justify-self: start;
+  min-height: var(--tap);
+  padding: 0 1.1em;
+  font: inherit;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--paper-sunk, transparent);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+}
+
+/* What an opener's answer shows, beside the question. */
+.shows {
+  margin-inline-start: 0.6em;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  color: var(--ink-faint);
 }

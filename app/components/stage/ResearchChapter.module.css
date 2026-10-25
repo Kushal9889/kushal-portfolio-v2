@@ -354,3 +354,8 @@
     overflow-wrap: anywhere;
   }
 }
+
+/* The result block beside the paper; a grid child that may shrink. */
+.result {
+  min-width: 0;
+}

@@ -36,7 +36,7 @@ export default function Compare({
 
   return (
     <figure className={styles.compare}>
-      <figcaption className={styles.title}>{title}</figcaption>
+      <figcaption className={styles.srOnly}>{title}</figcaption>
       {/* The axis is hidden from screen readers, so its type and bounds are said
           once here, with the unit spelled out. */}
       <p className={styles.srOnly}>
@@ -69,7 +69,7 @@ export default function Compare({
           </span>
         ))}
       </div>
-      {note && <p className={styles.note}>{note}</p>}
+      {note && <p className={styles.srOnly}>{note}</p>}
     </figure>
   );
 }

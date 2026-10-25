@@ -165,3 +165,29 @@
     transition-property: background-color, opacity, color;
   }
 }
+
+.mobile {
+  margin: var(--s-4) auto;
+  inline-size: calc(100% - 2 * var(--s-4));
+  padding: var(--s-3);
+  background: var(--paper-sunk);
+  border: var(--border-hair) solid var(--rule);
+}
+.mobile summary, .mobile a {
+  display: flex;
+  align-items: center;
+  min-block-size: 44px;
+  color: var(--ink);
+  padding-inline: var(--s-2);
+}
+.mobile summary { cursor: pointer; }
+.mobile .list { list-style: none; padding: 0; margin: 0; }
+@media (min-width: 62rem) {
+  .mobile { display: none; }
+  .link { min-block-size: 44px; }
+  .link::after { inset: 0; }
+}
+
+.rail[data-at-top] {
+  visibility: hidden;
+}

@@ -122,7 +122,7 @@ export const STATIONS: Station[] = [
   },
   {
     chapter: "built",
-    sections: ["BU Life AI", "This site"],
+    sections: ["This site"],
     from: [-0.5, 0.4, 0.8],
     distance: 5,
     fov: 52,

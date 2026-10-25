@@ -28,12 +28,16 @@ export type RailItem = { id: string; label: string };
 
 export default function SectionRail({ items }: { items: RailItem[] }) {
   const [active, setActive] = useState<string | null>(null);
+  // The hero carries its own routes, so the rail waits until the reader leaves it.
+  const [atTop, setAtTop] = useState(false);
 
   useEffect(() => {
     const sections = items
       .map((i) => document.getElementById(i.id))
       .filter((el): el is HTMLElement => el !== null);
     if (sections.length === 0) return;
+    const top = document.getElementById("top");
+    if (top) sections.unshift(top);
 
     /*
      * IntersectionObserver, not a scroll listener and not a scroll timeline.
@@ -51,7 +55,9 @@ export default function SectionRail({ items }: { items: RailItem[] }) {
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) setActive(entry.target.id);
+          if (!entry.isIntersecting) continue;
+          setActive(entry.target.id === "top" ? null : entry.target.id);
+          setAtTop(entry.target.id === "top");
         }
       },
       { rootMargin: "-12% 0px -66% 0px", threshold: 0 },
@@ -62,7 +68,20 @@ export default function SectionRail({ items }: { items: RailItem[] }) {
   }, [items]);
 
   return (
-    <nav className={styles.rail} aria-label="Sections">
+    <>
+    <details className={`more ${styles.mobile}`}>
+      <summary>Sections</summary>
+      <nav aria-label="Sections on this page">
+        <ul className={styles.list}>
+          {items.map((item) => (
+            <li key={item.id}>
+              <a href={`#${item.id}`} aria-current={active === item.id ? "location" : undefined}>{item.label}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </details>
+    <nav className={styles.rail} aria-label="Sections" data-at-top={atTop || undefined}>
       <ul className={styles.list}>
         {items.map((item) => (
           <li key={item.id}>
@@ -81,5 +100,6 @@ export default function SectionRail({ items }: { items: RailItem[] }) {
         ))}
       </ul>
     </nav>
+    </>
   );
 }

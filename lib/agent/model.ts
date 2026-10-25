@@ -414,7 +414,7 @@ const FIRST_TOKEN_MS = Number(process.env.AGENT_FIRST_TOKEN_MS ?? 6_000);
 const ANSWER_MS = Number(process.env.AGENT_ANSWER_MS ?? 15_000);
 
 /**
- * The per-question budget (Kushal, 2026-10-10): 8 s from the question to an
+ * The per-question budget (2026-10-10): 8 s from the question to an
  * answer or the passage fallback, whatever the provider does. Each NVIDIA call
  * gets min(its own cap, time left), so a hanging provider costs at most the
  * budget. Measured before: embed 4 s + rerank 3 s + answer 12 s = 19.0 s.

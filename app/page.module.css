@@ -428,7 +428,7 @@
   }
 }
 
-/* The closing section is set up a step. Peak-end: the last thing read carries
+/* The closing section is set up a step. The last thing read carries
    disproportionate weight in what a reader remembers. */
 /* The closing heading no longer needs its own size.
  *
@@ -544,7 +544,7 @@
   font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   margin: var(--s-8) 0 var(--s-4);
   padding-inline: clamp(1.25rem, 5vw, 4rem);
-  font-size: clamp(1.9rem, 8.2vw, 13rem);
+  font-size: clamp(1.5rem, 8.2vw, 13rem);
   font-weight: 800;
   line-height: 0.9;
   letter-spacing: -0.05em;
@@ -892,115 +892,6 @@ html[data-film="live"] .wordmark {
   }
 }
 
-/* The thesis, as display type: tight leading and negative tracking as the size
-   grows, weight rather than colour for the emphasis. It stays in view while
-   the column beside it is read. */
-.pull {
-  margin: 0;
-  padding-inline-start: var(--s-5);
-  border-inline-start: 1px solid var(--tone, var(--ink));
-}
-
-.pull p {
-  margin: 0;
-  font-size: clamp(1.5rem, 2.4vw, 2.25rem);
-  font-weight: 650;
-  line-height: 1.12;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  text-wrap: balance;
-}
-
-@media (min-width: 62rem) {
-  .pull {
-    position: sticky;
-    top: 28vh;
-  }
-}
-
-/* When he can start and the page a reader will forward. */
-.resume {
-  display: grid;
-  gap: var(--s-4);
-  align-content: start;
-}
-
-.start {
-  display: grid;
-  gap: 2px;
-  margin: 0;
-  padding: var(--s-4);
-  background: var(--graphite);
-  border: var(--border-hair) solid var(--rule);
-}
-
-.startLabel,
-.startCount {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: var(--step--2);
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-.startCount {
-  color: var(--tone, var(--ink-soft));
-}
-
-.startDate {
-  font-size: var(--step-2);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  color: var(--ink);
-}
-
-.sheet {
-  display: grid;
-  background: var(--graphite);
-  border: var(--border-hair) solid var(--rule);
-  color: var(--ink);
-  text-decoration: none;
-}
-
-.sheet img {
-  display: block;
-  inline-size: 100%;
-  block-size: auto;
-  aspect-ratio: 560 / 411;
-  object-fit: cover;
-  object-position: top;
-  border-block-end: var(--border-hair) solid var(--rule);
-}
-
-.sheetCap {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--s-3);
-  min-height: 44px;
-  padding: var(--s-3) var(--s-4);
-  font-weight: 600;
-}
-
-.sheetMeta {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: var(--step--2);
-  font-weight: 400;
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .sheet {
-    transition: border-color var(--t-fast) ease;
-  }
-  .sheet:hover {
-    border-color: var(--tone, var(--ink));
-  }
-}
-
 /* Every section by its heading, from the end of the page. */
 .footIndex {
   display: flex;
@@ -1045,6 +936,151 @@ html[data-film="live"] .wordmark {
 
 .top {
   font-family: var(--font-mono), ui-monospace, monospace;
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
+}
+
+
+.journeyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-block-start: var(--s-4);
+}
+.journeyActions a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  padding: var(--s-2) var(--s-3);
+  border: var(--border-hair) solid var(--rule);
+  color: var(--ink);
+  text-decoration: none;
+}
+.journeyActions a[data-primary] { background: var(--ink); color: var(--paper); }
+.journeyActions a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+@media (max-width: 47.99rem) {
+  .journeyActions { flex-direction: column; align-items: stretch; }
+}
+
+/* Older roles: the figures and the fold, nothing else on screen. Side by side
+   where there is room, so two-year-old work costs one row instead of two. */
+.roleContent[data-compact] .rolePair {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-3);
+}
+
+.roleContent[data-compact] .roleFigures {
+  position: static;
+}
+
+@media (min-width: 62rem) {
+  .roles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .roles > :not([data-compact]) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* The section's point, directly under its heading, in the reading size. */
+.claim {
+  margin: var(--s-3) 0 0;
+  max-width: 40rem;
+  font-size: var(--step-1);
+  line-height: 1.35;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+/* Arriving from a route or a link: the claim takes the section's tone for a
+   moment, so the reader sees where they landed. */
+@media (prefers-reduced-motion: no-preference) {
+  .section:target .claim {
+    animation: claim-arrive 600ms var(--ease-out, ease-out);
+  }
+}
+
+@keyframes claim-arrive {
+  from {
+    background: color-mix(in oklch, var(--tone, var(--ink)) 28%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+.footTools {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+/* The claim sits close under its heading, one idea with it. */
+.head:has(+ .claim) {
+  margin-bottom: var(--s-3);
+}
+
+.claim {
+  margin-top: 0;
+  margin-bottom: var(--s-5);
+  width: fit-content;
+}
+
+/* Over the moving film a claim gets the same graphite plate every card uses. */
+:global(html[data-film="live"]) .claim {
+  padding: var(--s-2) var(--s-4);
+  background: var(--graphite);
+}
+
+/* The bug's title is the argument, but not a whole screen of it: capped so the
+   result line and the start of the diff share the first view. */
+@media (min-width: 62rem) {
+  .section[data-lead="artifact"] .title {
+    font-size: clamp(2.75rem, 1.5rem + 3vw, 4.5rem);
+  }
+}
+
+/* The section index reads on a plate rather than straight off the footage. */
+:global(html[data-film="live"]) .footIndex {
+  background: var(--graphite);
+}
+
+/* Phone: the wordmark is decoration; a third of a screen is enough. */
+@media (max-width: 767px) {
+  .wordmark {
+    font-size: 9vw;
+    margin-top: var(--s-6);
+  }
+}
+
+.roleIndex {
+  list-style: none;
+  margin: 0 0 var(--s-5);
+  padding: 0;
+  display: grid;
+  gap: 1px;
+  background: var(--rule);
+  border: var(--border-hair) solid var(--rule);
+}
+
+.roleIndex a {
+  display: grid;
+  gap: 2px;
+  min-height: 44px;
+  padding: var(--s-2) var(--s-3);
+  background: var(--graphite, var(--paper));
+  color: var(--ink);
+  font-size: var(--step--1);
+  text-decoration: none;
+}
+
+.roleIndex span {
+  color: var(--ink-soft);
+}
+
+/* Phone: the section list is already one tap away in the Sections menu. */
+@media (max-width: 767px) {
+  .footIndex ol {
+    display: none;
+  }
 }

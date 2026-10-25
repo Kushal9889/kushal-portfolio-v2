@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadContent } from "../lib/content";
 
-// Strict rule (Kushal, 2026-10-02): every stated figure is reachable by a link.
+// Strict rule (2026-10-02): every stated figure is reachable by a link.
 // A source is a URL or the literal `resume`, which renders as the resume PDF.
 test("every metric names a source", () => {
   const { sections } = loadContent();

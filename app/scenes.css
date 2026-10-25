@@ -168,6 +168,52 @@ main > section [data-surface] {
   background-color: var(--scene-panel);
 }
 
+/* The light scheme a reader picks from the palette: the same family on paper.
+   Ink and rules come from the light tokens in globals.css, so text clears AA
+   on the light ground instead of keeping the cream meant for the dark one. */
+:root[data-theme="light"] :is(#top, #opensource, #work, #running, #research, #proof, #approach, #measured, #education, #contact),
+:root[data-theme="light"] :is(#top, #opensource, #work, #running, #research, #proof, #approach, #measured, #education, #contact) [data-surface] {
+  --scene-ground: oklch(0.975 0.0015 250);
+  --scene-panel: oklch(0.998 0.001 250);
+  --scene-rule: color-mix(in oklch, var(--tone, oklch(0.185 0.004 250)) 40%, transparent);
+  --ink: oklch(0.185 0.004 250);
+  --ink-soft: oklch(0.38 0.006 250);
+  --ink-faint: oklch(0.46 0.008 250);
+  --signal: oklch(0.185 0.004 250);
+  --signal-deep: oklch(0.32 0.006 250);
+  --on-signal: oklch(0.99 0.001 250);
+  --link: oklch(0.40 0.12 258);
+  --cream: oklch(0.185 0.004 250);
+  --graphite: oklch(0.998 0.001 250 / 0.94);
+  --paper: oklch(0.975 0.0015 250);
+  --paper-sunk: oklch(0.948 0.002 250);
+  --paper-raised: oklch(0.998 0.001 250);
+  --paper-high: oklch(1 0 0);
+}
+
+:root[data-theme="light"] :is(#top, #opensource, #work, #running, #research, #proof, #approach, #measured, #education, #contact) {
+  --tone: oklch(0.42 0.09 258);
+}
+
+:root[data-theme="light"] #proof [data-issuer] {
+  --tone: oklch(0.42 0.09 258);
+}
+
+/* Brand tints are pale for the dark ground; on paper they take the tone. */
+:root[data-theme="light"] main [style*="--role-tint"],
+:root[data-theme="light"] main [style*="--figure-tint"] {
+  --role-tint: var(--tone) !important;
+  --figure-tint: var(--tone) !important;
+}
+
+:root[data-theme="light"] body > header [data-surface="console"] {
+  --signal: oklch(0.185 0.004 250);
+  --signal-deep: oklch(0.32 0.006 250);
+  --on-signal: oklch(0.99 0.001 250);
+  --live: oklch(0.52 0.14 152);
+  --scene-rule: oklch(0.185 0.004 250 / 0.2);
+}
+
 /* The agent console: lime for ask and live; a failure is the one red. */
 body > header [data-surface="console"] {
   --live: oklch(0.89 0.2 128);
@@ -759,7 +805,6 @@ body > header a[class*="cta"]::after {
 
 body > header a[class*="cta"]:hover,
 body > header a[class*="cta"]:focus-visible {
-  translate: 0 -2px;
   background:
     linear-gradient(105deg, transparent 38%, oklch(0.89 0.2 128 / 0.55) 50%, transparent 62%) 160% 0 / 250% 100% no-repeat,
     var(--signal);
@@ -769,7 +814,9 @@ body > header a[class*="cta"]:focus-visible {
     0 18px 50px -12px color-mix(in oklch, var(--signal-deep) 60%, transparent);
 }
 
-/* Every other action: a graphite plate that lifts and catches a sheen. */
+/* Every other action: a graphite plate that catches a sheen. No lift: a control
+   that moves away from the pointer on hover flickers when the pointer sits on its
+   edge. */
 main > section#contact ul[class*="links"] > li > :is(a, button),
 body > header [data-surface="console"] button:not([type="submit"]),
 main > section#proof a[href*="credly"] {
@@ -783,7 +830,6 @@ main > section#contact ul[class*="links"] > li > :is(a, button):is(:hover, :focu
 body > header [data-surface="console"] button:not([type="submit"]):is(:hover, :focus-visible),
 main > section#proof a[href*="credly"]:is(:hover, :focus-visible) {
   background-position: -60% 0, 0 0;
-  translate: 0 -2px;
   border-color: var(--ink);
 }
 
@@ -1030,13 +1076,12 @@ main > section#opensource [class*="Artifacts-module"][class*="link"] {
 
 main > section#opensource [class*="Artifacts-module"][class*="link"]:is(:hover, :focus-visible) {
   border-color: var(--tone);
-  translate: 0 -2px;
 }
 
 /* Credentials: graphite cards framed in the issuer's tone, cream type, no
    burgundy. The NVIDIA proctored exam is the feature card across the row. */
 main > section#proof [data-issuer] {
-  border: 1px solid var(--tone);
+  border: 1px solid var(--rule);
   background: var(--graphite);
   padding: var(--s-4);
 }
@@ -1096,11 +1141,11 @@ main > section#proof {
    tone stays on the frame, the mark and Verify. */
 main > section#proof [data-issuer],
 main > section#proof [data-issuer] [class*="verify"] {
-  background: oklch(0.175 0.006 60 / 0.94);
+  background: var(--graphite);
 }
 
 main > section#proof [data-issuer] [class*="frame"] {
-  background: oklch(0.2 0.006 60);
+  background: var(--paper-high);
 }
 
 /* The bug's code panel carries the same three corner marks as the cards. */
@@ -1171,7 +1216,7 @@ main > section dl > :not(:first-child) > dt:not([data-numeric]) * {
 
 /* The proctored exam reads first by weight, not by a broken layout. */
 main > section#proof [data-issuer="NVIDIA"] {
-  border-width: 2px;
+  border-width: 1px;
 }
 
 /* The microscope belongs to a pointer. On touch and narrow screens the
@@ -1471,7 +1516,7 @@ main > section#measured > .wrap > p {
 }
 
 main > section:is(#approach, #measured) > .wrap > details > summary,
-main > section#contact > .wrap [class*="Reach-module"][class*="wrap"] > :is(button, p) {
+main > section#contact > .wrap [class*="Reach-module"][class*="wrap"] > :is(button, p):not(:empty) {
   width: fit-content;
   padding: var(--s-1) var(--s-3);
   background: var(--graphite);
@@ -1541,4 +1586,23 @@ html .progress {
     min-inline-size: 44px;
     text-align: center;
   }
+}
+
+/* The issuer remains on its mark and verification link; both mounts share a quiet frame. */
+main > section#proof [data-issuer] [class*="frame"] {
+  border-color: var(--rule);
+  box-shadow: inset 1px 0 0 color-mix(in oklch, var(--ink) 14%, transparent);
+}
+main > section#proof [data-issuer] [class*="frame"]::after { display: none; }
+main > section#proof [data-issuer] a[href*="credly"] { white-space: normal; }
+
+main > section#proof [data-issuer] > button:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+
+/* Also running: the one ask is a real control on its own plate over the film. */
+main > section#running li > [class*="AskSeeds-module"][class*="seed"] {
+  padding: var(--s-3) var(--s-4);
+  background: var(--graphite);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  font-size: var(--step-0);
 }

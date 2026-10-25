@@ -80,7 +80,7 @@ export function ground(answer: string, ...context: string[]): Grounding {
  * Share of the sentence, not Jaccard: a twelve-word sentence lifted from an
  * eighty-word paragraph has Jaccard 0.15 and is still wholly from it. Measured
  * on 93 answer sentences from the held-out suite (2026-10-10): C >= 0.5 labels
- * 86, Jaccard >= 0.2 labels 58. Kushal chose C.
+ * 86, Jaccard >= 0.2 labels 58, so C is the measure.
  */
 const STOP = new Set(["the", "and", "for", "with", "his", "her", "their", "has", "was", "that", "this", "from", "are", "into", "not", "but", "who", "its", "than", "then", "also", "which"]);
 const words = (s: string) => new Set(s.toLowerCase().replace(/\*\*/g, "").split(/[^a-z0-9+#%]+/).filter((w) => w.length > 2 && !STOP.has(w)));

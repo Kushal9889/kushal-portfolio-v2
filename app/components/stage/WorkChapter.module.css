@@ -598,3 +598,8 @@
 .metricValue:has(.ghost) {
   padding-bottom: 16px;
 }
+
+/* The stack row in a role's footer; a flex child that may shrink. */
+.parts {
+  min-width: 0;
+}

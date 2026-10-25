@@ -12,7 +12,7 @@ import { analyze } from "../lib/agent/query";
 import { retrieve } from "../lib/agent/retrieve";
 
 /**
- * Held-out scenario suite for the agent (tick 7, parts A2 and A3).
+ * Held-out scenario suite for the agent.
  *
  * The 26 cases in content/evals.json were the ones retrieval was tuned on, so
  * they cannot say whether a change generalises. These 60 were written from

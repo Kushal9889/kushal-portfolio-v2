@@ -5,6 +5,7 @@ import { mailtoLink, type ReachContext } from "@/lib/reach";
 import { track } from "@/lib/analytics";
 import { reducedMotion } from "@/lib/verbs";
 import { MailMark, LinkedInMark } from "./Mark";
+import { useReferralTag } from "./Reach";
 import styles from "./ReachDock.module.css";
 
 /**
@@ -39,7 +40,9 @@ export default function ReachDock({
   site,
   linkedin,
   resumeHref,
+  who,
 }: {
+  who?: string;
   email: string;
   site: string;
   linkedin: string;
@@ -47,9 +50,10 @@ export default function ReachDock({
 }) {
   const [at, setAt] = useState<string | null>(null);
   const [hidden, setHidden] = useState(false);
+  const tag = useReferralTag();
 
   useEffect(() => {
-    const sections = [...document.querySelectorAll<HTMLElement>("main > section[id]")];
+    const sections = [...document.querySelectorAll<HTMLElement>("header#top, main > section[id]")];
     if (sections.length === 0) return;
 
     /*
@@ -65,12 +69,13 @@ export default function ReachDock({
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
           const id = entry.target.id;
-          if (id === "contact") {
+          // The hero has its own action, and the contact section is the real thing.
+          if (id === "contact" || id === "top") {
             setHidden(true);
             continue;
           }
           setHidden(false);
-          if (CONTEXTS[id]) setAt(id);
+          setAt(CONTEXTS[id] ? id : null);
         }
       },
       { rootMargin: "-50% 0px -50% 0px", threshold: 0 },
@@ -84,11 +89,11 @@ export default function ReachDock({
   const context: ReachContext = here?.context ?? "general";
 
   return (
-    <div className={styles.dock} data-hidden={hidden || undefined} data-print="hide">
+    <div className={styles.dock} inert={hidden} data-hidden={hidden || undefined} data-print="hide">
       <nav className={styles.inner} aria-label="Contact">
         <a
           className={styles.primary}
-          href={mailtoLink(email, site, context)}
+          href={mailtoLink(email, site, context, tag, who)}
           onClick={() => track("contact", `dock-${context}`)}
         >
           <MailMark />
@@ -103,8 +108,8 @@ export default function ReachDock({
           </span>
         </a>
 
-        <SearchKey />
-        <MotionSwitch />
+        <a className={styles.side} href="#ask" data-only-desk>Ask</a>
+        <ShareKey who={who} />
 
         <a
           className={styles.side}
@@ -112,7 +117,7 @@ export default function ReachDock({
           download
           onClick={() => track("contact", "dock-resume")}
         >
-          Résumé
+          Résumé, 1 page
         </a>
 
         <a
@@ -137,7 +142,7 @@ export default function ReachDock({
  * its author uses. The key is shown for the reader's platform after mount (the
  * server cannot know it). Hidden where there is no keyboard to press it on.
  */
-function SearchKey() {
+export function SearchKey() {
   const [mac, setMac] = useState(true);
   useEffect(() => setMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)), []);
 
@@ -163,14 +168,14 @@ function SearchKey() {
  * so the page reloads once). With Reduce Motion on in macOS nothing moved
  * and there was no way to see it.
  */
-function MotionSwitch() {
+export function MotionSwitch({ className = styles.side }: { className?: string }) {
   const [moving, setMoving] = useState<boolean | null>(null);
   useEffect(() => setMoving(!reducedMotion()), []);
 
   return (
     <button
       type="button"
-      className={styles.side}
+      className={className}
       aria-pressed={moving ?? undefined}
       onClick={() => {
         try {
@@ -182,6 +187,29 @@ function MotionSwitch() {
       }}
     >
       {moving === false ? "Motion off" : "Motion on"}
+    </button>
+  );
+}
+
+/**
+ * Phone only: the share sheet, in the slot Ask takes on a desktop. Most phone
+ * readers are passing him on, not interviewing the agent. Renders nothing
+ * where the browser has no share sheet.
+ */
+function ShareKey({ who }: { who?: string }) {
+  const [can, setCan] = useState(false);
+  useEffect(() => setCan(typeof navigator.share === "function" && matchMedia("(max-width: 767px)").matches), []);
+  if (!can) return null;
+  return (
+    <button
+      type="button"
+      className={styles.side}
+      onClick={() => {
+        navigator.share({ title: who ?? document.title, url: location.origin + location.pathname }).catch(() => undefined);
+        track("contact", "dock-share");
+      }}
+    >
+      Share
     </button>
   );
 }

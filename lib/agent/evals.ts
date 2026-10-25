@@ -87,3 +87,6 @@ export type Mode = "route" | "omission" | "leak" | "invention";
  * runs each, 78 of 80" is a stronger claim than a ratio that happened to land
  * on a good afternoon.
  */
+
+/** The current case questions, so a recorded report can drop scenarios retired since it ran. */
+export const CASE_QUESTIONS = new Set(CASES.map((item) => item.question));

@@ -3023,3 +3023,12 @@ html[data-film="still"] body::after {
     transform: translateX(233%);
   }
 }
+
+summary { min-block-size: 44px; }
+
+/* Blocks for one device only: a phone reader is usually forwarding him. */
+@media (min-width: 768px) {
+  [data-only="phone"] {
+    display: none !important;
+  }
+}

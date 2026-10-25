@@ -53,8 +53,8 @@
 .cell {
   position: relative;
   overflow: hidden;
-  width: 1.65rem;
-  height: 1.65rem;
+  width: 44px;
+  height: 44px;
   border-radius: var(--r-sm);
   border: var(--border-solid) solid var(--rule);
   background: none;

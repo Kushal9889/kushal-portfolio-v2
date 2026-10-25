@@ -14,7 +14,7 @@ const MAP: [test: RegExp, anchor: string][] = [
   [/img systems/i, "work-img"],
   [/growaza/i, "work-growaza"],
   [/open source|langchain|deepagents/i, "bug"],
-  [/bu life|this site|built/i, "built"],
+  [/this site|built/i, "built"],
   [/publication|paper|ieee|igi/i, "research"],
   [/certification|credential|nvidia|coursera/i, "credentials"],
   [/education|achievement|jee|codechef|bitbyte|tarang/i, "beyond"],

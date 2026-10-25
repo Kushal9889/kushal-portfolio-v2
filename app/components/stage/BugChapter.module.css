@@ -919,3 +919,15 @@ blockquote.body {
     margin-left: 0;
   }
 }
+
+/* Hooks the chapter's script and layout read: the code walk queries
+   `.before code`, and the claim and reporter/maintainer rows are grouped by
+   class. Layout-neutral, so defining them changes nothing on screen. */
+.claim,
+.thread {
+  min-width: 0;
+}
+
+.before {
+  tab-size: 2;
+}

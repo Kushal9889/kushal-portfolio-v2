@@ -147,3 +147,19 @@ button.side[aria-pressed="true"] {
     display: none;
   }
 }
+
+.side { min-inline-size: 44px; }
+@media (max-width: 40rem) {
+  .inner { gap: var(--s-1); }
+  .primary, .side { padding-inline: var(--s-2); font-size: var(--step--2); }
+}
+@media (max-width: 22.5rem) {
+  .inner > a:last-child { display: none; }
+}
+
+/* Phone: Share takes the Ask slot when the browser has a share sheet. */
+@media (max-width: 767px) {
+  .inner:has(button:not([aria-keyshortcuts]):not([aria-pressed])) [data-only-desk] {
+    display: none;
+  }
+}

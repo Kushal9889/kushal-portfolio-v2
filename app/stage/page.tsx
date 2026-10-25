@@ -1,3 +1,4 @@
+import { CASE_QUESTIONS } from "@/lib/agent/evals";
 /** The earlier stage page, moved off the root. */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -166,12 +167,6 @@ export default function Page() {
     return { host: new URL(url).hostname.replace(/^www\./, ""), status: found?.status ?? null, checkedOn: found?.checkedOn ?? profile.lastVerified };
   };
 
-  const life = section("BU Life AI");
-  const liveUrl = pick(life.body, /Live: \[[^\]]+\]\((https?:[^)]+)\)/)?.[0] ?? "";
-  const sourceUrl = pick(life.body, /Source: \[[^\]]+\]\((https?:[^)]+)\)/)?.[0] ?? "";
-  const lifeRepo = sourceUrl.replace(/^https:\/\/github\.com\//, "").replace(/\/$/, "");
-  const agents = pick(life.body, /agents for (\w+), (\w+) and (\w+)/) ?? [];
-  const lifeFull = (life.body.split(/\n\s*\n/)[0] ?? "").replace(/\*\*/g, "").replace(/\s+/g, " ").trim();
   const site = section("This site");
   const siteRepo = profile.repo.replace(/^https:\/\/github\.com\//, "").replace(/\/$/, "");
 
@@ -271,7 +266,7 @@ export default function Page() {
         // Excludes the hero's own fixed demo question at the source, so the
         // list is identical before and after that answer resolves and never
         // moves the "also ask" row once it is on screen.
-        followups={evals.cases_detail
+        followups={evals.cases_detail.filter((c) => CASE_QUESTIONS.has(c.name))
           .filter((c) => c.group === "grounding" && c.pass && c.name !== "What has he shipped on Azure?")
           .map((c) => c.name)}
       />
@@ -318,7 +313,7 @@ export default function Page() {
           denseUsed: evals.denseUsed,
           retrievals: evals.retrievals,
           groups: Object.entries(evals.groups).map(([name, g]) => ({ name, cases: g.cases, passed: g.passed })),
-          detail: evals.cases_detail.map((c) => ({
+          detail: evals.cases_detail.filter((c) => CASE_QUESTIONS.has(c.name)).map((c) => ({
             name: c.name,
             group: c.group,
             asserts: c.asserts,
@@ -352,23 +347,6 @@ export default function Page() {
       />
 
       <BuiltChapter
-        host={liveUrl ? new URL(liveUrl).hostname : ""}
-        liveUrl={liveUrl}
-        sourceUrl={sourceUrl}
-        repo={lifeRepo}
-        cache={{
-          reach: (cache.reach as Record<string, { ms: number; checkedOn: string }>)[liveUrl] ?? null,
-          commit: (cache.commits as Record<string, { at: string; stars: number; checkedOn: string }>)[lifeRepo] ?? null,
-        }}
-        life={{
-          title: life.title,
-          lead: summary(life),
-          full: lifeFull,
-          agents,
-          metrics: life.metrics.map(({ value, label }) => ({ value, label })),
-          stack: life.stack,
-          hue: signatures.organisations["Boston University"].hue,
-        }}
         site={{
           title: site.title,
           evals: { passes: evals.totalPasses, runs: evals.totalRuns, measured: evals.measured },

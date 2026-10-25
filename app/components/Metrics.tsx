@@ -46,6 +46,7 @@ export default function Metrics({ items, seal }: { items: Metric[]; seal?: strin
         <div
           key={m.label}
           className={styles.cell}
+          data-word={/^[+\-~$]?\d/.test(m.value) ? undefined : ""}
           data-sourced={m.source ? "" : undefined}
           data-scaled={percentPosition(m.value) !== null ? "" : undefined}
           style={
@@ -86,9 +87,9 @@ export default function Metrics({ items, seal }: { items: Metric[]; seal?: strin
                 target="_blank"
                 rel="noreferrer"
                 title={m.source === "resume" ? "His resume (PDF)" : m.source}
-                aria-label={`${m.source === "resume" ? "resume" : "source"} for ${m.label}`}
+                aria-label={`${m.source === "resume" ? "Résumé" : "Source"} for ${m.label}`}
               >
-                {m.source === "resume" ? "resume" : "source"}
+                source
               </a>
             )}
           </dd>
