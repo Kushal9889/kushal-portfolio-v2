@@ -163,10 +163,6 @@ export const PARTIAL_NOTE =
 export const AGGREGATE_NOTE =
   "\n\nThe question asks across the whole profile. Name every section above that answers it, one sentence each, with the detail or figure that section records. Do not stop at the first.";
 
-/** Appended to the context on the graph route: the reader asked across his work. */
-export const AGGREGATE_NOTE =
-  "\n\nThe question asks across his work. Name every section above that answers it, one sentence each, with the detail or figure that section records. Do not stop at the first.";
-
 export function deflection(question: string): string {
   if (OVERRIDE.test(question)) {
     return `Not something I can do. Ask about the work: ${covers}.`;
