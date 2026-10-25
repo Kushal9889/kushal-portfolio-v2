@@ -131,12 +131,18 @@ verification link, or the em-dash rate rises above 2 per 1,000 words.
 
 ## Deploy
 
-Push to GitHub, import the repo on Vercel, set `NVIDIA_API_KEY`. Nothing else.
+The deployment target is Netlify. Use the committed retrieval index and media:
+`npm ci`, then `npm run build:release`. The normal `build` command regenerates
+artifacts and is for authoring, not release promotion.
 
-CI runs typecheck, token lint, fact verification, index rebuild and a production
-build on every push. Link checking runs as a separate non-blocking job, because a
-credential host being briefly unreachable should be visible without blocking a
-deploy.
+Netlify runs fact verification, the production build, repository checks and unit
+tests. CI also checks HTTP behavior, browser journeys and production dependency
+advisories. Failed checks block readiness; skipped live-provider tests do not
+certify the agent. Configure the matching required checks in GitHub and verify
+Netlify publication controls before enabling automatic production publication.
+
+See [the release contract](release/production-readiness.md) for numeric targets,
+preview verification, pending integration work and the rollback procedure.
 
 ## Voice
 

@@ -24,6 +24,7 @@ import WorkStack from "./components/WorkStack";
 import BrandMark from "./components/BrandMark";
 import SectionRail from "./components/SectionRail";
 import EvalMatrix from "./components/EvalMatrix";
+import { CASE_QUESTIONS } from "@/lib/agent/evals";
 import Panel from "./components/Panel";
 import Artifacts2 from "./components/Artifacts";
 import evals from "@/content/evals.json";
@@ -612,7 +613,7 @@ export default function Page() {
             proves he finds failures and this proves he checks for them. */}
         <Section id="measured" beat="proof" title="How this is measured" claim={`${evals.passed} of ${evals.cases} eval cases pass on every run.`} data-layout="bank" data-register="instrument" data-sweep="on">
           <Measured>
-            <EvalMatrix />
+            <EvalMatrix questions={[...CASE_QUESTIONS]} />
             <ModelChoice />
             <Vitals />
             <Defects />

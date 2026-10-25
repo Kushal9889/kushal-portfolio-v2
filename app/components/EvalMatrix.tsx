@@ -1,6 +1,5 @@
 "use client";
 
-import { CASE_QUESTIONS } from "@/lib/agent/evals";
 
 import { useState } from "react";
 import evals from "@/content/evals.json";
@@ -85,8 +84,9 @@ function reachedModel(c: Case) {
   return !/routes to (deflect|authorisation)/.test(c.asserts);
 }
 
-export default function EvalMatrix() {
-  const cases = (evals.cases_detail ?? []).filter((c) => CASE_QUESTIONS.has(c.name)) as Case[];
+export default function EvalMatrix({ questions }: { questions: string[] }) {
+  const current = new Set(questions);
+  const cases = (evals.cases_detail ?? []).filter((c) => current.has(c.name)) as Case[];
   const [open, setOpen] = useState<string | null>(null);
   if (cases.length === 0) return null;
 

@@ -41,8 +41,12 @@
     "build:guilloche": "tsx scripts/build-guilloche.ts",
     "bench:film": "python3 scripts/bench-film.py",
     "test:agent": "tsx scripts/agent-scenarios.ts --split test --gate",
-    "test:agent:faults": "for f in outage 429 timeout chat embed rerank neon; do echo \"== AGENT_FAULT=$f\"; AGENT_FAULT=$f tsx scripts/agent-scenarios.ts --split test --gate | grep -E '^test |GATE|^FAIL' || exit 1; done",
-    "bench": "tsx scripts/bench-all.ts"
+    "test:agent:faults": "bash -e -o pipefail scripts/agent-faults.sh",
+    "bench": "tsx scripts/bench-all.ts",
+    "build:release": "next build",
+    "test:gates": "python3 -m unittest discover -s tests -p \"test_release_gates.py\"",
+    "test:release-smoke": "node --test tests/release-smoke.test.mjs",
+    "verify:deployment": "node scripts/release-smoke.mjs"
   },
   "dependencies": {
     "@langchain/core": "^1.2.5",
@@ -54,7 +58,7 @@
     "@vercel/otel": "^2.1.3",
     "gsap": "^3.15.0",
     "kokoro-js": "^1.2.1",
-    "next": "16.1.6",
+    "next": "16.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "three": "^0.186.1"
