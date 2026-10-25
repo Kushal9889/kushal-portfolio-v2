@@ -95,14 +95,6 @@
   color: var(--ink-soft);
 }
 
-/* One target. The credential that used to sit beside it was a second thing to
-   click next to the only thing worth clicking, and it now sits in the register
-   above where it reads as a fact rather than as an alternative. */
-.actions {
-  display: flex;
-  margin-top: var(--s-6);
-}
-
 /* One primary action, larger than anything near it, and the only thing on the
  * page wearing the accent. Competing calls to action cost more than they add.
  *
@@ -115,7 +107,7 @@
  * semantic tokens spent theirs on readouts. ADR-005 moves --signal to the brand
  * tier: it means "the one thing to press", --live keeps "happening now", and
  * every interactive target on the page is this colour and nothing else is. */
-/* Fitts: the one thing the page asks for is the largest target in it.
+/* The one thing the page asks for is the largest target in it.
    It was 182px wide against a 662px instrument, sitting bottom-left as the
    smallest interactive object on the screen. */
 .cta {
@@ -285,17 +277,6 @@
   }
 }
 
-/* The register's links are the smallest targets in the hero. The row is the
-   target area, so the link fills it rather than growing it: a 44px inline box
-   inside a 40px row would have set the three rows to different heights. */
-.fact a {
-  display: block;
-  padding-block: var(--s-2);
-  /* Cancels its own padding exactly. A literal -0.55rem pulled 0.8px further
-     than the 0.5rem it was undoing, so each row rendered 1.6px short of the
-     height it was laid out for. */
-  margin-block: calc(-1 * var(--s-2));
-}
 
 
 /* Current employer and title, directly under the headline.
@@ -352,64 +333,6 @@
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-/* The register.
- *
- * Three facts a recruiter needs before writing: the record behind the sentence
- * above, the start date, and the credential. They used to be three blocks in
- * three treatments with their own margins.
- *
- * Ruled by a 1px grid gap over a ruled ground rather than by borders, so no
- * cell has to know which of its edges is shared with a neighbour and the rules
- * stay exactly one pixel at any zoom. */
-.facts {
-  display: grid;
-  gap: var(--border-hair);
-  background: var(--rule);
-  border: var(--border-hair) solid var(--rule);
-  margin: var(--s-5) 0 0;
-}
-
-/* Rows, not columns.
- *
- * Three columns fitted the width and not the content: inside the 368px identity
- * rail each cell came out 122px wide, which broke a repository path over three
- * lines and made the block taller than the stacked version it replaced.
- *
- * As rows it reads straight down the scan rail with the keys in one column and
- * the values in another, which is the shape a specification has and the shape
- * an eye moving down the left edge is already following. */
-.fact {
-  display: grid;
-  grid-template-columns: 6.25rem minmax(0, 1fr);
-  align-items: baseline;
-  column-gap: var(--s-4);
-  padding: var(--s-3) var(--s-4);
-  background: var(--paper);
-}
-
-.fact dt {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: var(--step--2);
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-.fact dd {
-  margin: 0;
-  font-size: var(--step--1);
-  line-height: 1.35;
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
-
-.fact a {
-  text-decoration-color: var(--rule);
-}
-
-.fact a:hover {
-  text-decoration-color: var(--signal);
-}
 
 
 
@@ -534,8 +457,6 @@
 
 .consoleLabel {
   font-size: var(--step--2);
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -688,7 +609,7 @@
    * answer replaced the bars waiting for it -- measured at 1440, the console
    * jumped 79px and took the ask bar with it. A pane that is always the same
    * size is also what an instrument looks like. */
-  height: 5.4rem;
+  height: 3lh;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -730,8 +651,6 @@
 
 .saidSrcLabel {
   font-size: var(--step--2);
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
   color: var(--ink-faint);
 }
 
@@ -812,33 +731,6 @@
   }
 }
 
-/* The tools, for the phone reader only: one wrapped run of marked chips under
-   the role line. The desktop reader gets them in every role's stack. */
-.skills {
-  display: none;
-}
-
-@media (max-width: 767px) {
-  .skills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-2);
-    margin: var(--s-3) 0 0;
-    padding: 0;
-    list-style: none;
-    font-family: var(--font-mono), ui-monospace, monospace;
-    font-size: var(--step--1);
-    color: var(--ink);
-  }
-
-  .skills li {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--s-2);
-    padding: 2px var(--s-2);
-    border: var(--border-hair) solid color-mix(in oklab, var(--ink) 30%, transparent);
-  }
-}
 
 /* The answer types over a transparent copy of itself, so the box is its final
    size from the first frame and nothing below it moves while the words arrive. */
@@ -855,46 +747,6 @@
   opacity: 0;
 }
 
-/* The certified row: the two official badges, as the vendors issue them, each a
-   link to its public verification page. */
-.badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-2);
-}
-
-.badge {
-  display: block;
-  line-height: 0;
-  border: var(--border-hair) solid var(--rule);
-  transition: border-color var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out);
-}
-
-.badge img {
-  display: block;
-  width: 56px;
-  height: 56px;
-  /* The artwork is a wide plate with the badge in its middle; the square crop
-     keeps the badge and drops the margin. */
-  object-fit: cover;
-  object-position: center;
-}
-
-.badge:hover,
-.badge:focus-visible {
-  border-color: var(--ink-soft);
-  transform: translateY(-1px);
-}
-
-.badge:focus-visible {
-  outline: 2px solid var(--signal);
-  outline-offset: 2px;
-}
-
-/* The label sits level with the badges, not on their last baseline. */
-.fact:has(.badges) {
-  align-items: center;
-}
 
 /* Desktop: the hero ends above the dock (the 4rem gutter, globals.css).
  *
@@ -1135,32 +987,72 @@
   mask-image: linear-gradient(to bottom, oklch(0 0 0) calc(100% - 1.5rem), transparent);
 }
 
-/* Proof: three checkable figures, each a jump to the section that sources it.
-   The figure carries the weight; the label is the footnote. */
-.proofStrip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-2) var(--s-4);
-}
 
-.proofStrip a {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.4em;
-  text-decoration: none;
-  color: var(--ink-soft);
-  border-bottom: 1px solid transparent;
-  transition: border-color var(--t-fast) var(--ease-out);
+.name { display: inline-flex; align-items: center; min-block-size: 44px; text-decoration: none; }
+.journeys {
+  display: grid;
+  gap: var(--s-2);
+  margin-block: var(--s-3);
 }
-
-.proofStrip b {
-  font-weight: 800;
-  font-variant-numeric: tabular-nums lining-nums;
-  letter-spacing: -0.02em;
+.journeys a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: var(--s-3);
+  min-block-size: 44px;
+  padding: var(--s-2) var(--s-3);
+  border: var(--border-hair) solid var(--rule);
   color: var(--ink);
+  font-size: var(--step--1);
+  line-height: 1.3;
+  text-decoration: none;
+}
+.journeys a::after { content: "\2192"; grid-row: 1 / span 2; grid-column: 2; color: var(--ink-faint); }
+.journeys b { font-weight: 600; }
+.journeys span { color: var(--ink-soft); }
+.journeys a:hover, .journeys a:focus-visible { background: var(--paper-sunk); border-color: var(--ink); }
+
+.actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+}
+.ctaText { display: grid; gap: 2px; white-space: nowrap; }
+.ctaHint {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  font-weight: 400;
+  opacity: 0.8;
+}
+.secondary {
+  display: flex;
+  align-items: center;
+  padding-inline: var(--s-5);
+  border: var(--border-hair) solid var(--ink-faint);
+  border-radius: var(--r-md);
+  color: var(--ink);
+  font-size: var(--step-0);
+  font-weight: 600;
+  text-decoration: none;
+}
+.secondary:hover, .secondary:focus-visible { background: var(--paper-sunk); }
+
+/* Phone: the headline steps down so the routes and the action share the first screen. */
+@media (max-width: 767px) {
+  .line { font-size: var(--step-3); }
+  .cta { padding: var(--s-3) var(--s-4); }
 }
 
-.proofStrip a:hover,
-.proofStrip a:focus-visible {
-  border-bottom-color: var(--signal-deep);
+.certified {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+/* Phone: the referrer's route comes first. */
+@media (max-width: 767px) {
+  .journeys a[data-only="phone"] {
+    order: -1;
+  }
 }

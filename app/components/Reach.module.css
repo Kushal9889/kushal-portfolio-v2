@@ -133,23 +133,48 @@
   border-bottom-color: var(--ink);
 }
 
-/* Same confirmation as the agent's copy control, for the same reason: the label
-   changing is invisible to a reader looking at where they are about to paste. */
-.item[data-copied] {
-  border-color: var(--ink);
-  background: var(--paper-sunk);
-}
 
-/* On a phone, met in person: email, LinkedIn, resume and the contact card.
-   The source link and the forwarding note are for the desktop reader. */
-@media (max-width: 767px) {
-  .links > li:nth-child(4),
-  .forward {
-    display: none;
-  }
-}
 
 /* A phone number never breaks inside itself. */
 a.address {
   white-space: nowrap;
+}
+
+.preview { margin-block: var(--s-3); max-inline-size: 34rem; }
+.preview summary { min-block-size: 44px; display: flex; align-items: center; cursor: pointer; color: var(--ink); }
+.referral { margin-block: var(--s-5); padding: var(--s-4); max-inline-size: 34rem; border: var(--border-hair) solid var(--rule); }
+.referral h3 { margin: 0 0 var(--s-3); font-size: var(--step-1); }
+.preview label, .referral label { display: block; color: var(--ink); font-size: var(--step--1); }
+.preview textarea, .referral textarea {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  margin-block: var(--s-2);
+  padding: var(--s-3);
+  font: inherit;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--paper-sunk);
+  border: var(--border-hair) solid var(--rule);
+  resize: vertical;
+}
+.forward { display: inline-flex; align-items: center; min-block-size: 44px; padding: var(--s-2) var(--s-3); color: var(--ink); cursor: pointer; }
+
+.extra { list-style: none; margin: var(--s-3) 0 0; padding: 0; display: grid; gap: var(--s-2); max-width: 34rem; }
+.fallback { display: block; max-inline-size: 34rem; color: var(--ink); font-size: var(--step--1); }
+.fallback textarea { display: block; inline-size: 100%; margin-block: var(--s-2); padding: var(--s-3); font: inherit; color: var(--ink); background: var(--paper-sunk); border: var(--border-hair) solid var(--rule); }
+.status { margin: var(--s-2) 0 0; min-block-size: 1.5em; font-size: var(--step--1); color: var(--ink-soft); }
+.available { margin: var(--s-5) 0 var(--s-3); max-width: 34rem; font-size: var(--step-0); color: var(--ink); }
+
+/* When he can start and the two actions it gates, read as one group. */
+.close {
+  margin-top: var(--s-5);
+  padding: var(--s-4);
+  max-width: 36rem;
+  border: var(--border-hair) solid var(--rule);
+  background: var(--graphite, transparent);
+}
+
+.close .available {
+  margin-top: 0;
 }

@@ -25,7 +25,7 @@ const CASES: [question: string, wants: string][] = [
   ["Tell me about Growaza", "Growaza"],
   ["What did he do at IMG Systems?", "IMG Systems"],
   ["What certifications does he have?", "Certifications"],
-  ["What is BU Life AI?", "BU Life AI"],
+  ["Why does the graph run without a checkpointer?", "This site"],
   ["What bug did he find in LangChain?", "Open source, LangChain deepagents"],
   ["What is he good at?", "What he is good at"],
   ["Tell me about yourself", "Who he is"],

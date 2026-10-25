@@ -40,6 +40,7 @@ function isMisregistration(block: string): boolean {
 
 const root = process.cwd();
 const read = (p: string) => (existsSync(join(root, p)) ? readFileSync(join(root, p), "utf8") : "");
+const HOME = /ClassicPage/.test(read("app/page.tsx")) ? "app/ClassicPage.tsx" : "app/page.tsx";
 const has = (p: string) => existsSync(join(root, p));
 
 function walk(dir: string, exts: string[], out: string[] = []): string[] {
@@ -134,7 +135,7 @@ const domains: Domain[] = [
       { id: "1.7", need: "JEE stated as top 0.9 percent", pass: /0\.9 percent/.test(facts) && !/0\.08/.test(facts) },
       { id: "1.8", need: "NVIDIA credential linked", pass: /credly\.com\/badges/.test(certs) },
       { id: "1.9", need: "IBM program lists 10 components", pass: countOf(certs, /"name":/g) >= 13 },
-      { id: "1.10", need: "BU Life AI repo linked", pass: /Kushal9889\/BU-Life-AI/.test(facts) },
+      { id: "1.10", need: "portfolio RAG source linked", pass: /Kushal9889\/kushal-portfolio-v2/.test(facts) },
       { id: "1.11", need: "both publications linked", pass: countOf(facts, /Kushal9889\/(Deep-Learning|Cyber-Physical)/g) >= 2 },
       { id: "1.12", need: "last-verified stamp rendered", pass: /lastVerified/.test(allSource) },
       {
@@ -284,11 +285,11 @@ const domains: Domain[] = [
     name: "6. Conversion and persuasion",
     blocking: false,
     checks: [
-      { id: "6.1", need: "agent above the fold", pass: /<Agent[\s\S]{0,80}<\/Hero>/.test(read("app/page.tsx")) },
+      { id: "6.1", need: "agent above the fold", pass: /<Agent[\s\S]{0,80}<\/Hero>/.test(read(HOME)) },
       { id: "6.2", need: "metrics extracted from prose", pass: countOf(facts, /@metric/g) >= 12 },
       { id: "6.3", need: "one claim per section", pass: countOf(facts, /\*\*/g) / 2 >= 8 },
       { id: "6.4", need: "opening line to clipboard", pass: /clipboard/.test(read("app/components/Agent.tsx")) },
-      { id: "6.5", need: "contact is the designed ending", pass: /id="contact"/.test(read("app/page.tsx")) },
+      { id: "6.5", need: "contact is the designed ending", pass: /id="contact"/.test(read(HOME)) },
       { id: "6.6", need: "honest availability stated", pass: /## Availability/.test(facts) },
       { id: "6.7", need: "work authorisation answered precisely", pass: /AUTHORISATION_ANSWER/.test(read("lib/agent/policy.ts")) },
       { id: "6.8", need: "no fake urgency", pass: !/only \d+ spots|limited time|act now|viewing this/i.test(codeOnly + facts) },
@@ -610,7 +611,7 @@ const domains: Domain[] = [
         id: "12.6",
         need: "every section uses the same heading component, with no ordinal above it",
         pass: (() => {
-          const page = read("app/page.tsx");
+          const page = read(HOME);
           const sections = countOf(page, /<Section /g);
           return (
             sections > 0 &&

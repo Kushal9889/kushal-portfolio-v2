@@ -2,13 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SENT_EVENT, TELEMETRY_EVENT, type SentDetail, type TelemetryPing } from "./Agent";
-import BrandMark from "./BrandMark";
+import { VISITOR_JOURNEYS } from "@/lib/journeys";
 import Paced from "./Paced";
+import { useReferralTag } from "./Reach";
+import { mailtoLink } from "@/lib/reach";
 import WorkLoop from "./WorkLoop";
 import styles from "./Hero.module.css";
 import { reducedMotion } from "@/lib/verbs";
+import { track } from "@/lib/analytics";
 
 const NODES = ["route", "retrieve", "answer"] as const;
+
+/** Milliseconds under a second, seconds above it: "2822ms" reads as a big number. */
+const dur = (ms: number) => (ms < 1000 ? `${ms}ms` : `${(ms / 1000).toFixed(1)} s`);
 type NodeName = (typeof NODES)[number];
 
 /** Timings arrive per node as the graph executes. Absent until measured. */
@@ -18,31 +24,19 @@ type Props = {
   name: string;
   tagline: string;
   location: string;
-  /** Where he works right now. A recruiter scans for employer and title before
-   *  anything else, and the hero named neither. */
+  /** Title, employer and start date in one line: what a recruiter checks first. */
   current: string;
-  /** The tools he names first (facts.md, Skills). Shown on a phone only,
-   *  where a reader standing beside him has seconds, not minutes. */
-  skills?: string[];
-  /** What he builds, in the words a 2026 role is written in. */
-  /** The least fakeable thing he owns, stated before the first scroll.
-   *
-   *  Split into a figure and a sentence rather than passed as one string. A
-   *  recruiter decides whether to keep reading in two to three seconds, against
-   *  the largest and highest-contrast object on the page, and this claim -- an
-   *  outside maintainer acting on his work -- was previously set at the same
-   *  size as the four gray lines around it. A number set as a number is a
-   *  difference in kind, not in degree, which is what the isolation effect
-   *  actually requires. */
-  evidence: { figure: string; unit: string; sentence: string; href: string; label: string };
-  /** Three figures a recruiter can check, each one link from its section.
-   *  Taken from the @metric lines in content/facts.md, never typed here. */
-  proof?: { value: string; label: string; href: string }[];
-  /** When he can start, and where. The question that gates a reply. */
-  available: string;
-  /** The official badges he holds, each linking to its public verification page. */
-  credentials: { label: string; url: string; image?: string }[];
-  contactHref: string;
+  /** The least fakeable thing he owns, stated before the first scroll. The
+   *  figure is matched inside the sentence and links the merged pull request. */
+  evidence: { figure: string; sentence: string; href: string; label: string };
+  /** The written draft the primary action opens. */
+  email: string;
+  site: string;
+  /** Name and role for the draft's subject line. */
+  who: string;
+  /** The two pinned certifications, named on a phone where a referrer reads first. */
+  certified?: string[];
+  resumeHref: string;
   /** The agent itself, rendered under the graph it just traced. */
   children?: React.ReactNode;
 };
@@ -64,14 +58,15 @@ export default function Hero({
   tagline,
   location,
   current,
-  skills = [],
   evidence,
-  proof = [],
-  available,
-  credentials,
-  contactHref,
+  email,
+  site,
+  who,
+  certified = [],
+  resumeHref,
   children,
 }: Props) {
+  const tag = useReferralTag();
   const [trace, setTrace] = useState<Trace>({});
   const [active, setActive] = useState<NodeName | null>(null);
   const [done, setDone] = useState(false);
@@ -202,10 +197,10 @@ export default function Hero({
   const total = Object.values(trace).reduce((a, b) => a + b, 0);
 
   return (
-    <header className={styles.hero}>
+    <header className={styles.hero} id="top" tabIndex={-1}>
       <div className="wrap">
         <div className={styles.top} data-film-scrim>
-          <span className={styles.name}>{name}</span>
+          <a className={styles.name} href="#top">{name}</a>
           <span className={styles.place}>{location}</span>
         </div>
 
@@ -235,46 +230,45 @@ export default function Hero({
         <div className={styles.body}>
           <div className={styles.identity} data-film-scrim>
 
-        {/* Title and employer, which is the line a reader looks for first and
-            the one the headline above cannot carry.
-
-            The four capability chips that sat under this moved to section 03.
-            They named the same thing this line does, one level more generic,
-            and the first screen can hold about seven blocks before each one
-            costs the others. Nothing was deleted: the terms still render, in
-            the section whose prose already covers them. */}
+        {/* Title, employer and start date: the line a recruiter scans for
+            before anything else, set directly under the claim. */}
         <p className={`${styles.current} rise`} style={{ "--rise-n": 0 } as React.CSSProperties}>
           {current}
         </p>
-
-        {skills.length > 0 && (
-          <ul className={`${styles.skills} rise`} style={{ "--rise-n": 1 } as React.CSSProperties} aria-label="Tools">
-            {skills.map((t) => (
-              <li key={t}>
-                <BrandMark name={t} />
-                {t}
-              </li>
-            ))}
-          </ul>
+        {certified.length > 0 && (
+          <p className={styles.certified} data-only="phone">
+            {certified.join(" \u00b7 ")}
+          </p>
         )}
 
-        {/* The one thing on this page an outside party did in response to his
-            work, and the only claim here no other candidate can copy.
+        {/* Each route names who it is for and what it leads to, so a reader
+            picks by recognising themselves rather than by guessing a section. */}
+        <nav className={styles.journeys} aria-label="Find what you need">
+          {VISITOR_JOURNEYS.map((journey) => (
+            <a key={journey.label} href={journey.href} data-only={"phone" in journey ? "phone" : undefined}>
+              <b>{journey.label}</b>
+              <span>{journey.promise}</span>
+            </a>
+          ))}
+        </nav>
 
-            It was a bordered box with a display figure stacked over a caption,
-            which is the shape every hero on the web uses for a statistic. The
-            shape says "metric" and this is not a metric, it is an event with a
-            date and a name attached. So it is a sentence now, with the figure
-            carrying the weight inside it, and the record it came from sits in
-            the register below rather than as a caption under a number. */}
-        <p
-          className={`${styles.proof} rise`}
-          style={{ "--rise-n": 2 } as React.CSSProperties}
-        >
+        {/* One filled action and one plain one. The draft is already written,
+            so pressing it costs the reader a send, not a message. */}
+        <div className={styles.actions}>
+          <a className={styles.cta} href={mailtoLink(email, site, "general", tag, who)} onClick={() => track("contact", "hero-email")} data-pull>
+            <span className={styles.ctaText}>
+              Email him
+              <span className={styles.ctaHint}>draft written</span>
+            </span>
+          </a>
+          <a className={styles.secondary} href={resumeHref} target="_blank" rel="noreferrer" onClick={() => track("contact", "hero-resume")}>
+            Résumé
+          </a>
+        </div>
+
+        {/* The one claim an outsider acted on, beside the action it argues for. */}
+        <p className={`${styles.proof} rise`} style={{ "--rise-n": 2 } as React.CSSProperties}>
           {(() => {
-            // The figure steps up inside its own sentence rather than being
-            // lifted out of it. Matched against the corpus value the section
-            // below renders, so the emphasis cannot land on a stale number.
             const at = evidence.sentence.lastIndexOf(evidence.figure);
             if (at === -1) return evidence.sentence;
             const end = at + evidence.figure.length;
@@ -289,64 +283,6 @@ export default function Hero({
             );
           })()}
         </p>
-
-        {/* The register.
-         *
-         * Two facts that decide whether a recruiter writes at all: when he can
-         * start, and the credential. They were separate blocks with their own
-         * margins, in three different treatments, spread over 180px of the
-         * first screen. A third row repeated the record named in the sentence
-         * above; the sentence links it now, so the claim and its citation are
-         * one object rather than two.
-         *
-         * As one hairline table they cost 84px and read in a single fixation.
-         * A definition list because that is what they are, and the rules come
-         * from a 1px grid gap over a ruled ground rather than from borders, so
-         * no cell has to know which of its edges is shared. */}
-        {/* In the first screen now, not at 1660px, and above the credential
-            table rather than under it. The three facts wrap to 225px at 320,
-            which put the one action this page asks for at y=849 in a 700px
-            viewport. They are the footnote to the claim; the ask is not. */}
-        <div className={styles.actions}>
-          <a className={styles.cta} href={contactHref} data-pull>
-            Get in touch
-          </a>
-        </div>
-
-        <dl className={styles.facts}>
-          {proof.length > 0 && (
-            <div className={styles.fact}>
-              <dt>proof</dt>
-              <dd className={styles.proofStrip}>
-                {proof.map((p) => (
-                  <a key={p.href} href={p.href} data-pull>
-                    <b>{p.value}</b>
-                    <span>{p.label}</span>
-                  </a>
-                ))}
-              </dd>
-            </div>
-          )}
-          <div className={styles.fact}>
-            <dt>available</dt>
-            <dd>{available}</dd>
-          </div>
-          <div className={styles.fact}>
-            <dt>certified</dt>
-            <dd className={styles.badges}>
-              {credentials.map((c) => (
-                <a key={c.url} className={styles.badge} href={c.url} target="_blank" rel="noreferrer" aria-label={`${c.label}, verify`} data-pull>
-                  {c.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- a small static vendor badge
-                    <img src={c.image} alt="" width={56} height={56} loading="eager" />
-                  ) : (
-                    c.label
-                  )}
-                </a>
-              ))}
-            </dd>
-          </div>
-        </dl>
           </div>
 
         {/* One instrument, not two.
@@ -367,7 +303,7 @@ export default function Hero({
             <span className={styles.consoleLabel}>agent</span>
             <span className={styles.consoleState} data-state={done ? "done" : unreachable ? "degraded" : "running"}>
               <span className="live-dot" data-state={done || unreachable ? undefined : "running"} />
-              {done ? `${total}ms` : unreachable ? "unreachable" : "running"}
+              {done ? dur(total) : unreachable ? "unreachable" : "answering\u2026"}
             </span>
           </div>
 
@@ -388,7 +324,7 @@ export default function Hero({
                   </div>
                   <span className={styles.label}>{node}</span>
                   <span className={`${styles.ms} tabular`}>
-                    {ms !== undefined ? `${ms}ms` : state === "running" ? "\u00b7\u00b7\u00b7" : ""}
+                    {ms !== undefined ? dur(ms) : state === "running" ? "\u00b7\u00b7\u00b7" : ""}
                   </span>
                 </div>
               );
@@ -450,7 +386,7 @@ export default function Hero({
                  chips it will be grounded in, so the panel states what it is
                  about to do and nothing moves when the words arrive. */
               <>
-                <p className={styles.saidPending}>running the graph</p>
+                <p className={styles.saidPending}>{"answering\u2026"}</p>
                 <div className={styles.skel} aria-hidden="true">
                   <span className={styles.skelBar} />
                   <span className={styles.skelBar} style={{ "--skel-n": 1 } as React.CSSProperties} />

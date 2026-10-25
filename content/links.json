@@ -20,18 +20,6 @@
       "checkedOn": "2026-10-07"
     },
     {
-      "url": "https://bulife-ai.netlify.app/",
-      "status": 200,
-      "ok": true,
-      "checkedOn": "2026-10-07"
-    },
-    {
-      "url": "https://github.com/Kushal9889/BU-Life-AI",
-      "status": 200,
-      "ok": true,
-      "checkedOn": "2026-10-07"
-    },
-    {
       "url": "https://github.com/langchain-ai/deepagents/issues/4846",
       "status": 200,
       "ok": true,

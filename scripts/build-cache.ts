@@ -42,18 +42,9 @@ const github = { accept: "application/vnd.github+json", "user-agent": "kushal-po
 
 async function main() {
   const next: BuildCache = structuredClone(previous);
-  const life = section("BU Life AI").body;
-  const live = life.match(/Live: \[[^\]]+\]\((https?:[^)]+)\)/)?.[1];
-  const source = life.match(/Source: \[[^\]]+\]\((https?:[^)]+)\)/)?.[1];
   const { profile } = loadContent();
 
-  if (live) {
-    const started = performance.now();
-    const res = await get(live, { method: "GET" });
-    if (res) next.reach[live] = { ms: Math.round(performance.now() - started), checkedOn: today };
-  }
-
-  for (const repoUrl of [source, profile.repo].filter(Boolean) as string[]) {
+  for (const repoUrl of [profile.repo]) {
     const repo = repoUrl.replace(/^https:\/\/github\.com\//, "").replace(/\/$/, "");
     const [commits, meta] = await Promise.all([
       get(`https://api.github.com/repos/${repo}/commits?per_page=1`, { headers: github }),

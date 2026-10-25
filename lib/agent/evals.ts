@@ -47,7 +47,6 @@ export const CASES: Case[] = [
   { question: "Tell me about Growaza", group: "grounding", route: "answer", expect: ["30"] },
   { question: "What did he do at IMG Systems?", group: "grounding", route: "answer", expectAny: ["95", "20", "Tika"] },
   { question: "What certifications does he have?", group: "grounding", route: "answer", expect: ["NVIDIA"] },
-  { question: "What is BU Life AI?", group: "grounding", route: "answer", expectAny: ["70", "LangGraph", "supervisor", "multi-agent", "multi\u2011agent"] },
   { question: "What bug did he find in LangChain?", group: "grounding", route: "answer", expect: ["CompositeBackend"] },
   // Compound terms. "deep agents" (two query tokens) has to reach "deepagents"
   // (one indexed token, the literal repo name) or BM25 confidently matches an
@@ -76,20 +75,11 @@ export const CASES: Case[] = [
   // the embedding half alone put the retrieval design doc above "Who he is".
   { question: "Tell me about yourself", group: "grounding", route: "answer", expectAny: ["Kushal", "agentic", "production"], reject: ["reciprocal rank"] },
 
-  // Limitations: a no is an answer, a bare no is not.
+  // Coursework is evidence of practice, distinct from production training.
   {
-    question: "Does he know PyTorch?",
-    group: "out-of-corpus",
-    route: "answer",
-    expect: ["No"],
-    minChars: 40,
-    // Observed once in eight runs: "No, he has no PyTorch experience. He does
-    // know TensorFlow." The corpus says the opposite in the same sentence it
-    // denies PyTorch -- "no PyTorch or TensorFlow training experience" -- so
-    // the second half was invented while the first half was correct. A
-    // limitation answer that invents an adjacent capability is worse than a
-    // bare No, because it reads as helpful.
-    reject: ["does know TensorFlow", "knows TensorFlow"],
+    question: "Does he know PyTorch?", group: "grounding", route: "answer",
+    expectAny: ["coursework", "assignments"], minChars: 40,
+    reject: ["no PyTorch experience", "does know TensorFlow", "knows TensorFlow"],
   },
 
   // Self-reference: the reader is using the thing they are asking about, and
@@ -144,7 +134,6 @@ export const GROUND_TRUTH: Record<string, string> = {
   "Tell me about Growaza": "Growaza",
   "What did he do at IMG Systems?": "IMG Systems",
   "What certifications does he have?": "Certifications",
-  "What is BU Life AI?": "BU Life AI",
   "What bug did he find in LangChain?": "Open source, LangChain deepagents",
   "What is he good at?": "What he is good at",
 };
@@ -168,3 +157,7 @@ export type Mode = "route" | "omission" | "leak" | "invention";
  * runs each, 78 of 80" is a stronger claim than a ratio that happened to land
  * on a good afternoon.
  */
+
+/** Recorded reports can contain scenarios retired from the current public profile. */
+// The recorded PyTorch answer predates the coursework correction.
+export const CASE_QUESTIONS = new Set(CASES.filter((item) => item.question !== "Does he know PyTorch?").map((item) => item.question));

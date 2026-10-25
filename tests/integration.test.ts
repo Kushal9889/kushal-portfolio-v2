@@ -142,7 +142,7 @@ describe("retrieval puts the answering section first", () => {
     ["What did he build at IMG Systems?", "IMG Systems"],
     ["What did he do at Growaza?", "Growaza"],
     ["What bug did he find in LangChain?", "Open source, LangChain deepagents"],
-    ["What is BU Life AI?", "BU Life AI"],
+    ["Why does the graph run without a checkpointer?", "This site"],
     ["What certifications does he have?", "Certifications"],
   ];
 

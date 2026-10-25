@@ -7,8 +7,6 @@
   margin-block-end: var(--s-3);
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--step--2);
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
   color: var(--ink-faint);
 }
 

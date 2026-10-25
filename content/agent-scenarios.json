@@ -9,7 +9,6 @@
   "questrom": "Boston University, Questrom Computational Lab",
   "img": "IMG Systems",
   "growaza": "Growaza",
-  "bulife": "BU Life AI",
   "oss": "Open source, LangChain deepagents",
   "certs": "Certifications",
   "edu": "Education",
@@ -194,54 +193,6 @@
    },
    "must": [
     "intern"
-   ]
-  },
-  {
-   "id": 15,
-   "kind": "direct",
-   "q": "What is BU Life AI?",
-   "expect": "answer",
-   "rel": {
-    "bulife": 2
-   },
-   "must": [
-    "campus"
-   ]
-  },
-  {
-   "id": 16,
-   "kind": "paraphrase",
-   "q": "Why did the campus assistant use a supervisor with separate agents instead of one agent?",
-   "expect": "answer",
-   "rel": {
-    "bulife": 2
-   },
-   "must": [
-    "supervisor"
-   ]
-  },
-  {
-   "id": 17,
-   "kind": "direct",
-   "q": "What breaks first if BU Life AI gets 10x the traffic?",
-   "expect": "answer",
-   "rel": {
-    "bulife": 2
-   },
-   "must": [
-    "Render"
-   ]
-  },
-  {
-   "id": 18,
-   "kind": "typo",
-   "q": "wat embedings does bu life ai use",
-   "expect": "answer",
-   "rel": {
-    "bulife": 2
-   },
-   "must": [
-    "NV-Embed"
    ]
   },
   {
@@ -568,19 +519,6 @@
    ]
   },
   {
-   "id": 45,
-   "kind": "multi",
-   "q": "Compare the retrieval he built at Questrom with the one in BU Life AI.",
-   "expect": "answer",
-   "rel": {
-    "questrom": 2,
-    "bulife": 2
-   },
-   "must": [
-    "BM25"
-   ]
-  },
-  {
    "id": 46,
    "kind": "multi",
    "q": "Where has he used Docker, across all his jobs?",
@@ -592,20 +530,6 @@
    },
    "must": [
     "Docker"
-   ]
-  },
-  {
-   "id": 47,
-   "kind": "multi",
-   "q": "Which of his projects use LangGraph?",
-   "expect": "answer",
-   "rel": {
-    "questrom": 2,
-    "bulife": 2,
-    "site": 1
-   },
-   "must": [
-    "LangGraph"
    ]
   },
   {
@@ -636,23 +560,6 @@
    },
    "must": [
     "20"
-   ]
-  },
-  {
-   "id": 50,
-   "kind": "followup",
-   "q": "What was the stack?",
-   "history": [
-    {
-     "question": "Tell me about BU Life AI."
-    }
-   ],
-   "expect": "answer",
-   "rel": {
-    "bulife": 2
-   },
-   "must": [
-    "pgvector"
    ]
   },
   {

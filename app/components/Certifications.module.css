@@ -82,8 +82,6 @@
 .tag {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--step--2);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -149,26 +147,27 @@
 /* The rest: one tile per issuer, brand mark first, in a ledger of
    hairline cells with a plus at each corner the way a drawing marks its
    registration points. */
+/* The other issuers on one row, each a chip in the same style. */
 .logos {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  border-top: var(--border-hair) solid var(--rule);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
 }
 
 .logo {
   position: relative;
-  border-bottom: var(--border-hair) solid var(--rule);
+  border: var(--border-hair) solid var(--rule);
 }
 
 .logoHead {
   display: flex;
   align-items: center;
   gap: var(--s-3);
-  min-height: 64px;
-  padding-inline: var(--s-2);
+  min-height: 48px;
+  padding-inline: var(--s-3);
   color: var(--ink);
   text-decoration: none;
   cursor: pointer;
@@ -177,21 +176,6 @@
 
 .logoHead::-webkit-details-marker {
   display: none;
-}
-
-.plus {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: var(--step-2);
-  font-weight: 300;
-  line-height: 1;
-  color: var(--ink-soft);
-  transition: rotate var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out);
-}
-
-.logoHead:hover .plus,
-.logoFold[open] .plus {
-  color: var(--ink);
-  rotate: 45deg;
 }
 
 .mark {
@@ -215,8 +199,6 @@
   margin-left: auto;
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--step--2);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 

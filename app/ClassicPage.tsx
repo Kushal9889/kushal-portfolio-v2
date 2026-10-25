@@ -3,18 +3,17 @@
 import "./globals.css";
 import "./scenes.css";
 import Hero from "./components/Hero";
-import ProofWall, { seal } from "./components/ProofWall";
+import ProofWall from "./components/ProofWall";
 import Prose from "./components/Prose";
 import Certifications from "./components/Certifications";
 import DiffReveal from "./components/DiffReveal";
 import Agent from "./components/Agent";
 import Palette from "./components/Palette";
-import LiveStatus from "./components/LiveStatus";
 import Metrics from "./components/Metrics";
 import Artifacts from "./components/Artifacts";
 import Measured from "./components/Measured";
-import Reach from "./components/Reach";
-import ReachDock from "./components/ReachDock";
+import Reach, { EmailLink } from "./components/Reach";
+import ReachDock, { MotionSwitch, SearchKey } from "./components/ReachDock";
 import SectionLink from "./components/SectionLink";
 import PageMotion from "./components/PageMotion";
 import SceneFx from "./components/SceneFx";
@@ -40,14 +39,13 @@ import FilmBoot from "./components/film/FilmBoot";
 import FilmMount from "./components/film/FilmMount";
 import Timeline, { startOf } from "./components/Timeline";
 import Compare from "./components/Compare";
-import Topology from "./components/Topology";
 import CopyText from "./components/CopyText";
-import Countdown from "./components/Countdown";
+import { VISITOR_JOURNEYS } from "@/lib/journeys";
 
 /** The section headings verbatim, for the rail and the footer index alike. */
 const CHAPTERS = [
-  { id: "work", label: "Work" },
   { id: "opensource", label: "The bug that looked like success" },
+  { id: "work", label: "Work" },
   { id: "running", label: "Also running" },
   { id: "research", label: "Research" },
   { id: "proof", label: "What else checks out" },
@@ -60,9 +58,16 @@ const CHAPTERS = [
 /** A corpus body with its line wrapping and bold markers taken out, for quoting. */
 const flat = (body: string) => body.replace(/\*\*/g, "").replace(/\s+/g, " ");
 
+/** The bolded opening claim of a corpus body. */
+const boldLead = (body: string) => body.match(/\*\*([\s\S]+?)\*\*/)?.[1].replace(/\s+/g, " ").replace(/:$/, ".") ?? "";
+
+/** The first sentence of a corpus body that contains `needle`. */
+const sentenceWith = (body: string, needle: string) => flat(body).split(/(?<=[a-z0-9]\.) (?=[A-Z])/).find((x) => x.includes(needle)) ?? "";
+
 function Section({
   id,
   title,
+  claim,
   children,
   beat,
   scrim,
@@ -70,6 +75,8 @@ function Section({
 }: {
   id: string;
   title: string;
+  /** The section's point in one line, read before anything else in it. */
+  claim?: string;
   children: React.ReactNode;
   /** The film beat this slot plays. Beats keep the story's order while the
    *  sections move, so a section can sit in any slot. Defaults to its id. */
@@ -105,7 +112,7 @@ function Section({
   "data-sweep"?: "on";
 }) {
   return (
-    <section id={id} data-beat={beat ?? id} className={styles.section} {...tone}>
+    <section tabIndex={-1} id={id} data-beat={beat ?? id} className={styles.section} {...tone}>
       {/* Two columns above 62rem: the heading holds a rail on the left and
           everything else runs beside it. Stacked, seven section headings cost
           most of a screen on their own and the page used half its width. The
@@ -122,6 +129,9 @@ function Section({
             <SectionLink id={id} title={title} />
           </h2>
         </div>
+        {/* Beside the heading in the rail layouts, under it elsewhere: always
+            the first thing in the reading column. */}
+        {claim && <p className={styles.claim}>{claim}</p>}
         {children}
       </div>
     </section>
@@ -155,24 +165,41 @@ const ROLE_TINT: Record<string, string> = {
 function RoleContent({
   section: s,
   past = false,
+  compact = false,
+  id,
   row,
 }: {
   section: Section;
   past?: boolean;
+  /** Older roles show their figures; the prose and stack open on demand. */
+  compact?: boolean;
+  id: string;
   /** Which grid row this role occupies. */
   row: number;
 }) {
-  // The first paragraph is the role in one breath and stays visible; the
-  // rest opens on demand.
+  // The first paragraph is the role in one breath; the rest opens on demand.
   const [lead, ...more] = s.body.split(/\n\s*\n/);
-  const body = more.length > 0 ? <Prose body={more.join("\n\n")} className={styles.roleBody} claimHref={s.claim} /> : null;
+  const leadProse = <Prose body={lead} className={`${styles.roleBody} ${styles.roleLead}`} claimHref={s.claim} />;
+  const stack = s.stack.length > 0 && (
+    <ul className={styles.stack}>
+      {s.stack.map((t) => (
+        <li key={t}>
+          <BrandMark name={t} />
+          {t}
+        </li>
+      ))}
+    </ul>
+  );
+  const rest = more.length > 0 ? <Prose body={more.join("\n\n")} className={styles.roleBody} claimHref={s.claim} /> : null;
+  const folded = compact ? <>{leadProse}{stack}{rest}</> : <>{stack}{rest}</>;
 
   return (
     <article
-      id={`role-${row}`}
+      id={id}
       className={styles.roleContent}
       data-role-content
       data-past={past || undefined}
+      data-compact={compact || undefined}
       style={{ "--row": row, "--role-tint": ROLE_TINT[s.title] ?? "var(--rule)" } as React.CSSProperties}
     >
       <Panel
@@ -188,42 +215,23 @@ function RoleContent({
         state={past ? "done" : "running"}
         status={`${s.roleParts.dates}${s.roleParts.location ? ` \u00b7 ${s.roleParts.location}` : ""}`}
       >
-        {/* Identity figure on the left, proof on the right (stacked on a
-            phone, where only the first figure shows). The ask sits outside
-            the fold so a phone reader can put the role to the agent at once. */}
         <div className={styles.rolePair}>
           <div
             className={styles.roleFigures}
             style={{ "--figure-tint": ROLE_TINT[s.title] } as React.CSSProperties}
           >
-            <Metrics items={s.metrics} />
+            <Metrics items={s.metrics.slice(0, 4)} />
           </div>
           <div className={styles.roleProof}>
-            <Prose body={lead} className={`${styles.roleBody} ${styles.roleLead}`} claimHref={s.claim} />
-            {/* The stack is the first thing a reader checks against their own,
-                so it stays out of the fold, marks first. */}
-            {s.stack.length > 0 && (
-              <ul className={styles.stack}>
-                {s.stack.map((t) => (
-                  <li key={t}>
-                    <BrandMark name={t} />
-                    {t}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {s.asks.length > 0 && <AskSeeds items={s.asks} />}
-            {/* Folded on both views so each role reads as title, figure,
-                one paragraph and its stack first. */}
-            {body && (
-              <details className="more" data-phone-fold>
-                <summary aria-label={`What he built as ${s.roleParts.title}`}>
-                  <span className="more-open">What he built</span>
-                  <span className="more-close">Show less</span>
-                </summary>
-                {body}
-              </details>
-            )}
+            {!compact && leadProse}
+            <details className="more" data-phone-fold>
+              <summary aria-label={`What he built as ${s.roleParts.title}`}>
+                <span className="more-open">What he built</span>
+                <span className="more-close">Show less</span>
+              </summary>
+              {folded}
+              {s.asks.length > 0 && <AskSeeds items={s.asks} />}
+            </details>
           </div>
         </div>
       </Panel>
@@ -249,7 +257,6 @@ export default function Page() {
   const merged = os.artifacts.find((a) => a.state === "merged");
   const evidence = {
     figure: hours?.value.replace(/\s*hours?$/i, "") ?? "57",
-    unit: "hours to merge",
     sentence: profile.proof,
     href: merged?.url ?? profile.github,
     label: merged?.label ?? "",
@@ -286,10 +293,10 @@ export default function Page() {
   // Newest first. `past` is the de-emphasis flag the rail and the content
   // column both read, so the order and the weighting live in one place.
   const roles = [
-    { section: questrom, past: false },
-    { section: backend, past: false },
-    { section: img, past: true },
-    { section: growaza, past: true },
+    { section: backend, past: false, compact: false, id: "role-2" },
+    { section: questrom, past: true, compact: false, id: "role-1" },
+    { section: img, past: true, compact: true, id: "role-3" },
+    { section: growaza, past: true, compact: true, id: "role-4" },
   ];
 
   // Figures drawn beside the prose that states them. Every value is read from
@@ -301,23 +308,24 @@ export default function Page() {
   const fixS = parseFloat(pub.metrics[2]?.value ?? "");
   const staticS = parseFloat(pub.metrics[2]?.label.match(/against ([\d.]+)s/)?.[1] ?? "");
   const doi = pub.artifacts.find((a) => a.url.includes("doi.org"))?.url;
-  const life = flat(section("BU Life AI").body);
   const edu = flat(section("Education").body);
+  const gre = edu.match(/GRE total score: (\d+) of (\d+)/);
+  const greLabel = gre ? `GRE ${gre[1]}/${gre[2]}` : "";
   const after = (needle: string) => (edu.includes(needle) ? edu.slice(edu.indexOf(needle)) : "");
   const courses = edu.match(/Coursework: (.+?)\./)?.[1].split(", ") ?? [];
-  const habit = flat(section("Who he is").body).split(/(?<=\.) /).find((s) => s.includes("working habit"));
   const start = startOf(section("Availability").body);
   const filed = os.artifacts.find((a) => a.state === "closed" && a.url.includes("deepagents"));
 
   return (
     <>
       <FilmBoot />
-      <Palette email={profile.email} github={profile.github} repo={profile.repo} asks={asks} />
+      <Palette who={`${profile.name}, ${profile.role}`} email={profile.email} site={profile.site.replace("https://", "")} github={profile.github} repo={profile.repo} asks={asks} />
       {/* Reaching him from wherever the reader is, with the draft written for
           the section they are actually in. Six of the seven openers in
           lib/reach.ts have never been reachable, because the contact block is
           the only caller and it takes the default. */}
       <ReachDock
+        who={`${profile.name}, ${profile.role}`}
         email={profile.email}
         site={profile.site.replace("https://", "")}
         linkedin={profile.linkedin}
@@ -331,7 +339,6 @@ export default function Page() {
           verbatim, not a second set of names for the same things: two vocabularies
           for one page is how a reader ends up unsure whether "Proof" and "What
           else checks out" are the same section. */}
-      <SectionRail items={CHAPTERS} />
       {/* Scroll progress. Purely decorative, so it is hidden from assistive tech
           and disappears entirely under reduced-motion. */}
       <div className={styles.progress} aria-hidden="true" />
@@ -339,64 +346,26 @@ export default function Page() {
         name={profile.name}
         tagline={profile.tagline}
         location={profile.location}
-        current={profile.current}
-        skills={section("Skills").stack}
+        current={`${backend.roleParts.title}, ${backend.title.replace(/, backend$/, "")}.${start ? ` Full-time from ${start.label}.` : ""}`}
         evidence={evidence}
-        proof={[
-          { m: section("Open source, LangChain deepagents").metrics[0], label: "to a merged fix", href: "#opensource" },
-          { m: section("Publications").metrics[0], label: "paper accuracy", href: "#research" },
-          { m: section("BU Life AI").metrics[0], label: "redundant LLM calls", href: "#running" },
-        ]
-          .filter((p) => p.m)
-          .map((p) => ({ value: p.m.value, label: p.label, href: p.href }))}
-        available={profile.available}
-        credentials={certs
-          .filter((c) => c.pinned && c.url)
-          .map((c) => ({ label: `${c.name}, ${c.issuer}`, url: c.url as string, image: c.image }))}
-        contactHref="#contact"
+        email={profile.email}
+        site={profile.site.replace("https://", "")}
+        who={`${profile.name}, ${profile.role}`}
+        certified={certs.filter((c) => c.pinned && c.url).map((c) => c.name)}
+        resumeHref="/kushal-gaddamwar-resume.pdf"
       >
         <Agent {...agentProps} loop={false} />
       </Hero>
+      <SectionRail items={CHAPTERS} />
 
       <main id="main">
         <FilmLine which="hook" />
         <FilmTransit id="T1" />
 
-        <Section id="work" title="Work" data-layout="banner" data-register="chapter">
-          <WorkStack />
-          {/* Rail and content are two columns of one grid, not three
-              self-contained role cards, so every role's identity can share
-              one tall containing block and stack rather than take turns --
-              see .roleRail in page.module.css. */}
-          <div
-            className={styles.roles}
-            style={{ "--role-count": roles.length } as React.CSSProperties}
-          >
-            {/* No rail. Each rack's own header strip sticks, so the identity of
-                the role a reader is inside stays on screen without a second
-                column existing to hold a copy of it. */}
-            {roles.map(({ section: s, past }, i) => (
-              <RoleContent key={s.title} section={s} past={past} row={i + 1} />
-            ))}
-          </div>
-          {/* The four racks on one axis, after them: which roles overlap, which
-              followed which. Each bar returns to its rack. */}
-          <Timeline
-            label="His roles over time"
-            items={roles.map(({ section: s }, i) => ({
-              label: s.roleParts.title,
-              sub: s.title.replace(/, backend$/, ""),
-              when: s.roleParts.dates,
-              href: `#role-${i + 1}`,
-              tint: ROLE_TINT[s.title],
-            }))}
-          />
-        </Section>
-
-        <FilmTransit id="T2" />
-
         <Section
           id="opensource"
+          beat="work"
+          claim={hours ? `Merged by a LangChain maintainer ${hours.value} after his report.` : undefined}
           title="The bug that looked like success"
           data-lead="artifact"
           data-layout="banner"
@@ -411,9 +380,6 @@ export default function Page() {
             prUrl={merged?.url ?? ""}
             prLabel={merged?.label.replace(/^.*#/, "PR #") ?? ""}
           />
-          <div className={styles.roleFigures} style={{ "--figure-tint": "var(--brand-langchain)" } as React.CSSProperties}>
-            <Metrics items={os.metrics} />
-          </div>
           <div className={styles.beside}>
             <Prose body={section("Open source, LangChain deepagents").body} topic="the LangChain deepagents fix" claimHref={section("Open source, LangChain deepagents").claim} />
             {/* The two public records and the time between them, as a path a
@@ -445,69 +411,68 @@ export default function Page() {
               <span className="more-open">The issue, the pull request and questions to ask</span>
               <span className="more-close">Show less</span>
             </summary>
+            {/* The 57 hours is the claim above and the chain beside it; the
+                other figures sit here with the records. */}
+            <div className={styles.roleFigures} style={{ "--figure-tint": "var(--brand-langchain)" } as React.CSSProperties}>
+              <Metrics items={os.metrics} />
+            </div>
             <Artifacts items={os.artifacts} chain />
             <AskSeeds items={section("Open source, LangChain deepagents").asks} />
           </details>
         </Section>
 
+        <FilmTransit id="T2" />
+
+        <Section id="work" beat="opensource" title="Work" claim={boldLead(section("Who he is").body)} data-layout="banner" data-register="chapter">
+          <WorkStack />
+          {/* Rail and content are two columns of one grid, not three
+              self-contained role cards, so every role's identity can share
+              one tall containing block and stack rather than take turns --
+              see .roleRail in page.module.css. */}
+          {/* Phone: every role in one glance before the racks, for a reader
+              checking the shape of his experience rather than its detail. */}
+          <ol className={styles.roleIndex} data-only="phone" aria-label="Roles at a glance">
+            {roles.map(({ section: r, id }) => (
+              <li key={id}>
+                <a href={`#${id}`}>
+                  <b>{r.roleParts.title}</b>
+                  <span>{r.title.replace(/, backend$/, "")} \u00b7 {r.roleParts.dates}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+          <div
+            className={styles.roles}
+            style={{ "--role-count": roles.length } as React.CSSProperties}
+          >
+            {/* No rail. Each rack's own header strip sticks, so the identity of
+                the role a reader is inside stays on screen without a second
+                column existing to hold a copy of it. */}
+            {roles.map(({ section: s, past, compact, id }, i) => (
+              <RoleContent key={s.title} section={s} past={past} compact={compact} id={id} row={i + 1} />
+            ))}
+          </div>
+          <nav className={styles.journeyActions} aria-label="Next steps after Work">
+            <EmailLink who={`${profile.name}, ${profile.role}`} email={profile.email} site={profile.site.replace("https://", "")} context="work" data-primary>Email him</EmailLink>
+            <a href="#approach">How he engineers</a>
+          </nav>
+        </Section>
+
         <FilmTransit id="T3" />
 
-        {/* The deployed project, in its own section so the film can hold the
-            memory beat behind it. Same panel, same probe, same corpus. */}
-        <Section id="running" beat="research" title="Also running" data-register="instrument">
-          <Panel
-            className={styles.alsoBuilt}
-            hue="var(--brand-nvidia)"
-            kind="instrument"
-            surface="console"
-            heading={3}
-            label={section("BU Life AI").title}
-            state="running"
-            status="reachability"
-          >
-            <div
-              className={styles.roleFigures}
-              style={{ "--figure-tint": "var(--brand-nvidia)" } as React.CSSProperties}
-            >
-              <Metrics items={section("BU Life AI").metrics} />
-            </div>
-            {/* What the three agents are and how a question reaches one, drawn
-                from the sentence that says so, then whether it is up right now. */}
-            <Topology
-              root={life.match(/a (\w+ supervisor)/)?.[1] ?? "Supervisor"}
-              rootNote="classifies intent and routes"
-              leaves={life.match(/agents for (\w+), (\w+) and (\w+)/)?.slice(1) ?? []}
-              leafNote="ReAct agents, each on its own thread"
-              store={/pgvector/.test(life) && /BM25/.test(life) ? "pgvector, fused with BM25" : undefined}
-            />
-            <LiveStatus url="https://bulife-ai.netlify.app/" label="bulife-ai.netlify.app" />
-            <details className="more">
-              <summary>
-                <span className="more-open">Stack and how it works</span>
-                <span className="more-close">Show less</span>
-              </summary>
-              <Prose body={section("BU Life AI").body} topic="BU Life AI" claimHref={section("BU Life AI").claim} />
-              <ul className={styles.stack}>
-                {section("BU Life AI").stack.map((t) => (
-                  <li key={t}>
-                    <BrandMark name={t} />
-                    {t}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          </Panel>
+        <Section id="running" beat="research" title="Also running" claim={sentenceWith(section("This site").body, "The agent on this page answers")} data-register="instrument">
+          <AskSeeds items={[{ question: "What happens when every model provider fails?" }]} />
         </Section>
 
         <FilmTransit id="T4" />
 
-        {/* Research took this section from BU Life AI.
+        {/* The paper has measured results and a DOI.
             The paper is first-author work with measured numbers and a DOI, and
             it sat in a one-third column under Credentials while a side project
             held a top-level heading. It also completes the thread section 01
             opens: the paper argues context is needed to catch bugs static
             analysis misses, and the LangChain defect was exactly that shape. */}
-        <Section id="research" beat="approach" title="Research" data-register="instrument">
+        <Section id="research" beat="approach" title="Research" claim={boldLead(pub.body)} data-register="instrument">
           {/* Framed the way Also running is: one console panel with a status,
               the figures, the argument, and the papers behind a fold. */}
           <Panel
@@ -526,47 +491,46 @@ export default function Page() {
             >
               <Metrics items={section("Publications").metrics} />
             </div>
-            <div className={styles.beside}>
-              <Prose body={section("Publications").body} topic="publications" claimHref={section("Publications").claim} phoneOpen={1} />
-              <div className={styles.figures}>
-                {gnn > 0 && (
-                  <Compare
-                    title="Bug detection accuracy"
-                    min={80}
-                    max={95}
-                    ticks={[80, 85, 90, 95]}
-                    unit="%"
-                    rows={[
-                      { label: "Graph network alone", value: gnn, shown: `${gnn}%` },
-                      { label: "Transformer alone", value: pct(pub.metrics[1]?.value), shown: pub.metrics[1]?.value ?? "" },
-                      { label: "Combined", value: pct(pub.metrics[0]?.value), shown: pub.metrics[0]?.value ?? "", lead: true },
-                    ]}
-                    note="Dots, not bars: the scale starts at 80%."
-                  />
-                )}
-                {staticS > 0 && fixS > 0 && (
-                  <Compare
-                    title="Detect and fix, seconds"
-                    min={0}
-                    max={30}
-                    ticks={[0, 10, 20, 30]}
-                    unit=" s"
-                    rows={[
-                      { label: "Static analysis", value: staticS, shown: `${staticS} s` },
-                      { label: "The paper's model", value: fixS, shown: `${fixS} s`, lead: true },
-                    ]}
-                  />
-                )}
-                {doi && <CopyText text={doi} label="Copy the DOI link" what="doi" />}
-              </div>
-            </div>
-            {/* Both papers as rows a reader can open, rather than as two links
-                inside a paragraph. The DOI resolves; the link checker proves it. */}
-            <details className="more" data-phone-fold>
+            {gnn > 0 && (
+              <Compare
+                title="Bug detection accuracy"
+                min={80}
+                max={95}
+                ticks={[80, 85, 90, 95]}
+                unit="%"
+                rows={[
+                  { label: "Graph network alone", value: gnn, shown: `${gnn}%` },
+                  { label: "Transformer alone", value: pct(pub.metrics[1]?.value), shown: pub.metrics[1]?.value ?? "" },
+                  { label: "Combined", value: pct(pub.metrics[0]?.value), shown: pub.metrics[0]?.value ?? "", lead: true },
+                ]}
+                note="Dots, not bars: the scale starts at 80%."
+              />
+            )}
+            {/* The argument, the timing chart and both papers open together. */}
+            <details className="more">
               <summary>
-                <span className="more-open">Both papers</span>
+                <span className="more-open">The paper, its timing chart and both papers</span>
                 <span className="more-close">Show less</span>
               </summary>
+              <div className={styles.beside}>
+                <Prose body={section("Publications").body} topic="publications" claimHref={section("Publications").claim} />
+                <div className={styles.figures}>
+                  {staticS > 0 && fixS > 0 && (
+                    <Compare
+                      title="Detect and fix, seconds"
+                      min={0}
+                      max={30}
+                      ticks={[0, 10, 20, 30]}
+                      unit=" s"
+                      rows={[
+                        { label: "Static analysis", value: staticS, shown: `${staticS} s` },
+                        { label: "The paper's model", value: fixS, shown: `${fixS} s`, lead: true },
+                      ]}
+                    />
+                  )}
+                  {doi && <CopyText text={doi} label="Copy the DOI link" what="doi" />}
+                </div>
+              </div>
               <Artifacts2 items={section("Publications").artifacts} />
             </details>
           </Panel>
@@ -582,6 +546,7 @@ export default function Page() {
             takes and the key ReachDock maps to a draft. */}
         <Section
           id="proof"
+          claim={sentenceWith(section("Who he is").body, "certifies him")}
           beat="measured"
          
           title="What else checks out"
@@ -598,26 +563,38 @@ export default function Page() {
             just watched the agent answer wants to know who they are talking to;
             the scope limits are here rather than buried because stating them
             early is what makes the rest of the page readable as fact. */}
-        <Section id="approach" beat="running" data-phone="hide" title="How he works" data-layout="rule" data-register="instrument">
-          <div className={styles.beside}>
-            <div>
-              <Prose body={section("Who he is").body} topic="who he is" claimHref={section("Who he is").claim} />
-              <Prose body={section("What he is good at").body} topic="what he is good at" claimHref={section("What he is good at").claim} />
-              {/* Condensed mode keeps only the first paragraph of a prose block,
-                  which took two thirds of the scope limits with it. This is the one
-                  section whose whole value is that it narrows the claim. */}
-              <div data-keep="all">
-                <Prose body={section("What he does not do").body} />
-              </div>
-            </div>
-            {/* The section's thesis, set as display type in the column the
-                measure leaves empty. A copy of a sentence already in the prose,
-                so it is hidden from assistive technology. */}
-            {habit && (
-              <blockquote className={styles.pull} aria-hidden="true">
-                <p>{habit}</p>
-              </blockquote>
-            )}
+        <Section id="approach" beat="running" title="How he works" claim={boldLead(section("What he is good at").body)} data-layout="rule" data-register="instrument">
+          <Panel kind="instrument" surface="console" heading={3} label="Decisions behind this page">
+            {[
+              ["Conversation state", "**The graph runs without a checkpointer.**"],
+              ["Provider failure", "**When every model provider fails, the answer degrades rather than erroring.**"],
+              ["Evaluation strategy", "**The evaluation suite has no LLM judge, deliberately.**"],
+            ].map(([label, opening]) => {
+              const body = section("This site").body.split(/\n\s*\n/).find((paragraph) => paragraph.startsWith(opening));
+              return body ? <details className="more" key={label}>
+                <summary>{label}: {opening.replace(/\*\*/g, "")}</summary>
+                <Prose body={body} claimHref={section("This site").claim} />
+              </details> : null;
+            })}
+            <AskSeeds items={[{ question: VISITOR_JOURNEYS[1].question }]} />
+            <nav className={styles.journeyActions} aria-label="Technical evidence">
+              <a href="#measured">Inspect the measured evidence</a>
+              <a href={profile.repo} target="_blank" rel="noreferrer">Open the source</a>
+            </nav>
+          </Panel>
+          <div>
+            {/* The opening paragraph restates the hero and the roles; the rest stays. */}
+            <Prose body={section("Who he is").body.split(/\n\s*\n/).slice(1).join("\n\n")} topic="who he is" claimHref={section("Who he is").claim} />
+            {/* The habit is stated once, in the paragraph above. */}
+            <Prose
+              body={section("What he is good at").body.split(/\n\s*\n/).filter((p) => !p.includes("contradicts itself")).join("\n\n")}
+              topic="what he is good at"
+              claimHref={section("What he is good at").claim}
+            />
+            <details className="more">
+              <summary>Experience scope</summary>
+              <Prose body={section("What he does not do").body} />
+            </details>
           </div>
           <details className="more" data-phone-fold>
             <summary>
@@ -633,55 +610,40 @@ export default function Page() {
         {/* The strongest signal in 2026 hiring is evidence that the thing was
             measured, not that it was built. It sits second because the bug above
             proves he finds failures and this proves he checks for them. */}
-        <Section id="measured" beat="proof" data-phone="hide" title="How this is measured" data-layout="bank" data-register="instrument" data-sweep="on">
-          <Measured />
-          {/*
-           * Order is the layout here. This grid auto-places into two columns in
-           * DOM order, so each row is as tall as its taller cell and the shorter
-           * cell leaves the rest of its column empty. In the previous order a
-           * 126px chart sat beside a 672px panel and a 788px panel sat beside a
-           * 77px summary: 1,304px of empty column inside one section, which is
-           * most of why this was the tallest section on the page at 3,181px.
-           *
-           * The two tall panels are paired, then the two short blocks are
-           * paired. It also reads better: the panels are the section's argument
-           * and the chart and the defect list are its footnotes.
-           */}
-          {/* The published results sit behind one fold: the headline above is
-              the claim, these are the evidence for it. */}
-          <p className={styles.latency}>
-              Median answer {(evals.p50 / 1000).toFixed(1)} s, 95th percentile {(evals.p95 / 1000).toFixed(1)} s, from the {evals.measured} eval run.
-            </p>
-          <details className="more">
-            <summary>
-              <span className="more-open">See the evidence: eval cases, model comparison, page vitals, defects</span>
-              <span className="more-close">Show less</span>
-            </summary>
-            {/* The suite as sixteen objects rather than one ratio. Six of them are
-                attempts to break the agent, which the score cannot say. */}
+        <Section id="measured" beat="proof" title="How this is measured" claim={`${evals.passed} of ${evals.cases} eval cases pass on every run.`} data-layout="bank" data-register="instrument" data-sweep="on">
+          <Measured>
             <EvalMatrix />
-            {/* Which model answers, and the measurement that says the choice was
-                not a guess. Beside the eval matrix because both are published
-                results from a build-time run rather than something happening now. */}
             <ModelChoice />
             <Vitals />
             <Defects />
-          </details>
+          </Measured>
         </Section>
 
         <FilmTransit id="T8" />
 
-        <Section id="education" title="Education" data-tone="sunk" data-layout="rule" data-register="instrument">
+        <Section id="education" title="Education" claim={sentenceWith(section("Education").body, "GPA")} data-tone="sunk" data-layout="rule" data-register="instrument">
           {/* Two panels: the degrees, then what came before them. Stacked: side
               by side inside the reading column each panel was too narrow for
               its figures. */}
-          <div className={styles.panelStack}>
-            <Panel className={styles.alsoBuilt} hue="var(--brand-bu)" kind="instrument" surface="console" heading={3} label="Degrees" state="running" status="M.S. in progress">
-              <div className={styles.eduFigures}>
-                <Metrics items={section("Education").metrics} />
-              </div>
+          {/* Degree, GPA, teaching and the two rankings in view; the rest of the
+              record opens on demand. */}
+          <Panel className={styles.alsoBuilt} hue="var(--brand-bu)" kind="instrument" surface="console" heading={3} label="Degrees" state="running" status="M.S. in progress">
+            <div className={styles.eduFigures}>
+              <Metrics
+                items={[
+                  ...section("Education").metrics,
+                  ...section("Achievements").metrics.filter((m) => /JEE|CodeChef/.test(m.label)),
+                ]}
+              />
+            </div>
+            <details className="more">
+              <summary>
+                <span className="more-open">Coursework, timeline and earlier achievements</span>
+                <span className="more-close">Show less</span>
+              </summary>
+              {greLabel && <p><strong>{greLabel}</strong></p>}
               <div className={styles.beside}>
-                <Prose body={section("Education").body} topic="education" phoneOpen={1} />
+                <Prose body={section("Education").body.replace(/GRE total score: [^.]+\.\s*/, "")} topic="education" />
                 <div className={styles.figures}>
                   <Timeline
                     label="Degrees and teaching over time"
@@ -700,23 +662,19 @@ export default function Page() {
                   )}
                 </div>
               </div>
-            </Panel>
-            <Panel className={styles.alsoBuilt} hue="var(--brand-bu)" kind="instrument" surface="console" heading={3} label="Before this" state="done" status="2020 to 2024">
               <div className={styles.eduFigures}>
-                <Metrics
-                  items={section("Achievements").metrics}
-                  seal={section("Proof wall").badges.filter((b) => /top \d+%/i.test(b.label)).map((b) => seal(b.label))[0]}
-                />
+                <Metrics items={section("Achievements").metrics.filter((m) => !/JEE|CodeChef/.test(m.label))} />
               </div>
-              <Prose body={section("Achievements").body} topic="achievements" phoneOpen={1} />
-            </Panel>
-          </div>
+              <Prose body={section("Achievements").body} topic="achievements" />
+            </details>
+          </Panel>
         </Section>
 
         <FilmTransit id="T9" />
 
         <Section
           id="contact"
+          claim={sentenceWith(section("Availability").body, "Target roles")}
          
           title="Get in touch"
           data-weight="closing"
@@ -724,50 +682,27 @@ export default function Page() {
           data-register="chapter"
           data-sweep="on"
         >
-          <Prose body={section("Availability").body} />
-          {/* Every path from "decided to write" to "message sent", with the
-              draft already composed. The bare mailto that was here opened an
-              empty window at the exact moment the reader had chosen to act. */}
-          <div className={styles.beside}>
-            <Reach
-              email={profile.email}
-              phone={profile.phone}
-              linkedin={profile.linkedin}
-              github={profile.github}
-              repo={profile.repo}
-              site={profile.site.replace("https://", "")}
-              resumeHref="/kushal-gaddamwar-resume.pdf"
-              forward={{
-                name: profile.name,
-                current: profile.current,
-                proof: profile.proof,
-                site: profile.site,
-                evals,
-              }}
-            />
-            {/* The two things a reader checks before writing: when he can start,
-                and the one page they will forward. The preview opens at the
-                summary; the full file is one press away. */}
-            <aside className={styles.resume} aria-label="Start date and résumé">
-              {start && (
-                <p className={styles.start}>
-                  <span className={styles.startLabel}>Full-time from</span>
-                  <span className={styles.startDate}>{start.label}</span>
-                  <Countdown until={start.iso} className={styles.startCount} />
-                </p>
-              )}
-              <a className={styles.sheet} href="/kushal-gaddamwar-resume.pdf" target="_blank" rel="noreferrer">
-                {/* eslint-disable-next-line @next/next/no-img-element -- a static preview of a static file */}
-                <img src="/resume-preview.webp" alt="The summary and experience on his résumé" width={560} height={411} loading="lazy" />
-                <span className={styles.sheetCap}>
-                  Open the résumé
-                  <span className={styles.sheetMeta}>PDF, one page</span>
-                </span>
-              </a>
-            </aside>
-          </div>
-          {/* The record, last: what he can prove, as badges, each one a link. */}
+          {/* The record first, then the close: when he can start and the one
+              action, so the page ends on what the reader came to do. */}
           <ProofWall certs={certs} badges={section("Proof wall").badges} />
+          <Reach
+            email={profile.email}
+            phone={profile.phone}
+            linkedin={profile.linkedin}
+            repo={profile.repo}
+            site={profile.site.replace("https://", "")}
+            resumeHref="/kushal-gaddamwar-resume.pdf"
+            who={`${profile.name}, ${profile.role}`}
+            available={section("Availability").body.split(/\n\s*\n/)[0].replace(/\s+/g, " ")}
+            forward={{
+              name: profile.name,
+              current: profile.current,
+              proof: profile.proof,
+              site: profile.site,
+              certified: certs.filter((c) => c.pinned && c.url).map((c) => `${c.name} (${c.issuer})`),
+              evals,
+            }}
+          />
           <FilmLine which="closing" />
         </Section>
       </main>
@@ -783,9 +718,13 @@ export default function Page() {
               </li>
             ))}
           </ol>
-          <a className={styles.top} href="#top">
-            Back to top
-          </a>
+          <span className={styles.footTools}>
+            <SearchKey />
+            <MotionSwitch />
+            <a className={styles.top} href="#top">
+              Back to top
+            </a>
+          </span>
         </nav>
         {/* The wordmark, oversized and outlined.
             `aria-hidden`, and that is not an oversight: the name is already the

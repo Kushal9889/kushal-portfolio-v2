@@ -1,7 +1,7 @@
 ---
 name: Kushal Gaddamwar
 role: AI Engineer
-current: AI Engineer and Lead Backend Engineer at Boston University's Questrom Computational Lab
+current: Research Assistant at Boston University's Questrom Computational Lab; Graduate Teaching Assistant at Boston University
 tagline: I engineer the systems around LLMs. Not the prompts inside them.
 location: Boston, MA
 email: kushal7887pd@gmail.com
@@ -20,9 +20,9 @@ lastVerified: 2026-10-02
 @source resume
 
 **Kushal Gaddamwar builds AI agents, then makes them answer to the same rules as the engineers
-around them.** At Boston University's Questrom Computational Lab he is the AI Engineer behind a
-14-tool LangGraph agent for Sikich, and the Lead Backend Engineer whose harness holds Claude Code
-agents to the gates human code has to pass. He also teaches as a Graduate Teaching Assistant for
+around them.** As a Research Assistant at Boston University's Questrom Computational Lab, he built a
+14-tool LangGraph agent for Sikich and leads backend engineering, including a harness that holds
+Claude Code agents to the gates human code has to pass. He also teaches as a Graduate Teaching Assistant for
 MET CS 664 Artificial Intelligence, and finishes his M.S. in Computer Science at BU in December
 2026. NVIDIA certifies him in agentic AI; Anthropic certifies him as a Claude developer.
 
@@ -34,9 +34,10 @@ The work he does is context engineering: deciding what a model sees on every inf
 Retrieval, memory, tool surface, evaluation. Most of the difficulty in agentic systems is not the
 prompt. It is everything around the prompt.
 
-He is not a researcher and not an ML training engineer. He has not trained models in production or
-research. His training work is coursework: the assignments in Advanced Machine Learning and Neural
-Networks at Boston University. He builds systems that stay correct under load.
+His applied ML foundation comes from Advanced Machine Learning and Neural Networks at Boston
+University: building models, examining prediction errors, and comparing model complexity against
+held-out performance. He connects those fundamentals with the retrieval, evaluation and deployment
+work in his AI systems.
 
 ## What he is good at
 @source resume
@@ -57,16 +58,14 @@ Growaza.
 
 ## What he does not do
 
-Model training in production or research. He has no PyTorch or TensorFlow project there. His
-training work is the coursework assignments in Advanced Machine Learning and Neural Networks at
-Boston University, and he does not present himself as an ML engineer.
-
-Data science and statistical modeling.
+His deployed work centers on LLM applications, retrieval and backend systems. His model-training
+experience is graduate coursework, including PyTorch assignments; production-scale neural-network
+training is not claimed here.
 
 ## Boston University, Questrom Computational Lab, backend
 @source resume
 
-Role: Lead Backend Engineer. August 2026 to present. Boston, MA.
+Role: Research Assistant (Lead Backend Engineer). August 2026 to present. Boston, MA.
 
 @metric Lead | the whole backend for the EST field-service platform | resume
 @metric Recurring visits | scheduled across sites and clients; a missed job becomes a dispatch alert | resume
@@ -94,7 +93,7 @@ Stack: Claude Code, Model Context Protocol, Django REST Framework, PostgreSQL, D
 ## Boston University, Questrom Computational Lab
 @source resume
 
-Role: AI Engineer, Graduate Researcher. May 2026 to present. Boston, MA.
+Role: Research Assistant (AI Engineer). May 2026 to August 2026. Boston, MA.
 
 @metric 14 | tools on one LangGraph agent | resume
 @metric BM25 + vector | hybrid retrieval, Cohere reranked | resume
@@ -190,48 +189,6 @@ resume line said "led".
 
 Stack: React, Redux, MySQL, Redis, Node.js, JWT, RBAC, AWS EC2 and S3.
 
-## BU Life AI
-@source https://github.com/Kushal9889/BU-Life-AI
-
-**A live multi-agent campus assistant for Boston University students, running since January
-2026:** a LangGraph supervisor classifies intent and routes to one of three specialised ReAct
-agents for places, resources and events, each on its own thread so concurrent users never share
-state, retrieving over NVIDIA NV-Embed 1024-dimension vectors in pgvector fused with BM25, which
-cut redundant LLM calls 70 percent.
-
-@metric -70% | redundant LLM calls | https://github.com/Kushal9889/BU-Life-AI
-@metric 3 | specialised agents, isolated state | https://github.com/Kushal9889/BU-Life-AI
-@metric 1024-dim | NV-Embed over pgvector | https://github.com/Kushal9889/BU-Life-AI
-
-Live: [bulife-ai.netlify.app](https://bulife-ai.netlify.app/)
-Source: [github.com/Kushal9889/BU-Life-AI](https://github.com/Kushal9889/BU-Life-AI)
-
-The constraint: students ask heterogeneous questions across housing, dining, events, and campus
-resources. One agent with a single long context prompt mixes tool namespaces across those domains,
-which causes retrieval contamination and reasoning drift over a session.
-
-**The decision: a LangGraph supervisor node classifies intent and routes to one of three specialised
-ReAct agents**, for places, resources, and events. Each agent owns its own LangGraph thread, so
-concurrent users never share state. The cost is orchestration complexity. What it buys is state
-isolation and a 70 percent reduction in redundant LLM calls.
-
-Retrieval combines BM25 lexical search with NVIDIA NV-Embed 1024-dimension vectors over pgvector,
-merged through an EnsembleRetriever. The retriever is initialised once at startup as a singleton,
-so there is no per-request re-ingestion cost.
-
-Inference runs on NVIDIA NIM, which is free, with AWS Bedrock and Claude 3 Haiku behind it as a
-paid fallback for when NIM is unavailable. Two providers, the free one first, which is the same
-failover shape the portfolio uses and for the same reason: the cheap path serves almost every
-request and the paid path exists so an outage degrades instead of failing.
-
-Stack: LangGraph, FastAPI, Next.js, TypeScript, pgvector, Neon Postgres, NVIDIA NIM, LangSmith
-
-Tokens stream over Server-Sent Events. The frontend is on Netlify and the backend on Render.
-
-What breaks at 10x: the Render free tier is the first bottleneck, CPU throttling and cold starts.
-Neon connection limits are second. The fix is a paid tier with persistent workers and PgBouncer
-pooling. He has not needed it yet and has not pretended otherwise.
-
 ## Open source, LangChain deepagents
 @source https://github.com/langchain-ai/deepagents/issues/4846
 
@@ -306,6 +263,14 @@ building agents with the Model Context Protocol, and a capstone project.
 Boston University, M.S. Computer Science, GPA 3.5 of 4.0. September 2025 to December 2026 expected.
 Boston, MA. Graduate Teaching Assistant for MET CS 664 Artificial Intelligence, about 40 graduate
 students, September 2026 to present. Coursework: Generative AI, Web Mining and Graph Analytics, Software Engineering, AI Systems, Advanced Machine Learning and Neural Networks.
+
+GRE total score: 334 of 340.
+
+Applied ML coursework: implemented Gini impurity and entropy calculations with NumPy; fitted
+classification and regression trees with scikit-learn; compared full and cost-complexity-pruned
+trees using confusion matrices, R-squared and mean squared error. Advanced study covers bagging,
+random forests, boosting, logistic regression and neural networks. PyTorch assignments form part
+of his graduate coursework. These are academic implementations, distinct from his deployed AI systems.
 
 IIIT Design and Manufacturing Jabalpur, B.Tech Computer Science and Engineering. October 2020 to
 June 2024. India.
@@ -402,8 +367,7 @@ The public record behind the claims on this page, shown as badges: what he shipp
 Available full-time from January 2027, earlier for the right team. Remote, hybrid or on-site anywhere
 in the United States. Based in Boston.
 
-Target roles: Agentic AI Engineer, Applied AI Engineer, LLM Engineer, AI Platform Engineer, Context
-Engineer.
+Target roles: Agentic AI Engineer, Applied AI Engineer, AI Platform Engineer, AI Engineer.
 
 ## Work authorisation
 

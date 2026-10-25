@@ -461,7 +461,7 @@ export async function* runStream(
     if (grounded) {
       yield {
         type: "token",
-        text: `${grounded.replace(/\*\*/g, "")}${measured}\n\nThat is the source text, unsummarised: every model provider is rate-limited right now. Retrieval still ran, and the sources above are the ones it chose.`,
+        text: `${grounded.replace(/\*\*/g, "")}${measured}\n\nThat is the source text, unsummarised: no generation provider is available right now. Retrieval still ran, and the sources above are the ones it chose.`,
       };
       yield { type: "offers", offers: offersFor(chunks) };
       yield {

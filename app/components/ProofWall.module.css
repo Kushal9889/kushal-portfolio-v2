@@ -129,8 +129,6 @@
 .cap {
   font-family: var(--font-mono), monospace;
   font-size: var(--step--2);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   text-align: center;
   line-height: 1.25;
 }
@@ -303,10 +301,7 @@
   padding: var(--s-1) var(--s-3);
   background: var(--graphite);
   border: var(--border-hair) solid var(--rule);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: var(--step--2);
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
+  font-size: var(--step--1);
   color: var(--ink-soft);
 }
 
@@ -316,4 +311,36 @@
   font-weight: 800;
   letter-spacing: 0;
   color: var(--ink);
+}
+
+/* Desktop: one level row, so the record reads as one set rather than a cloud. */
+@media (min-width: 768px) {
+  .stage {
+    gap: var(--s-5);
+    padding-bottom: var(--s-6);
+  }
+
+  .item {
+    --lift: 0 !important;
+  }
+}
+
+/* Phone: one row the thumb swipes through, so the close is not a screen away. */
+@media (max-width: 767px) {
+  .stage {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: clip;
+    scroll-snap-type: x mandatory;
+    gap: var(--s-4);
+    padding: var(--s-4) 0 var(--s-5);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .item {
+    --lift: 0 !important;
+    flex: none;
+    scroll-snap-align: start;
+  }
 }

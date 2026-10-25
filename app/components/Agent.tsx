@@ -15,6 +15,7 @@ import Paced from "./Paced";
 import type { GlyphKey } from "@/lib/ui-icons";
 import styles from "./Agent.module.css";
 import { reducedMotion } from "@/lib/verbs";
+import { VISITOR_JOURNEYS } from "@/lib/journeys";
 
 type Result = {
   answer: string;
@@ -56,16 +57,7 @@ type Turn = { question: string; result: Result | null };
  * uses one of these. Each is a question a recruiter actually asks, so the first
  * answer is useful rather than a demonstration that the box works.
  */
-const OPENERS = [
-  { q: "What broke in production and how did he find it?", shows: "failure" },
-  // A 2026 screen opens on evidence, not on design: the first thing asked of
-  // anyone claiming a working agent is how they know it works.
-  { q: "How does he know the retrieval is actually working?", shows: "evals" },
-  // Two, not three. The third asked what he shipped on Azure, which demonstrates
-  // grounding -- and the answer already rendered above this bar demonstrates
-  // grounding with its own source chips. A suggestion that repeats what is
-  // already on screen spends a row of the first viewport to show nothing new.
-];
+const OPENERS = VISITOR_JOURNEYS.map(({ label, question }) => ({ q: question, shows: label }));
 
 /**
  * Offered only after the first answer.
@@ -152,6 +144,9 @@ export default function Agent({
   /** Set when the question arrived from a shared link rather than being typed. */
   const [fromLink, setFromLink] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [inputError, setInputError] = useState<string | null>(null);
+  const [retryQuestion, setRetryQuestion] = useState<string | null>(null);
+  const activeQuestion = useRef("");
   const stream = useRef<EventSource | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -307,8 +302,28 @@ export default function Agent({
     }
   }
 
-  async function submit(question: string) {
-    if (!question.trim() || pending) return;
+  function restoreQuestion(question: string) {
+    if (inputRef.current && !inputRef.current.value) {
+      inputRef.current.value = question;
+      inputRef.current.style.height = "auto";
+    }
+    setRetryQuestion(question);
+  }
+
+  function submit(question: string) {
+    if (pending || stream.current) {
+      setInputError("An answer is running. Stop it before asking another question.");
+      return false;
+    }
+    question = question.trim();
+    if (!question || question.length > 2000) {
+      setInputError(question ? "Keep the question within 2,000 characters." : "Type a question about his work before asking.");
+      inputRef.current?.focus();
+      return false;
+    }
+    setInputError(null);
+    setRetryQuestion(null);
+    activeQuestion.current = question;
 
     /*
      * "yes", answered where it was asked.
@@ -341,7 +356,7 @@ export default function Agent({
           },
         },
       ]);
-      return;
+      return true;
     }
     pendingOpen.current = null;
 
@@ -416,8 +431,26 @@ export default function Agent({
       requestAnimationFrame(() => requestAnimationFrame(revealAgent));
     };
 
+    const fail = () => {
+      if (!answer) answer = `Connection dropped. He is reachable at ${email}.`;
+      restoreQuestion(question);
+      setInputError("The answer could not finish. Your question is ready to edit or retry.");
+      settle();
+      finish();
+    };
+
     source.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      let data;
+      try {
+        data = JSON.parse(event.data);
+      } catch {
+        fail();
+        return;
+      }
+      if (!data || typeof data.type !== "string") {
+        fail();
+        return;
+      }
       if (data.type === "route") {
         route = data.route;
         timings.route = data.ms;
@@ -462,9 +495,10 @@ export default function Agent({
         settle();
       } else if (data.type === "error") {
         answer = data.message;
-        settle();
-        finish();
+        fail();
       } else if (data.type === "done") {
+        setInputError(null);
+        setRetryQuestion(null);
         timings.answer = Math.max(0, data.total - (timings.route ?? 0) - (timings.retrieve ?? 0));
         settle({
           usage: data.usage,
@@ -501,16 +535,17 @@ export default function Agent({
 
     // EventSource retries on its own, which would re-ask a paid question. One
     // failure ends the turn and leaves the typed path untouched.
-    source.onerror = () => {
-      if (!answer) answer = `Connection dropped. He is reachable at ${email}.`;
-      settle();
-      finish();
-    };
+    source.onerror = fail;
+    return true;
   }
 
 
   /** One control ends everything in flight: generation, playback, and the mic. */
   function stop() {
+    if (stream.current) {
+      restoreQuestion(activeQuestion.current);
+      setInputError("Stopped. Your question is ready to edit or retry.");
+    }
     stream.current?.close();
     stream.current = null;
     setPending(false);
@@ -637,11 +672,10 @@ export default function Agent({
         onSubmit={(e) => {
           e.preventDefault();
           const value = inputRef.current?.value ?? "";
-          if (inputRef.current) {
+          if (submit(value) && inputRef.current) {
             inputRef.current.value = "";
             inputRef.current.style.height = "auto";
           }
-          submit(value);
         }}
       >
         {/* A textarea rather than an input, and 2000 characters rather than 500.
@@ -657,6 +691,7 @@ export default function Agent({
           rows={1}
           placeholder="Ask about his work"
           aria-label="Ask about his work"
+          aria-describedby="ask-feedback"
           maxLength={2000}
           disabled={pending}
           // The demo endpoint is cached for sixty seconds and shares the cold
@@ -666,12 +701,21 @@ export default function Agent({
             void fetch("/api/agent/demo").catch(() => {});
           }}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && e.keyCode !== 229) {
               e.preventDefault();
               e.currentTarget.form?.requestSubmit();
             }
           }}
+          onPaste={(e) => {
+            const el = e.currentTarget;
+            const length = el.value.length - (el.selectionEnd - el.selectionStart) + e.clipboardData.getData("text").length;
+            if (length > 2000) {
+              e.preventDefault();
+              setInputError("That text exceeds 2,000 characters. Shorten it before pasting; your current question is unchanged.");
+            }
+          }}
           onInput={(e) => {
+            setInputError(null);
             // Grows with a pasted block instead of scrolling inside two lines.
             const el = e.currentTarget;
             el.style.height = "auto";
@@ -691,7 +735,11 @@ export default function Agent({
           </button>
         )}
         {pending || listening ? (
-          <button type="button" className={styles.stop} onClick={stop}>
+          <button type="button" className={styles.stop} onClick={(e) => {
+            // This node becomes Ask in the same click; prevent a new form submit.
+            e.preventDefault();
+            stop();
+          }}>
             Stop
           </button>
         ) : (
@@ -700,6 +748,13 @@ export default function Agent({
           </button>
         )}
       </form>
+      <p id="ask-feedback" role="status" className={styles.inputNotice}>{inputError}</p>
+      {retryQuestion && !pending && (
+        <button type="button" className={styles.retry} onClick={() => {
+          if (submit(inputRef.current?.value || retryQuestion) && inputRef.current) inputRef.current.value = "";
+        }}>Retry question</button>
+      )}
+      <noscript><p>Interactive answers need JavaScript. Read the work below, open the résumé, or use the contact links.</p></noscript>
 
       {micError && (
         <p className={styles.micError} role="status">
@@ -825,21 +880,30 @@ export default function Agent({
           suggestion is only useful while the reader has not asked anything; once
           they have, the answer is the point and the past questions below it are
           the way back. */}
-      {turns.length === 0 && (
-        <ul className={styles.openers}>
-          {OPENERS.map((o) => (
-            <li key={o.q}>
-              <button className={styles.opener} onClick={() => submit(o.q)}>
-                {o.q}
-                {/* What the answer will demonstrate, not only what is asked.
-                    A reader choosing between three questions is choosing
-                    blind otherwise. */}
-                <span className={styles.shows}>{o.shows}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      {turns.length === 0 && (() => {
+        // One question on show; the rest wait behind a fold so the console
+        // does not repeat the three routes beside it.
+        const opener = (o: (typeof OPENERS)[number]) => (
+          <li key={o.q}>
+            <button type="button" className={styles.opener} disabled={pending} onClick={() => submit(o.q)}>
+              {o.q}
+              <span className={styles.shows}>{o.shows}</span>
+            </button>
+          </li>
+        );
+        const [first, ...rest] = OPENERS;
+        return (
+          <>
+            <ul className={styles.openers}>{opener(first)}</ul>
+            {rest.length > 0 && (
+              <details className="more">
+                <summary>More questions</summary>
+                <ul className={styles.openers}>{rest.map(opener)}</ul>
+              </details>
+            )}
+          </>
+        );
+      })()}
 
       {/* What the answers come from, named where they appear, and the one link
           a reader most often wants next. The mark is the logo alone. */}
@@ -863,9 +927,10 @@ export default function Agent({
       </div>
 
       {/* Held back until an answer exists above it. */}
-      {turns.length > 0 && !pending && (
+      {turns.length > 0 && (
         <button
           className={styles.adversarial}
+          disabled={pending}
           onClick={() => submit(ADVERSARIAL.q)}
           title="The policy layer classifies this before any model sees it"
         >
@@ -910,7 +975,7 @@ export default function Agent({
               {turn.question}
             </p>
 
-            {!turn.result ? (
+            {!turn.result ? (pending && latest ? (
               // "running the graph" sat unchanged for the whole wait, which on
               // a slow provider is five seconds of a sentence that stops being
               // information after the first one. The events that drive this
@@ -937,7 +1002,7 @@ export default function Agent({
                   ))}
                 </span>
               </p>
-            ) : (
+            ) : <p className={styles.inputNotice}>Stopped before an answer arrived.</p>) : (
               <>
                 {/* Answer first, complete on its own. Evidence and trace are
                     below it, so a reader who only wants the answer is done. */}

@@ -21,7 +21,6 @@ const REQUIRED_SECTIONS = [
   "Boston University, Questrom Computational Lab",
   "IMG Systems",
   "Growaza",
-  "BU Life AI",
   "Open source, LangChain deepagents",
   "Certifications",
   "Education",

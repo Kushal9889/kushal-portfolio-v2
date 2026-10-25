@@ -103,7 +103,7 @@ export const AUTHORISATION_ANSWER = `${profile.name} is on an F-1 student visa a
  * true reply instead of a fluent guess. Partial adds one instruction to the
  * prompt so the model says what is related and names the gap.
  */
-export const NOT_IN_PROFILE = `That is not in his profile. It covers his work at Boston University's Questrom lab, IMG Systems and Growaza, BU Life AI, his open-source fixes, his research, certifications and education. For anything else, ask him at ${profile.email}.`;
+export const NOT_IN_PROFILE = `That is not in his profile. It covers his work at Boston University's Questrom lab, IMG Systems and Growaza, his open-source fixes, his research, certifications and education. For anything else, ask him at ${profile.email}.`;
 
 export const PARTIAL_NOTE =
   "\n\nThe sections above are related to the question but may not state exactly what was asked. Say what he has done that is closest, then say plainly that his profile does not say whether he has done exactly that. Do not fill the gap.";

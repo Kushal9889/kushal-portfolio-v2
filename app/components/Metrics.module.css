@@ -54,8 +54,6 @@
   display: inline-block;
   margin-inline-start: 0.45em;
   font-size: var(--step--2);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink-soft);
   vertical-align: 0.35em;
 }
@@ -280,4 +278,29 @@ a.source:hover {
   white-space: nowrap;
   color: var(--on-signal);
   background: var(--ink);
+}
+
+/* A word is not a reading: set as one plain line, so display size stays with numbers. */
+.cell[data-word] {
+  display: block;
+  font-size: var(--step-0);
+  line-height: 1.4;
+}
+
+.cell[data-word] .value {
+  display: inline;
+  font-size: inherit;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: inherit;
+}
+
+.cell[data-word] .value::after {
+  content: ": ";
+}
+
+.cell[data-word] .label {
+  display: inline;
+  max-width: none;
+  font-size: inherit;
 }

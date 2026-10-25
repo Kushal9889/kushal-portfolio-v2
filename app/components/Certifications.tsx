@@ -30,7 +30,7 @@ export default function Certifications({
           const face = (
             <>
               <span className={styles.tag}>
-                [ {c.kind === "proctored-exam" ? "proctored exam" : "certification"} ]
+                {c.kind === "proctored-exam" ? "Proctored exam" : "Certification"}
               </span>
               <span className={styles.issuer}>
                 {c.issuer === "NVIDIA" && <NvidiaMark size={16} />}
@@ -58,8 +58,8 @@ export default function Certifications({
               ) : (
                 face
               )}
-              <a className={styles.verify} href={c.url ?? "#"} target="_blank" rel="noreferrer" aria-label={`Verify on Credly: ${c.name}`}>
-                [ Verify on Credly <span className={styles.arrow} aria-hidden="true">↗</span> ]
+              <a className={styles.verify} href={c.url ?? "#"} target="_blank" rel="noreferrer" aria-label={`Verify ${c.issuer} credential on Credly: ${c.name}`}>
+                [ Verify {c.issuer} <span className={styles.arrow} aria-hidden="true">↗</span> ]
               </a>
             </div>
           );
@@ -121,19 +121,17 @@ function issuers(certs: Certification[]): Group[] {
   return [...groups.values()].filter((g) => g.links.length > 0);
 }
 
+/** One chip per issuer: the mark or name, and a count only when there is more than one. */
 function LogoHead({ g }: { g: Group }) {
   return (
     <>
-      <span className={styles.plus} aria-hidden="true">+</span>
       {LOGO[g.issuer] ? (
         // eslint-disable-next-line @next/next/no-img-element -- a static brand mark
         <img className={styles.mark} src={LOGO[g.issuer]} alt={g.issuer} width={44} height={44} />
       ) : (
         <span className={styles.wordmark}>{g.issuer}</span>
       )}
-      <span className={styles.logoCount}>
-        {g.links.length} verified
-      </span>
+      {g.links.length > 1 && <span className={styles.logoCount}>{g.links.length} certificates</span>}
     </>
   );
 }

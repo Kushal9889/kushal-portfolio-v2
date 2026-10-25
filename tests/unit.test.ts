@@ -19,6 +19,7 @@ import {
   SUBJECT,
   OPENER,
   LINKEDIN_NOTE_LIMIT,
+  referralTag,
   type ReachContext,
 } from "../lib/reach";
 import { tokenize } from "../lib/agent/retrieve";
@@ -225,6 +226,24 @@ describe("reach", () => {
     assert.match(draft, /name two times/i);
   });
 
+  test("a referral tag reaches the subject only when it is well formed", () => {
+    assert.equal(referralTag("acme"), "acme");
+    assert.equal(referralTag(" Acme-2 "), "acme-2");
+    for (const bad of [null, "", "a b", "a_b", "<x>", "x".repeat(33), "acme&subject=hi"]) {
+      assert.equal(referralTag(bad), null, `accepted ${bad}`);
+    }
+    assert.equal(mailDraft("a@b.co", "site.test", "general", "acme").subject, `${SUBJECT.general} (via acme)`);
+    assert.equal(mailDraft("a@b.co", "site.test").subject, SUBJECT.general);
+    const who = "Kushal Gaddamwar, AI Engineer";
+    const draft = mailDraft("a@b.co", "site.test", "general", "acme", who);
+    assert.equal(draft.subject, `Interview: ${who} (via acme)`);
+    for (const slot of ["[role]", "[team]", "[two times]"]) assert.ok(draft.body.includes(slot), `body lacks ${slot}`);
+    assert.ok(decodeURIComponent(mailtoLink("a@b.co", "site.test", "general", "acme", who)).includes(draft.body.split("\n")[1]));
+    assert.ok(linkedinNote("general", "acme").endsWith("(via acme)"));
+    assert.ok(linkedinNote("general", "acme").length <= LINKEDIN_NOTE_LIMIT);
+    assert.ok(!linkedinNote("general", null).includes("via"));
+  });
+
   test("a mailto encodes spaces as %20, never as plus", () => {
     // URLSearchParams emits "+", which several clients render literally in a
     // subject line and ship a draft reading "Your+work+at+the+Questrom+Lab".
@@ -237,11 +256,19 @@ describe("reach", () => {
     const { profile } = loadContent();
     const blurb = forwardBlurb(
       { name: profile.name, current: profile.current, proof: profile.proof, site: profile.site },
-      { passed: 16, cases: 16, p50: 977 },
+      { passed: 16, cases: 16, p50: 977, measured: "2026-10-10", runs: 3 },
     );
     assert.ok(blurb.includes(profile.proof), "the strongest claim has to travel with it");
     assert.ok(blurb.includes("?mode=condensed"));
+    assert.ok(blurb.includes("Recorded 2026-10-10"));
+    assert.ok(blurb.includes("passed all 3 runs"));
     assert.ok(blurb.split("\n").length === 4, "four lines or it does not get pasted");
+    const certified = forwardBlurb(
+      { name: profile.name, current: profile.current, proof: profile.proof, site: profile.site, certified: ["A (X)", "B (Y)"] },
+      { passed: 16, cases: 16, p50: 977, measured: "2026-10-10", runs: 3 },
+    );
+    assert.ok(certified.includes("Certified: A (X); B (Y)."));
+    assert.equal(certified.split("\n").length, 4);
   });
 });
 
@@ -1091,5 +1118,32 @@ describe("cite: per-sentence source", async () => {
   test("each sentence maps to the section whose passage holds most of its words", () => {
     const c = cite("He built an Apache Tika pipeline for 5,000+ profiles a month. He cut API response time 30% at Growaza. He enjoys hiking.", sections);
     assert.deepEqual(c.map((x) => x.source), ["IMG Systems", "Growaza", null]);
+  });
+});
+
+
+describe("public project selection", () => {
+  test("the unfinished project is absent from public facts and the serving index", async () => {
+    const { readFileSync } = await import("node:fs");
+    for (const file of ["content/facts.md", "lib/agent/index.json", "lib/agent/prewarm.json"]) {
+      assert.ok(!/BU Life AI|BU-Life-AI|70 percent|redundant LLM calls/i.test(readFileSync(file, "utf8")), file);
+    }
+    const { sections } = loadContent();
+    assert.ok(sections.some((item) => item.title === "This site"));
+  });
+});
+
+
+describe("portfolio study evidence", () => {
+  test("coursework and industry scope stay distinct, and GRE stays out of proof badges", () => {
+    const { profile } = loadContent();
+    assert.match(profile.current, /Research Assistant/);
+    assert.match(section("Boston University, Questrom Computational Lab, backend").roleParts.title, /Research Assistant/);
+    assert.match(section("Boston University, Questrom Computational Lab").roleParts.title, /Research Assistant/);
+    assert.match(section("Education").body, /GRE total score: 334 of 340/);
+    assert.match(section("Education").body, /classification and regression trees/);
+    assert.doesNotMatch(section("Proof wall").body, /GRE|334/);
+    assert.doesNotMatch(section("What he does not do").body, /does not present himself as an ML engineer|has no PyTorch/);
+    assert.match(section("Boston University, Questrom Computational Lab").roleParts.dates, /August 2026/);
   });
 });

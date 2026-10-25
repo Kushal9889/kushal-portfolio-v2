@@ -1,16 +1,6 @@
 {
-  "reach": {
-    "https://bulife-ai.netlify.app/": {
-      "ms": 155,
-      "checkedOn": "2026-10-07"
-    }
-  },
+  "reach": {},
   "commits": {
-    "Kushal9889/BU-Life-AI": {
-      "at": "2026-08-11T19:28:53Z",
-      "stars": 0,
-      "checkedOn": "2026-10-07"
-    },
     "Kushal9889/kushal-portfolio-v2": {
       "at": "2026-08-25T05:27:13Z",
       "stars": 0,
