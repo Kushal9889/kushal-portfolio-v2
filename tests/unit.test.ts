@@ -1174,3 +1174,60 @@ describe("failover order", async () => {
     assert.deepEqual(benchToBack(["nvidia", "groq"], () => true), ["nvidia", "groq"]);
   });
 });
+
+describe("graph route", async () => {
+  const { graphSections, AGGREGATE } = await import("../lib/agent/retrieve");
+
+  test("aggregation wording is recognised, a single-employer question is not", () => {
+    for (const q of ["Where has he used Docker, across all his jobs?", "Which of his projects use LangGraph?", "List his measured results with Redis."]) {
+      assert.ok(AGGREGATE.test(q), q);
+    }
+    assert.ok(!AGGREGATE.test("What did he do at IMG Systems?"));
+  });
+
+  test("an entity links every section that names it, and only those", () => {
+    assert.deepEqual(
+      new Set(graphSections("where has he used docker")),
+      new Set(["Boston University, Questrom Computational Lab, backend", "Boston University, Questrom Computational Lab", "IMG Systems"]),
+    );
+  });
+});
+
+describe("rum beacon schema", async () => {
+  const { parseRum, RUM_MAX_BYTES } = await import("../lib/rum");
+
+  test("keeps the known fields, drops the rest, strips query strings", () => {
+    const out = parseRum({
+      inp: 123.456, viewport: "phone", cores: 8, net: "4g", userAgent: "x", ip: "1.2.3.4",
+      loaf: [{ file: "https://a.test/app.js?token=1#x", fn: "tick", invoker: "user-callback", ms: 90, extra: 1 }],
+      film: { droppedPct: 0.2, tier: "d", secret: "x" },
+    });
+    assert.ok(out);
+    assert.equal(out.inp, 123.5);
+    assert.equal(out.loaf[0].file, "/app.js");
+    assert.deepEqual(Object.keys(out).sort(), ["cores", "film", "inp", "loaf", "net", "viewport"]);
+    assert.equal(out.film.tier, "d");
+    assert.equal(out.film.heldPct, null);
+  });
+
+  test("rejects a body with no viewport and out-of-range numbers", () => {
+    assert.equal(parseRum({ inp: 5 }), null);
+    assert.equal(parseRum("x"), null);
+    assert.equal(parseRum({ viewport: "desktop", inp: -1, cores: 1e9 })?.inp, null);
+    assert.equal(RUM_MAX_BYTES, 2048);
+  });
+});
+
+describe("answerScore: 40% source match + 40% facts found + 20% sentences sourced", async () => {
+  const { answerScore } = await import("../lib/agent/ground");
+  const g = (v: number) => ({ claims: 4, found: Math.round(v * 4), g: v, unsupported: [] });
+  test("sure, every fact found, every sentence sourced = 100", () => {
+    assert.equal(answerScore("answer", g(1), [{ sentence: "a", source: "IMG Systems" }]), 100);
+  });
+  test("partly sure, half the facts, no sources = 44", () => {
+    assert.equal(answerScore("partial", g(0.5), [{ sentence: "a", source: null }]), 44);
+  });
+  test("don't know has no score", () => {
+    assert.equal(answerScore("unknown", g(1), []), null);
+  });
+});
