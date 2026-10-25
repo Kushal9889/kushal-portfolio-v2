@@ -33,3 +33,9 @@ __pycache__/
 
 # Eval-only provider cache (ADR-010)
 .cache/
+
+# Local tooling for the editing loop, not part of the site.
+scripts/loop-plan.py
+scripts/loop-skills.py
+scripts/skill-cache.py
+scripts/issues.py
