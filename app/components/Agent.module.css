@@ -1,39 +1,85 @@
+/*
+ * The agent card, sized to the screen: a bar (status island, tabs), one
+ * scroller, a pinned composer.
+ *
+ * Shape lock: square like the page (--r-md and --r-lg are 0); --r-pill only
+ * for the island and dots. One accent, --signal, spent on the primary action
+ * and the running state. Figures in an answer carry --mark, because a figure is a claim
+ * an outsider can check. Body text never drops below 16px.
+ */
+
 .agent {
-  /* No frame of its own. The hero's console panel wraps the graph and this
-     input together as one instrument, and a second border inside the first
-     reads as two boxes that happen to be touching. */
+  --tap: 44px;
+  --mono: var(--font-mono, ui-monospace, "SF Mono", Menlo, monospace);
+  position: relative;
+  isolation: isolate;
   display: grid;
-  /* minmax(0, 1fr) rather than 1fr: a grid track defaults to min-content, and
-     the longest opener is wider than a phone. Without this the whole block
-     pushes past the viewport and the page scrolls sideways. */
+  /* minmax(0, 1fr): a grid track defaults to min-content, and a long chip
+     would otherwise push the card past a phone's width. */
   grid-template-columns: minmax(0, 1fr);
-  gap: 1.25rem;
+  gap: var(--s-4);
+  color: var(--ink);
 }
 
-.bar {
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.workLoop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--t-slow, 0.6s) var(--ease-out);
+}
+
+.workLoop[data-on] {
+  opacity: 0.3;
+}
+
+/* ---------- Composer ---------- */
+
+.composer {
   display: flex;
-  gap: 0.75rem;
-  align-items: stretch;
-  border: 1px solid var(--ink);
-  padding: 0.35rem 0.35rem 0.35rem 0.9rem;
+  align-items: flex-end;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-2) var(--s-2) var(--s-5);
+  background: var(--paper-raised, var(--paper));
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 1px 0 var(--console-ring, transparent);
+  transition:
+    border-color var(--t-fast) var(--ease-out),
+    box-shadow var(--t-fast) var(--ease-out);
 }
 
-.bar:focus-within {
-  outline: 2px solid var(--signal);
-  outline-offset: 2px;
+.composer:focus-within {
+  border-color: var(--signal);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--signal) 28%, transparent);
 }
 
 .input {
   flex: 1;
   min-width: 0;
+  min-height: var(--tap);
   font: inherit;
+  /* 17px on every width: under 16px, iOS zooms the page on focus. */
   font-size: var(--step-0);
   line-height: 1.5;
   color: inherit;
   background: none;
   border: none;
-  padding: 0.6rem 0;
-  /* Height follows the content, so the native handle would fight it. */
+  padding: 10px 0;
   resize: none;
   overflow-y: auto;
   max-height: 200px;
@@ -45,796 +91,2064 @@
 
 .input::placeholder {
   color: var(--ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.send,
-.stop {
+.controls {
+  display: flex;
+  gap: var(--s-1);
+  align-items: center;
+}
+
+.iconBtn,
+.go {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
-  padding: 0.5em 1.1em;
+  justify-content: center;
+  gap: 0.4em;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  border-radius: var(--r-md);
+  font: inherit;
   font-size: var(--step--1);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  background: var(--ink);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform var(--t-fast) var(--ease-out),
+    background var(--t-fast) var(--ease-out);
+}
+
+.iconBtn {
+  color: var(--ink-soft);
+  background: transparent;
+  border: none;
+}
+
+.iconBtn:hover {
+  color: var(--ink);
+  background: color-mix(in oklch, var(--ink) 8%, transparent);
+}
+
+.iconBtn[data-on] {
   color: var(--paper);
+  background: var(--fail);
 }
 
-/* Stop is the same weight as Ask on purpose. A control that ends something the
-   visitor started should not be harder to hit than the one that started it. */
-.stop {
+.go {
+  padding: 0 1.15em;
+  color: var(--paper);
   background: var(--signal);
+  border: none;
 }
 
-.openers {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.go[data-kind="stop"] {
+  color: var(--ink);
+  background: transparent;
+  border: var(--border-hair) solid var(--ink-soft);
+}
+
+.go:active,
+.lead:active,
+.ghost:active,
+.chip:active {
+  transform: scale(0.97);
+}
+
+/* ---------- Chips: follow-ups and reasons ---------- */
+
+.offers,
+.reasons,
+.followups {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.opener {
-  /* Buttons are inline-flex globally, which made the label below the question
-     into a flex sibling sitting beside it: "What has he shipped on Azure?evals"
-     rendered as one run. Stacking the two is the whole point of the label. */
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.3rem;
-  /* Long questions wrap rather than setting the width of everything above them. */
-  white-space: normal;
-  text-align: left;
-  font-size: var(--step--1);
-  text-align: left;
+.chip,
+.chip:hover {
+  border-color: var(--ink-soft);
+  background: color-mix(in oklch, var(--ink) 6%, transparent);
+}
+
+.chip[data-kind="open"]::after {
+  content: "\2197";
+  margin-inline-start: 0.4em;
+  color: var(--ink-faint);
+}
+
+.chip[data-kind="probe"] {
+  border-style: dashed;
   color: var(--ink-soft);
-  border: 1px solid var(--rule);
-  padding: 0.45em 0.8em;
-  transition:
-    border-color var(--t-fast) var(--ease-out),
-    color var(--t-fast) var(--ease-out);
 }
 
-.opener:hover {
-  border-color: var(--ink);
-  color: var(--ink);
-}
+/* ---------- Thread and answer sheet ---------- */
 
-.thread {
+.sheet {
   display: grid;
-  gap: 1.5rem;
-}
-
-.turn {
-  display: grid;
-  gap: 0.6rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--rule);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-4);
+  min-width: 0;
+  padding: var(--s-5);
+  background: var(--paper-sunk, var(--paper));
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-lg);
 }
 
 .question {
   margin: 0;
   font-size: var(--step--1);
-  color: var(--ink-faint);
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+  /* A pasted job description is long; three lines say which question it was. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .answer {
-  margin: 0;
-  font-family: var(--font-serif), Georgia, serif;
-  font-size: var(--step-1);
-  line-height: 1.5;
-  max-width: var(--measure);
-  text-wrap: pretty;
+  font-size: var(--step-0);
+  line-height: 1.6;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  max-width: 68ch;
+  white-space: pre-line;
 }
 
-/* Sizing and placement only; colour and motion both come from the global
-   .live-dot it is paired with, unchanged. */
+.answer p {
+  margin: 0 0 0.75em;
+  white-space: normal;
+}
+
+.answer p:last-child {
+  margin-bottom: 0;
+}
+
+@media (min-width: 900px) {
+  .answer {
+    font-size: 1.1875rem;
+    line-height: 1.58;
+  }
+}
+
+.answer[data-degraded] {
+  color: var(--ink-soft);
+}
+
+/* A figure the sources hold: the checkable part of the answer. */
+.fact {
+  font-weight: 650;
+  color: var(--ink);
+  box-shadow: inset 0 -0.38em 0 var(--mark-wash, color-mix(in oklch, var(--signal) 22%, transparent));
+  padding: 0 0.08em;
+  border-radius: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A figure or name the sources do not hold. */
+.unsupported {
+  color: inherit;
+  background: none;
+  text-decoration: underline wavy var(--warn) 1.5px;
+  text-underline-offset: 4px;
+}
+
 .cursor {
-  margin-inline-start: 0.15em;
+  display: inline-block;
+  margin-inline-start: 0.2em;
   width: 0.55em;
   height: 0.55em;
 }
 
-.thinking {
+.note {
   margin: 0;
+  padding: var(--s-2) var(--s-3);
   font-size: var(--step--1);
+  line-height: 1.5;
+  border-inline-start: 3px solid var(--warn);
+  background: var(--warn-wash, transparent);
+  border-radius: 0 var(--r-sm, 6px) var(--r-sm, 6px) 0;
 }
 
-.sources {
-  margin: 0;
-  font-size: var(--step--1);
-  color: var(--ink-soft);
+.note[data-tone="live"] {
+  border-color: var(--live);
+  background: var(--live-wash, transparent);
 }
 
-.traceToggle {
-  justify-self: start;
-  font-size: var(--step--1);
-  color: var(--ink-soft);
-  border-bottom: 1px solid var(--rule);
-  padding-bottom: 2px;
+.note[data-tone="fail"] {
+  border-color: var(--fail);
+  background: var(--fail-wash, transparent);
 }
 
-.traceToggle:hover {
-  color: var(--ink);
-  border-color: var(--ink);
-}
+/* ---------- Waiting ---------- */
 
-.trace {
-  margin: 0;
+.wait {
   display: grid;
-  gap: 0.3rem;
-  font-size: var(--step--1);
+  gap: var(--s-3);
 }
 
-.traceRow {
-  display: grid;
-  grid-template-columns: 5.5rem 4rem 1fr;
-  align-items: center;
-  gap: 0.75rem;
+.skeleton {
+  display: block;
+  height: 0.9em;
+  border-radius: var(--r-md);
+  background: color-mix(in oklch, var(--ink) 9%, transparent);
 }
 
-.traceRow dt {
-  color: var(--ink-soft);
+.skeleton[data-short] {
+  width: 62%;
 }
 
-.traceRow dd {
-  margin: 0;
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    animation: breathe 1.6s var(--ease-standard, ease-in-out) infinite alternate;
+  }
+  .sheet {
+    animation: rise var(--t-mid, 0.32s) var(--ease-out) both;
+  }
+  .offers li,
+  .reads li {
+    animation: rise var(--t-mid, 0.32s) var(--ease-out) both;
+    animation-delay: calc(var(--n, 0) * 50ms);
+  }
 }
 
-/* Proportional bar. Reading the shape is faster than reading the numbers, and
-   the numbers are right there when the shape raises a question. */
-.traceBar {
-  height: 3px;
-  background: var(--signal);
-  width: var(--w);
-  min-width: 1px;
+@keyframes breathe {
+  to {
+    opacity: 0.45;
+  }
 }
 
-.conversion {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--rule);
-  font-size: var(--step--1);
-}
-
-.copy {
-  font-size: var(--step--1);
-  padding: 0.5em 1em;
-  border: 1px solid var(--ink);
-  transition:
-    background-color var(--t-fast) var(--ease-out),
-    color var(--t-fast) var(--ease-out);
-}
-
-.copy:hover {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-.usage {
-  color: var(--ink-faint);
-}
-
-.mic {
-  padding: 0.5em 1.1em;
-  font-size: var(--step--1);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  border: 1px solid var(--rule);
-  transition:
-    border-color var(--t-fast) var(--ease-out),
-    color var(--t-fast) var(--ease-out);
-}
-
-.mic:hover {
-  border-color: var(--ink);
-}
-
-/* Listening is live state, so it is the one thing here allowed to take the
-   accent colour. */
-.micOn {
-  border-color: var(--signal);
-  color: var(--signal);
-}
-
-.voiceToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: var(--step--1);
-  color: var(--ink-soft);
-  cursor: pointer;
-}
-
-/* Follows the selection. Fixed rather than absolute so it tracks the viewport
-   while the page behind it scrolls. */
-.selectAsk {
-  position: fixed;
-  transform: translate(-50%, -100%);
-  z-index: 40;
-  font-size: var(--step--1);
-  padding: 0.4em 0.8em;
-  background: var(--ink);
-  color: var(--paper);
-  white-space: nowrap;
-  animation: fadeUp var(--t-fast) var(--ease-out) both;
-}
-
-@keyframes fadeUp {
+@keyframes rise {
   from {
     opacity: 0;
-    transform: translate(-50%, calc(-100% + 4px));
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -100%);
+    transform: translateY(6px);
   }
 }
 
-/* Stated plainly, in body colour rather than an alarm colour: a blocked
-   microphone is a limitation to work around, not an error the visitor caused. */
-.micError {
-  margin: 0.6rem 0 0;
-  font-size: var(--step--1);
-  color: var(--ink-soft);
-}
+/* ---------- Proof rail ---------- */
 
-/* A finished exchange, folded back to the question that produced it. Rendered as
-   a button because clicking it re-asks: the answer is regenerated against the
-   current corpus rather than replayed from memory, so nothing stale is shown. */
-.past {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 0.5rem 0;
-  border: none;
-  border-bottom: 1px solid var(--rule);
-  background: none;
-  font: inherit;
-  font-size: var(--step--1);
-  color: var(--ink-faint);
-  cursor: pointer;
-  transition: color var(--t-fast) var(--ease-out);
-}
-
-.past:hover {
-  color: var(--ink);
-}
-
-/* The capability line. Set small and quiet: it tells a visitor what is here
-   without competing with the thing it is describing. */
-/*
- * What this page can do, said plainly.
- *
- * Previously three grey fragments on one line at 15px: "K for anywhere",
- * "select any text to ask about it". Each named a mechanism rather than an
- * outcome, and a reader who does not already know what a command palette is
- * learned nothing from any of them. Each row now leads with the action in ink
- * and follows with what happens, and the rows are stacked because three
- * instructions on one line read as a footer nobody looks at.
- */
-.affordances {
-  list-style: none;
-  display: grid;
-  gap: 0.55rem;
-  margin: 0.25rem 0 0;
+.proofList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
   padding: 0;
-  font-size: var(--step--1);
-  color: var(--ink-soft);
-  max-width: 44rem;
-}
-
-.affordances li {
-  display: grid;
-  grid-template-columns: 4.5rem 1fr;
-  gap: 0.75rem;
-  align-items: baseline;
-}
-
-.affordances b {
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.keys {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  justify-self: start;
-}
-
-/*
- * A key that looks like a key.
- *
- * It was a hairline outline at 0.85em, which read as a bordered word rather
- * than as something to press. Given a face, a shadow standing it off the page
- * and a press state, it becomes the one instruction on the page that needs no
- * explaining.
- */
-.kbd {
-  /* kbd is inline, and a non-replaced inline box ignores both transform and
-     min-width. The press state was written, matched, and silently discarded by
-     the layout model until this line existed. */
-  display: inline-block;
-  font-family: var(--font-mono), monospace;
+  list-style: none;
+  font-family: var(--mono);
   font-size: var(--step--2);
   line-height: 1;
-  min-width: 1.6em;
-  padding: 0.34em 0.42em;
-  text-align: center;
+}
+
+.step,
+.step[data-state="done"] > span:first-child {
+  color: var(--live);
+}
+
+.step[data-state="failed"] {
   color: var(--ink);
-  background: var(--paper);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
-  box-shadow: 0 1.5px 0 var(--rule);
-  transition:
-    transform var(--t-fast) var(--ease-standard),
-    box-shadow var(--t-fast) var(--ease-standard);
+  box-shadow: inset 0 0 0 1px var(--fail);
 }
 
-/* Pressing the real shortcut presses these too, so the hint confirms itself. */
-:global(:root[data-palette="open"]) .kbd {
-  transform: translateY(1.5px);
-  box-shadow: 0 0 0 var(--rule);
+.step[data-state="failed"] > span:first-child {
+  color: var(--fail);
 }
 
-/* A gesture has no key to draw, so it is named in the same slot at the same
-   size. Keeping the column identical is what makes the three rows scan as one
-   list rather than as three unrelated notes. */
-  /* --ink-soft, not --ink-faint. APCA punishes small text hard: the faintest
-     tone measured Lc 61 here against a floor of 75 for anything under 18px.
-     The third step of the ink ramp is for large or decorative text only. */
-.gesture {
-  font-family: var(--font-mono), monospace;
-  font-size: var(--step--2);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  border-block-end: 1px dashed var(--rule);
-  padding-block-end: 0.15em;
+.step[data-state="partial"] {
+  box-shadow: inset 0 0 0 1px var(--warn);
 }
 
-/* Retrieved sections, arriving in sequence.
- *
- * Each one starts 60ms after the one before it, which is slow enough to read as
- * separate arrivals and fast enough that four of them are settled well inside
- * the time it takes to finish the first line of the answer above.
- *
- * The separator is drawn by the stylesheet rather than joined into the string,
- * so the last item does not carry a trailing one and nothing has to know how
- * many there are. */
-.source {
-  display: inline-block;
-  animation: source-land 320ms var(--ease-out) both;
-  animation-delay: calc(var(--n) * 60ms);
-}
+/* ---------- Actions ---------- */
 
-.source:not(:last-child)::after {
-  content: " · ";
-  color: var(--ink-faint);
-}
-
-@keyframes source-land {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 4px, 0);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .source {
-    animation: none;
-  }
-}
-
-/*
- * Reachability.
- *
- * Measured on a phone, 26 controls on this page were under the 44px minimum,
- * including a 13px checkbox for the voice toggle. Every fix below is padding
- * and hit area rather than visible size, so nothing looks larger; it is simply
- * possible to hit with a thumb.
- *
- * Links inside a sentence are deliberately untouched. WCAG 2.5.8 exempts
- * inline targets, and padding them would break the line rhythm of the prose
- * they sit in for no gain in either compliance or usability.
- */
-.opener {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-}
-
-.traceToggle {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-/* The checkbox itself stays visually small; the label around it becomes the
-   target, which is what a thumb actually lands on. */
-.voiceToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  min-height: 44px;
-  cursor: pointer;
-}
-
-.voiceToggle input {
-  width: 1.05rem;
-  height: 1.05rem;
-  flex: none;
-}
-
-/* The accent belongs to the checked state, not the control. Unscoped, the
-   fill read as live before voice was ever turned on. */
-.voiceToggle input:checked {
-  accent-color: var(--signal);
-}
-
-/* What an opener demonstrates, set under the question it belongs to. */
-.shows {
-  font-size: 0.68rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-}
-
-/* The attack, offered deliberately. Set apart from the openers because it is a
-   different kind of invitation: the others ask for information, this one asks
-   the reader to try to make the page fail. */
-.adversarial {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.3rem;
-  justify-self: start;
-  margin-block-start: 0.9rem;
-  text-align: left;
-  font-size: var(--step--1);
-  color: var(--ink-soft);
-  border: 1px dashed var(--rule);
-  padding: 0.45em 0.8em;
-  transition:
-    border-color var(--t-fast) var(--ease-out),
-    color var(--t-fast) var(--ease-out);
-}
-
-.adversarial:hover {
-  border-color: var(--ink);
-  color: var(--ink);
-}
-
-/* Considered and not chosen. Struck through rather than merely dimmed: dim
-   reads as "less important", struck reads as "ranked and rejected", which is
-   the claim being made. */
-.rejected {
-  text-decoration: line-through;
-  text-decoration-thickness: 1px;
-  color: var(--ink-faint);
-}
-
-.rejected + .rejected::before {
-  content: ", ";
-  text-decoration: none;
-}
-
-.policyToggle {
-  font-size: inherit;
-  color: var(--ink);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.policy {
-  margin: 0.6rem 0 0;
-  padding: 0.8rem 0.9rem;
-  background: var(--paper-sunk);
-  border-radius: 3px;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: var(--step-code);
-  line-height: 1.6;
-  color: var(--ink-soft);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  max-height: 20rem;
-  overflow-y: auto;
-}
-
-/* One line of affordances, replacing four rows of instruction.
- *
- * The long form was accurate and unread: it spent 190px of the first screen
- * teaching a page that a recruiter is not trying to learn. These are the same
- * three capabilities named in the fewest words that still say what happens. */
-.hints {
-  list-style: none;
+.actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s-2) var(--s-4);
-  margin: var(--s-3) 0 0;
-  padding: 0;
-  font-size: var(--step--2);
-  color: var(--ink-faint);
-}
-
-.hints li {
-  display: inline-flex;
-  align-items: center;
   gap: var(--s-2);
 }
 
-/* Confirming a copy with something other than a different sentence.
- *
- * The only signal that a click landed was the label changing, which a reader
- * who was looking at their clipboard target rather than at the button never
- * saw. The surface inverts for the moment the text is on the clipboard and a
- * tick is drawn in front of it. No semantic colour: this is a confirmation of
- * an action, not a state the system is in. */
-.copy[data-copied] {
-  background: var(--ink);
-  color: var(--paper);
-  border-color: var(--ink);
+.lead,
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  min-height: var(--tap);
+  padding: 0 1.1em;
+  font: inherit;
+  font-size: var(--step--1);
+  font-weight: 600;
+  border-radius: var(--r-md);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out),
+    transform var(--t-fast) var(--ease-out);
 }
 
-.copy[data-copied]::before {
+.lead {
+  color: var(--paper);
+  background: var(--signal);
+  border: none;
+}
+
+.lead:hover {
+  background: color-mix(in oklch, var(--signal) 86%, var(--ink));
+}
+
+.ghost {
+  color: var(--ink);
+  background: transparent;
+  border: var(--border-hair) solid var(--rule);
+}
+
+.ghost:hover {
+  border-color: var(--ink-soft);
+}
+
+.ghost[aria-expanded="true"] {
+  background: color-mix(in oklch, var(--ink) 8%, transparent);
+}
+
+.ghost[data-done] {
+  border-color: var(--live);
+}
+
+/* Phone: the four actions sit in two even columns, thumb-sized. */
+@media (max-width: 560px) {
+  .sheet {
+    padding: var(--s-4) var(--s-3);
+  }
+  .actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .lead,
+  .ghost {
+    padding: 0 0.7em;
+    min-width: 0;
+  }
+  .composer {
+    padding-inline-start: var(--s-4);
+  }
+  .step {
+    white-space: normal;
+  }
+}
+
+.draft {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-md, 12px);
+}
+
+.draftHead {
+  margin: 0;
+  font-weight: 600;
+}
+
+.draftHead span {
+  display: block;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  font-weight: 400;
+  color: var(--ink-faint);
+}
+
+.draftText {
+  margin: 0;
+  font: inherit;
+  font-size: var(--step--1);
+  white-space: pre-wrap;
+  color: var(--ink-soft);
+}
+
+/* ---------- Details disclosure ---------- */
+
+.dim {
+  margin: 0;
+  color: var(--ink-faint);
+}
+
+.reads,
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reads li {
+  padding: 0.35em 0.8em;
+  border: var(--border-hair) solid var(--mark-rule, var(--rule));
+  border-radius: var(--r-md);
+  background: var(--mark-wash, transparent);
+}
+
+.tools a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  min-height: var(--tap);
+  padding: 0 0.9em;
+  color: var(--ink);
+  text-decoration: none;
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-md);
+}
+
+.tools a:hover {
+  border-color: var(--ink-soft);
+}
+
+.coverage {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.coverage li {
+  display: grid;
+  grid-template-columns: 7ch minmax(0, 1fr);
+  gap: 2px var(--s-3);
+  padding: var(--s-2) 0;
+  border-bottom: var(--border-hair) solid color-mix(in oklch, var(--rule) 60%, transparent);
+}
+
+.coverage li > .dim {
+  grid-column: 2;
+}
+
+.coverage b {
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  font-weight: 600;
+}
+
+.coverage [data-status="covered"] b {
+  color: var(--live);
+}
+
+.coverage [data-status="partial"] b {
+  color: var(--warn);
+}
+
+.coverage [data-status="missing"] b {
+  color: var(--fail);
+}
+
+.stepList {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stepList li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 2px var(--s-3);
+  align-items: baseline;
+}
+
+.stepName {
+  font-family: var(--mono);
+  color: var(--ink);
+}
+
+.stepList li[data-state="failed"] .stepName {
+  color: var(--fail);
+}
+
+.bar {
+  grid-column: 1 / -1;
+  height: 3px;
+  border-radius: 2px;
+  width: var(--w);
+  min-width: 2px;
+  background: var(--ink-soft);
+}
+
+.stepNote {
+  grid-column: 1 / -1;
+  color: var(--ink-faint);
+  overflow-wrap: anywhere;
+}
+
+.cites {
+  margin: var(--s-1) 0 0;
+  padding-inline-start: 1.4em;
+  color: var(--ink-soft);
+}
+
+.cites li[data-none] {
+  color: var(--warn);
+}
+
+/* Inline source marker after each cited sentence. */
+.cite button {
+  font: inherit;
+  font-size: 0.7em;
+  font-variant-numeric: tabular-nums;
+  padding: 0 0.25em;
+  margin-inline-start: 0.1em;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.cite button:hover,
+.cite button:focus-visible {
+  color: var(--ink);
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.providers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--s-3);
+}
+
+.providers [data-health="ready"]::before,
+.providers [data-health="benched"]::before {
   content: "";
   display: inline-block;
-  width: 0.32em;
-  height: 0.62em;
-  margin-inline-end: 0.5em;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  transform: rotate(45deg) translate(-0.1em, -0.05em);
-  animation: tick-in var(--t-normal) var(--ease-instrument) both;
+  width: 7px;
+  height: 7px;
+  margin-inline-end: 0.4em;
+  border-radius: 50%;
+  background: var(--live);
 }
 
-@keyframes tick-in {
-  from {
-    opacity: 0;
-    transform: rotate(45deg) translate(-0.1em, -0.05em) scale(0.4);
+.providers [data-health="benched"]::before {
+  background: var(--warn);
+}
+
+.textBtn {
+  justify-self: start;
+  min-height: var(--tap);
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  background: none;
+  border: none;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.textBtn[data-done] {
+  color: var(--live);
+}
+
+.policy {
+  margin: 0;
+  max-height: 320px;
+  overflow: auto;
+  padding: var(--s-3);
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  white-space: pre-wrap;
+  background: var(--paper);
+  border-radius: var(--r-md, 12px);
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: var(--tap);
+  cursor: pointer;
+}
+
+.toggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--signal);
+}
+
+/* ---------- Select to ask ---------- */
+
+.selectAsk {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  z-index: var(--z-furniture);
+  min-height: 36px;
+  padding: 0 1em;
+  font: inherit;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--paper);
+  background: var(--ink);
+  border: none;
+  border-radius: var(--r-md);
+  box-shadow: var(--lift-2);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* ---------- Focus and motion floors ---------- */
+
+.agent :is(button, a, input, textarea, summary, mark, [tabindex]):focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workLoop {
+    display: none;
   }
-  to {
-    opacity: 1;
-    transform: rotate(45deg) translate(-0.1em, -0.05em) scale(1);
+  .agent *,
+  .agent *::before {
+    transition-duration: 0.01ms !important;
+    animation: none !important;
   }
 }
 
-/* Listening is a live state, so it takes the accent and it breathes. Border
-   colour alone did not read as "the microphone is open right now". */
-.micOn::after {
+@media (forced-colors: active) {
+  .go,
+  .lead {
+    border: 1px solid ButtonText;
+  }
+}
+
+/* A technology name in an answer: weight only, so figures keep the wash. */
+.skill {
+  font-weight: 650;
+  color: var(--ink);
+}
+
+/* The policy probe is a curiosity, not a next step: text weight, full hit area. */
+.chip[data-kind="probe"] {
+  border: none;
+  background: none;
+  box-shadow: none;
+  padding-inline: 0.4em;
+  font-size: var(--step--2);
+  text-decoration: underline dashed;
+  text-underline-offset: 4px;
+}
+
+/* Filled actions keep their fill inside the hero console, whose scene paints
+   every other button as a graphite plate, and drop the film's text halo. */
+.agent.agent .lead {
+  color: var(--paper);
+  background: var(--signal);
+  text-shadow: none;
+}
+
+.agent.agent .lead:hover {
+  background: color-mix(in oklch, var(--signal) 86%, var(--ink));
+}
+
+/* Ask is a neutral outline: the hero's "Email him" is the one filled accent on
+   the first screen, and a second fill beside it split the first choice. */
+.agent.agent .go:not([data-kind="stop"]) {
+  color: var(--ink);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--ink-faint);
+  text-shadow: none;
+}
+
+.agent.agent .go:not([data-kind="stop"]):hover {
+  background: var(--paper-sunk);
+}
+
+/* Icons: one weight, one size, optically centred, never squeezed by a label. */
+.agent svg {
+  flex: none;
+}
+
+.chip {
+  gap: 0.45em;
+}
+
+/*
+ * The trace as an instrument panel: one card per stage, in the order the
+ * request ran (retrieve, generate, the timeline of both, then what the answer
+ * cites and which providers were up). Square like the rest of the page; depth
+ * is a hairline, a signal edge and the page's own lift, never a radius.
+ */
+.board {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.card {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--s-2);
+  min-width: 0;
+  padding: var(--s-3) var(--s-4) var(--s-4);
+  background: color-mix(in oklch, var(--paper) 86%, var(--signal) 3%);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-md);
+  box-shadow: var(--lift-1), inset 0 1px 0 color-mix(in oklch, var(--ink) 6%, transparent);
+  transition: border-color var(--t-fast) var(--ease-out), box-shadow var(--t-fast) var(--ease-out);
+  animation: cardIn 200ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 25ms);
+}
+
+/* The signal edge: a 2px rule down the leading side, the one accent. */
+.card::before {
   content: "";
   position: absolute;
-  inset: -3px;
-  border: var(--border-hair) solid var(--signal);
-  border-radius: inherit;
-  animation: mic-listening 1.6s var(--ease-out) infinite;
-  pointer-events: none;
+  inset: -1px auto -1px -1px;
+  width: 2px;
+  background: var(--signal);
+  transform-origin: top;
+  animation: edgeIn 240ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 25ms + 60ms);
 }
 
-.mic {
-  position: relative;
+.card:hover,
+.card:focus-within {
+  border-color: color-mix(in oklch, var(--signal) 45%, var(--rule));
+  box-shadow: var(--lift-2), inset 0 1px 0 color-mix(in oklch, var(--ink) 8%, transparent);
 }
 
-@keyframes mic-listening {
-  0%,
-  100% {
-    opacity: 0.9;
-    transform: scale(1);
+.card[data-span="full"],
+.card[data-span="wide"]:last-child,
+.card[data-span="wide"]:has(+ .card[data-span="full"]) {
+  grid-column: 1 / -1;
+}
+
+.cardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-1) var(--s-3);
+}
+
+.cardHead h4 {
+  margin: 0;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.badge {
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  padding: 1px 8px;
+  color: var(--ink-soft);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-md);
+  white-space: nowrap;
+}
+
+/* A live dot for the store, lit when the dense leg came from Neon. */
+.badge[data-store]::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 6px;
+  border-radius: 50%;
+  vertical-align: 1px;
+  background: var(--ink-faint);
+}
+
+.badge[data-store="neon"]::before {
+  background: var(--live);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--live) 22%, transparent);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: var(--s-2) var(--s-3);
+  margin: 0;
+}
+
+.stats[data-fit="narrow"] {
+  grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+}
+
+.stats[data-cols="1"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.stats > div {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.stats dt {
+  font-size: var(--step--2);
+  color: var(--ink-faint);
+}
+
+.stats dd {
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.paths {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  color: var(--ink-soft);
+}
+
+.paths li::before {
+  content: "graph  ";
+  color: var(--signal);
+}
+
+/* Bars grow from zero in step order: the timeline reads as it ran. */
+.card .bar {
+  background: color-mix(in oklch, var(--signal) 70%, var(--ink-soft));
+  transform-origin: left;
+  animation: barGrow 300ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 25ms + var(--n, 0) * 30ms + 80ms);
+}
+
+.card .stepList li[data-state="failed"] .bar {
+  background: var(--fail);
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
-  50% {
-    opacity: 0.25;
-    transform: scale(1.06);
+}
+
+@keyframes edgeIn {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes barGrow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@media (max-width: 720px) {
+  .board {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .copy[data-copied]::before,
-  .micOn::after {
+  .card,
+  .card::before,
+  .card .bar {
     animation: none;
   }
 }
 
-/* The provider roster. Every configured provider, with the one that is cooling
-   off marked as such -- this showed only the benched ones, so the failover
-   chain was visible exactly when it had already failed. */
-.providers {
+/* What the composer refused, or why a run ended, in plain words. */
+.inputNotice {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--ink);
+}
+
+.inputNotice:empty {
+  display: none;
+}
+
+.retry {
+  justify-self: start;
+  min-height: var(--tap);
+  padding: 0 1.1em;
+  font: inherit;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--paper-sunk, transparent);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+
+
+/* ==========================================================================
+ * Screen layout (2026-10-25)
+ *
+ * The card fills whatever height its host gives it (the hero console on a
+ * desktop, a full-height sheet on a phone once the reader asks) and keeps
+ * exactly one scroller: the view between the bar and the composer. Fades at
+ * its edges and the "More below" cue say when it holds more than it shows.
+ * ========================================================================== */
+
+.agent {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+}
+
+.topBar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-3);
+  padding-block-end: var(--s-3);
+  border-bottom: var(--border-hair) solid var(--rule);
+}
+
+.scrollBox {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.view {
+  --fade: 28px;
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  padding-block: var(--s-4);
+  outline: none;
+}
+
+.view[data-top] {
+  mask-image: linear-gradient(to bottom, transparent, #000 var(--fade));
+}
+
+.view[data-bottom] {
+  mask-image: linear-gradient(to top, transparent, #000 var(--fade));
+}
+
+.view[data-top][data-bottom] {
+  mask-image: linear-gradient(to bottom, transparent, #000 var(--fade), #000 calc(100% - var(--fade)), transparent);
+}
+
+.content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-4);
+  min-width: 0;
+}
+
+/* An icon-only round control in the corner of the bottom fade, where the text
+   under it is already fading out; it never sits over readable lines. */
+.moreCue {
+  position: absolute;
+  z-index: 2;
+  inset-block-end: var(--s-2);
+  inset-inline-end: var(--s-2);
+  display: inline-grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border-radius: var(--r-pill);
+  font: inherit;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  color: var(--ink);
+  background: var(--paper-raised, var(--paper));
+  border: var(--border-hair) solid var(--rule);
+  box-shadow: var(--lift-2);
+  cursor: pointer;
+}
+
+.dock {
+  flex: none;
+  display: grid;
+  gap: var(--s-2);
+  padding-block: var(--s-3) max(0px, env(safe-area-inset-bottom));
+  border-top: var(--border-hair) solid var(--rule);
+}
+
+.hint {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  color: var(--ink-faint);
+}
+
+.hint kbd {
+  font: inherit;
+  padding: 0 4px;
+  color: var(--ink-soft);
+  border: var(--border-hair) solid var(--rule);
+}
+
+/* ---------- Island: where the run is, then how it went ---------- */
+
+.island {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  max-width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 0.4em 0 1em;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: oklch(0.97 0 0);
+  background: oklch(0.1 0.004 250);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-pill);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.1);
+}
+
+.islandText {
+  min-width: 0;
+  padding-inline-end: 0.6em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.island[data-phase="done"] :global(.live-dot) {
+  background: var(--live);
+}
+
+.island:is([data-phase="degraded"], [data-phase="stopped"]) :global(.live-dot) {
+  background: var(--warn);
+}
+
+.island[data-phase="failed"] :global(.live-dot) {
+  background: var(--fail);
+}
+
+.islandBand {
+  position: relative;
+  flex: none;
+  min-height: 30px;
+  padding: 0 0.8em;
+  font: inherit;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  color: oklch(0.97 0 0);
+  background: transparent;
+  border: var(--border-hair) solid oklch(1 0 0 / 0.3);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+}
+
+/* The hit area reaches 44px without making the badge bigger. */
+.islandBand::after {
+  content: "";
+  position: absolute;
+  inset: -7px -2px;
+}
+
+.islandBand[data-band="answer"] {
+  border-color: var(--live);
+}
+
+.islandBand[data-band="partial"] {
+  border-color: var(--warn);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The capsule keeps its place; its words swap with a short spring. */
+  .islandText {
+    animation: islandIn 360ms var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both;
+  }
+}
+
+@keyframes islandIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px) scale(0.97);
+  }
+}
+
+/* ---------- Tabs ---------- */
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: var(--border-hair) solid var(--rule);
+}
+
+.tab {
+  min-height: 36px;
+  padding: 0 0.9em;
+  font: inherit;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out);
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab[aria-selected="true"] {
+  color: var(--on-signal, var(--paper));
+  background: var(--signal);
+}
+
+/* ---------- Featured answer: the load-time question, set as a headline ---------- */
+
+.featured {
+  position: relative;
+  display: grid;
+  gap: var(--s-4);
+  min-width: 0;
+  padding: var(--s-5);
+  background-color: color-mix(in oklch, var(--paper) 90%, var(--signal) 4%);
+  /* A fine dot grid, the console's plotting paper. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http:%2F%2Fwww%2Ew3%2Eorg%2F2000%2Fsvg' width='14' height='14'%3E%3Ccircle cx='1' cy='1' r='1' fill='%23ffffff' fill-opacity='0.07'/%3E%3C/svg%3E");
+  border: var(--border-hair) solid color-mix(in oklch, var(--signal) 40%, var(--rule));
+}
+
+/* Registration marks at two corners, in the accent. */
+.featured::before,
+.featured::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  border: 0 solid var(--signal);
+}
+
+.featured::before {
+  inset-block-start: -1px;
+  inset-inline-start: -1px;
+  border-block-start-width: 2px;
+  border-inline-start-width: 2px;
+}
+
+.featured::after {
+  inset-block-end: -1px;
+  inset-inline-end: -1px;
+  border-block-end-width: 2px;
+  border-inline-end-width: 2px;
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+
+.featuredQ {
+  margin: 0;
+  font-family: var(--font-plate, inherit);
+  font-size: clamp(1.35rem, 2.1vw, 1.75rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.featured .leadLine {
+  font-size: 1.3em;
+}
+
+.grounded {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+}
+
+.grounded li {
+  padding: 0.3em 0.7em;
+  color: var(--ink-soft);
+  border: var(--border-hair) solid var(--mark-rule, var(--rule));
+  background: var(--mark-wash, transparent);
+}
+
+.featuredCta {
+  display: grid;
+  gap: var(--s-3);
+  justify-items: start;
+}
+
+.invite {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  min-height: 48px;
+  padding: 0 1.4em;
+  font: inherit;
+  font-size: var(--step-0);
+  font-weight: 700;
+  color: var(--on-signal, var(--paper));
+  background: var(--signal);
+  border: none;
+  box-shadow: inset 0 -2px 0 color-mix(in oklch, var(--ink) 22%, transparent);
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out);
+}
+
+.invite:hover {
+  background: var(--signal-deep, var(--signal));
+}
+
+.invite:active {
+  transform: translateY(1px);
+}
+
+.invite svg {
+  transition: transform var(--t-fast) var(--ease-out);
+}
+
+.invite:hover svg {
+  transform: translate(2px, -2px);
+}
+
+/* ---------- Empty state: one card per kind of visitor ---------- */
+
+.openers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.opener {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: start;
+  gap: var(--s-1) var(--s-2);
+  width: 100%;
+  height: 100%;
+  min-height: 88px;
+  padding: var(--s-3) var(--s-4);
+  font: inherit;
+  text-align: start;
+  color: var(--ink);
+  background: color-mix(in oklch, var(--ink) 4%, transparent);
+  border: var(--border-hair) solid var(--rule);
+  cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease-out), background var(--t-fast) var(--ease-out);
+}
+
+.opener:hover {
+  border-color: color-mix(in oklch, var(--signal) 55%, var(--rule));
+  background: color-mix(in oklch, var(--ink) 7%, transparent);
+}
+
+.openerFor {
+  grid-column: 1;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+
+.openerQ {
+  grid-column: 1;
+  font-size: var(--step--1);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.opener svg {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: var(--ink-faint);
+}
+
+/* ---------- Answer formatting ---------- */
+
+.leadLine {
+  margin: 0 0 0.6em;
+  font-size: 1.2em;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.points {
+  display: grid;
+  gap: 0.4em;
+  margin: 0 0 0.75em;
+  padding-inline-start: 1.1em;
+  white-space: normal;
+}
+
+.points li::marker {
+  color: var(--signal);
+}
+
+/* A figure the record does not hold says so on hover or focus. */
+.unsupported {
+  position: relative;
+}
+
+.unsupported:is(:hover, :focus-visible)::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 3;
+  inset-inline-start: 0;
+  inset-block-end: calc(100% + 6px);
+  padding: 4px 8px;
+  font: 600 var(--step--2) / 1.3 var(--mono);
+  white-space: nowrap;
+  color: var(--paper);
+  background: var(--ink);
+  pointer-events: none;
+}
+
+.peek {
+  position: fixed;
+  z-index: var(--z-furniture, 50);
+  transform: translate(-50%, calc(-100% - 10px));
+  display: grid;
+  gap: 4px;
+  width: min(320px, calc(100vw - 32px));
+  padding: var(--s-3);
+  font-size: var(--step--1);
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--paper-raised, var(--paper));
+  border: var(--border-hair) solid color-mix(in oklch, var(--signal) 45%, var(--rule));
+  box-shadow: var(--lift-2);
+  pointer-events: none;
+}
+
+.peek b {
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.cite button {
+  min-width: 24px;
+  min-height: 24px;
+}
+
+/* ---------- Live pipeline and skeleton ---------- */
+
+.pipeline {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+}
+
+.pipeline li {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--ink-faint);
+  transition: color var(--t-fast) var(--ease-out);
+}
+
+.pipeline li[data-state="running"] {
+  color: var(--ink);
+}
+
+.pipeline li:is([data-state="done"], [data-state="skipped"], [data-state="failed"]) {
+  color: var(--ink-soft);
+}
+
+.pipeMark {
+  width: 8px;
+  height: 8px;
+  border: 1px solid currentColor;
+}
+
+.pipeline li[data-state="running"] .pipeMark {
+  background: var(--signal);
+  border-color: var(--signal);
+}
+
+.pipeline li[data-state="done"] .pipeMark {
+  background: var(--live);
+  border-color: var(--live);
+}
+
+.pipeline li[data-state="failed"] .pipeMark {
+  background: var(--warn);
+  border-color: var(--warn);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pipeline li[data-state="running"] .pipeMark {
+    animation: breathe 0.8s var(--ease-standard, ease-in-out) infinite alternate;
+  }
+}
+
+.skeleton[data-lead] {
+  width: 88%;
+  height: 1.2em;
+}
+
+.skeleton[data-chip] {
+  width: 6rem;
+  height: 28px;
+}
+
+.skelChips {
+  display: flex;
+  gap: var(--s-2);
+}
+
+/* ---------- History, proof, actions, sources ---------- */
+
+.history {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pastTurn > summary {
+  display: block;
+  min-height: var(--tap);
+  padding: 0.7em 1em;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  list-style: none;
+  border: var(--border-hair) solid var(--rule);
+  background: color-mix(in oklch, var(--ink) 4%, transparent);
+  cursor: pointer;
+}
+
+.pastTurn > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pastTurn[open] > summary {
+  color: var(--ink);
+  white-space: normal;
+}
+
+.pastTurn > .answer {
+  padding: var(--s-3) var(--s-4);
+  border: var(--border-hair) solid var(--rule);
+  border-top: none;
+  font-size: var(--step-0);
+}
+
+button.step {
+  font: inherit;
+  font-family: var(--mono);
+  min-height: 32px;
+  border: none;
+  cursor: pointer;
+}
+
+button.step:hover {
+  color: var(--ink);
+}
+
+.votes {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.votes .iconBtn[aria-pressed="true"] {
+  color: var(--ink);
+}
+
+.citedPanel {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.panelHead {
+  margin: 0;
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.cites li + li {
+  margin-block-start: var(--s-2);
+}
+
+.cites li p {
+  margin: 4px 0 0;
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.cites li:target {
+  outline: 1px solid var(--signal);
+  outline-offset: 4px;
+}
+
+.note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+}
+
+/* ---------- Phone: full-height sheet once the reader asks, Trace as a bottom sheet ---------- */
+
+.sheetDialog {
+  position: fixed;
+  inset: auto 0 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: 85dvh;
+  margin: 0;
+  padding: 0;
+  color: var(--ink);
+  background: var(--paper);
+  border: none;
+  border-top: var(--border-hair) solid var(--rule);
+}
+
+.sheetDialog::backdrop {
+  background: oklch(0 0 0 / 0.55);
+}
+
+.sheetBody {
+  max-height: 85dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--s-4) calc(var(--s-5) + env(safe-area-inset-bottom));
+}
+
+.sheetHead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: var(--s-4) var(--s-3);
+  background: var(--paper);
+}
+
+.sheetHead h4 {
+  margin: 0;
+  font-size: var(--step-0);
+}
+
+.grabber {
+  position: absolute;
+  inset-block-start: 6px;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  width: 36px;
+  height: 4px;
+  background: var(--ink-faint);
+  border-radius: var(--r-pill);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sheetDialog[open] {
+    animation: sheetUp 260ms var(--ease-out) both;
+  }
+}
+
+@keyframes sheetUp {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+}
+
+@media (max-width: 767px) {
+  /* Once the reader has asked, the card is the screen: bar on top, composer at
+     the bottom, the answer scrolling between. */
+  .agent[data-asked] {
+    height: calc(100dvh - 4.5rem);
+    min-height: 26rem;
+  }
+  .hint {
+    display: none;
+  }
+  .tab {
+    min-height: var(--tap);
+  }
+  .featured {
+    padding: var(--s-4);
+  }
+  .island {
+    min-height: var(--tap);
+  }
+}
+
+/* ---------- Second take: the warm voice, set apart from the facts ---------- */
+
+.asideCard {
+  display: grid;
+  gap: var(--s-2);
+  justify-items: start;
+  padding: var(--s-4);
+  border: var(--border-hair) solid color-mix(in oklch, var(--signal) 50%, var(--rule));
+  background: color-mix(in oklch, var(--paper) 86%, var(--signal) 8%);
+}
+
+.asideHead {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.04em;
+  color: var(--signal);
+}
+
+.asideLine {
+  margin: 0;
+  font-family: var(--font-plate, inherit);
+  font-size: clamp(1.1rem, 1.6vw, 1.3rem);
+  font-weight: 700;
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.asideCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  min-height: var(--tap);
+  padding: 0 1.1em;
+  font: inherit;
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--ink);
+  background: transparent;
+  border: var(--border-hair) solid var(--signal);
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out);
+}
+
+.asideCta:hover {
+  color: var(--on-signal, var(--paper));
+  background: var(--signal);
+}
+
+/* Focus lands on the finished answer for screen readers; it is a region, not a
+   control, so it takes no ring. */
+.agent .answer[tabindex]:focus,
+.agent .answer[tabindex]:focus-visible {
+  outline: none;
+}
+
+/* Answer type at reading size inside a card, not a headline; the page's h3
+   stretch and tracking stay out of the question. */
+.question {
+  font-family: inherit;
+  font-stretch: normal;
+  letter-spacing: normal;
+}
+
+@media (min-width: 900px) {
+  .answer {
+    font-size: 1.0625rem;
+  }
+}
+
+.leadLine {
+  font-size: 1.12em;
+}
+
+/* The selected segment. The console's button sheen rule outranks a two-class
+   selector, so this one carries the component class twice. */
+.agent .tab[aria-selected="true"] {
+  color: var(--on-signal);
+  background: var(--signal);
+  text-shadow: none;
+}
+
+/* Ask stays an outline until there is something to send, then it is the one
+   filled control in the card, as a send button is once a draft exists. */
+.agent.agent form:has(textarea:not(:placeholder-shown)) .go:not([data-kind="stop"]) {
+  color: var(--on-signal);
+  background: var(--signal);
+  box-shadow: none;
+}
+
+@media (max-width: 767px) {
+  .islandBand,
+  button.step,
+  .chip[data-kind="probe"] {
+    min-height: var(--tap);
+  }
+  .islandBand::after {
+    content: none;
+  }
+}
+
+/* ---------- The window: the card lifted over the page ----------
+ * One element, two places. Closed, the popover is the inline card (author
+ * rules undo the UA popover box). Open, it sits in the top layer at about 70%
+ * of the width and 62% of the height, centred above the dock, with the page
+ * dimmed but visible and still scrollable around it. */
+:where(.agent[popover]:not(:popover-open)) {
+  width: auto;
+  height: auto;
+}
+
+.agent[popover]:not(:popover-open) {
+  inset: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  background: transparent;
+  color: var(--ink);
+}
+
+.agent:popover-open {
+  position: fixed;
+  inset: 0 0 4rem;
+  margin: auto;
+  width: min(70vw, 76rem);
+  min-width: min(44rem, calc(100vw - 2rem));
+  height: clamp(30rem, 62svh, calc(100svh - 7rem));
+  padding: var(--s-4) var(--s-5) var(--s-3);
+  overflow: hidden;
+  color: var(--ink);
+  background: oklch(0.205 0.012 258);
+  border: var(--border-hair) solid oklch(0.955 0.03 86 / 0.28);
+  box-shadow: 0 2px 6px oklch(0 0 0 / 0.3), 0 32px 90px oklch(0 0 0 / 0.55);
+}
+
+/* The film keeps moving behind the page; behind the window it is held to a
+   near-opaque dark so the conversation is the only thing in motion. */
+.agent:popover-open::backdrop {
+  background: oklch(0.12 0.01 258 / 0.86);
+}
+
+/* Beats the film-mode glass on header consoles (two classes, three elements),
+   which set this surface to 76% paper with a gradient over it. */
+.agent.agent.agent:popover-open[data-surface] {
+  background: oklch(0.205 0.012 258);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .agent:popover-open {
+    transition:
+      opacity 200ms var(--ease-out),
+      transform 240ms var(--ease-out);
+  }
+
+  @starting-style {
+    .agent:popover-open {
+      opacity: 0;
+      transform: translateY(12px) scale(0.985);
+    }
+  }
+}
+
+.winTitle {
+  margin: 0;
+  font-family: inherit;
+  font-size: var(--step-0);
+  font-weight: 600;
+  font-stretch: normal;
+  letter-spacing: normal;
+}
+
+.winBtn {
+  margin-inline-start: auto;
+}
+
+.stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Regular width inside the window: Sources and Trace stand beside the answer
+   instead of replacing it, so the reader never loses the text they are checking. */
+.agent[data-split] .stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
+  grid-template-rows: minmax(0, 1fr);
+  gap: var(--s-5);
+}
+
+.inspector {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--s-4) 0 var(--s-4) var(--s-5);
+  border-inline-start: var(--border-hair) solid var(--rule);
+}
+
+/* What the hero shows while the card is in its window. */
+.parked {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: var(--border-hair) dashed var(--rule);
+}
+
+.parkedQ {
+  margin: 0;
+  font-size: var(--step-1);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ---------- Inline on a wide screen: a live display ----------
+ * No inner scroller: the wheel scrolls the page, the answer is clipped under a
+ * fade, and reading further is the Full view button. */
+.agent[data-compact] .view {
+  overflow: hidden;
+  overscroll-behavior: auto;
+}
+
+.agent.agent .moreCue[data-label] {
+  display: inline-flex;
+  width: auto;
+  gap: 0.45em;
+  padding: 0 1em;
+  border-radius: 0;
+  font-family: inherit;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--on-signal);
+  background: var(--signal);
+  border: none;
+  box-shadow: var(--lift-2);
+  text-shadow: none;
+}
+
+/* Inline, only the latest exchange shows; earlier turns and the view tabs live
+   in the full view, and the hint line below names them. */
+.agent[data-compact] :is(.history, .tabs) {
+  display: none;
+}
+
+/* The side panel is one column wide: the board stacks its cards. */
+.inspector .board {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.glance {
+  flex: none;
+  display: grid;
+  gap: var(--s-2);
+  padding-block: var(--s-3) var(--s-2);
+  border-top: var(--border-hair) solid var(--rule);
+}
+
+.glanceActions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--s-1) var(--s-2);
 }
 
-.provider {
-  font-size: var(--step--2);
-  letter-spacing: var(--track-wide);
-  padding: 0.15em 0.5em;
-  border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-pill);
-  color: var(--ink-faint);
-}
-
-.provider[data-health="ready"] {
-  color: var(--live);
-  border-color: color-mix(in oklch, var(--live) 45%, var(--paper));
-}
-
-.provider[data-health="benched"] {
-  color: var(--warn);
-  border-color: color-mix(in oklch, var(--warn) 45%, var(--paper));
-}
-
-/* The floating ask button carries the console ground, because what it opens is
-   the console. It appears over paper prose, so without the panel treatment it
-   read as a browser tooltip rather than as part of the instrument. */
-.selectAsk {
-  border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-md);
-  box-shadow: var(--lift-2);
-}
-
-/* What to do next.
- *
- * Two kinds, one appearance, because the difference that matters to a reader is
- * not "link versus button" -- it is that both of these are things the page can
- * actually do. The arrow marks the one that leaves the page, which is the only
- * distinction worth a glyph.
- *
- * Staggered in because they arrive after the answer has settled, so appearing
- * together would read as a redraw of the answer rather than as an addition to
- * it. One-shot: appearing is a state change, so this clears the motion rule. */
-.offers {
+/* The rest, named once and quietly: mono, faint, a dotted rule under each word
+   that turns solid with an arrow on hover, so each reads as a door. */
+.glanceHints {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s-2);
-  list-style: none;
-  margin: var(--s-3) 0 0;
-  padding: 0;
-}
-
-.offer {
-  display: inline-block;
-  font: inherit;
-  font-size: var(--step--1);
-  color: var(--ink-soft);
-  background: transparent;
-  border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-pill);
-  padding: 0.3em 0.8em;
-  cursor: pointer;
-  text-decoration: none;
-  text-align: left;
-  transition: color var(--t-fast) var(--ease-instrument),
-    border-color var(--t-fast) var(--ease-instrument);
-  animation: offer-in var(--t-normal) var(--ease-instrument) both;
-  animation-delay: calc(var(--n, 0) * 60ms);
-}
-
-.offer:hover,
-.offer:focus-visible {
-  color: var(--ink);
-  border-color: var(--ink-faint);
-}
-
-/* Marks the one that opens a new tab. The reader should know before clicking
- * whether the page is about to change under them. */
-.offer[data-kind="open"]::after {
-  content: " \2197";
+  align-items: center;
+  gap: 0 var(--s-3);
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--step--2);
   color: var(--ink-faint);
 }
 
-@keyframes offer-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .offer {
-    animation: none;
-  }
-}
-
-/* Something the agent did, kept pressable.
- *
- * The auto-open attempt happens after a network round trip, which every popup
- * blocker treats as not-a-user-gesture, so the control is what actually works.
- * It is the only filled affordance in the thread because it is the only one
- * that leaves the page. */
-.actionBtn {
-  display: inline-block;
-  margin: var(--s-3) var(--s-2) 0 0;
-  font-size: var(--step--1);
-  color: var(--paper);
-  background: var(--ink);
-  border: var(--border-hair) solid var(--ink);
-  border-radius: var(--r-pill);
-  padding: 0.4em 1em;
-  text-decoration: none;
-  cursor: pointer;
-  transition: opacity var(--t-fast) var(--ease-instrument);
-}
-
-.actionBtn:hover,
-.actionBtn:focus-visible {
-  opacity: 0.85;
-}
-
-.actionGhost {
+.glanceHints button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  min-height: 28px;
+  padding: 0;
   font: inherit;
-  font-size: var(--step--1);
-  color: var(--ink-soft);
-  background: transparent;
-  border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-pill);
-  padding: 0.4em 1em;
+  color: inherit;
+  background: none;
+  border: none;
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;
+  text-decoration-color: color-mix(in oklch, var(--ink-faint) 60%, transparent);
   cursor: pointer;
+  transition: color var(--t-fast) var(--ease-out);
 }
 
-.actionGhost:hover,
-.actionGhost:focus-visible {
+.glanceHints button::after {
+  content: "\2197";
+  opacity: 0;
+  transform: translate(-2px, 2px);
+  transition: opacity var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out);
+}
+
+.glanceHints button:is(:hover, :focus-visible) {
   color: var(--ink);
-  border-color: var(--ink-faint);
+  text-decoration-style: solid;
+  text-decoration-color: var(--signal);
 }
 
-.draft {
-  display: block;
-  margin-block-start: var(--s-2);
+.glanceHints button:is(:hover, :focus-visible)::after {
+  opacity: 1;
+  transform: none;
 }
 
-.draftText {
-  margin: var(--s-3) 0 0;
-  padding: var(--s-3);
-  background: var(--paper-sunk);
-  border-radius: var(--r-md);
-  font-size: var(--step--2);
+.glanceHints .tabular {
   color: var(--ink-soft);
-  white-space: pre-wrap;
-  overflow-x: auto;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  color: var(--ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* One bar row inline: the island gives up width (its text truncates) before
+   the window button wraps onto a line of its own. */
+.agent[data-compact] .topBar {
+  flex-wrap: nowrap;
+}
+
+.agent[data-compact] .island {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.agent[data-compact] .islandText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Filled actions keep their fill under the console's button sheen, which sets
+   a transparent background shorthand at (0,2,3); the sheen image stays on top. */
+.agent.agent .invite,
+.parked.parked .invite {
+  color: var(--on-signal);
+  background-color: var(--signal);
+  text-shadow: none;
+}
+
+/* The answer toolbar: borderless symbols with their word, monochrome, one
+   hover fill. Four items; anything else is in the hint line. */
+.agent.agent .glanceActions .ghost {
+  min-height: var(--tap);
+  padding: 0 0.7em;
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.agent.agent .glanceActions .ghost:hover {
+  background-color: color-mix(in oklch, var(--ink) 8%, transparent);
+}
+
+@media (max-width: 767px) {
+  /* Phone: four equal cells, symbol over a short word, the way an iOS toolbar
+     labels its items. */
+  .glanceActions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .agent.agent .glanceActions .ghost {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-height: 52px;
+    padding: 4px 2px;
+    font-size: var(--step--2);
+    white-space: nowrap;
+  }
+
+  .glanceHints button {
+    min-height: var(--tap);
+  }
+}
+
+/* A textarea's intrinsic width (its default cols) is its flex minimum; at 390
+   it pushed the composer 45px past the card and clipped Ask. */
+.composer {
+  min-width: 0;
   max-width: 100%;
 }
 
-/* A demonstration that ran, and whether it held.
- *
- * Colour is the outcome and nothing else: --live for an assertion that passed,
- * --fail for one that did not. It can show red, which is the point of offering
- * to run it in front of someone. */
-.evalResult {
-  display: grid;
-  gap: 2px;
-  margin: var(--s-3) 0 0;
-  padding-inline-start: var(--s-3);
-  border-inline-start: var(--border-emphasis) solid var(--rule);
+.composer .input {
+  min-width: 0;
 }
 
-.evalResult[data-outcome="pass"] {
-  border-inline-start-color: var(--live);
+/* Hint words are text, not buttons with a ground: the console sheen's
+   background never reaches them. */
+.agent.agent .glanceHints button {
+  background: none;
+  box-shadow: none;
 }
 
-.evalResult[data-outcome="fail"] {
-  border-inline-start-color: var(--fail);
-}
-
-.evalCase {
-  font-size: var(--step--1);
-  color: var(--ink);
-}
-
-.evalAsserts {
-  font-size: var(--step--2);
-  color: var(--ink-faint);
-  font-variant-numeric: tabular-nums;
+@media (max-width: 767px) {
+  /* The lead is the answer's first sentence, one step above body, not a headline. */
+  .leadLine {
+    font-size: 1.04em;
+  }
 }

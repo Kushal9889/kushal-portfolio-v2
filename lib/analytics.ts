@@ -15,6 +15,7 @@ export type Event =
   | "agent_opened"
   | "agent_asked"
   | "voice_used"
+  | "agent_feedback"
   | "contact";
 
 export function track(event: Event, detail?: string) {

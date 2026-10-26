@@ -6,6 +6,7 @@
     "retrieve",
     "answer",
     "deflect",
+    "unknown",
     "act",
     "end"
   ],
@@ -28,7 +29,12 @@
     {
       "from": "retrieve",
       "to": "answer",
-      "conditional": false
+      "conditional": true
+    },
+    {
+      "from": "retrieve",
+      "to": "unknown",
+      "conditional": true
     },
     {
       "from": "route",
@@ -49,7 +55,12 @@
       "from": "start",
       "to": "route",
       "conditional": false
+    },
+    {
+      "from": "unknown",
+      "to": "end",
+      "conditional": false
     }
   ],
-  "conditional": 3
+  "conditional": 5
 }

@@ -1,0 +1,1608 @@
+/*
+ * Scenes. One ground for the whole page, graded per section like the shots of a
+ * film: each section re-declares the tokens every component already reads, so
+ * nothing below edits a component stylesheet. Plan and the full mapping of which
+ * palette and which effect sits where: docs/redesign-2026-10.md.
+ *
+ * Per scene, 60/30/10: --scene-ground is the veil laid behind the text side,
+ * --ink* is the content on top, --signal is the one highlight.
+ */
+
+/* ---- Type: four voices, set tight ------------------------------------- */
+
+html:root {
+  --font-display: var(--font-spine);
+  --font-mono: var(--font-ibm);
+  --track-tight: -0.03em;
+  --track-wide: 0.02em;
+  --track-caps: 0.04em;
+  --step-4: clamp(2.6rem, 1.5rem + 3.3vw, 4.6rem);
+  --step-5: clamp(3.6rem, 1.4rem + 8.2vw, 10.5rem);
+  --step-2: clamp(1.9rem, 1.4rem + 1.9vw, 2.9rem);
+  --link: oklch(0.76 0.13 262);
+}
+
+body,
+p,
+li,
+dd {
+  letter-spacing: -0.006em;
+}
+
+h1,
+h2 {
+  font-family: var(--font-plate), var(--font-spine), ui-sans-serif, system-ui, sans-serif;
+  font-stretch: 88%;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--step-4);
+  line-height: 0.96;
+  padding-bottom: 0.08em;
+}
+
+body > header h1 + div[class] {
+  margin-top: 0.6rem;
+}
+
+/* Emphasis stays in the family: the italic of the sibling face. */
+h1 > span {
+  font-family: var(--font-signature), var(--font-spine), sans-serif;
+  font-style: italic;
+  font-weight: 340;
+  font-stretch: 104%;
+  letter-spacing: -0.035em;
+  color: var(--ink-soft);
+}
+
+h3 {
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-stretch: 94%;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+main > section[data-register="instrument"] h2 {
+  font-size: clamp(1.75rem, 1.3rem + 1.4vw, 2.5rem);
+  line-height: 0.98;
+  overflow-wrap: normal;
+  hyphens: manual;
+}
+
+main > section[data-register="chapter"] h2 {
+  font-size: var(--step-5);
+  line-height: 0.84;
+  letter-spacing: -0.05em;
+}
+
+/* Figures read as stat tiles: the text sans at semibold, proportional digits
+   for a standalone value (tabular only where numbers stand in a column), the
+   label in sentence case at reading contrast, and one lead figure per list. */
+main dt {
+  font-family: var(--font-spine), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  font-stretch: 100%;
+  letter-spacing: -0.025em;
+  font-variant-numeric: proportional-nums lining-nums;
+}
+
+main dl > div:first-child > dt {
+  font-size: clamp(2.6rem, 1.8rem + 2.4vw, 3.6rem);
+  line-height: 1;
+}
+
+main dd {
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  line-height: 1.35;
+  max-width: 24ch;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Small labels were uppercase at 0.12em: loose. Sentence case, near zero. */
+.label,
+.caption {
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+
+/* Links: cobalt, a fine underline, never a paragraph of colour. */
+.prose a,
+main p a {
+  color: var(--link);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+  text-decoration-color: color-mix(in oklch, var(--link) 45%, transparent);
+}
+
+.prose a:hover,
+main p a:hover {
+  text-decoration-color: var(--link);
+}
+
+/* ---- Scene tokens: one family ------------------------------------------ */
+
+/* The eleven triads of 2026-10-13 kept leaking into the page after later
+   passes repainted it (an indigo figure in The bug, a neon red, a brown
+   certificate card), so every scene now shares one set and differs only by
+   its tone, set per section in the family pass below.
+   Ground soft black, panels graphite, type and figures in the claim white,
+   the CTA cream, lime only for the agent. The tone draws edges, marks and
+   underlines, never a fill. */
+body > header,
+body > header [data-surface],
+main > section,
+main > section [data-surface] {
+  --scene-ground: oklch(0.175 0.006 60);
+  --scene-panel: oklch(0.175 0.006 60);
+  --scene-rule: color-mix(in oklch, var(--tone, var(--cream)) 42%, transparent);
+  --ink: oklch(0.97 0.012 86);
+  --ink-soft: oklch(0.9 0.014 84);
+  --ink-faint: oklch(0.82 0.014 80);
+  --signal: var(--cream);
+  --signal-deep: var(--tone, var(--cream));
+  --on-signal: oklch(0.19 0.008 60);
+  --link: var(--tone, var(--cream));
+  --fail: var(--tone, var(--cream));
+  --figure: var(--ink);
+  --paper: var(--scene-ground);
+  --paper-raised: var(--scene-panel);
+  --paper-high: color-mix(in oklch, var(--scene-panel) 88%, var(--ink));
+  --paper-sunk: color-mix(in oklch, var(--scene-ground) 90%, oklch(0 0 0));
+  --rule: var(--scene-rule);
+  --mark: var(--signal);
+  --mark-ink: var(--signal-deep);
+  --signal-wash: color-mix(in oklch, var(--signal) 14%, var(--scene-ground));
+  --mark-wash: color-mix(in oklch, var(--mark) 14%, var(--scene-ground));
+  --mark-rule: color-mix(in oklch, var(--mark) 46%, var(--scene-ground));
+}
+
+main > section [data-surface] {
+  background-color: var(--scene-panel);
+}
+
+/* The light scheme a reader picks from the palette: the same family on paper.
+   Ink and rules come from the light tokens in globals.css, so text clears AA
+   on the light ground instead of keeping the cream meant for the dark one. */
+:root[data-theme="light"] :is(#top, #opensource, #work, #running, #research, #proof, #approach, #measured, #education, #contact),
+:root[data-theme="light"] :is(#top, #opensource, #work, #running, #research, #proof, #approach, #measured, #education, #contact) [data-surface] {
+  --scene-ground: oklch(0.975 0.0015 250);
+  --scene-panel: oklch(0.998 0.001 250);
+  --scene-rule: color-mix(in oklch, var(--tone, oklch(0.185 0.004 250)) 40%, transparent);
+  --ink: oklch(0.185 0.004 250);
+  --ink-soft: oklch(0.38 0.006 250);
+  --ink-faint: oklch(0.46 0.008 250);
+  --signal: oklch(0.185 0.004 250);
+  --signal-deep: oklch(0.32 0.006 250);
+  --on-signal: oklch(0.99 0.001 250);
+  --link: oklch(0.40 0.12 258);
+  --cream: oklch(0.185 0.004 250);
+  --graphite: oklch(0.998 0.001 250 / 0.94);
+  --paper: oklch(0.975 0.0015 250);
+  --paper-sunk: oklch(0.948 0.002 250);
+  --paper-raised: oklch(0.998 0.001 250);
+  --paper-high: oklch(1 0 0);
+}
+
+:root[data-theme="light"] :is(#top, #opensource, #work, #running, #research, #proof, #approach, #measured, #education, #contact) {
+  --tone: oklch(0.42 0.09 258);
+}
+
+:root[data-theme="light"] #proof [data-issuer] {
+  --tone: oklch(0.42 0.09 258);
+}
+
+/* Brand tints are pale for the dark ground; on paper they take the tone. */
+:root[data-theme="light"] main [style*="--role-tint"],
+:root[data-theme="light"] main [style*="--figure-tint"] {
+  --role-tint: var(--tone) !important;
+  --figure-tint: var(--tone) !important;
+}
+
+:root[data-theme="light"] body > header [data-surface="console"] {
+  --signal: oklch(0.185 0.004 250);
+  --signal-deep: oklch(0.32 0.006 250);
+  --on-signal: oklch(0.99 0.001 250);
+  --live: oklch(0.52 0.14 152);
+  --scene-rule: oklch(0.185 0.004 250 / 0.2);
+}
+
+/* The agent console: lime for ask and live; a failure is the one red. */
+body > header [data-surface="console"] {
+  --live: oklch(0.89 0.2 128);
+  --fail: oklch(0.64 0.22 22);
+  --signal: oklch(0.89 0.2 128);
+  /* A step deeper, so Ask has a hover state of its own. */
+  --signal-deep: oklch(0.82 0.19 128);
+  --on-signal: oklch(0.19 0.008 60);
+  --scene-rule: oklch(0.955 0.03 86 / 0.28);
+}
+
+/* ---- Clear space: the veil (arrangement 2) ----------------------------- */
+
+/* The text side sits on the scene's ground; the footage keeps the far side
+   clear, the way a sky leaves room for a line of type. */
+body > header,
+main > section {
+  position: relative;
+  isolation: isolate;
+  /* Solid field on the text side, a short edge, clear film beyond it. */
+  --scene-field: linear-gradient(transparent, transparent);
+}
+
+body > header::after,
+main > section::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--scene-field);
+}
+
+@media (max-width: 767px) {
+  body > header::after,
+  main > section::after {
+    background: var(--scene-field);
+  }
+}
+
+/* ---- Overlap (arrangement 1) ------------------------------------------- */
+
+/* Chapter titles are set huge and the first panel rides over their lower
+   third, so the work sits on top of its own heading. */
+@media (min-width: 62rem) {
+  main > section[data-layout="banner"]:not(#contact) > .wrap > div:first-child {
+    position: relative;
+    z-index: 0;
+    /* Measured: the rack already rises 48px into the head; this leaves the
+       panel over the lower third of the title, not half of it. */
+    margin-bottom: calc(var(--step-5) * 0.06);
+  }
+
+  main > section[data-layout="banner"]:not(#contact) > .wrap > div:first-child h2 {
+    color: color-mix(in oklch, var(--ink) 92%, transparent);
+  }
+
+  main > section[data-layout="banner"]:not(#contact) > .wrap > :not(:first-child) {
+    position: relative;
+    z-index: 1;
+  }
+
+}
+
+/* ---- Hero CTA: the one filled control --------------------------------- */
+
+body > header a[href="#contact"]:not(nav a) {
+  background: var(--signal);
+  color: var(--on-signal);
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+/* ---- Camera viewfinder on the hero console ----------------------------- */
+
+/* The outer console only. The agent inside it is a console surface too, and a
+   second set of corners 6px inside its top edge crossed its first line. */
+body > header [data-surface="console"]:not([data-surface="console"] [data-surface="console"])::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  pointer-events: none;
+  z-index: 3;
+  --c: color-mix(in oklch, var(--ink) 70%, transparent);
+  background:
+    linear-gradient(var(--c), var(--c)) top left / 18px 1px,
+    linear-gradient(var(--c), var(--c)) top left / 1px 18px,
+    linear-gradient(var(--c), var(--c)) top right / 18px 1px,
+    linear-gradient(var(--c), var(--c)) top right / 1px 18px,
+    linear-gradient(var(--c), var(--c)) bottom left / 18px 1px,
+    linear-gradient(var(--c), var(--c)) bottom left / 1px 18px,
+    linear-gradient(var(--c), var(--c)) bottom right / 18px 1px,
+    linear-gradient(var(--c), var(--c)) bottom right / 1px 18px;
+  background-repeat: no-repeat;
+}
+
+/* ---- Consoles: solid graphite plates ----------------------------------- */
+
+body > header [data-surface="console"],
+main > section#measured [data-surface="console"] {
+  background: var(--graphite);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  body > header [data-surface="console"],
+  main > section#measured [data-surface="console"] {
+    background: var(--scene-ground);
+    backdrop-filter: none;
+  }
+}
+
+/* ---- The bug: x-ray scan over the code slab ---------------------------- */
+
+main > section#opensource pre {
+  position: relative;
+  overflow: hidden;
+}
+
+main > section#opensource pre::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in oklch, var(--signal) 0%, transparent) 40%,
+    color-mix(in oklch, var(--signal) 26%, transparent) 50%,
+    color-mix(in oklch, var(--signal) 0%, transparent) 60%,
+    transparent 100%
+  );
+  background-size: 100% 260%;
+  background-position: 0 100%;
+  mix-blend-mode: screen;
+}
+
+/* ---- Research: liquid chrome figure, microscope reticle, figures wrap --- */
+
+main > section:is(#research, #running) dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-5, 1.5rem) var(--s-7, 3rem);
+}
+
+main > section:is(#research, #running) dl > div {
+  min-width: 9ch;
+}
+
+/* Liquid chrome. SplitText wraps each glyph in its own transformed box,
+   which a parent's text clip does not paint through, so every piece carries
+   the matcap itself. */
+:root:not([data-motion="js"]) main > section#contact h2 {
+  background: linear-gradient(
+    176deg,
+    oklch(0.99 0.01 85) 0%,
+    oklch(0.84 0.015 85) 34%,
+    oklch(0.56 0.02 85) 50%,
+    oklch(0.97 0.01 85) 56%,
+    oklch(0.74 0.02 85) 76%,
+    oklch(0.95 0.015 85) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* With the motion bundle the title is split into animated glyph boxes, and
+   Chrome stops painting a text-clipped background through them (measured:
+   the letters went transparent). That path keeps a solid ivory face with the
+   chrome carried by its edges instead, so the title always reads. */
+:root[data-motion="js"] main > section#contact h2 {
+  color: oklch(0.94 0.012 85);
+  text-shadow:
+    0 1px 0 oklch(1 0 0 / 0.55),
+    0 -1px 0 oklch(0.42 0.015 85 / 0.7),
+    0 0.06em 0.12em oklch(0.12 0.01 85 / 0.55);
+}
+
+main > section#research dl > div:first-child {
+  position: relative;
+  padding: 0.6rem 0.9rem;
+  --r: color-mix(in oklch, var(--signal) 80%, transparent);
+  background:
+    linear-gradient(var(--r), var(--r)) top left / 12px 1px,
+    linear-gradient(var(--r), var(--r)) top left / 1px 12px,
+    linear-gradient(var(--r), var(--r)) bottom right / 12px 1px,
+    linear-gradient(var(--r), var(--r)) bottom right / 1px 12px;
+  background-repeat: no-repeat;
+}
+
+main > section#research dl dt {
+  color: var(--signal);
+}
+
+/* The microscope: a lens ring and cross-hair that follow the pointer
+   (SceneFx writes --mx and --my). */
+main > section#research [data-surface="console"] {
+  position: relative;
+}
+
+main > section#research [data-surface="console"]::after {
+  content: "";
+  position: absolute;
+  left: var(--mx, 70%);
+  top: var(--my, 30%);
+  width: 132px;
+  height: 132px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: var(--lens, 0);
+  transition: opacity 200ms var(--ease-out, ease-out);
+  border: 1px solid color-mix(in oklch, var(--signal) 70%, transparent);
+  box-shadow: 0 0 0 6px color-mix(in oklch, var(--scene-ground) 50%, transparent);
+  background:
+    linear-gradient(color-mix(in oklch, var(--signal) 55%, transparent), color-mix(in oklch, var(--signal) 55%, transparent)) center / 1px 100% no-repeat,
+    linear-gradient(color-mix(in oklch, var(--signal) 55%, transparent), color-mix(in oklch, var(--signal) 55%, transparent)) center / 100% 1px no-repeat;
+  -webkit-backdrop-filter: brightness(1.25) contrast(1.15);
+  backdrop-filter: brightness(1.25) contrast(1.15);
+}
+
+/* ---- Also running: cutaway corner -------------------------------------- */
+
+main > section#running [data-surface="console"] {
+  clip-path: polygon(0 0, calc(100% - 44px) 0, 100% 44px, 100% 100%, 0 100%);
+  box-shadow: inset -1px 0 0 color-mix(in oklch, var(--signal) 60%, transparent);
+}
+
+/* ---- Work: exploded racks ---------------------------------------------- */
+
+main > section#work [data-kind="rack"] {
+  transform-style: preserve-3d;
+  transition: rotate 500ms var(--ease-spring, ease-out);
+}
+
+main > section#work [data-kind="rack"] > * {
+  transition: translate 500ms var(--ease-spring, ease-out);
+}
+
+@media (hover: hover) and (min-width: 62rem) {
+  main > section#work [data-kind="rack"]:hover {
+    rotate: x 3deg;
+  }
+
+  main > section#work [data-kind="rack"]:hover > *:nth-child(1) {
+    translate: 0 -6px 0;
+  }
+
+}
+
+main > section#work dt {
+  color: var(--signal);
+}
+
+/* ---- How he works: blueprint grid -------------------------------------- */
+
+main > section#approach::after {
+  background:
+    linear-gradient(color-mix(in oklch, var(--ink) 7%, transparent) 1px, transparent 1px) 0 0 / 48px 48px,
+    linear-gradient(90deg, color-mix(in oklch, var(--ink) 7%, transparent) 1px, transparent 1px) 0 0 / 48px 48px,
+    var(--scene-field);
+  -webkit-mask-image: linear-gradient(100deg, #000 0 60%, transparent 92%);
+  mask-image: linear-gradient(100deg, #000 0 60%, transparent 92%);
+}
+
+/* ---- Measured: instrument ruler under each figure, automation sweep ----- */
+
+main > section#measured dt {
+  color: var(--signal);
+  padding-bottom: 0.45rem;
+  background: repeating-linear-gradient(
+      90deg,
+      color-mix(in oklch, var(--ink) 40%, transparent) 0 1px,
+      transparent 1px 8px
+    )
+    bottom left / 100% 5px no-repeat;
+}
+
+main > section#measured ul:has(> li > button[data-reliability]) {
+  position: relative;
+}
+
+main > section#measured ul:has(> li > button[data-reliability])::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklch, var(--signal) 22%, transparent) 48%,
+    transparent 56%
+  );
+  background-size: 260% 100%;
+  background-position: 120% 0;
+  mix-blend-mode: screen;
+}
+
+/* ---- Credentials: 360 tilt ---------------------------------------------- */
+
+main > section#proof [data-issuer] {
+  perspective: 900px;
+}
+
+main > section#proof [data-issuer] > button {
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 220ms var(--ease-out, ease-out);
+  transform-style: preserve-3d;
+}
+
+/* ---- Education: stitched seam ------------------------------------------ */
+
+main > section#education [data-surface="console"] {
+  background-image: repeating-linear-gradient(
+    90deg,
+    color-mix(in oklch, var(--ink) 55%, transparent) 0 7px,
+    transparent 7px 12px
+  );
+  background-size: 100% 1px;
+  background-position: 0 6px;
+  background-repeat: no-repeat;
+}
+
+/* ---- Get in touch: shaped plates ----------------------------------------- */
+
+main > section#contact ul[class*="links"] > li > a,
+main > section#contact ul[class*="links"] > li > button {
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+}
+
+main > section#contact a[href^="mailto"] {
+  position: relative;
+}
+
+/* ---- Scroll-driven sweeps (x-ray, automation), CSS only ---------------- */
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    main > section#opensource pre::after {
+      animation: scene-xray linear both;
+      animation-timeline: view();
+      animation-range: entry 20% cover 70%;
+    }
+
+    main > section#measured ul:has(> li > button[data-reliability])::after {
+      animation: scene-sweep linear both;
+      animation-timeline: view();
+      animation-range: entry 30% cover 60%;
+    }
+  }
+}
+
+@keyframes scene-xray {
+  from {
+    background-position: 0 100%;
+  }
+  to {
+    background-position: 0 0%;
+  }
+}
+
+@keyframes scene-sweep {
+  from {
+    background-position: 120% 0;
+  }
+  to {
+    background-position: -20% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main > section#work [data-kind="rack"],
+  main > section#work [data-kind="rack"] > *,
+  main > section#proof [data-issuer] > button {
+    transition: none;
+  }
+}
+
+/* ---- Scene lighting ------------------------------------------------------
+ * A key light in the scene's own highlight colour, laid over the veil. It
+ * travels across the section as the section passes through the screen, so
+ * each scene is lit in its own colour while the reader moves through it.
+ * Static (centred, dimmer) where scroll timelines are missing or motion is
+ * reduced. The sweep beam on [data-sweep] sections already reads --signal. */
+body > header,
+main > section:not(#approach) {
+  --scene-light: radial-gradient(
+    ellipse 46% 38% at 50% 50%,
+    color-mix(in oklch, var(--signal) 17%, transparent) 0%,
+    color-mix(in oklch, var(--signal) 6%, transparent) 45%,
+    transparent 72%
+  );
+}
+
+body > header::after,
+main > section:not(#approach)::after {
+  background:
+    var(--scene-light) 30% 20% / 140% 140% no-repeat,
+    var(--scene-field);
+}
+
+@media (max-width: 767px) {
+  body > header::after,
+  main > section:not(#approach)::after {
+    background:
+      var(--scene-light) 50% 20% / 160% 120% no-repeat,
+      var(--scene-field);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) and (min-width: 768px) {
+    main > section:not(#approach)::after {
+      animation: scene-light linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+  }
+}
+
+@keyframes scene-light {
+  from {
+    background-position: 0% 0%, 0 0;
+  }
+  to {
+    background-position: 100% 100%, 0 0;
+  }
+}
+
+/* Medals answer the pointer: the badge lifts and brightens. */
+main > section:is(#proof, #contact) a:has(> img) {
+  transition: translate 200ms var(--ease-out, ease-out), filter 200ms var(--ease-out, ease-out);
+}
+
+main > section:is(#proof, #contact) a:has(> img):hover {
+  translate: 0 -3px;
+  filter: brightness(1.08) saturate(1.06);
+}
+
+/* Machine labels inside panels were uppercase mono sentences. Sentence case,
+   tight: read as labels, not as shouting. */
+main [data-surface] :is(span, p, small, time, div, a):not(:has(*)) {
+  text-transform: none;
+}
+
+/* Hero object (Clay Render + explode view, generated 2026-10-13): the GPU
+   module, layers apart, rides over the end of the headline. Its black ground
+   drops out against the hero by lighten blending. Desktop only. */
+@media (min-width: 62rem) {
+  body > header::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    top: 4.5rem;
+    right: clamp(0.5rem, 2.5vw, 3rem);
+    width: clamp(220px, 22vw, 360px);
+    aspect-ratio: 1;
+    background: url("/hero-gpu.webp") center / contain no-repeat;
+    mix-blend-mode: lighten;
+    opacity: 0.92;
+    pointer-events: none;
+    -webkit-mask-image: radial-gradient(closest-side, #000 58%, transparent 100%);
+    mask-image: radial-gradient(closest-side, #000 58%, transparent 100%);
+  }
+}
+
+/* Paper sections: type sits on ivory, not on footage, so the edge and shadow
+   the film needs would only blur it. */
+main > section:is(#research, #education) [data-surface],
+main > section:is(#research, #education) [data-surface] * {
+  text-shadow: none;
+  -webkit-text-stroke: 0;
+}
+
+/* ---- Highlights: numbers and claims carry the pair ---------------------
+ * The lead figure of every list sits on a block of the section's added
+ * colour, set in the section's own ground colour, so each block is the
+ * combination itself (crimson on navy, coral on deep blue, gold under navy).
+ * Claim sentences take a marker band of the same colour under ink text, so
+ * the words keep their contrast and only the band carries the hue. */
+main > section dl > :first-child > dt,
+main > section dl > :first-child > dt[data-numeric] {
+  display: block;
+  width: fit-content;
+  padding: 0;
+  background: none;
+  font-family: var(--font-plate, inherit);
+  font-size: clamp(2.75rem, 6.5vw, 4.75rem);
+  font-weight: 800;
+  font-stretch: 88%;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--figure, var(--signal));
+  -webkit-text-fill-color: var(--figure, var(--signal));
+}
+
+main > section dl > :first-child > dt * {
+  color: inherit;
+  -webkit-text-fill-color: currentColor;
+  background: none;
+}
+
+.lead a,
+.prose .lead a {
+  color: var(--ink);
+  -webkit-text-fill-color: var(--ink);
+  background: none;
+  text-decoration: underline;
+  text-decoration-color: var(--proof-mark);
+  text-decoration-thickness: 0.14em;
+  text-underline-offset: 0.2em;
+  text-decoration-skip-ink: none;
+}
+
+/* ---- Film live: the colour sits on the panels, the footage runs between --
+ * globals.css clears every inner fill while the film plays (one glass per
+ * section). The scene pairs need a ground of their own, so the panel itself
+ * becomes the solid block of the scene colour and the film stays unveiled
+ * around it. */
+main > section [data-tier="housing"],
+html[data-film="live"] main > section > .wrap [data-tier="housing"][data-tier],
+html[data-film="live"] main > section [data-tier="housing"],
+html[data-film="live"] main > section [data-surface="console"] {
+  background: var(--graphite);
+}
+
+/* Phone: the closing title sits on the brightest stretch of footage, so it
+   gets a plate of the scene ground instead of the veil it used to share. */
+@media (max-width: 767px) {
+  main > section#contact h2 {
+    display: inline-block;
+    padding: 0.08em 0.18em 0.12em;
+  }
+}
+
+/* Cobalt is a fill colour here (button, blocks); as text on soft black it
+   takes the lighter partner so the figure keeps its contrast. */
+body > header [class*="proofFigure"] {
+  color: var(--signal-deep);
+}
+
+/* ---- Recruiter pass (2026-10-18) -------------------------------------------
+ * One cream for type on every dark scene, one lime mark for proof sentences,
+ * no headpiece band over the titles, one glass hover for every action. */
+:root {
+  --cream: oklch(0.955 0.03 86);
+  --proof-mark: oklch(0.89 0.2 128);
+}
+
+body > header,
+body > header [data-surface],
+main > section:not(#running),
+main > section:not(#running) [data-surface],
+main > section#opensource h2 {
+  --ink: var(--cream);
+}
+
+[data-register="chapter"] > .wrap::before {
+  display: none;
+}
+
+/* Get in touch: the closing title at full chapter scale. */
+main > section#contact h2 {
+  font-size: clamp(3.4rem, 15vw, 9rem);
+  line-height: 0.88;
+}
+
+/* The primary action: cobalt with a lit top edge, a glow under it and a
+   sheen that crosses it now and then. */
+body > header a[class*="cta"] {
+  font-size: 1.125rem;
+  font-weight: 650;
+  padding-block: 1.05em;
+  background:
+    linear-gradient(105deg, transparent 38%, oklch(0.89 0.2 128 / 0.55) 50%, transparent 62%) 160% 0 / 250% 100% no-repeat,
+    var(--signal);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.6),
+    0 0 0 1px color-mix(in oklch, var(--signal-deep) 55%, transparent),
+    0 14px 40px -14px color-mix(in oklch, var(--signal) 45%, transparent);
+  transition: translate 220ms var(--ease-out, ease-out), box-shadow 220ms var(--ease-out, ease-out);
+}
+
+body > header a[class*="cta"]::after {
+  content: "  \2192";
+}
+
+body > header a[class*="cta"]:hover,
+body > header a[class*="cta"]:focus-visible {
+  background:
+    linear-gradient(105deg, transparent 38%, oklch(0.89 0.2 128 / 0.55) 50%, transparent 62%) 160% 0 / 250% 100% no-repeat,
+    var(--signal);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.6),
+    0 0 0 1px var(--signal-deep),
+    0 18px 50px -12px color-mix(in oklch, var(--signal-deep) 60%, transparent);
+}
+
+/* Every other action: a graphite plate that catches a sheen. No lift: a control
+   that moves away from the pointer on hover flickers when the pointer sits on its
+   edge. */
+main > section#contact ul[class*="links"] > li > :is(a, button),
+body > header [data-surface="console"] button:not([type="submit"]),
+main > section#proof a[href*="credly"] {
+  background:
+    linear-gradient(105deg, transparent 38%, color-mix(in oklch, var(--ink) 16%, transparent) 50%, transparent 62%) 160% 0 / 250% 100% no-repeat,
+    var(--graphite);
+  transition: background-position 700ms var(--ease-out, ease-out), translate 220ms var(--ease-out, ease-out), border-color 220ms;
+}
+
+main > section#contact ul[class*="links"] > li > :is(a, button):is(:hover, :focus-visible),
+body > header [data-surface="console"] button:not([type="submit"]):is(:hover, :focus-visible),
+main > section#proof a[href*="credly"]:is(:hover, :focus-visible) {
+  background-position: -60% 0, 0 0;
+  border-color: var(--ink);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  body > header a[class*="cta"] {
+    animation: cta-sheen 5.5s var(--ease-out, ease-out) 2s infinite;
+  }
+}
+
+@keyframes cta-sheen {
+  0%, 70% { background-position: 160% 0, 0 0; }
+  100% { background-position: -60% 0, 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main > section#contact ul[class*="links"] > li > :is(a, button),
+  body > header [data-surface="console"] button,
+  main > section#proof a[href*="credly"],
+  body > header a[class*="cta"] {
+    transition: none;
+  }
+}
+
+/* ---- Graphite pass (2026-10-18) --------------------------------------------
+ * Tinted panels fought the footage (navy and deep blue on blue-grey film), and
+ * glass reads as a template. Every panel is one warm graphite plate; the
+ * scene pairs live in the number blocks, rules and accents, so the film stays
+ * the 60, graphite the 30 and the pair the 10. */
+:root {
+  --graphite: oklch(0.175 0.006 60 / 0.94);
+}
+
+body > header [data-surface],
+main > section,
+main > section [data-surface] {
+  --scene-panel: oklch(0.175 0.006 60);
+  --paper-raised: oklch(0.175 0.006 60);
+  --paper-high: oklch(0.215 0.007 60);
+}
+
+/* Titles in sentence case: WORK and GET IN TOUCH were the only shouting ones. */
+main > section[id] h2[class][class],
+main > section[id] h2[class][class] * {
+  text-transform: none;
+}
+
+/* Measured: the lead figure gets its block like every other list. */
+main > section#measured dl > :first-child > dt [class*="value"] {
+  font-size: clamp(2.75rem, 6.5vw, 4.75rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--signal);
+  -webkit-text-fill-color: var(--signal);
+}
+
+/* Hero borders: cream hairlines at rest, lime when a control has focus. */
+body > header [data-surface="console"] :is(input, textarea):focus-visible,
+body > header a:focus-visible,
+body > header button:focus-visible {
+  outline: 2px solid oklch(0.89 0.2 128);
+  outline-offset: 2px;
+}
+
+/* Work roles: one edge colour per role. The left rule and the dates already
+   carried the role's tint; the other three sides and the inner rules fell
+   back to the section crimson. Now the whole frame, the head hairline, the
+   inner rules and the status dot take the role tint, so each card is one
+   colour and the four cards share one grammar. Crimson stays on the figure. */
+main > section#work [data-kind="rack"] {
+  --rule: color-mix(in oklch, var(--role-tint) 38%, transparent);
+  --scene-rule: var(--rule);
+  border: 1px solid var(--role-tint);
+}
+
+main > section#work [data-kind="rack"] > header {
+  border-bottom-color: color-mix(in oklch, var(--role-tint) 45%, transparent);
+}
+
+main > section#work [data-kind="rack"] [class*="status"],
+main > section#work [data-kind="rack"] [class*="status"]::before {
+  color: var(--role-tint);
+  --live: var(--role-tint);
+  --fail: var(--role-tint);
+  --signal: var(--role-tint);
+}
+
+/* Work figures take the role's own colour, like its frame and dates. */
+
+/* Registration marks on three corners of each role card; the bottom left
+   stays open, where "What he built" opens. */
+main > section#work [data-kind="rack"]::before {
+  inset: var(--s-2) var(--s-2) auto var(--s-2);
+  width: auto;
+  height: 22px;
+  border: 0;
+  background:
+    linear-gradient(var(--role-tint), var(--role-tint)) left top / 22px 2px no-repeat,
+    linear-gradient(var(--role-tint), var(--role-tint)) left top / 2px 22px no-repeat,
+    linear-gradient(var(--role-tint), var(--role-tint)) right top / 22px 2px no-repeat,
+    linear-gradient(var(--role-tint), var(--role-tint)) right top / 2px 22px no-repeat;
+}
+
+main > section#work [data-kind="rack"]::after {
+  border-color: var(--role-tint);
+}
+
+main > section#work [data-kind="rack"]::before,
+main > section#work [data-kind="rack"]::after {
+  z-index: 2;
+}
+
+/* Source links inside a role card take the card's colour, not crimson. */
+main > section#work [data-kind="rack"] dd a,
+main > section#work [data-kind="rack"] dl a {
+  color: var(--role-tint);
+  -webkit-text-fill-color: var(--role-tint);
+  text-decoration-color: color-mix(in oklch, var(--role-tint) 60%, transparent);
+  border-bottom-color: var(--role-tint);
+}
+
+/* Inside a role card the claim underline is the card's own colour, so frame,
+   dates, figure, marks and claim are one family per role. */
+main > section#work [data-kind="rack"] {
+  --proof-mark: var(--role-tint);
+}
+
+/* ---- Family pass (2026-10-18) ----------------------------------------------
+ * One tone family across the page: the brand pastels the Work cards already
+ * use (lightness 0.82, low chroma). Each section, and each credential, takes
+ * one tone for its frames, corner marks, lead figure, claim underline, source
+ * links and status dots. No red, no purple, no lime outside the hero. */
+main > section#opensource { --tone: var(--brand-langchain); }
+main > section#running { --tone: var(--brand-django); }
+main > section#research { --tone: var(--brand-docker); --gold: var(--tone); }
+main > section#approach { --tone: oklch(0.86 0.06 80); }
+main > section#measured { --tone: var(--brand-azure); }
+main > section#education { --tone: oklch(0.86 0.06 80); }
+main > section#contact { --tone: oklch(0.86 0.06 80); }
+main > section#proof [data-issuer="NVIDIA"] { --tone: var(--brand-nvidia); }
+main > section#proof [data-issuer="Anthropic"] { --tone: var(--brand-claude); }
+
+main > section:is(#opensource, #running, #research, #approach, #measured, #education, #contact, #proof),
+main > section:is(#opensource, #running, #research, #approach, #measured, #education, #contact, #proof) [data-surface] {
+  --proof-mark: var(--tone);
+  --figure: var(--tone);
+  --fail: var(--tone);
+  --live: var(--tone);
+  --mark: var(--tone);
+  --rule: color-mix(in oklch, var(--tone) 34%, transparent);
+  --scene-rule: var(--rule);
+  --link: var(--tone);
+}
+
+/* The bug's figures read in the claim's white, the way Work's do ("57 hours"
+   in the same white as the sentence it proves). */
+main > section#opensource,
+main > section#opensource [data-surface] {
+  --figure: var(--ink);
+}
+
+main > section:is(#opensource, #running, #research) [data-surface] {
+  --signal: var(--tone);
+  --signal-deep: var(--tone);
+  --on-signal: oklch(0.19 0.008 60);
+}
+
+/* Cards in the toned sections: the Work card grammar. Full frame in the
+   tone, marks on three corners, bottom left open. */
+main > section:is(#opensource, #running, #research) [data-tier="housing"],
+main > section#opensource [class*="DiffReveal-module"][class*="sticky"] {
+  position: relative;
+  border: 1px solid var(--tone);
+}
+
+main > section:is(#opensource, #running, #research) [data-tier="housing"]::before {
+  display: block;
+  inset: var(--s-2) var(--s-2) auto var(--s-2);
+  width: auto;
+  height: 22px;
+  border: 0;
+  z-index: 2;
+  background:
+    linear-gradient(var(--tone), var(--tone)) left top / 22px 2px no-repeat,
+    linear-gradient(var(--tone), var(--tone)) left top / 2px 22px no-repeat,
+    linear-gradient(var(--tone), var(--tone)) right top / 22px 2px no-repeat,
+    linear-gradient(var(--tone), var(--tone)) right top / 2px 22px no-repeat;
+}
+
+/* The label sat at 9px, across the 2px arm of the mark at 8px. It starts
+   below the arm now, so the mark frames the label instead of striking it. */
+main > section:is(#opensource, #running, #research, #education) [data-tier="housing"] > :first-child {
+  padding-block-start: var(--s-4);
+}
+
+main > section:is(#opensource, #running, #research) [data-tier="housing"]::after {
+  display: block;
+  z-index: 2;
+  border-color: var(--tone);
+}
+
+/* Source links and status labels in the tone. */
+main > section:is(#opensource, #running, #research, #measured, #education) [class*="source"],
+main > section:is(#opensource, #running, #research) [class*="status"] {
+  color: var(--tone);
+  -webkit-text-fill-color: var(--tone);
+  text-decoration-color: color-mix(in oklch, var(--tone) 60%, transparent);
+  border-bottom-color: var(--tone);
+}
+
+/* The bug: the struck line takes the tone instead of red; the repo path is
+   the LangChain highlight. */
+main > section#opensource [class*="DiffReveal-module"][class*="bad"] {
+  background: color-mix(in oklch, var(--tone) 14%, transparent);
+  box-shadow: inset 2px 0 0 var(--tone);
+}
+
+main > section#opensource [class*="DiffReveal-module"][class*="repo"] {
+  color: var(--ink);
+  -webkit-text-fill-color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--brand-azure);
+  text-decoration-thickness: 0.14em;
+  text-underline-offset: 0.22em;
+  transition: text-decoration-color var(--t-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  main > section#opensource [class*="DiffReveal-module"][class*="repo"]:hover {
+    text-decoration-color: var(--ink);
+  }
+}
+
+/* Every surface in the bug takes the card grammar, not only the housings. */
+main > section#opensource :is([data-surface], [class*="DiffReveal-module"][class*="sticky"], a[class*="pull"], [class*="Stage"] [data-surface]) {
+  border-color: var(--tone);
+}
+
+/* GitHub links: the mark in the tone, a hairline frame, a quiet lift. */
+main > section#opensource [class*="Artifacts-module"][class*="link"] {
+  border: 1px solid color-mix(in oklch, var(--tone) 40%, transparent);
+  padding-inline: var(--s-3);
+  transition: border-color 200ms var(--ease-out, ease-out), translate 200ms var(--ease-out, ease-out);
+}
+
+main > section#opensource [class*="Artifacts-module"][class*="link"]:is(:hover, :focus-visible) {
+  border-color: var(--tone);
+}
+
+/* Credentials: graphite cards framed in the issuer's tone, cream type, no
+   burgundy. The NVIDIA proctored exam is the feature card across the row. */
+main > section#proof [data-issuer] {
+  border: 1px solid var(--rule);
+  background: var(--graphite);
+  padding: var(--s-4);
+}
+
+main > section#proof [data-issuer] > button {
+  background: none;
+  outline: 0;
+  clip-path: none;
+  box-shadow: none;
+}
+
+main > section#proof [data-issuer] img {
+  border: 1px solid color-mix(in oklch, var(--tone) 50%, transparent);
+}
+
+main > section#proof [data-issuer] [class*="label"],
+main > section#proof [data-issuer] a[href*="credly"] {
+  color: var(--tone);
+  -webkit-text-fill-color: var(--tone);
+}
+
+main > section#research [data-surface="console"] dl {
+  background: none;
+}
+
+/* Also running: cream type like every other scene, green for the tone. */
+main > section#running,
+main > section#running [data-surface] {
+  --ink: var(--cream);
+  --ink-soft: oklch(0.88 0.025 83);
+  --ink-faint: oklch(0.8 0.02 80);
+}
+
+main > section:is(#research, #running, #opensource) [data-surface] {
+  --scene-ground: oklch(0.175 0.006 60);
+  --paper: oklch(0.175 0.006 60);
+  --paper-sunk: oklch(0.155 0.006 60);
+}
+
+/* Credentials: no burgundy ground, no black cards. The section sits on the
+   neutral ground; each card is a dark wash of its own issuer tone. */
+main > section#proof {
+  --scene-ground: oklch(0.175 0.006 60);
+  --scene-panel: oklch(0.175 0.006 60);
+  --paper: oklch(0.175 0.006 60);
+  --paper-sunk: oklch(0.155 0.006 60);
+  --signal: var(--cream);
+  --on-signal: oklch(0.19 0.008 60);
+}
+
+main > section#proof {
+  background-color: transparent;
+}
+
+/* Neutral graphite for every issuer: a tinted ground read brown on the
+   Anthropic card (no burgundy, red or black backgrounds). The issuer's
+   tone stays on the frame, the mark and Verify. */
+main > section#proof [data-issuer],
+main > section#proof [data-issuer] [class*="verify"] {
+  background: var(--graphite);
+}
+
+main > section#proof [data-issuer] [class*="frame"] {
+  background: var(--paper-high);
+}
+
+/* The bug's code panel carries the same three corner marks as the cards. */
+main > section#opensource [class*="DiffReveal-module"][class*="sticky"] {
+  position: relative;
+}
+
+main > section#opensource [class*="DiffReveal-module"][class*="sticky"]::before,
+main > section#opensource [class*="DiffReveal-module"][class*="sticky"]::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+
+main > section#opensource [class*="DiffReveal-module"][class*="sticky"]::before {
+  inset: var(--s-2) var(--s-2) auto var(--s-2);
+  height: 22px;
+  background:
+    linear-gradient(var(--tone), var(--tone)) left top / 22px 2px no-repeat,
+    linear-gradient(var(--tone), var(--tone)) left top / 2px 22px no-repeat,
+    linear-gradient(var(--tone), var(--tone)) right top / 22px 2px no-repeat,
+    linear-gradient(var(--tone), var(--tone)) right top / 2px 22px no-repeat;
+}
+
+main > section#opensource [class*="DiffReveal-module"][class*="sticky"]::after {
+  inset: auto var(--s-2) var(--s-2) auto;
+  width: 22px;
+  height: 22px;
+  border: solid var(--tone);
+  border-width: 0 2px 2px 0;
+}
+
+/* Figures: one white, three weights (the 14, Lead, 20%, 30%
+   and 57 hours). Every figure takes the
+   white of the claim it proves (--ink), on desktop and phone; the section's
+   tone stays on frames and underlines.
+   1 lead: heaviest and largest. 2 side numbers: heavy, 1.5em in a role card.
+   3 side words: lighter, read as context. No glow: on big digits it read as
+   a block behind the number. */
+main > section dl dt,
+main > section dl dt * {
+  color: var(--figure);
+  -webkit-text-fill-color: var(--figure);
+  text-shadow: none;
+}
+
+main > section dl > :first-child > dt {
+  font-weight: 800;
+}
+
+main > section dl > :not(:first-child) > dt[data-numeric] {
+  font-family: var(--font-plate, inherit);
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+
+main > section#work [data-kind="rack"] dl > :not(:first-child) > dt[data-numeric] {
+  font-size: 1.5em;
+}
+
+main > section dl > :not(:first-child) > dt:not([data-numeric]),
+main > section dl > :not(:first-child) > dt:not([data-numeric]) * {
+  color: var(--ink-soft);
+  -webkit-text-fill-color: var(--ink-soft);
+  font-weight: 600;
+}
+
+/* The proctored exam reads first by weight, not by a broken layout. */
+main > section#proof [data-issuer="NVIDIA"] {
+  border-width: 1px;
+}
+
+/* The microscope belongs to a pointer. On touch and narrow screens the
+   reticle sat on top of the claim sentence, so it goes. */
+@media (max-width: 61.99rem), (hover: none) {
+  main > section#research [data-surface="console"]::before,
+  main > section#research [data-surface="console"]::after {
+    display: none;
+  }
+}
+
+/* Research figures in the section tone, never gold. Restated here after a
+   removal cut the earlier override. */
+main > section#research [data-surface] {
+  --gold: var(--tone);
+}
+
+/* ---- Elite tick (2026-10-18): small details a recruiter feels ---------------
+ * B1 roles held now say so, from the panel's own running state;
+ * A1-A3 actions answer the pointer and the keyboard in their tone;
+ * B2 source links show where they go; B3 selection in the page's cream;
+ * C1 a card under the pointer tightens its frame. */
+main > section#work [data-kind="rack"][data-state="running"] > header::after {
+  content: "Current";
+  position: absolute;
+  top: 0;
+  translate: 0 -50%;
+  right: calc(var(--s-3) + 30px);
+  z-index: 3;
+  padding: 0.2em 0.55em 0.18em;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: oklch(0.19 0.008 60);
+  /* The header's own fill and underline are inherited; the tag sets its own. */
+  -webkit-text-fill-color: currentColor;
+  text-decoration: none;
+  text-shadow: none;
+  background: var(--role-tint);
+}
+
+body > header a[class*="cta"]::after {
+  display: inline-block;
+  transition: translate 220ms var(--ease-out, ease-out);
+}
+
+body > header a[class*="cta"]:is(:hover, :focus-visible)::after {
+  translate: 4px 0;
+}
+
+main > section#contact ul[class*="links"] > li > :is(a, button):is(:hover, :focus-visible) svg {
+  translate: 3px 0;
+  transition: translate 220ms var(--ease-out, ease-out);
+}
+
+main a:focus-visible,
+main button:focus-visible,
+main summary:focus-visible {
+  outline: 2px solid var(--tone, var(--role-tint, var(--cream)));
+  outline-offset: 3px;
+}
+
+main [class*="source"]:is(:hover, :focus-visible)::after {
+  content: " \\2197";
+}
+
+::selection {
+  background: oklch(0.94 0.028 85);
+  color: oklch(0.19 0.008 60);
+  -webkit-text-fill-color: oklch(0.19 0.008 60);
+}
+
+main > section:is(#work, #opensource, #running, #research) [data-tier="housing"] {
+  transition: border-color 220ms var(--ease-out, ease-out), box-shadow 220ms var(--ease-out, ease-out);
+}
+
+main > section:is(#work, #opensource, #running, #research) [data-tier="housing"]::before,
+main > section:is(#work, #opensource, #running, #research) [data-tier="housing"]::after {
+  transition: inset 220ms var(--ease-out, ease-out);
+}
+
+/* Hover only where there is a pointer: a tap on a phone would leave the card
+   raised and its corners drawn in until the next tap elsewhere. */
+@media (hover: hover) and (pointer: fine) {
+  main > section:is(#work, #opensource, #running, #research) [data-tier="housing"]:hover {
+    box-shadow: 0 0 0 1px var(--tone, var(--role-tint)), 0 18px 48px -24px oklch(0 0 0 / 0.8);
+  }
+
+  main > section:is(#work, #opensource, #running, #research) [data-tier="housing"]:hover::before {
+    inset: 4px 4px auto 4px;
+  }
+
+  main > section:is(#work, #opensource, #running, #research) [data-tier="housing"]:hover::after {
+    inset: auto 4px 4px auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body > header a[class*="cta"]::after,
+  main [data-tier="housing"],
+  main [data-tier="housing"]::before,
+  main [data-tier="housing"]::after,
+  main > section#contact svg {
+    transition: none;
+  }
+}
+
+/* ---- Final pass, loop 1 (2026-10-18) ---------------------------------------
+ * One figure hierarchy on every section, tone on every small control, and the
+ * dense prose opened up. Each block names the request it answers. */
+
+/* Contact on a phone: the plate under the title is graphite with a rule of
+   the section tone, not a black slab. Email and LinkedIn rows take the tone
+   on their edge. */
+@media (max-width: 767px) {
+  main > section#contact h2 {
+    background: oklch(0.175 0.006 60 / 0.92);
+    box-shadow: inset 0 -3px 0 var(--tone);
+  }
+}
+
+main > section#contact ul[class*="links"] > li > :is(a, button) {
+  box-shadow: inset 3px 0 0 var(--tone);
+}
+
+/* Work: tech chips and the "What he built" toggle in the card tint. */
+main > section#work [data-kind="rack"] ul[class*="stack"] > li {
+  border-color: color-mix(in oklch, var(--role-tint) 40%, transparent);
+}
+
+main > section#work [data-kind="rack"] summary {
+  color: var(--role-tint);
+}
+
+/* Running and Research chips in the section tone. */
+main > section:is(#running, #research) ul > li {
+  border-color: color-mix(in oklch, var(--tone) 40%, transparent);
+}
+
+/* Corner marks on the Measured and Education consoles, same three corners. */
+main > section:is(#measured, #education) [data-tier="housing"] {
+  border: 1px solid color-mix(in oklch, var(--tone) 70%, transparent);
+}
+
+main > section:is(#measured, #education) [data-tier="housing"]::before {
+  display: block;
+  width: auto;
+  height: 22px;
+  border: 0;
+  z-index: 2;
+  background:
+    linear-gradient(var(--tone), var(--tone)) left top / 22px 2px no-repeat,
+    linear-gradient(var(--tone), var(--tone)) left top / 2px 22px no-repeat,
+    linear-gradient(var(--tone), var(--tone)) right top / 22px 2px no-repeat,
+    linear-gradient(var(--tone), var(--tone)) right top / 2px 22px no-repeat;
+}
+
+main > section:is(#measured, #education) [data-tier="housing"]::after {
+  display: block;
+  z-index: 2;
+  border-color: var(--tone);
+}
+
+/* Claims answer the pointer: the underline thickens. */
+.lead a {
+  transition: text-decoration-thickness 180ms var(--ease-out, ease-out);
+}
+
+:is(.lead a, main [data-claim], main > section p > strong > a):is(:hover, :focus-visible) {
+  text-decoration-thickness: 0.24em;
+}
+
+/* The bug: issue and PR numbers in the tone; the step button framed in it. */
+main > section#opensource [class*="Callout-module"][class*="detail"] {
+  color: var(--tone);
+  -webkit-text-fill-color: var(--tone);
+  font-weight: 700;
+}
+
+main > section#opensource button[class*="mobileStepBtn"] {
+  border: 1px solid var(--tone);
+  transition: background-color 200ms var(--ease-out, ease-out), color 200ms;
+}
+
+main > section#opensource button[class*="mobileStepBtn"]:is(:hover, :focus-visible) {
+  background: var(--tone);
+  color: oklch(0.19 0.008 60);
+}
+
+/* Credentials: the badge lifts; Verify is a framed control in the issuer tone. */
+main > section#proof [data-issuer] img {
+  transition: translate 240ms var(--ease-out, ease-out), box-shadow 240ms var(--ease-out, ease-out);
+}
+
+main > section#proof [data-issuer] > button:is(:hover, :focus-visible) img {
+  translate: 0 -3px;
+  box-shadow: 0 14px 30px -14px color-mix(in oklch, var(--tone) 60%, transparent);
+}
+
+main > section#proof [class*="verify"] {
+  display: inline-block;
+  padding: 0.45em 0.8em;
+  border: 1px solid color-mix(in oklch, var(--tone) 55%, transparent);
+  transition: border-color 200ms var(--ease-out, ease-out), background-color 200ms;
+}
+
+main > section#proof [class*="verify"]:is(:hover, :focus-visible) {
+  border-color: var(--tone);
+  background: color-mix(in oklch, var(--tone) 12%, transparent);
+}
+
+/* How he works: a measure and leading a long paragraph can be read in, and
+   the claim sentence set a step up from the body. */
+main > section#approach .prose {
+  max-width: 62ch;
+}
+
+main > section#approach .prose p {
+  line-height: 1.65;
+}
+
+main > section#approach .prose p:first-child {
+  font-size: 1.12em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main > section#proof [data-issuer] img,
+  main > section#proof [class*="verify"],
+  main > section#opensource button[class*="mobileStepBtn"] {
+    transition: none;
+  }
+}
+
+/* Measured and Education: the marks sit closer to the frame so the top left
+   one clears the panel label. */
+main > section:is(#measured, #education) [data-tier="housing"]::before {
+  inset: 4px 4px auto 4px;
+}
+
+main > section:is(#measured, #education) [data-tier="housing"]::after {
+  inset: auto 4px 4px auto;
+}
+
+/* Phone Contact title: solid cream on the graphite plate. The liquid chrome
+   (a gradient clipped into the letters) measured 5.86:1 on its mid stops
+   against the 7:1 body floor, and its rule outranked the plate. Desktop keeps
+   the chrome. */
+@media (max-width: 767px) {
+  main > section#contact h2[class][class],
+  main > section#contact h2[class][class] * {
+    background-image: none;
+    -webkit-background-clip: border-box;
+    background-clip: border-box;
+    color: var(--cream);
+    -webkit-text-fill-color: var(--cream);
+    text-shadow: none;
+    -webkit-text-stroke: 0;
+  }
+
+  main > section#contact h2[class][class] {
+    padding: 0.3em 0.22em 0.3em;
+    background-color: oklch(0.175 0.006 60);
+    box-shadow: inset 0 -3px 0 var(--tone);
+  }
+
+  main > section#contact h2[class][class] * {
+    background-color: transparent;
+  }
+}
+
+/* ---- Ship pass (2026-10-21): readability over footage and layout ------------
+ * Every rule here closes a row found by scripts/ui-defects.py or the
+ * full-section sheets. */
+
+/* How he works, How this is measured and the Contact intro sat straight on
+   the brightest frames of the film. Each text block gets the graphite plate
+   every card uses, framed in the section tone; the footage keeps the space
+   around them. */
+main > section#approach [class*="prose"],
+main > section#measured > .wrap > [class*="wrap"],
+main > section#measured > .wrap > p,
+main > section#contact > .wrap > [class*="prose"] {
+  background: var(--graphite);
+  border: 1px solid color-mix(in oklch, var(--tone) 38%, transparent);
+  padding: var(--s-4) var(--s-5);
+  max-width: 46rem;
+}
+
+main > section#measured > .wrap > [class*="wrap"] {
+  max-width: none;
+}
+
+main > section:is(#approach, #measured, #contact) [class*="prose"] *,
+main > section#measured > .wrap > [class*="wrap"] *,
+main > section#measured > .wrap > p {
+  text-shadow: none;
+}
+
+main > section:is(#approach, #measured) > .wrap > details > summary,
+main > section#contact > .wrap [class*="Reach-module"][class*="wrap"] > :is(button, p):not(:empty) {
+  width: fit-content;
+  padding: var(--s-1) var(--s-3);
+  background: var(--graphite);
+  text-shadow: none;
+}
+
+/* The bug: "57 hours" is the section's one big number and is wider than an
+   auto-fit column, so it takes the whole first row instead of running into
+   the next figure. */
+main > section#opensource dl > :first-child {
+  grid-column: 1 / -1;
+}
+
+/* Education, before this: five figures in four columns left $12K alone on a
+   second row. The 99.1 takes the first column on two rows, the other four sit
+   two by two beside it; on a phone the 99.1 takes the first row. */
+@media (min-width: 48rem) {
+  main > section#education dl:has(> :nth-child(5):last-child) {
+    grid-template-columns: minmax(0, 1.3fr) repeat(2, minmax(0, 1fr));
+  }
+
+  main > section#education dl:has(> :nth-child(5):last-child) > :first-child {
+    grid-row: span 2;
+  }
+}
+
+@media (max-width: 47.99rem) {
+  main > section#education dl:has(> :nth-child(5):last-child) > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  main > section#education dl:has(> :nth-child(5):last-child) > :last-child {
+    grid-column: auto;
+  }
+}
+
+/* The bug's code on a phone: lines wrap instead of running off the panel. */
+@media (max-width: 767px) {
+  main > section#opensource pre[class*="code"],
+  main > section#opensource pre[class*="code"] code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Page chrome in the family: the scroll line in cream, the film's recorded
+   marker in cream instead of the live red-orange. */
+html .progress {
+  background: var(--cream);
+}
+
+[class*="FilmChip-module"][class*="marker"] {
+  box-shadow: inset 0 0 0 1.5px var(--cream);
+}
+
+[class*="FilmChip-module"][data-marker="filled"] [class*="marker"] {
+  background: var(--cream);
+}
+
+/* Touch: the hero proof rows and the source links reach 44px. */
+@media (max-width: 767px) {
+  body > header [class*="proofStrip"] a {
+    min-height: 44px;
+  }
+
+  main dd a[aria-label] {
+    min-inline-size: 44px;
+    text-align: center;
+  }
+}
+
+/* The issuer remains on its mark and verification link; both mounts share a quiet frame. */
+main > section#proof [data-issuer] [class*="frame"] {
+  border-color: var(--rule);
+  box-shadow: inset 1px 0 0 color-mix(in oklch, var(--ink) 14%, transparent);
+}
+main > section#proof [data-issuer] [class*="frame"]::after { display: none; }
+main > section#proof [data-issuer] a[href*="credly"] { white-space: normal; }
+
+main > section#proof [data-issuer] > button:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+
+/* Also running: the one ask is a real control on its own plate over the film. */
+main > section#running li > [class*="AskSeeds-module"][class*="seed"] {
+  padding: var(--s-3) var(--s-4);
+  background: var(--graphite);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  font-size: var(--step-0);
+}

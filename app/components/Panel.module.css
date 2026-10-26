@@ -5,9 +5,9 @@
  * read as one object instead of a box with a bar balanced on top. */
 .panel {
   margin-block: var(--s-5);
-  border: var(--border-hair) solid var(--rule);
   border-radius: var(--r-panel);
-  box-shadow: var(--lift-2);
+  /* The frame, the caught edge and the corner marks arrive with
+     data-tier="housing"; restating them here is how two panels drift apart. */
   overflow: hidden;
 }
 
@@ -22,17 +22,20 @@
   background: var(--paper-sunk);
 }
 
+/* Uppercase metadata is set in the data voice (micro type is
+   mono, caps, wide-tracked). A 6 to 7 word caps line in the display face read as
+   shouting; in mono it reads as a plate. */
 .label {
-  font-size: var(--step--2);
-  letter-spacing: var(--track-caps);
-  text-transform: uppercase;
-  color: var(--ink-faint);
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--ink-soft);
 }
 
 .status {
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
+  font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--step--2);
   letter-spacing: var(--track-wide);
   text-transform: uppercase;
@@ -64,8 +67,16 @@
     padding: var(--s-2) var(--s-4);
   }
 
+  /* A phone has no room for identity and status side by side: the status
+     wrapped into a one-word column. Stacked, both read in full. */
+  .head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-1);
+  }
+
   .body {
-    padding: var(--s-4);
+    padding: var(--s-3) var(--s-2);
   }
 }
 
@@ -90,5 +101,101 @@
         translate: 0 12px;
       }
     }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * The four enclosures.
+ *
+ * Same object, four builds. What varies is where the frame sits relative to the
+ * content, because that is the thing that differs between a figure, a list of
+ * rows, a set of readings and one unit in a stack. Varying colour or radius
+ * instead would give four boxes that are the same box wearing four coats.
+ * ------------------------------------------------------------------------ */
+
+/* Rows run to the frame.
+ *
+ * A row inside a padded body is a link with a gutter either side of it, so the
+ * target stops short of the edge the eye reads as its boundary. Removing the
+ * side padding makes the whole width of the enclosure pressable, which is what
+ * a row in a record is for. */
+.panel[data-kind="record"] .body {
+  padding: 0;
+}
+
+.panel[data-kind="record"] .body > :is(ul, ol, dl) {
+  margin: 0;
+}
+
+/* Readings, and nothing competing with them.
+ *
+ * The header fill is what separates an instrument's chrome from its display.
+ * A readout has no display: the figures are the whole content, so the strip
+ * gives up its ground and keeps only the rule under it. */
+.panel[data-kind="readout"] .head {
+  background: none;
+}
+
+.panel[data-kind="readout"] .body {
+  padding-block: var(--s-4) var(--s-5);
+}
+
+/* One unit in a stack.
+ *
+ * The strip carries an identity rather than a label, so it is set at the size an
+ * identity is read at and given the room that implies.
+ *
+ * It also sticks, which is the whole reason the rack replaced a separate rail:
+ * the title of the role a reader is inside stays on screen because it belongs
+ * to the unit they are reading. That needs the enclosure to stop clipping --
+ * `overflow: hidden` on the panel makes it the nearest scroll container and a
+ * sticky child then has nothing to stick to. The clip was only ever there to
+ * make the strip's fill follow the corner radius, and every radius on this page
+ * is zero, so nothing is given up by releasing it here. */
+.panel[data-kind="rack"] {
+  overflow: visible;
+}
+
+.panel[data-kind="rack"] .head {
+  align-items: baseline;
+  padding-block: var(--s-4);
+  position: sticky;
+  top: var(--role-stack-base, 0px);
+  z-index: 1;
+  /* Opaque, or the figures scroll through the strip that is labelling them. */
+  background: var(--paper-high);
+}
+
+.panel[data-kind="rack"] .label {
+  /* The identity of a unit is a title, not a plate: the display voice. */
+  font-family: inherit;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--s-3);
+  font-size: var(--step-1);
+  font-weight: var(--rack-weight, 600);
+  letter-spacing: -0.015em;
+  text-transform: none;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+/* Which unit the reader is level with.
+ *
+ * Set by the rail's observer, not by hover: it reports scroll position, which
+ * is a computed state, and it is the one thing a stack of near-identical units
+ * cannot say on its own. */
+.panel[data-kind="rack"][data-current] {
+  box-shadow:
+    inset 3px 0 0 var(--signal),
+    var(--bezel),
+    0 1px 2px oklch(0.07 0.01 258 / 0.5),
+    0 14px 34px oklch(0.07 0.01 258 / 0.34);
+}
+
+@media (max-width: 767px) {
+  .panel {
+    margin-block: var(--s-3);
   }
 }

@@ -1,13 +1,13 @@
 .list {
   list-style: none;
-  margin: clamp(1.25rem, 3vh, 2rem) 0 0;
+  margin: var(--s-5) 0 0;
   padding: 0;
-  border-block-start: 1px solid var(--rule);
+  border-block-start: var(--border-hair) solid var(--rule);
   max-width: 46rem;
 }
 
 .row {
-  border-block-end: 1px solid var(--rule);
+  border-block-end: var(--border-hair) solid var(--rule);
 }
 
 /* A whole row is the target, not just the number at the end of it. A 15px link
@@ -17,8 +17,8 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 0.5rem 0.85rem;
-  padding: 0.85rem 0.2rem;
+  gap: var(--s-2) var(--s-3);
+  padding: var(--s-3) var(--s-1);
   text-decoration: none;
   min-height: 44px;
 }
@@ -37,9 +37,11 @@
   color: var(--ink-soft);
 }
 
+/* An artifact's label is either a repository reference or the title of a
+   paper. The first is an identifier and belongs in mono; the second is a name
+   and does not. `data-id` marks which, set from the label itself. */
 .label {
   grid-column: 2;
-  font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--step--1);
   color: var(--ink);
   overflow-wrap: anywhere;
@@ -55,9 +57,9 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-faint);
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  padding: 0.15rem 0.6rem;
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-sm);
+  padding: var(--s-1) var(--s-2);
   white-space: nowrap;
 }
 
@@ -99,4 +101,47 @@
   color: var(--mark-ink);
   border-color: var(--mark-rule);
   background: var(--mark-wash);
+}
+
+.label[data-id] {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * The leader, joining one callout to the next.
+ *
+ * On a drawing a leader is the line that says "this mark refers to that thing".
+ * Here it says the only causal fact the open-source section has: he filed 4846,
+ * and 4925 exists because of it. Adjacency was carrying that on its own, which
+ * is to say it was not being carried at all.
+ *
+ * Drawn between the callouts rather than between the rows, because the callout
+ * is the mark being joined. Only on a list the caller has said is a chain: the
+ * two papers are separate work and a line between them would be a claim.
+ *
+ * Deliberately not CSS anchor positioning. That is the right tool when the two
+ * ends live in different containers and one of them moves; here they are two
+ * items in one list at a fixed inline offset, so a pseudo-element does the same
+ * job with nothing to keep in sync and no support branch to carry.
+ */
+.list[data-chain] {
+  position: relative;
+}
+
+.list[data-chain] .row + .row {
+  position: relative;
+}
+
+.list[data-chain] .row + .row::before {
+  content: "";
+  position: absolute;
+  /* Centred on the callout. Measured rather than assumed: the mark is 44px wide
+     and starts 4px into the row, so its centre is at 26px and the leader sits
+     half a pixel left of that to land on the device pixel. */
+  inset-inline-start: calc(0.25rem + 1.375rem - 0.5px);
+  inset-block: 0;
+  width: 1px;
+  background-color: color-mix(in oklch, var(--ink) 32%, transparent);
+  pointer-events: none;
 }

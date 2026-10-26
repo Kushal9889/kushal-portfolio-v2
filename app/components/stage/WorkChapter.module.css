@@ -1,0 +1,605 @@
+.work {
+  position: relative;
+  z-index: 2;
+}
+
+.inner {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: clamp(32px, 4vw, 72px);
+  padding: 88px clamp(24px, 5vw, 88px) 48px;
+}
+
+.work[data-rack="on"] {
+  height: 100vh;
+  min-height: 760px;
+}
+
+.work[data-rack="on"] .inner {
+  height: 100%;
+}
+
+/* ---- The held side ------------------------------------------------------ */
+
+.side {
+  align-self: start;
+}
+
+.title {
+  margin: 0;
+  font-stretch: 100%;
+  font-family: var(--font-plate);
+  font-size: clamp(5rem, 11vw, 11rem);
+  font-weight: 800;
+  line-height: 0.84;
+  letter-spacing: -0.04em;
+}
+
+.machine {
+  margin: 12px 0 0;
+  font: 400 0.8125rem/1.4 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+.machine span {
+  color: var(--ink);
+}
+
+.index {
+  display: grid;
+  margin: 44px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--hair);
+}
+
+.index li {
+  position: relative;
+  border-bottom: 1px solid var(--hair);
+  font-size: 1rem;
+  line-height: 1.3;
+  color: var(--ink-soft);
+  transition: color 200ms linear;
+}
+
+/* Each row is a link to that role's sheet, landed assembled. */
+.index a {
+  display: grid;
+  grid-template-columns: 2.5ch 6px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.index a:hover {
+  color: var(--ink);
+}
+
+.index a:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.numeral {
+  font: 400 0.75rem/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.activeMark {
+  width: 6px;
+  height: 6px;
+}
+
+.companyName {
+  background: linear-gradient(var(--ink), var(--ink)) 0 100% / 0 1px no-repeat;
+  transition: background-size 240ms var(--ease-arrive);
+}
+
+.index a:hover .companyName {
+  background-size: 100% 1px;
+}
+
+.arrow {
+  opacity: 0;
+  transition: opacity 150ms linear;
+}
+
+.index a:hover .arrow {
+  opacity: 1;
+}
+
+/* A 2px rule rides the top edge of the active row. */
+.index li[data-active="true"] {
+  color: var(--ink);
+  box-shadow: inset 0 2px 0 var(--ink);
+}
+
+.index li[data-active="true"] .activeMark {
+  background: var(--ink);
+}
+
+.dates {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+/* The row of the role on screen carries a rail that fills as its slab is read
+   through, so the index reports position rather than only naming it. */
+.index li {
+  position: relative;
+}
+
+.index li::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--ink);
+  transform: scaleX(var(--read, 0));
+  transform-origin: left center;
+  transition: transform 120ms linear;
+}
+
+.index li[data-active="true"] .companyName {
+  background-size: 100% 1px;
+}
+
+.index li[data-active="true"] .arrow {
+  opacity: 1;
+}
+
+/* ---- The rack ----------------------------------------------------------- */
+
+.rack {
+  display: grid;
+  gap: 24px;
+}
+
+.work[data-rack="on"] .rack {
+  position: relative;
+  display: block;
+  height: 100%;
+  perspective: 1600px;
+  perspective-origin: 50% 0%;
+}
+
+/* An inset border one step inside the edge, the frame every drawing sheet has.
+   It is what makes open space on the sheet read as margin rather than as a gap. */
+.slab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: clamp(22px, 2.2vw, 32px);
+  border-radius: 2px;
+  border: 1px solid var(--hair);
+  border-top-color: var(--hair-strong);
+  background: var(--void-raised);
+}
+
+.work[data-rack="on"] .slab {
+  position: absolute;
+  inset: 0;
+}
+
+/* The nameplate, with the sheet number set against it the way a drawing numbers
+   its sheets. */
+.slab[data-role="boston"] {
+  box-shadow: inset 0 1px 0 var(--bu-scarlet, oklch(0.53 0.22 29));
+}
+
+.slabHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.company {
+  margin: 0;
+  font-family: var(--font-plate);
+  font-size: clamp(2.25rem, 3.4vw, 3.25rem);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.sheet {
+  flex: none;
+  margin: 6px 0 0;
+  padding: 4px 8px;
+  border: 1px solid var(--hair-strong);
+  font: 400 0.6875rem/1.3 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+.lead {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  border: 1px solid var(--hair);
+  background: var(--hair);
+}
+
+.metric {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 16px 16px;
+  background: var(--void-raised);
+}
+
+.metricValue {
+  margin: 0;
+  font-family: var(--font-plate);
+  font-size: clamp(2.5rem, 3.8vw, 3.75rem);
+  font-weight: 820;
+  font-stretch: 90%;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.85;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+
+.metricValue[data-long] {
+  font-size: clamp(1.5rem, 2.1vw, 2.125rem);
+  line-height: 1;
+  letter-spacing: -0.015em;
+  white-space: normal;
+}
+
+.metricLabel {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+
+/* ---- Observation and thread message ---------------------------------- */
+
+.nodeLine {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font: 400 0.75rem/1.3 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+.nodeLine span {
+  color: var(--ink);
+}
+
+.slab[data-role="img"] .company {
+  font-weight: 300;
+  font-stretch: 112%;
+}
+
+.observation {
+  display: grid;
+  gap: 6px;
+}
+
+.obsHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font: 400 0.6875rem/1.3 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+.obsHead i {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--hair-strong);
+}
+
+.obsHead span {
+  color: var(--ink);
+}
+
+.metricValue > span {
+  position: relative;
+}
+
+/* The before range, struck, then dropped to a caption under the figure. */
+.ghost {
+  display: block;
+  margin-top: 8px;
+  --strike: 1;
+  font: 400 0.75rem/1 var(--font-mono);
+  letter-spacing: 0;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  width: fit-content;
+  position: relative;
+}
+
+.ghost::before {
+  content: "from ";
+}
+
+.ghost::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--ink-soft);
+  transform: scaleX(var(--strike));
+  transform-origin: left center;
+  opacity: 0.6;
+}
+
+.metricValue {
+  position: relative;
+}
+
+
+.cacheBar {
+  position: absolute !important;
+  left: 0;
+  right: 0;
+  bottom: -10px;
+  height: 2px;
+  background: var(--hair-strong);
+}
+
+.cacheBar i {
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform: scaleX(0.7);
+  transform-origin: left center;
+}
+
+.note {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  margin-left: 24px;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--hair);
+}
+
+.note::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: -27px;
+  width: 5px;
+  height: 5px;
+  background: var(--ink-soft);
+}
+
+.threadHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font: 400 0.75rem/1.3 var(--font-mono);
+}
+
+.threadHead code {
+  font: inherit;
+  color: var(--ink);
+}
+
+.monogram {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--hair-strong);
+  border-radius: 50%;
+  font-size: 0.625rem;
+}
+
+.noteKind {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.6875rem;
+  color: var(--ink-soft);
+}
+
+.typing {
+  display: inline-flex;
+  gap: 4px;
+  opacity: 0;
+}
+
+.typing i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+}
+
+.quote {
+  margin: 0;
+}
+
+.noteText {
+  margin: 0;
+  max-width: 64ch;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.askRole {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--hair-strong);
+  border-bottom-width: 2px;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--ink);
+  font: 500 0.8125rem/1 var(--font-spine), sans-serif;
+  cursor: pointer;
+}
+
+.askRole:hover {
+  background: var(--paper-high);
+}
+
+.askRole:active {
+  transform: translateY(1px);
+  border-bottom-width: 1px;
+}
+
+.askRole:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.askRole kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--hair-strong);
+  font: 400 0.6875rem/1.3 var(--font-mono);
+}
+
+/* ---- Foot: parts list and title block ------------------------------------ */
+
+.foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 24px;
+  margin-top: auto;
+}
+
+.partsHead {
+  margin: 0 0 6px;
+  font: 400 0.6875rem/1.3 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--hair-strong);
+  border-radius: 2px;
+  font: 400 0.75rem/1 var(--font-mono);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.chips li span {
+  font-size: 0.625rem;
+  color: var(--ink-faint);
+}
+
+.chips svg {
+  fill: var(--ink);
+}
+
+/* The corner block of a drawing: fixed fields, hairline cells, nothing else. */
+.titleBlock {
+  display: grid;
+  gap: 1px;
+  width: 330px;
+  margin: 0;
+  border: 1px solid var(--hair-strong);
+  background: var(--hair-strong);
+}
+
+.titleBlock div {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  background: var(--void-raised);
+}
+
+.titleBlock dt,
+.titleBlock dd {
+  margin: 0;
+  padding: 6px 10px;
+}
+
+.titleBlock dt {
+  border-right: 1px solid var(--hair);
+  font: 400 0.6875rem/1.5 var(--font-mono);
+  color: var(--ink-faint);
+}
+
+.titleBlock dd {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.headMeta {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+@media (max-width: 767px) {
+  .inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .slabHead {
+    flex-direction: column;
+  }
+
+  .foot {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .titleBlock {
+    width: 100%;
+  }
+
+  .note {
+    margin-left: 0;
+  }
+
+  .note::before {
+    display: none;
+  }
+}
+
+/* Room for the before range once it has dropped 12px under the figure. */
+.metricValue:has(.ghost) {
+  padding-bottom: 16px;
+}
+
+/* The stack row in a role's footer; a flex child that may shrink. */
+.parts {
+  min-width: 0;
+}

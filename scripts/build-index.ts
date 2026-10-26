@@ -1,8 +1,17 @@
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
-import { loadContent } from "../lib/content";
-import { chunkSection, sentences, estimateTokens, BREAK_BELOW, type Passage } from "../lib/agent/chunk";
+
+// Same as the other scripts: tsx does not load .env.local, and the semantic
+// chunker (CHUNKER=llm) reads GEMINI_API_KEY from it.
+const envFile = join(process.cwd(), ".env.local");
+if (existsSync(envFile)) process.loadEnvFile(envFile);
+const EMBED_MODEL = buildEmbedModel();
+import { loadContent, corpusHash, CONTENT_DIR } from "../lib/content";
+import { chunkSection, sentences, estimateTokens, BREAK_BELOW, MAX_TOKENS, MIN_TOKENS, type Passage } from "../lib/agent/chunk";
 import { indexTokens } from "../lib/agent/tokenize";
+import { llmChunk, CHUNK_PROMPT_VERSION } from "./llm-chunk";
+import { buildEmbedModel, embedTexts } from "../lib/agent/model";
 
 /**
  * Builds the retrieval index at compile time.
@@ -18,6 +27,15 @@ import { indexTokens } from "../lib/agent/tokenize";
 // The index and the query are tokenised by the same function, in one place.
 // They were two near-copies that nothing kept in step.
 const tokenize = indexTokens;
+
+/**
+ * Heading terms outweigh body terms by this much. At 2 -- what pasting the
+ * heading in twice produced -- "What bug did he find in LangChain?" ranked
+ * Publications first. At 6 every lexical case in integration.test.ts passes.
+ * Higher is not free: the title field is tiny, so a large weight lets any
+ * passage of a section beat the one that holds the answer.
+ */
+const TITLE_WEIGHT = 6;
 
 /**
  * The embedding model accepts 512 tokens and nothing was enforcing it.
@@ -82,6 +100,8 @@ function pool(vectors: number[][]): number[] {
  * sides have to live in the same space.
  */
 async function embedAll(texts: string[], inputType: "query" | "passage"): Promise<number[][] | null> {
+  // One model per index, chosen when the build starts (see buildEmbedModel).
+  if (!EMBED_MODEL.startsWith("nvidia/")) return embedTexts(texts, inputType, EMBED_MODEL);
   const key = process.env.NVIDIA_API_KEY;
   if (!key) return null;
   const out: number[][] = [];
@@ -90,7 +110,7 @@ async function embedAll(texts: string[], inputType: "query" | "passage"): Promis
     const res = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-      body: JSON.stringify({ input: batch, model: "nvidia/nv-embedqa-e5-v5", input_type: inputType }),
+      body: JSON.stringify({ input: batch, model: EMBED_MODEL, input_type: inputType }),
     });
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
@@ -132,7 +152,7 @@ async function embedPassagesLegacy(texts: string[]): Promise<number[][] | null> 
       headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
       body: JSON.stringify({
         input: batch,
-        model: "nvidia/nv-embedqa-e5-v5",
+        model: EMBED_MODEL,
         input_type: "passage",
       }),
     });
@@ -185,7 +205,14 @@ async function main() {
       fromNotes: s.source !== "facts",
       dated: Boolean(s.roleParts.dates),
       current: /present|current/i.test(s.roleParts.dates),
-      year: Math.max(0, ...(s.roleParts.dates.match(/\b(20\d{2})\b/g) ?? []).map(Number)),
+      year: Math.max(0, ...(s.roleParts.dates.match(/\b((19|20)\d{2})\b/g) ?? []).map(Number)),
+      // The span the Role line covers, for "in 2021" / "between 2021 and 2023"
+      // filters and the timeline. A current role runs to the build year.
+      yearStart: Math.min(...(s.roleParts.dates.match(/\b((19|20)\d{2})\b/g) ?? ["0"]).map(Number)),
+      yearEnd: /present|current/i.test(s.roleParts.dates)
+        ? new Date().getFullYear()
+        : Math.max(0, ...(s.roleParts.dates.match(/\b((19|20)\d{2})\b/g) ?? []).map(Number)),
+      kind: s.kind ?? "",
       metrics: s.metrics.length,
       artifacts: s.artifacts.length,
     },
@@ -198,13 +225,39 @@ async function main() {
    * split happens at a topic boundary rather than at a character count, which
    * is the whole difference between semantic chunking and a text splitter.
    */
+  /*
+   * Incremental: a section whose text and model are unchanged since the last
+   * build keeps its passages and vectors, so an unchanged corpus makes 0
+   * embedding calls. sha256(model + title + body) per section, stored in the
+   * index; `--full` re-embeds everything.
+   */
+  const path = process.env.AGENT_CORPUS ? join(CONTENT_DIR, "index.json") : join(process.cwd(), "lib", "agent", "index.json");
+  // The chunker that produced a section is part of its identity: a section
+  // the semantic chunker could not split keeps the default-mode hash, so the
+  // next CHUNKER=llm build tries it again instead of reusing default passages.
+  const hashOf = (p: { title: string; body: string }, mode = process.env.CHUNKER === "llm" ? CHUNK_PROMPT_VERSION : "default") =>
+    createHash("sha256").update(`${EMBED_MODEL}\n${MIN_TOKENS}-${MAX_TOKENS}\n${mode}\n${p.title}\n${p.body}`).digest("hex");
+  const hashes = Object.fromEntries(parents.map((p) => [p.title, hashOf(p)]));
+  const prev =
+    !process.argv.includes("--full") && existsSync(path)
+      ? (JSON.parse(readFileSync(path, "utf8")) as { hashes?: Record<string, string>; breakBelow?: number; passages: Passage[]; vectors: number[][] | null })
+      : null;
+  const reuse = new Set(
+    prev?.vectors && prev.breakBelow !== undefined ? parents.filter((p) => prev.hashes?.[p.title] === hashes[p.title]).map((p) => p.title) : [],
+  );
+  console.log(`build-index: ${reuse.size} of ${parents.length} sections unchanged, ${parents.length - reuse.size} to embed`);
+
   const sentenceIndex: { parent: number; text: string }[] = [];
   for (const [i, p] of parents.entries()) {
+    if (reuse.has(p.title)) continue;
     for (const text of sentences(p.body)) sentenceIndex.push({ parent: i, text });
   }
   console.log(`build-index: ${sentenceIndex.length} sentences across ${parents.length} sections`);
 
-  const sentenceVectors = await embedAll(
+  // The break point is read from the whole corpus on a full build and kept on
+  // an incremental one, so a one-section edit cannot move every boundary.
+  let breakBelow = reuse.size ? prev!.breakBelow! : BREAK_BELOW;
+  const sentenceVectors = !sentenceIndex.length ? [] : await embedAll(
     sentenceIndex.map((s) => s.text),
     "passage",
   );
@@ -234,21 +287,39 @@ async function main() {
     }
     sims.sort((x, y) => x - y);
     const at = (q: number) => sims[Math.floor(sims.length * q)]?.toFixed(3) ?? "-";
+    // The break point is this corpus's own p25 under the model that embedded
+    // it. A pinned 0.47 was the p25 of an older model; under the current one it
+    // sat above the median and split almost every sentence pair.
+    if (sims.length && !reuse.size) breakBelow = sims[Math.floor(sims.length * 0.25)];
     console.log(
       `build-index: adjacent-sentence similarity  p10 ${at(0.1)}  p25 ${at(0.25)} ` +
-        `p50 ${at(0.5)}  p90 ${at(0.9)}   (breaking below ${BREAK_BELOW})`,
+        `p50 ${at(0.5)}  p90 ${at(0.9)}   (breaking below ${breakBelow.toFixed(3)})`,
     );
   }
 
   // Split each section, giving the chunker the sentence vectors for that
   // section only. A boundary is never allowed to cross a heading.
   const passages: Passage[] = [];
+  const kept = new Map<Passage, number[]>();
   let cursor = 0;
-  for (const [i, p] of parents.entries()) {
+  for (const p of parents) {
+    if (reuse.has(p.title)) {
+      prev!.passages.forEach((q, n) => {
+        if (q.parent !== p.title) return;
+        passages.push(q);
+        kept.set(q, prev!.vectors![n]);
+      });
+      continue;
+    }
     const count = sentences(p.body).length;
     const vectors = sentenceVectors ? sentenceVectors.slice(cursor, cursor + count) : undefined;
     cursor += count;
-    passages.push(...chunkSection(p.title, p.body, vectors));
+    const units = process.env.CHUNKER === "llm" ? await llmChunk(p.title, p.body) : null;
+    if (units) passages.push(...units.map((u, ordinal) => ({ parent: p.title, ordinal, text: u.text, tokens: u.tokens, context: u.context })));
+    else {
+      passages.push(...chunkSection(p.title, p.body, vectors, breakBelow));
+      hashes[p.title] = hashOf(p, "default");
+    }
   }
 
   const sizes = passages.map((p) => p.tokens).sort((a, b) => a - b);
@@ -257,15 +328,39 @@ async function main() {
       `p50 ${sizes[Math.floor(sizes.length / 2)]} max ${sizes[sizes.length - 1]}`,
   );
 
-  // BM25 is built over passages, not sections. The heading is repeated into
-  // each passage's searchable text because titles carry the strongest terms in
-  // this corpus and a passage three paragraphs into a section would otherwise
-  // lose the name of the thing it is about.
-  const docs = passages.map((p) => tokenize(`${p.parent} ${p.parent} ${p.text}`));
+  /*
+   * BM25 is built over passages, not sections, and the heading is scored as its
+   * own field.
+   *
+   * A term in a section's heading says what the passage is about; the same term
+   * in running prose says only that it was mentioned. Those are different
+   * signals and they were being counted as one, because the heading was pasted
+   * into the body text twice and then tokenised together with it.
+   *
+   * Twice was not enough. "What bug did he find in LangChain?" returned
+   * Publications ahead of the section titled "Open source, LangChain
+   * deepagents": the publications text names bug detection three times and
+   * cross-references LangChain once, so it carried more of the query's terms
+   * than the section the question is actually about.
+   *
+   * This is the field-weighted form. Per-field term frequencies are summed with
+   * a weight and the result is handed to the single saturation function in
+   * `bm25()`, rather than each field being scored separately and the scores
+   * added. Scoring fields apart and combining afterwards breaks the saturation
+   * curve BM25 depends on, which is the documented failure mode of the naive
+   * version and the reason this is not a second retriever fused by rank.
+   *
+   * The weight is a float, so it is a dial rather than a repeat count.
+   */
+  const docs = passages.map((p) => ({
+    title: tokenize(p.parent),
+    body: tokenize(p.context ? `${p.context} ${p.text}` : p.text),
+  }));
 
-  const tf = docs.map((tokens) => {
+  const tf = docs.map(({ title, body }) => {
     const counts: Record<string, number> = {};
-    for (const t of tokens) counts[t] = (counts[t] ?? 0) + 1;
+    for (const t of body) counts[t] = (counts[t] ?? 0) + 1;
+    for (const t of title) counts[t] = (counts[t] ?? 0) + TITLE_WEIGHT;
     return counts;
   });
 
@@ -274,20 +369,134 @@ async function main() {
     for (const term of Object.keys(counts)) df[term] = (df[term] ?? 0) + 1;
   }
 
-  const lengths = docs.map((d) => d.length);
+  // Length has to be measured on the same weighted counts the scores are, or
+  // the normalisation divides by a document length the tf above no longer has.
+  const lengths = docs.map((d) => d.body.length + d.title.length * TITLE_WEIGHT);
   const avgLength = lengths.reduce((a, b) => a + b, 0) / lengths.length;
 
   // Every passage now fits the model's window by construction, so there is no
   // windowing and no mean-pooling. That pooling was averaging three
   // semantically different windows into one vector that represented none of
   // them, on exactly the sections that explain how this page works.
-  const vectors = await embedAll(
-    passages.map((p) => `${p.parent}\n${p.text}`),
-    "passage",
+  const fresh = passages.filter((p) => !kept.has(p));
+  const embedded = fresh.length ? await embedAll(fresh.map((p) => `${p.parent}\n${p.context ? `${p.context}\n` : ""}${p.text}`), "passage") : [];
+  const vectors = embedded ? passages.map((p) => kept.get(p) ?? embedded[fresh.indexOf(p)]) : null;
+  console.log(`build-index: embedded ${fresh.length} passages, reused ${kept.size}`);
+
+  /*
+   * Entity graph for aggregation questions (retrieve.ts graphSections). Nodes:
+   * every technology named on a section's Stack line. Edge: entity -> section
+   * when the section's stack lists it or its text names it on a word boundary.
+   * Summary sections are left out: they name everything and answer "where" for
+   * nothing. Measured 2026-10-10: docker -> the 3 jobs labelled for case 46,
+   * langgraph -> the 3 sections labelled for case 47.
+   */
+  // By template kind, not by title, so another person's summary sections are
+  // skipped too. Kindless sections (a proof wall) are summaries as well.
+  const GRAPH_SKIP_KINDS = new Set(["profile", "limits", "skills", "private", "credential", "award", "availability"]);
+  const skipped = (s: (typeof sections)[number]) => !s.kind || GRAPH_SKIP_KINDS.has(s.kind);
+  const named = (text: string, term: string) =>
+    new RegExp(`(^|[^a-z0-9])${term.toLowerCase().replace(/[.+#*?()[\]]/g, "\\$&")}($|[^a-z0-9])`).test(text.toLowerCase());
+  const vocab = [...new Set(sections.flatMap((s) => s.stack.map((t) => t.trim())).filter(Boolean))];
+  const graph = Object.fromEntries(
+    vocab
+      .map((t) => [t.toLowerCase(), sections.filter((s) => !skipped(s) && (s.stack.includes(t) || named(s.body, t))).map((s) => s.title)] as const)
+      .filter(([, titles]) => titles.length > 0),
   );
 
-  const out = { passages, parents, tf, lengths, df, avgLength, vectors };
-  const path = join(process.cwd(), "lib", "agent", "index.json");
+  /*
+   * Knowledge graph (multi-domain questions), typed and weighted.
+   *
+   *   nodes: domain, concept, tech (from the skills-kind section's
+   *          "Domain: concept, concept" lines and every Stack line), section
+   *   edges: concept -> domain            in_domain    w 1
+   *          concept -> evidence section  shown_in     w 1 + ln(mentions)
+   *          tech    -> section           uses         w 1.5 on its Stack line, else 1
+   *          concept <-> tech             co_occurs    w Jaccard of their section sets
+   *
+   * Evidence sections are role, project, publication and education kinds; they
+   * say where a thing was done. Labels are embedded as "Domain: concept" so a
+   * question reaches a node by meaning ("multi-agent systems" -> "multi-agent
+   * orchestration"). retrieve.ts spreads from the matched nodes two hops out.
+   */
+  const EVIDENCE = new Set(["role", "project", "publication", "education"]);
+  // Semantic edges keep at most 3 sections per node, above the corpus's own
+  // 90th percentile of node-section similarity (absolute cosines differ by
+  // corpus and model; unrelated pairs sat near 0.20 here, true links 0.25-0.38).
+  const KG_SEM_QUANTILE = Number(process.env.KG_SEM_QUANTILE ?? 0.9);
+  const KG_SEM_TOP = 3;
+  const count = (text: string, term: string) =>
+    (text.toLowerCase().match(new RegExp(`(^|[^a-z0-9])${term.toLowerCase().replace(/[.+#*?()[\]]/g, "\\$&")}(s|es)?(?=$|[^a-z0-9])`, "g")) ?? []).length;
+  type KgNode = { id: string; type: "domain" | "concept" | "tech" | "section"; label: string; kind?: string; v?: number[] | null };
+  const nodes = new Map<string, KgNode>();
+  const edges: [string, string, number, string][] = [];
+  const add = (n: KgNode) => nodes.get(n.id) ?? (nodes.set(n.id, n), n);
+  for (const s of sections) add({ id: `s:${s.title}`, type: "section", label: s.title, kind: s.kind ?? "" });
+  const evidence = sections.filter((s) => EVIDENCE.has(s.kind ?? ""));
+  const linkTo = (from: string, term: string, stackOf?: (s: (typeof sections)[number]) => boolean) => {
+    const hit: string[] = [];
+    for (const s of evidence) {
+      const n = count(s.body.replace(/\s+/g, " "), term) + (stackOf?.(s) ? 1 : 0);
+      if (!n) continue;
+      edges.push([from, `s:${s.title}`, stackOf?.(s) ? 1.5 : 1 + Math.log(n), stackOf ? "uses" : "shown_in"]);
+      hit.push(s.title);
+    }
+    return hit;
+  };
+  const conceptHits = new Map<string, Set<string>>();
+  for (const s of sections.filter((x) => x.kind === "skills")) {
+    for (const [, domain, items] of s.body.matchAll(/^([A-Z][A-Za-z &/-]{2,40}):\s*([\s\S]+?)(?=\n\s*\n|\n[A-Z][A-Za-z &/-]{2,40}:|$)/gm)) {
+      const d = add({ id: `d:${domain.trim().toLowerCase()}`, type: "domain", label: domain.trim() });
+      for (const name of items.replace(/\n/g, " ").split(/[,.;]/).map((t) => t.trim()).filter((t) => t.length > 1 && t.split(/\s+/).length <= 5)) {
+        const id = `c:${name.toLowerCase()}`;
+        const hit = linkTo(id, name);
+        add({ id, type: "concept", label: `${d.label}: ${name}` });
+        edges.push([id, d.id, 1, "in_domain"]);
+        conceptHits.set(id, new Set([...(conceptHits.get(id) ?? []), ...hit]));
+      }
+    }
+  }
+  const techHits = new Map<string, Set<string>>();
+  for (const t of vocab) {
+    const id = `t:${t.toLowerCase()}`;
+    const hit = linkTo(id, t, (s) => s.stack.includes(t));
+    add({ id, type: "tech", label: t });
+    techHits.set(id, new Set(hit));
+  }
+  for (const [c, cs] of conceptHits)
+    for (const [t, ts] of techHits) {
+      const inter = [...cs].filter((x) => ts.has(x)).length;
+      if (inter && c.slice(2) !== t.slice(2)) edges.push([c, t, +(inter / new Set([...cs, ...ts]).size).toFixed(3), "co_occurs"]);
+    }
+  const seedNodes = [...nodes.values()].filter((n) => n.type !== "section");
+  const seedVectors = seedNodes.length && vectors ? await embedAll(seedNodes.map((n) => n.label), "passage") : null;
+  seedNodes.forEach((n, i) => (n.v = seedVectors?.[i]?.map((x) => +x.toFixed(4)) ?? null));
+  // Semantic edges: the corpus describes work ("hybrid BM25 and vector
+  // retrieval") more often than it names the concept ("RAG"), so a concept also
+  // links to an evidence section whose best passage sits close to it in meaning.
+  const passageVec = (title: string) => passages.flatMap((p, i) => (p.parent === title && vectors?.[i] ? [vectors[i]] : []));
+  const dot = (a: number[], b: number[]) => a.reduce((x, y, i) => x + y * b[i], 0);
+  const lexical = new Set(edges.map(([f, t]) => `${f}>${t}`));
+  const simOf = new Map(seedNodes.filter((n) => n.v && n.type !== "domain").map((n) => [n, evidence.map((s) => ({ s, c: Math.max(-1, ...passageVec(s.title).map((v) => dot(n.v!, v))) })).sort((a, b) => b.c - a.c)]));
+  const all = [...simOf.values()].flat().map((x) => x.c).sort((a, b) => a - b);
+  const KG_SEM_FLOOR = all.length ? all[Math.floor(KG_SEM_QUANTILE * (all.length - 1))] : Infinity;
+  console.log(`build-index: semantic edge floor ${KG_SEM_FLOOR.toFixed(3)} (p${KG_SEM_QUANTILE * 100} of ${all.length})`);
+  for (const [n, sims] of simOf) {
+    for (const { s, c } of sims.slice(0, KG_SEM_TOP)) if (c >= KG_SEM_FLOOR && !lexical.has(`${n.id}>s:${s.title}`)) edges.push([n.id, `s:${s.title}`, +c.toFixed(3), "semantic"]);
+    if (process.env.KG_DEBUG) console.log("kg", n.id, sims.slice(0, 4).map((x) => `${x.s.title.slice(0, 18)} ${x.c.toFixed(3)}`).join(" | "));
+  }
+  // Seed floor: a question reaches the graph only if some node sits closer to
+  // it than to any off-topic question in lib/agent/null-questions.json gets
+  // (their best node, plus 0.02). Same null set as calibrate-null.ts.
+  const nullQs = (JSON.parse(readFileSync(join(process.cwd(), "lib/agent/null-questions.json"), "utf8")) as { questions: string[] }).questions;
+  const nullVecs = seedVectors ? await embedAll(nullQs, "query") : null;
+  const withVec = seedNodes.filter((n) => n.v);
+  const seedFloor = nullVecs ? +(Math.max(...nullVecs.map((q) => Math.max(...withVec.map((n) => dot(q, n.v!))))) + 0.02).toFixed(3) : null;
+  console.log(`build-index: graph seed floor ${seedFloor}`);
+  const kg = { seedFloor, nodes: [...nodes.values()], edges };
+  console.log(`build-index: entity graph ${Object.keys(graph).length} entities, knowledge graph ${kg.nodes.length} nodes, ${kg.edges.length} edges`);
+
+  const out = { passages, parents, tf, lengths, df, avgLength, vectors, hashes, breakBelow, corpus: corpusHash(), graph, kg, embedModel: EMBED_MODEL };
 
   writeFileSync(path, JSON.stringify(out));
 

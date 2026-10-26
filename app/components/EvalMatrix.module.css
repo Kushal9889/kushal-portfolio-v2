@@ -53,8 +53,8 @@
 .cell {
   position: relative;
   overflow: hidden;
-  width: 1.65rem;
-  height: 1.65rem;
+  width: 44px;
+  height: 44px;
   border-radius: var(--r-sm);
   border: var(--border-solid) solid var(--rule);
   background: none;
@@ -211,4 +211,12 @@
   .fill {
     animation: none;
   }
+}
+
+/* Named so the browser can carry it across the state change rather than
+   repainting it. Only the detail block is named: naming the whole panel would
+   animate the sixteen cells as one image and lose the one thing worth seeing,
+   which is that a different case is now open. */
+.detail {
+  view-transition-name: eval-detail;
 }

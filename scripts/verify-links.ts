@@ -1,14 +1,12 @@
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { inflateSync } from "node:zlib";
 import { allLinks, loadContent } from "../lib/content";
 
 /**
- * Checks every external link the site renders.
- *
- * A dead link on a portfolio reads as an abandoned site, and reviewers rate that
- * worse than having no site at all. This runs in CI so the failure surfaces on a
- * pull request rather than in front of a recruiter.
+ * Checks every external link the site renders, and writes each result with its
+ * date to content/links.json, which the page reads for its verification receipts.
+ * Runs in CI so a dead link fails a pull request rather than the live page.
  */
 async function check(url: string) {
   try {
@@ -75,12 +73,10 @@ async function checkArtifactStates() {
 }
 
 /**
- * The resume carries its own URLs, and nothing was checking them.
+ * The resume carries its own URLs, and they are checked with the page's.
  *
- * A dead link on the page fails this build. The same dead link on the PDF a
- * recruiter downloads has always been invisible here, which is backwards: the
- * PDF is the artifact that outlives the tab, gets forwarded, and is opened by
- * someone who cannot ask him what the link was meant to be.
+ * The PDF is served next to the page and linked from it, so a dead link inside
+ * it is a dead link on the site.
  *
  * Extraction is best-effort. Without pdftotext this contributes nothing rather
  * than failing the build on a missing local tool.
@@ -129,6 +125,11 @@ async function main() {
   }
 
   console.log(`\n${links.length} links, ${broken.length} broken`);
+  const checkedOn = new Date().toISOString().slice(0, 10);
+  writeFileSync(
+    join(process.cwd(), "content/links.json"),
+    `${JSON.stringify({ checkedOn, links: results.map(({ url, status, ok }) => ({ url, status, ok, checkedOn })) }, null, 2)}\n`,
+  );
 
   console.log("\nartifact states, against the GitHub API:");
   const wrongStates = await checkArtifactStates();

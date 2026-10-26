@@ -1,0 +1,59 @@
+/*
+ * The detail callout.
+ *
+ * Construction drawings mark a junction worth enlarging with a circle split
+ * across the middle: the detail number above the line, the sheet it is drawn on
+ * below. The circle is a hyperlink drawn in ink, and it is the convention every
+ * set of drawings has used for a century because it answers one question
+ * exactly -- where do I go to check this.
+ *
+ * That is the question this page is built around, so the convention is carried
+ * over unmodified rather than reinvented as a badge.
+ *
+ * It is also the only curve on the page. Every radius here is zero by decision,
+ * which makes a circle read as deliberate rather than as a leftover default, and
+ * it is why --r-pill has existed in the token sheet with almost nothing to spend
+ * itself on.
+ */
+.mark {
+  --size: 2.75rem;
+  position: relative;
+  display: grid;
+  place-content: center;
+  flex: none;
+  width: var(--size);
+  height: var(--size);
+  border-radius: var(--r-pill);
+  border: var(--border-solid) solid color-mix(in oklch, var(--ink) 45%, transparent);
+  /* The split. A rule across the full diameter, not a gap between two stacked
+     labels: on a real drawing the line is what makes the two halves mean
+     "detail" and "sheet" rather than "two numbers". */
+  background-image: linear-gradient(
+    to bottom,
+    transparent 0 calc(50% - 0.5px),
+    color-mix(in oklch, var(--ink) 45%, transparent) calc(50% - 0.5px) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
+  text-align: center;
+  line-height: 1;
+}
+
+.detail,
+.sheet {
+  display: block;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--step--2);
+  letter-spacing: var(--track-wide);
+}
+
+.detail {
+  color: var(--ink);
+  padding-block-end: 0.28em;
+}
+
+.sheet {
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  padding-block-start: 0.28em;
+}

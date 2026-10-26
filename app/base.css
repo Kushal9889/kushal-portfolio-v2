@@ -1,0 +1,983 @@
+/*
+ * Stage base. Extracted from globals.css: the tokens, the element base and
+ * the few global classes the stage page and the components it reuses actually
+ * match. The rest of globals.css is the classic document's own system and now
+ * loads only on the routes that render it.
+ *
+ * The two files are maintained by hand from here. A token added for the stage
+ * belongs in this file; a token the classic document needs belongs in both.
+ */
+
+/*
+ * Design tokens.
+ *
+ * Two accents and a three-step ink ramp. Every surface resolves to one of them;
+ * nothing hardcodes a colour, and `scripts/lint-tokens.ts` fails the build if a
+ * raw hex or rgb() literal appears outside this file.
+ *
+ * OKLCH rather than hex because L is perceptually uniform: a tone nudged by 0.05
+ * moves by the same visible amount at any hue, so a ramp built here stays a ramp
+ * after an edit.
+ *
+ * -------------------------------------------------------------------------
+ * Three tiers, three rules. See ADR-005.
+ *
+ *   MATERIAL   ground, the surface ladder, hairlines, the edge highlight. Free.
+ *              Encodes nothing, has to stay consistent, and may not imitate a
+ *              semantic colour.
+ *   BRAND      --signal, vermillion. THE THING TO PRESS. One accent, worn by
+ *              every interactive target and by nothing else. It meant
+ *              "happening now" until --live took that over, which is what had
+ *              left the primary action with no colour at all.
+ *   SEMANTIC   --live running, --warn a limit, --fail a defect, --mark a claim
+ *              an outsider can check. Each may only appear on a selector that
+ *              names the status it carries.
+ *
+ * Checks 12.4, 12.8, 12.10 and blocking 13.1 enforce these.
+ *
+ * --signal and --mark sit 242 degrees apart and were chosen by simulating
+ * protanopia, deuteranopia and tritanopia rather than by eye: the first pairing
+ * looked correct and collapsed to one colour under two of the three.
+ *
+ * Both sit against a warm ground (hue 88), so neither reads as pasted on.
+ *
+ * -------------------------------------------------------------------------
+ * The ink ramp, and the bug that flattened it.
+ *
+ * These were derived as color-mix percentages off a single axis, and both got
+ * pushed up that axis independently to fix APCA legibility on 12px labels. The
+ * result measured 1.06:1 between --ink-soft and --ink-faint: a ratio of 1.00 is
+ * the same colour, so the page had two text tones while claiming three.
+ *
+ * The root error was one axis doing two jobs. Small labels need MORE contrast,
+ * not less; they earn their quietness from size, tracking and case. Tying
+ * "quiet" to "lighter" made those requirements fight, and legibility won, which
+ * is exactly how the ramp collapsed.
+ *
+ * So the steps are set explicitly now, and the third level of hierarchy is
+ * carried by hue and case rather than by fading further. Measured in-browser
+ * against --paper on 2026-08-21; re-measure after any change to --paper:
+ *
+ *   --ink        15.9:1   lead sentences, headings, figures
+ *   --ink-soft    7.6:1   body prose after the lead
+ *   --ink-faint   5.4:1   small uppercase labels, still comfortably AA
+ *   --mark        7.1:1   verified claims, emphasis inside prose
+ *   --signal      6.9:1   interactive targets
+ */
+:root {
+  /* Two families. Interface and reading text use the display face at text sizes. */
+  --font-sans: var(--font-display);
+  --font-serif: var(--font-display);
+
+  /* Achromatic, very slightly cool.
+   *
+   * This was oklch(0.972 0.009 88) over oklch(0.225 0.014 62): a warm cream
+   * ground under a warm near-black, which together with the clay accent below
+   * is the exact three-part palette the anti-slop filter names as its
+   * second-most-recurring generated tell -- cream paper, oxblood accent,
+   * espresso text. Measured as hex the page was #f8f6ef / #211a15 / #a5220b,
+   * which sits inside all three of the banned families.
+   *
+   * The warmth was doing no work. It was there because warm reads as
+   * "editorial", and every generated editorial page reaches for it. A neutral
+   * substrate is what a measuring instrument is printed on, and it lets the
+   * one accent be the only chromatic thing in the field of view. */
+  color-scheme: dark;
+
+  /* Four grounds, not two.
+   *
+   * Depth on a dark substrate comes from stacked surfaces, not from outlines: a
+   * 1px rule at low opacity disappears and at high opacity reads as drawn-on
+   * furniture, which is why the previous ground looked flat and over-ruled at
+   * the same time. Each step is roughly 0.045 in L, which is the smallest
+   * difference that still separates two panels sitting on each other. */
+  --paper: oklch(0.170 0.008 258);
+  --paper-high: oklch(0.265 0.012 258);
+  --ink: oklch(0.965 0.003 258);
+  --rule: oklch(0.320 0.008 258);
+
+  /* Set explicitly rather than mixed, so the three steps stay three steps.
+     Chroma rises slightly as they lighten, which keeps a pale tone from
+     drifting toward grey and reading as disabled rather than as secondary. */
+  --ink-soft: oklch(0.855 0.005 258);
+  --ink-faint: oklch(0.740 0.008 258);
+
+  /* The one accent. Every interactive target wears it and nothing else does.
+   *
+   * It meant "live right now" and was barred from static content, which left
+   * the primary action colourless while four semantic tokens spent theirs on
+   * readouts. --live already says "happening now" and says it better. See
+   * ADR-005: material is free, this tier is one colour, semantic is unchanged.
+   *
+   * --signal-deep is the hover, one step down the lightness axis rather than a
+   * different hue, so pressing reads as the same object under more pressure.
+   * --on-signal is the label colour measured against the fill rather than
+   * assumed from the page ground. */
+  /* Electric cobalt, and it is now the only accent on the page.
+   *
+   * It was oklch(0.47 0.17 32) -- a dark, half-saturated red-brown that reads
+   * as clay. --mark was a second chromatic family at 34 elements, so the page
+   * ran two accents against each other while claiming one.
+   *
+   * They were the same job. --signal meant "the one thing to press" and --mark
+   * meant "a claim you can go and check": both say *the reader should act on
+   * this*. One colour now carries both, which is the difference between a page
+   * with an accent and a page with a palette. Red is released to --fail, where
+   * it is unambiguous, and nothing else on the page is chromatic except two
+   * strictly semantic states. */
+  --signal: oklch(0.700 0.135 258);
+  --signal-deep: oklch(0.780 0.115 258);
+  --on-signal: oklch(0.150 0.020 258);
+  --signal-wash: color-mix(in oklch, var(--signal) 10%, var(--paper));
+
+  /* Checkable claim. Deep enough to sit in running prose without shouting,
+     saturated enough that a scanning eye stops on it.
+
+     Indigo rather than the teal this started as. Teal reads well to normal
+     vision and sits 172 degrees from vermillion, but red against green is the
+     one pair colour-blind readers actually confuse: simulated, the two accents
+     came out 23 apart under tritanopia and 41 under deuteranopia, where under
+     about 60 they are the same colour. Indigo measures 150 in the worst of the
+     three simulations. It is also the colour a reader already associates with
+     a citation, which is exactly what a mark on this page is. */
+  /* Petrol blue, not violet.
+   *
+   * This was oklch(0.45 0.13 274). The paper ground is hue 88, so 274 sat 174
+   * degrees away -- near-perfect complementary opposition, and the only colour
+   * in the palette further than 64 degrees from the ground. It was also the
+   * most used one: every bold claim and every link. On warm cream that reads as
+   * purple pasted onto the page, and the 12% wash under each claim went
+   * pinkish-mauve.
+   *
+   * Chroma was the bigger lever than hue. Dropped from 0.13 to 0.075 the same
+   * family stops behaving like a highlighter and reads as ink with a blue cast,
+   * which is what a reference mark should look like in running text. Compared
+   * against 255, 248, 235, 222 and 205 as real bold prose on both grounds
+   * before choosing. */
+  /* One accent, one value. This was a step deeper than --signal on the
+     argument that a mark inside running prose is not a fill. Measured, the two
+     stand at a contrast ratio of 1.24 against each other: the same colour to
+     anyone reading the page, carrying two meanings the eye cannot separate,
+     which is a worse system than one token because it claims a distinction it
+     does not deliver. The distinction is real and it is carried by form -- a
+     fill for the thing to press, an underline for the thing to check -- the
+     way every reference system at this tier carries it.
+
+     The --mark-* names stay: they mark the role at 25 call sites, and a role
+     is worth naming even when it shares a value. */
+  --mark: var(--signal);
+  --mark-wash: color-mix(in oklch, var(--mark) 12%, var(--paper));
+  --mark-rule: color-mix(in oklch, var(--mark) 38%, var(--paper));
+  /* For mark-coloured text sitting on a mark wash, where the wash has already
+     eaten the contrast the plain token was measured against. */
+  --mark-ink: var(--signal-deep);
+
+  /* Stated, not mixed.
+   *
+   * This was color-mix(in oklch, var(--ink) 3.5%, var(--paper)) and it computed
+   * to oklch(0.945853 0.00919628 none) -- the hue came out powerless, because
+   * mixing two near-neutral colours leaves a chroma small enough that the hue
+   * channel carries no information. A `none` hue is not grey: it resolves as
+   * zero, which is red, so every surface built on this token rendered with a
+   * pink cast. That is the dock, every inline code chip, the evidence block,
+   * every panel header and every sunk section.
+   *
+   * The dark theme already stated its own value literally for a different
+   * reason. This one now does too, at the same warm hue as the paper it sits
+   * against. */
+  --paper-sunk: oklch(0.135 0.007 258);
+
+  /* Raised, the direction that was missing: two surfaces meant nothing could
+     sit above the ground, so three nested containers read as one flat area.
+     Sunk is toward the ink, raised is away from it; both invert in absolute
+     lightness between schemes and mean the same thing in each. --edge is a 1px
+     inset highlight, which is how a surface reads as lifted without a shadow
+     under it. */
+  --paper-raised: oklch(0.215 0.010 258);
+  --edge: oklch(1 0 0 / 0.06);
+
+  /* The chassis.
+   *
+   * The page is a sheet clamped into a machine. Paper is what the machine
+   * prints; this is what it is bolted to, and it shows at the chapter seams
+   * where one argument ends and the next begins. Darker than the console on
+   * purpose: console still means "running", chassis means "structure", and two
+   * dark grounds that mean different things have to look different.
+   *
+   * --plate is the same body offset behind a housing, so an enclosure reads as
+   * a part sitting proud of the chassis rather than as a rectangle drawn on it.
+   * --hazard is the stripe that marks where the chassis is cut. It is material,
+   * not semantic: it says "edge of the machine", never "something failed", and
+   * it is a different hue from --fail so the two never trade meanings. */
+  --chassis: oklch(0.115 0.006 258);
+  --plate: oklch(0.070 0.010 258 / 0.55);
+  --hazard: oklch(0.760 0.120 68);
+  --chamfer: 0.875rem;
+
+  /* Semantic colour.
+   *
+   * The old palette had two accents and a rule that one of them could only
+   * appear on a state selector. That kept the page honest and left it unable to
+   * say anything: there was no encoding for pass, fail, healthy, benched, or
+   * "this is a limit", all of which this system measures on every request.
+   *
+   * These four are meanings, not decorations. Each one may only appear on
+   * something that computed the state it names, which `scripts/audit.ts`
+   * checks. Colour is now information, which is a stricter rule than rationing
+   * it was, not a looser one.
+   *
+   *   --live      running, streaming, reachable, a passing assertion
+   *   --warn      a limit, a caveat, a provider cooling off
+   *   --fail      a defect, a struck line, a failed assertion
+   *   --mark      a claim an outsider can go and check
+   */
+  --live: oklch(0.780 0.130 152);
+  --live-wash: color-mix(in oklch, var(--live) 12%, var(--paper));
+  /* Measured 3.77:1 against the new ground at L0.60, which is under the 4.5 body
+     floor. The cool substrate is lighter than the cream it replaced, so every
+     token had to be re-measured against it and this was the one that failed. */
+  --warn: oklch(0.820 0.110 78);
+  --warn-wash: color-mix(in oklch, var(--warn) 14%, var(--paper));
+  /* Red belongs to failure and to nothing else now that the accent is cobalt.
+     It no longer has to dodge the accent's hue, so it can be the red a struck
+     line in a diff is expected to be. */
+  --fail: oklch(0.720 0.140 25);
+  --fail-wash: color-mix(in oklch, var(--fail) 11%, var(--paper));
+
+  /* Motion.
+   *
+   * Four durations, not three. `--t-normal` and `--t-mid` were referenced seven
+   * times between the hero's live pipeline and the topology graph and neither
+   * was ever declared, so every one of those transitions was invalid at
+   * computed value and snapped. `scripts/lint-vars.ts` now fails the build on a
+   * `var()` with no declaration and no fallback, because a dropped custom
+   * property is not a parse error: it renders almost right. */
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  /* Was cubic-bezier(0.34, 1.56, 0.64, 1), which overshoots past its target and
+     springs back. Real mass decelerates, it does not bounce; the overshoot is
+     the tell that an easing curve was picked rather than measured. Exponential
+     out: fast departure, long settle, no overshoot. */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Instrument snap: fast out of the gate, long settle. For readouts that
+     change value, where the eye needs to catch that something moved at all. */
+  --ease-instrument: linear(
+    0, 0.42 7.2%, 0.72 14.4%, 0.88 20%, 0.96 26%, 1.0 34%, 1.01 44%, 1
+  );
+  --t-fast: 150ms;
+  --t-normal: 220ms;
+  --t-base: 250ms;
+  --t-mid: 320ms;
+  --t-slow: 400ms;
+  /* Ambient loops only. Anything a reader waits on stays under --t-slow. */
+  --t-slower: 650ms;
+
+  --measure: 68ch;
+  /* Mono runs wider per character than the serif, so a console panel needs a
+     shorter measure to land near the same characters-per-line. */
+  --measure-tight: 46ch;
+
+  /* Space.
+   *
+   * There was no spacing token at all: twelve distinct padding pairs were
+   * authored per site, which is why no two panels on the page shared a rhythm. */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.5rem;
+  --s-6: 2rem;
+  --s-7: 3rem;
+  --s-8: 4rem;
+  --s-9: 6rem;
+
+  /*
+   * Radius, and the one rule that decides between the values.
+   *
+   * Seven were in use (1px, 2px, 3px, 4px, 50%, 100px, 999px) with nothing
+   * deciding between them. Five is not a fix on its own: a scale without a rule
+   * is still five numbers picked by feel. The rule is size, and it has one
+   * exception:
+   *
+   *   --r-sm     2px   marks and chips: things smaller than a line of text
+   *   --r-md     4px   controls: anything the reader presses or types into
+   *   --r-lg     8px   inner surfaces nested inside a panel
+   *   --r-panel 12px   enclosures: a panel, a console, a housing
+   *   --r-pill  999px  round by nature, never by size. Dots and switches only,
+   *                    which is why it is exempt from the ladder above.
+   *
+   * A container is never smaller than what it holds, so a radius never steps up
+   * as it nests. That is the whole rule, and `scripts/audit.ts` check 3.9 holds
+   * the page to it.
+   *
+   * --r-inner is the concentric correction. Two boxes at the same radius do not
+   * share an arc centre: the outer corner is centred at (R, R) and the inner one
+   * at (p + r, p + r), so they coincide only when r = R - p. Nesting a 12px box
+   * inside a 12px box at 8px of padding is the commonest reason a rounded
+   * interface looks very slightly wrong without anyone being able to say why.
+   * Give the enclosure `--r-out` and `--pad` and its child takes --r-inner. */
+  /* Square. Measured before this: 2px on 46 elements, 12px on 5, 8px on one.
+     A five-step radius scale existed in the stylesheet and the page rendered
+     as very slightly rounded everywhere, which is the corner you pick when you
+     have not decided. The page is an instrument; instruments have edges. The
+     only round things are the ones that are round by nature. */
+  --r-sm: 0px;
+  --r-md: 0px;
+  --r-lg: 0px;
+  --r-panel: 0px;
+  --r-pill: 999px;
+  --r-inner: max(var(--r-sm), calc(var(--r-out, var(--r-panel)) - var(--pad, 0px)));
+
+  /* Layers.
+   *
+   * Six raw values were in use across five files: -1, 40, 40, 50, 50, 100, with
+   * nothing deciding between them and two pairs colliding by accident rather
+   * than by intent. The dock and the select-to-ask button both sat at 40 and
+   * their overlap was undefined; the palette scrim and the progress rule both
+   * sat at 50 and the scrim won by document order.
+   *
+   * Named, the collisions become decisions: the dock is furniture, the palette
+   * is an overlay over everything including furniture, and the skip link beats
+   * both because a keyboard user has to be able to leave. */
+  --z-under: -1;
+  --z-furniture: 40;
+  --z-grain: 45;
+  --z-overlay: 50;
+  --z-escape: 100;
+
+  /* Border weights, so "quiet rule" and "this is an object" are a choice
+     rather than a number typed from memory. */
+  --border-hair: 1px;
+  /* Was 1.5px, which rendered on 22 elements and is a width no screen can draw
+     cleanly. A rule is quiet or it is structural; there is no third weight. */
+  --border-solid: 1px;
+  --border-emphasis: 2px;
+
+  /* Elevation. Shadow only: `backdrop-filter` and every gradient function are
+     banned outright, so depth has to come from a cast edge. */
+  /* Containers get the bezel, not a shadow: a hairline plus the light caught on
+     the top edge. Shadow survives only where an element genuinely floats over
+     something else. */
+  --bezel: inset 0 1px 0 0 var(--edge);
+  --lift-1: 0 1px 2px color-mix(in oklch, var(--ink) 8%, transparent);
+  --lift-2:
+    0 2px 4px color-mix(in oklch, var(--ink) 7%, transparent),
+    0 8px 20px color-mix(in oklch, var(--ink) 6%, transparent);
+
+  /* Tracking. Fifteen letter-spacing values were in use with no scale. */
+  --track-tight: -0.02em;
+  --track-normal: 0;
+  --track-wide: 0.06em;
+  --track-caps: 0.12em;
+
+  /* Type. --step--2 was referenced three times and never declared, so
+     `Artifacts .state`, `Reach .glyph` and `RetrievalField .stress` all
+     rendered at their parent's size instead of stepping down. 0.68rem had
+     separately become a de-facto sixth step in four places. */
+  --step--2: 0.75rem;
+  --step--1: 0.875rem;
+  --step-0: 1.0625rem;
+  --step-1: 1.3125rem;
+  /* Section headings. This was clamp(1.6rem, 1.2rem + 1.9vw, 2.6rem) and
+     components then overrode it with clamps of their own, so the seven h2s
+     rendered at 54px against a 64px h1: a ratio of 1.18, where the reference
+     systems run 2.4 to 2.9. Seven headings the same size as the headline is
+     seven headlines. */
+  --step-2: clamp(1.6rem, 1.35rem + 1.2vw, 2rem);
+  --step-3: clamp(2rem, 1.6rem + 1.8vw, 3rem);
+  /* The one display size, and the only thing on the page allowed to use it. */
+  --step-4: clamp(2.5rem, 1.7rem + 3.2vw, 4.25rem);
+  /* The macro step, for chapter headings only.
+   *
+   * Seven headings at --step-2 read as seven equal chapters, which is what the
+   * page shipped: a 54px h2 against a 68px h1 is a ratio of 1.18, where the
+   * reference systems run 2.4 to 2.9. The fix is not a bigger h2 everywhere. It
+   * is two registers, and this is the one the three chapters get.
+   *
+   * Capped at 7.5rem rather than the 13rem the industrial register would take,
+   * because "A bug in LangChain" has to set on two lines at 1440 and stay one
+   * heading at 390. Verified against the real copy at both widths, not chosen
+   * off a scale. */
+  --step-5: clamp(2.75rem, 1.5rem + 5vw, 7.5rem);
+  /* Serif prose sets its own reading size: it is the one thing on the page
+     measured for continuous reading rather than for scanning, and the mono
+     scale is tuned for labels. Declared here so the three components that had
+     each guessed at it stop disagreeing by fractions of a pixel. */
+  /* The reading face, one deliberate step above the interface face. A serif at
+     the same nominal size reads smaller because its x-height is smaller; this
+     is the only size on the page that is not a ladder step, and it is that for
+     an optical reason rather than by accident. */
+  --step-prose: 1.1875rem;
+  /* One size for inline code, everywhere. It was `em`-relative to whatever
+     contained it and rendered at 12.6, 13.2, 13.3 and 13.6px on one page. */
+  --step-code: var(--step--1);
+
+  /*
+   * Four sanctioned departures from the scale, and no others.
+   *
+   *   1.06em   the emphasis step. `.prose .lead` and `.prose strong` step up
+   *            relative to whatever they sit in, which is the point: emphasis
+   *            is a ratio to its context, not a fixed size. 70 nodes.
+   *   Metrics  `.value` sets its own display clamp. A figure that is the object
+   *            rather than a heading has to beat the heading.
+   *   `.index` the section numeral, sized to the rail it occupies.
+   *   DiffReveal `.code` clamps to fit a fixed panel rather than to the scale.
+   *
+   * Everything else resolves to a token. Measured after collapsing: 352 of 484
+   * text nodes on-scale, from 276 before, and 28 distinct rendered sizes down
+   * to 20.
+   */
+
+  /* Light is the default, unconditionally.
+   *
+   * Paper and ink is the visual argument this page makes, and following the
+   * system meant a recruiter with a dark OS saw a different site from the one
+   * the design was measured against. Dark is kept below and reachable, but it
+   * is opt-in now rather than automatic. */
+  color-scheme: light;
+}
+
+/*
+ * The machine, working.
+ *
+ * The console already carries a dot grid at rest, which is the surface it is
+ * printed on. This is the surface with current through it: a scanline field,
+ * and it exists only while a request is actually in flight. `data-streaming` is
+ * set on the root by the agent for the duration of the stream and is already
+ * read by lib/motion.ts, so this reports a state the system computed rather
+ * than decorating a dark box.
+ *
+ * Every stop is hard, so this is a rule ruled onto a surface and not a fade.
+ * Audit 2.5 tests exactly that distinction and scripts/gradients.ts holds it.
+ *
+ * The layer is a pseudo-element rather than a second background on the console
+ * itself, so the dot grid underneath it is untouched and the two never have to
+ * agree about background-size.
+ */
+[data-surface="console"] {
+  position: relative;
+}
+
+:root[data-streaming="yes"] [data-surface="console"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-grain);
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--ink) 22%, transparent) 0 1px,
+    transparent 1px 3px
+  );
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-streaming="yes"] [data-surface="console"]::after {
+    animation: scan 5s linear infinite;
+  }
+}
+
+@keyframes scan {
+  from {
+    background-position-y: 0;
+  }
+  to {
+    background-position-y: 60px;
+  }
+}
+
+/* The inner ring of the console housing. Scoped to the surface rather than the
+   scheme, because it belongs to the panel construction and not to the page. */
+[data-surface="console"] {
+  --console-ring: oklch(1 0 0 / 0.06);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  /*
+   * No pattern on the ground, and that is the decision rather than an omission.
+   *
+   * This carried a halftone dot field: two tiles at coprime pitches, meant to
+   * read as ink on stock. At 13px the dots are individually countable at reading
+   * distance, so it read as polka dot applied to the page rather than as a
+   * surface the page was printed on, and it was the loudest thing in every
+   * screenshot including the ones with a headline in them.
+   *
+   * Depth on a dark substrate comes from stacked grounds instead: --paper-sunk
+   * through --paper-high are four measured steps, and a panel sitting on the
+   * one below it is a surface rather than a texture. That is the mechanism this
+   * scheme is built for, and it does not compete with type for attention.
+   */
+  color: var(--ink);
+  /* Interface voice. Every readout names mono itself; what changed is the
+     default an element gets when it names nothing -- a heading or a control,
+     not a measurement. */
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: var(--step-0);
+  line-height: 1.5;
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration-color: var(--ink-faint);
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+  transition: text-decoration-color var(--t-fast) var(--ease-out);
+}
+
+a:hover {
+  text-decoration-color: var(--signal);
+}
+
+/* Every interactive element gets a visible focus ring. The previous site set
+   outline:none on inputs and defined no replacement, which made the whole page
+   unusable by keyboard. */
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+  border-radius: 1px;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Selection, per ground.
+ *
+ * One wash served both, and a mix tuned against cream is nearly invisible on
+ * charcoal. Selecting text is also the gesture that opens the ask button, so it
+ * needs to read as deliberate rather than accidental. */
+::selection {
+  background: var(--signal-wash);
+  color: var(--ink);
+}
+
+[data-surface="console"] ::selection,
+:root[data-theme="dark"] ::selection {
+  background: color-mix(in oklch, var(--signal) 30%, var(--paper));
+  color: var(--ink);
+}
+
+/* The surfaces the browser draws that belong to no design system until someone
+   claims them. Caret and scrollbar shipped as platform defaults: a blue caret
+   in the ask field on a warm ground, and a light-grey scrollbar track beside a
+   dark console. Both are visible on every screen of this page. */
+:where(input, textarea, [contenteditable]) {
+  caret-color: var(--signal);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: var(--r-pill);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-faint);
+  background-clip: content-box;
+}
+
+/* Small caps label used for section markers and data keys. */
+/*
+ * Three voices were doing one class's work, and the mono one was carrying
+ * sentences.
+ *
+ * `.label` was mono, uppercase and tracked at 0.1em, on the argument that a
+ * label marks a data key. Half its call sites are data keys and half are not:
+ * "status could not be checked from here" and "written by the runner, not typed
+ * here" are sentences, and setting a sentence in tracked uppercase mono is the
+ * same substitution the contract bans one level down, where mono stands in for
+ * "technical" on an ordinary word.
+ *
+ * So the jobs are separated and each gets the face that suits it.
+ *
+ *   .label     a short key beside a value. Uppercase earns its place here
+ *              because the string is two or three words and never a sentence.
+ *   .caption   an explanatory phrase. Sentence case, no tracking, because it is
+ *              read rather than scanned.
+ *   .ident     a repository path, a model name, a flag. The data voice, and the
+ *              only one of the three that is still mono.
+ */
+.label {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: var(--step--1);
+  /* Uppercase at small size with open tracking is already working against the
+     reader. Light weight on top of that was the fourth penalty. */
+  font-weight: 600;
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.caption {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: var(--step--1);
+  font-weight: 400;
+  letter-spacing: var(--track-normal);
+  color: var(--ink-faint);
+}
+
+.issuer-dot {
+  display: inline-block;
+  border-radius: 50%;
+  background: var(--brand);
+  flex: none;
+}
+
+/*
+ * Emphasis you can see from a metre away.
+ *
+ * Measured, the previous ladder was body at Lc 87 and a bold claim at Lc 99,
+ * with no change of size and none of weight that survived the serif. Twelve
+ * points of lightness is not emphasis; at scanning distance the two were the
+ * same grey. A claim now moves on three axes at once, which is what makes it
+ * arrive before the sentence around it is read.
+ *
+ * Still no colour. --signal means live, and spending it here would cost that
+ * word its meaning everywhere else on the page.
+ */
+/* Identifiers keep the mono face so a symbol read on the page matches the
+   symbol typed into an editor. Sized down because mono runs optically larger
+   than the serif around it at the same nominal size. */
+/* Every code carrier, not only the ones inside prose. A bare <code> outside
+   .prose inherited nothing and fell to the user agent's default monospace:
+   eleven elements, the LangChain diff among them, set in a second mono face
+   beside the hundred in the first. */
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--step-code);
+}
+
+/* Every live number on the page.
+ *
+ * `slashed-zero` alongside the tabular figures because these are latencies,
+ * token counts, ranks and pass rates read at a glance beside an O-heavy mono
+ * face, and a zero that can be misread as a letter is a number that has to be
+ * read twice.
+ *
+ * Deliberately not a second class named `.readout`. This selector is already
+ * applied everywhere a measured figure renders, and a new name for the same
+ * treatment is one more thing to keep in step for no gain. */
+.tabular {
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+
+/* Live state. The only place --signal appears as a fill. */
+.live {
+  color: var(--signal);
+}
+
+.live-dot {
+  display: inline-block;
+  width: 0.45em;
+  height: 0.45em;
+  border-radius: 50%;
+  background: var(--signal);
+  vertical-align: 0.08em;
+}
+
+/*
+ * The dot only moves while something actually is.
+ *
+ * It used to blink everywhere it appeared, including beside "answered in
+ * 2876ms", which is a finished measurement and not a live one. A blink on a
+ * settled number is decoration pretending to be status, and it trains the
+ * reader to ignore the one place the movement is real. Now the animation is
+ * opt-in and marks work in flight.
+ */
+.live-dot[data-state="running"] {
+  animation: pulse 2s var(--ease-out) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* Smooth scrolling, and room for the sticky rails to sit above an anchor.
+ *
+ * The page never had either. Every jump link -- the palette's, the section
+ * permalinks, the skip link -- teleported, which on a 14,000px document reads
+ * as the page having flinched rather than moved, and the destination heading
+ * then landed underneath the sticky section rail that was already there.
+ * scroll-padding-top is the same measurement the rails pin to.
+ *
+ * Overridden to `auto` in the reduced-motion block below, which is why that
+ * block already carries the property.
+ */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: clamp(1.5rem, 6vh, 3rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-property:
+      opacity, color, background-color, border-color, box-shadow, outline-color,
+      text-decoration-color, fill, stroke !important;
+  }
+}
+
+/* Skip link. First tab stop, invisible until focused. */
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: var(--s-2) var(--s-4);
+  z-index: var(--z-escape);
+}
+
+.skip:focus {
+  left: 0;
+}
+
+/*
+ * The console ground.
+ *
+ * Dark means live. Anything on this page that runs -- the agent, the node
+ * graph, rank fusion, the eval matrix, the trace, provider health -- sits on a
+ * console surface. Anything authored -- prose, roles, publications -- stays on
+ * paper. The ground is the encoding: a reader can tell whether they are looking
+ * at a claim or at a system before they read a word.
+ *
+ * This redefines the existing token names inside a scope rather than
+ * introducing a parallel set. Every component already reads var(--paper) and
+ * var(--ink), so all fifteen stylesheets inherit the dark surface with no edit
+ * at all, and a panel can be dark inside a light page without a global theme
+ * flip. The charcoal is warm (hue 75, the paper family) rather than blue-black,
+ * which is the tell of every generated dark theme.
+ */
+[data-surface="console"] {
+  color-scheme: dark;
+
+  --paper: oklch(0.192 0.004 250);
+  --paper-raised: oklch(0.238 0.005 250);
+  --paper-sunk: oklch(0.155 0.003 250);
+  --rule: oklch(0.352 0.005 250);
+
+  --ink: oklch(0.968 0.002 250);
+  --ink-soft: oklch(0.862 0.004 250);
+  --ink-faint: oklch(0.775 0.006 250);
+
+  /* Restated rather than mixed. The light values are tuned against a light
+     ground; the same chroma at these lightnesses reads muddy on charcoal, and
+     color-mix against a dark paper produces a different result than intended. */
+  --signal: oklch(0.72 0.18 258);
+  --signal-wash: color-mix(in oklch, var(--signal) 16%, var(--paper));
+  --mark: var(--signal);
+  --mark-wash: color-mix(in oklch, var(--mark) 16%, var(--paper));
+  --mark-rule: color-mix(in oklch, var(--mark) 48%, var(--paper));
+  --mark-ink: var(--signal-deep);
+
+  --live: oklch(0.80 0.17 152);
+  --live-wash: color-mix(in oklch, var(--live) 16%, var(--paper));
+  --warn: oklch(0.83 0.14 78);
+  --warn-wash: color-mix(in oklch, var(--warn) 16%, var(--paper));
+  --fail: oklch(0.79 0.17 25);
+  --fail-wash: color-mix(in oklch, var(--fail) 16%, var(--paper));
+
+  /* Tinted to the ground, not black at opacity.
+   *
+   * Pure black over a hue-258 charcoal desaturates whatever it falls across, so
+   * an edge under a shadow drifts grey while the surface beside it stays cool,
+   * and the two stop looking like the same material. Carrying the ground's own
+   * hue keeps the shadow reading as less light on this surface rather than as a
+   * different surface. */
+  --lift-1: 0 1px 2px oklch(0.06 0.012 258 / 0.44);
+  --lift-2:
+    0 2px 4px oklch(0.06 0.012 258 / 0.38),
+    0 8px 20px oklch(0.06 0.012 258 / 0.32);
+
+  background: var(--paper);
+  color: var(--ink);
+
+  /* A grid, the only way this stylesheet is allowed to draw one.
+   *
+   * `linear-gradient` and `radial-gradient` are banned outright by audit 2.5 --
+   * and `repeating-linear-gradient` contains the banned substring, which is how
+   * the last attempt at a texture on this page was caught. `conic-gradient` is
+   * not matched, and four hard stops from one origin tile into a fine dot grid.
+   *
+   * Deliberately at the edge of visible. It is there to give a dark panel the
+   * surface quality of a physical instrument face rather than a flat fill, and
+   * anything stronger would compete with the data drawn on top of it. */
+  background-image: conic-gradient(
+    from 90deg at 1px 1px,
+    color-mix(in oklch, var(--ink) 4%, transparent) 0 25%,
+    transparent 0 100%
+  );
+  background-size: 22px 22px;
+}
+
+/* Figures align in a column by default rather than only where a utility class
+   was remembered. Proportional digits in a metric row make two numbers of the
+   same magnitude look like different lengths. */
+dt,
+.tabular,
+time,
+[class*="value"],
+[class*="count"] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* The third curve named in the motion research: the standard in-and-out used for
+   elements that both enter and leave, where a pure decelerate reads as abrupt on
+   the way out. */
+:root {
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.prose a,
+button {
+  transition-timing-function: var(--ease-standard);
+}
+
+/*
+ * The control layer.
+ *
+ * Twenty-seven buttons on this page shared exactly three interaction moves --
+ * a border going from rule to ink, text going from soft to ink, and a two-pixel
+ * lift on two cards -- and exactly one `:active` rule between them. Nothing
+ * depressed, so every control felt like a link with a box around it, and a
+ * reader got no confirmation that a click had landed until the thing it did
+ * appeared.
+ *
+ * These are element-level so they apply to controls that already exist rather
+ * than requiring every call site to adopt a new class. Component styles keep
+ * their own look; this is the physics underneath them.
+ */
+button,
+[role="button"],
+summary,
+a[data-pull] {
+  /* Press depth, not a colour change. The surface goes down and its cast edge
+     collapses, which is what a physical control does and what a reader reads as
+     "that registered" without having to notice a hue. */
+  transition:
+    transform var(--t-fast) var(--ease-out),
+    box-shadow var(--t-fast) var(--ease-out);
+}
+
+button:active,
+[role="button"]:active,
+summary:active,
+a[data-pull]:active {
+  transform: translateY(1px);
+}
+
+[aria-expanded]::after {
+  content: "";
+  display: inline-block;
+  width: 0.34em;
+  height: 0.34em;
+  margin-inline-start: 0.5em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-0.12em) rotate(45deg);
+  transition: transform var(--t-normal) var(--ease-out);
+}
+
+/* The eval matrix cells are their own affordance and carry their own marker. */
+[aria-expanded][class*="cell"]::after {
+  content: none;
+}
+
+/*
+ * Touch targets.
+ *
+ * Measured: a metric's source link rendered 16px tall, the corpus question
+ * seeds 34px, and the voice checkbox 17px. WCAG 2.2 puts the floor at 24px and
+ * the comfortable target at 44px; these were under both. Padding rather than
+ * height, so the visual size is unchanged and only the hit area grows.
+ */
+a[class*="source"],
+a[class*="address"],
+button[class*="seed"] {
+  position: relative;
+}
+
+a[class*="source"]::before,
+a[class*="address"]::before,
+button[class*="seed"]::before {
+  content: "";
+  position: absolute;
+  /* Vertical only. Expanding sideways made the pseudo-element wider than its
+     parent, so scrollWidth exceeded clientWidth and the overflow propagated up
+     through every ancestor -- twelve reported boxes from one four-pixel
+     mistake. Height is the axis that was actually short: these render 16px and
+     34px tall against a 24px floor. */
+  inset: -0.7rem 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:active,
+  [role="button"]:active,
+  summary:active,
+  a[data-pull]:active {
+    transform: none;
+  }
+  [aria-expanded]::after {
+    transition: none;
+  }
+}
+
+/* The dock rides in a reserved gutter rather than on top of the page.
+   Fixed positioning alone would cover the last lines of the footer, which is
+   the behaviour that makes a floating widget feel bolted on. */
+body {
+  padding-block-end: 4rem;
+}

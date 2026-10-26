@@ -1,4 +1,5 @@
-import { streamWithFailover, listPrice, failoverState, chooseTool } from "./model";
+import { streamWithFailover, listPrice, failoverState, chooseTool, BUDGET_MS } from "./model";
+import { aside, ASIDE_VERSION } from "./aside";
 import {
   toolSchemas,
   openEvidence,
@@ -8,7 +9,7 @@ import {
   type ToolResult,
 } from "./tools";
 import type { RetrievalTrace } from "./retrieve";
-import { retrieve } from "./retrieve";
+import { coverage, passagesOf, retrieve, sourceTitles } from "./retrieve";
 import {
   classify,
   systemPrompt,
@@ -17,11 +18,17 @@ import {
   handoffAnswer,
   AUTHORISATION_ANSWER,
   POLICY_PREVIEW,
+  NOT_IN_PROFILE,
+  PROMPT_VERSION,
+  isJobDescription,
+  PARTIAL_NOTE,
+  AGGREGATE_NOTE,
 } from "./policy";
 import { analyze } from "./query";
 import { offersFor } from "./followups";
 import type { Offer } from "./offers";
 import { loadContent } from "../content";
+import { ground, cite, type Grounding, type Citation } from "./ground";
 import prewarm from "./prewarm.json";
 
 /** Named once so the tool prompt says who it is acting for. */
@@ -56,6 +63,15 @@ export type StreamEvent =
    * answers it.
    */
   | { type: "offers"; offers: Offer[] }
+  /** One guarded, fact-free line in a lighter voice (aside.ts); absent when it fails its guard. */
+  | { type: "aside"; text: string; version: string }
+  /**
+   * One pipeline stage as it finishes: what ran, how long it took, and the
+   * numbers it decided on. The page draws these as the run's live trace.
+   */
+  | { type: "step"; name: string; state: "done" | "failed" | "skipped"; ms: number; detail: string }
+  /** Per-requirement coverage when the question is a pasted job description (retrieve.ts coverage). */
+  | { type: "coverage"; rows: { req: string; status: "covered" | "partial" | "missing"; section: string | null }[] }
   /**
    * Something the agent did, rather than said.
    *
@@ -82,6 +98,14 @@ export type StreamEvent =
       degraded?: boolean;
       /** The system prompt, context elided. Shown on request in the trace. */
       policy?: string;
+      /** Figures and names in the answer read back against its context (ground.ts). */
+      grounding?: Grounding;
+      /** The section each answer sentence came from, or null (ground.ts cite). */
+      citations?: Citation[];
+      /** System prompt version (policy.ts PROMPT_VERSION). */
+      promptVersion?: string;
+      /** Time left in the 8 s budget after retrieval and at the first token. */
+      budget?: { afterRetrieveMs: number; firstTokenMs: number | null };
     }
   | { type: "error"; message: string };
 
@@ -149,9 +173,9 @@ function retrievalQuery(question: string, history: Exchange[]) {
   // The question is classified and expanded before the previous turn is
   // prepended, so a follow-up to an identity or work question keeps the
   // vocabulary that made the first one retrievable.
-  const { intent, query, weight, asked, floor } = analyze(question);
+  const { intent, query, asked, floor } = analyze(question);
   const previous = history.at(-1)?.question;
-  return { intent, weight, asked, floor, query: previous ? `${previous} ${query}` : query };
+  return { intent, asked, floor, query: previous ? `${previous} ${query}` : query };
 }
 
 export async function* runStream(
@@ -159,6 +183,7 @@ export async function* runStream(
   history: Exchange[] = [],
 ): AsyncGenerator<StreamEvent> {
   const started = Date.now();
+  const deadline = started + BUDGET_MS;
 
   // Openers were answered at build time. Serving them from the bundle costs a
   // map lookup instead of an embedding call plus a model round trip, which is
@@ -201,12 +226,19 @@ export async function* runStream(
       failover: failoverState(),
       warm: true,
       policy: POLICY_PREVIEW,
+      // Checked against the whole sections the cache names: the passages the
+      // build-time run saw are a subset, so this can only pass more, never less.
+      ...(() => {
+        const used = loadContent().sections.filter((s) => warm.sources.includes(s.title));
+        return { grounding: ground(warm.answer, question, ...used.map((s) => s.body)), citations: cite(warm.answer, used) };
+      })(),
     };
     return;
   }
 
   const route = classify(question);
   yield { type: "route", route, ms: Date.now() - started };
+  yield { type: "step", name: "route", state: "done", ms: Date.now() - started, detail: route };
 
   /*
    * An instruction, not a question.
@@ -231,7 +263,8 @@ export async function* runStream(
         ...historyMessages(history),
         { role: "user", content: question },
       ],
-      toolSchemas(),
+      toolSchemas(question),
+      deadline,
     );
 
     const call = chosen?.calls[0];
@@ -240,9 +273,12 @@ export async function* runStream(
     if (!call) {
       // No provider, or the model declined. Both mean the same thing to a
       // reader: say what can be done rather than failing silently.
+      // Nouns first, and no "I can": an answer that opens in the first person
+      // about its own abilities reads as a model talking about itself, and the
+      // reasoning gate flags that shape for exactly that reason.
       result = {
         ok: false,
-        say: `I can open his LinkedIn, his GitHub, the source for this page, the LangChain issue and its merged fix, or either publication. I can also draft an email to him, or run one of this site's own eval cases.`,
+        say: `Open on request: his LinkedIn, his GitHub, the source for this page, the LangChain issue and its merged fix, either publication, a written draft email to him, or one of this site's own eval cases.`,
       };
     } else if (call.name === "open_evidence") {
       result = openEvidence(String(call.args.target ?? ""));
@@ -295,19 +331,45 @@ export async function* runStream(
   }
 
   const retrieveStart = Date.now();
-  const { intent, query, weight, asked, floor } = retrievalQuery(question, history);
-  const { chunks, trace } = await retrieve(query, 4, weight, floor);
+  const { intent, query, asked, floor } = retrievalQuery(question, history);
+  const { chunks, trace, best } = await retrieve(query, { floor, deadline, question });
+  const leftAfterRetrieve = deadline - Date.now();
   yield {
     type: "sources",
-    titles: chunks.map((c) => c.title),
+    titles: sourceTitles(chunks),
     ms: Date.now() - retrieveStart,
     // The full fusion, every chunk, so the page can draw what actually
     // happened rather than an illustration of it.
     trace,
   };
+  {
+    const c = trace.confidence;
+    yield {
+      type: "step",
+      name: "retrieve",
+      state: "done",
+      ms: Date.now() - retrieveStart,
+      detail: `${trace.store ?? "memory"} ${trace.storeMs ?? 0} ms · ${chunks.length} sections · band ${trace.band}${c ? ` · tier ${c.tier} (cos ${c.signals.cosine ?? "-"} vs ${c.floors.cosine}, logit ${c.signals.logit ?? "-"} vs ${c.floors.logit})` : ""}${trace.missing?.length ? ` · missing ${trace.missing.join(", ")}` : ""}`,
+    };
+  }
 
-  const context = chunks.map((c) => `## ${c.title}\n${c.body}`).join("\n\n");
+  // Unknown band: fixed text, no model call. Partial: one instruction more.
+  if (trace.band === "unknown") {
+    yield { type: "token", text: NOT_IN_PROFILE };
+    yield { type: "done", total: Date.now() - started, usage: null, policy: POLICY_PREVIEW };
+    return;
+  }
+  // A name the corpus never uses is stated by code, not left to the model.
+  const missing = trace.missing?.length ? `The profile does not mention ${trace.missing.join(" or ")}.` : "";
+  if (missing) yield { type: "token", text: `${missing} ` };
+  const context =
+    chunks.map((c) => `## ${c.title}\n${c.body}`).join("\n\n") +
+    (missing ? `\n\nThe reader has been told: "${missing}" Do not claim it. Continue with the closest fact the sections above do state.` : "") +
+    (trace.band === "partial" ? PARTIAL_NOTE : "") +
+    (trace.graph?.length ? AGGREGATE_NOTE : "");
 
+  // Outside the try: the catch must know whether the reader already has an answer.
+  let emitted = 0;
   try {
     /**
      * Nothing is held back any more, because nothing arrives that needs holding.
@@ -329,7 +391,7 @@ export async function* runStream(
      * the next one may not honour the flag.
      */
     let buffer = "";
-    let emitted = 0;
+    let firstTokenLeft: number | null = null;
     let usage: { in: number; out: number } | null = null;
     let served: { provider: string; model: string } | null = null;
 
@@ -348,8 +410,10 @@ export async function* runStream(
       (provider, model) => {
         served = { provider, model };
       },
+      deadline,
     )) {
       buffer += token;
+      firstTokenLeft ??= deadline - Date.now();
 
       // The one case a post-hoc clean cannot cover.
       //
@@ -388,6 +452,15 @@ export async function* runStream(
     }
 
     yield { type: "offers", offers: offersFor(chunks) };
+    if (isJobDescription(question)) yield { type: "coverage", rows: coverage(question) };
+    const g = ground(cleaned, context, question);
+    yield { type: "step", name: "generate", state: "done", ms: Date.now() - retrieveStart, detail: `${(served as { provider?: string } | null)?.provider ?? "?"} · prompt ${PROMPT_VERSION}` };
+    yield { type: "step", name: "ground", state: g.g === 1 ? "done" : "failed", ms: 0, detail: `G ${g.g} over ${g.claims} claims${g.unsupported.length ? ` · unsupported ${g.unsupported.join(", ")}` : ""}` };
+    // Only answered questions reach here: refusals and deflections returned above.
+    const asideStart = Date.now();
+    const line = await aside(cleaned, deadline - Date.now());
+    if (line) yield { type: "aside", text: line, version: ASIDE_VERSION };
+    yield { type: "step", name: "aside", state: line ? "done" : "skipped", ms: Date.now() - asideStart, detail: line ? `guard passed · temp ${process.env.ASIDE_TEMPERATURE ?? 0.6}` : "no key, no time, or guard rejected" };
 
     const settled = served as { provider: string; model: string } | null;
     yield {
@@ -399,8 +472,22 @@ export async function* runStream(
       listPrice: usage && settled ? listPrice(settled.model, usage) : null,
       failover: failoverState(),
       policy: POLICY_PREVIEW,
+      promptVersion: PROMPT_VERSION,
+      // The model's text only: the handoff close is fixed copy, not a claim.
+      grounding: g,
+      citations: cite(cleaned, chunks, 0.5, passagesOf(chunks.map((c) => c.title))),
+      budget: { afterRetrieveMs: leftAfterRetrieve, firstTokenMs: firstTokenLeft },
     };
-  } catch {
+  } catch (e) {
+    // A throw after the answer streamed is a bug in the code after the model
+    // (offersFor once threw for a profile with no repo), not a provider outage.
+    // Appending the source text under it doubled the answer and told the
+    // reader every provider was rate-limited when none was.
+    if (emitted > 0) {
+      console.error(JSON.stringify({ level: "error", where: "stream.after-answer", error: String((e as Error)?.stack ?? e) }));
+      yield { type: "done", total: Date.now() - started, usage: null, failover: failoverState(), policy: POLICY_PREVIEW, promptVersion: PROMPT_VERSION };
+      return;
+    }
     /**
      * Every provider is down, and the answer degrades rather than erroring.
      *
@@ -416,12 +503,24 @@ export async function* runStream(
      * top chunk unsummarised gives the reader the grounded material and says
      * plainly that it is unsummarised, which is worth more than an apology.
      */
-    const grounded = chunks[0]?.body.split("\n\n").find((p) => p.trim().length > 0);
+    // The passage that matched, not the section's opening lines (those are the
+    // Role/Stack card, which answered nothing that was asked).
+    const grounded = best ?? chunks[0]?.body.split("\n\n").find((p) => p.trim().length > 0);
+
+    // The section's measured results, as one sentence: the card that lists them
+    // is skipped above because it reads as a form, but the figures are the
+    // part of it a reader asked about most often. Only figures the passage does
+    // not already state.
+    const home = grounded && (chunks.find((c) => c.body.includes(grounded.slice(0, 80))) ?? chunks[0]);
+    const extra = (home ? loadContent().sections.find((s) => s.title === home.title)?.metrics ?? [] : [])
+      .filter((m) => /^[+~$-]?\d/.test(m.value) && grounded && !grounded.includes(m.value))
+      .slice(0, 3);
+    const measured = extra.length ? ` Measured there: ${extra.map((m) => `${m.value} ${m.label}`).join("; ")}.` : "";
 
     if (grounded) {
       yield {
         type: "token",
-        text: `${grounded.replace(/\*\*/g, "")}\n\nThat is the source text, unsummarised: every model provider is rate-limited right now. Retrieval still ran, and the sources above are the ones it chose.`,
+        text: `${grounded.replace(/\*\*/g, "")}${measured}\n\nThat is the source text, unsummarised: no generation provider is available right now. Retrieval still ran, and the sources above are the ones it chose.`,
       };
       yield { type: "offers", offers: offersFor(chunks) };
       yield {

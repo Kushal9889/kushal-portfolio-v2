@@ -16,10 +16,11 @@
  * to NVIDIA, GitHub and LinkedIn, not to this palette.
  */
 
+import { brandIcon } from "@/lib/brand-icons";
+
 type Props = { size?: number; className?: string };
 
 const GITHUB = "#181717";
-const LINKEDIN = "#0A66C2";
 const NVIDIA = "#76B900";
 
 /**
@@ -56,16 +57,19 @@ const ISSUER_PATH: Record<string, string> = {
 
 
 export function GitHubMark({ size = 16, className }: Props) {
+  const icon = brandIcon("github");
+  if (!icon) return null;
+
   return (
     <svg
-      viewBox="0 0 16 16"
+      viewBox="0 0 24 24"
       width={size}
       height={size}
       fill={GITHUB}
       aria-hidden="true"
       className={className}
     >
-      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+      <path d={icon.path} />
     </svg>
   );
 }
@@ -76,7 +80,7 @@ export function LinkedInMark({ size = 16, className }: Props) {
       viewBox="0 0 16 16"
       width={size}
       height={size}
-      fill={LINKEDIN}
+      fill="currentColor"
       aria-hidden="true"
       className={className}
     >
@@ -138,23 +142,33 @@ export function IssuerDot({ issuer, size = 14 }: { issuer: string; size?: number
 }
 
 /**
- * The NVIDIA eye, simplified to a single path so it reads at 14px.
+ * The NVIDIA mark.
+ *
+ * This was redrawn by hand and described in its own comment as "simplified to a
+ * single path so it reads at 14px", which is the exact thing the note above
+ * `ISSUER_PATH` warns against: a logo that is almost right is the detail a
+ * reader who knows the brand spots first. It now comes from the same generated
+ * module every other mark on the page reads, so there is one source and it is
+ * the vendor's current artwork rather than an approximation of it.
  *
  * This is the only credential mark on the page. It marks a proctored exam, and
  * putting it beside the course completions would flatten that distinction into
  * a badge wall.
  */
 export function NvidiaMark({ size = 18, className }: Props) {
+  const icon = brandIcon("nvidia");
+  if (!icon) return null;
+
   return (
     <svg
-      viewBox="0 0 24 16"
-      width={(size * 24) / 16}
+      viewBox="0 0 24 24"
+      width={size}
       height={size}
       fill={NVIDIA}
       aria-hidden="true"
       className={className}
     >
-      <path d="M8.9 5.2V3.6c.16-.01.31-.02.47-.02 4.34-.14 7.18 3.73 7.18 3.73s-3.07 4.26-6.36 4.26c-.44 0-.87-.07-1.29-.21V6.5c1.69.2 2.03.95 3.04 2.64l2.26-1.9s-1.65-2.16-4.43-2.16c-.3 0-.59.02-.87.06v.06Zm0-5.2v2.4l.47-.03c6.03-.2 9.96 4.94 9.96 4.94s-4.52 5.49-9.22 5.49c-.4 0-.8-.04-1.2-.11v1.49c.33.04.67.06 1.01.06 4.37 0 7.54-2.23 10.6-4.88.5.41 2.58 1.4 3.01 1.83-2.91 2.44-9.7 4.4-13.55 4.4-.37 0-.72-.02-1.07-.06V16H24V0H8.9Zm0 11.36v1.26C4.86 11.9 3.74 7.7 3.74 7.7s1.94-2.15 5.16-2.5v1.38h-.01c-1.69-.2-3.01 1.38-3.01 1.38s.74 2.65 3.02 3.4ZM1.77 7.52s2.39-3.53 7.13-3.9V2.35C3.65 2.77 0 7.21 0 7.21s2.07 5.98 8.9 6.62v-1.35c-5.01-.62-7.13-5-7.13-5l.01.04Z" />
+      <path d={icon.path} />
     </svg>
   );
 }

@@ -78,7 +78,7 @@ export default function ModelChoice() {
                 {/* A score without its uncertainty is the thing that makes
                     leaderboards misleading, so the range travels with it. */}
                 <span className={styles.range}>
-                  could be {Math.round(r.low * 100)}&ndash;{Math.round(r.high * 100)}%
+                  could be {Math.round(r.low * 100)}-{Math.round(r.high * 100)}%
                 </span>
               </span>
 

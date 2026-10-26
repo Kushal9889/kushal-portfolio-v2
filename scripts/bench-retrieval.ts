@@ -59,7 +59,7 @@ async function score(label: string, metric: Metric): Promise<Result> {
   for (const [question, wants] of CASES) {
     const a = analyze(question);
     const started = Date.now();
-    const { chunks } = await retrieve(a.query, 4, a.weight, a.floor, metric);
+    const { chunks } = await retrieve(a.query, { floor: a.floor, metric });
     times.push(Date.now() - started);
 
     const rank = chunks.findIndex((c) => c.title === wants) + 1;
@@ -153,7 +153,7 @@ async function main() {
    */
   for (const [question] of CASES) {
     const a = analyze(question);
-    await retrieve(a.query, 4, a.weight, a.floor);
+    await retrieve(a.query, { floor: a.floor });
   }
 
   for (const metric of ["cosine", "dot", "l2", "l1"] as Metric[]) {

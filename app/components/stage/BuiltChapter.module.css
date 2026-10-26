@@ -1,0 +1,254 @@
+/*
+ * Built ("Running now"): four terminal panes in a 2 by 2 grid. Terminal chrome
+ * is the chapter's border language (plan D.6): a title bar with a dot-matrix
+ * marker, a body, and a status line naming where the value came from.
+ */
+
+.built {
+  position: relative;
+  min-height: 100vh;
+  padding: 120px clamp(24px, 5vw, 88px) 96px;
+}
+
+.inner {
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px 32px;
+  margin-bottom: 40px;
+}
+
+.title {
+  grid-column: 1;
+  margin: 0;
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.machine {
+  grid-column: 1;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+.machine span {
+  color: var(--ink);
+}
+
+.pane a:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
+
+.panes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--hair);
+  border: 1px solid var(--hair);
+  border-radius: 2px;
+}
+
+.pane {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 300px;
+  background: var(--void-raised);
+  box-shadow: inset 0 1px 0 var(--hair-strong);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 32px;
+  padding: 0 14px;
+  background: var(--void);
+  border-bottom: 1px solid var(--hair);
+}
+
+/* The identity hue: one 1px rule under the title bar, never a fill. */
+.bar[data-identity] {
+  box-shadow: inset 0 -1px 0 var(--identity);
+}
+
+.dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.dots i {
+  width: 6px;
+  height: 6px;
+  background: var(--hair-strong);
+}
+
+.paneTitle {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.paneTitle svg {
+  fill: var(--ink);
+}
+
+.word {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--ink-soft);
+}
+
+.word i {
+  width: 6px;
+  height: 6px;
+  border: 1px solid var(--hair-strong);
+}
+
+.word[data-status="live"] i {
+  border-color: var(--live);
+  background: var(--live);
+}
+
+.word[data-status="checking"] i {
+  animation: blink 1s steps(2, jump-none) infinite;
+}
+
+@keyframes blink {
+  50% {
+    border-color: transparent;
+  }
+}
+
+.body {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding: 20px 20px 16px;
+}
+
+.status {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 14px;
+  background: var(--void);
+  border-top: 1px solid var(--hair);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--ink-soft);
+}
+
+.status a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--hair-strong);
+  text-underline-offset: 0.18em;
+}
+
+.status a:hover {
+  text-decoration-color: var(--ink);
+}
+
+.rows {
+  display: grid;
+  margin: 0;
+}
+
+.rows div {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hair);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.rows div:last-child {
+  border-bottom: 0;
+}
+
+.rows dt {
+  color: var(--ink-soft);
+}
+
+.rows dd {
+  margin: 0;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 767px) {
+  .built {
+    padding: 96px 16px 64px;
+  }
+
+  .head {
+    grid-template-columns: 1fr;
+  }
+
+  .panes,
+  .pane,
+  .bar {
+    grid-template-columns: 1fr;
+  }
+
+  /* A machine line and a status word on one row need to be allowed to wrap. */
+  .bar {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .bar > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  /* A grid child's default min-width is its content, so one long machine line
+     pushed each pane past the screen. */
+  .panes > *,
+  .pane {
+    min-width: 0;
+  }
+
+  .pane svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .pane pre,
+  .pane code {
+    overflow-x: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word[data-status="checking"] i {
+    animation: none;
+  }
+}

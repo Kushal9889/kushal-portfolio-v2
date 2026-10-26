@@ -33,8 +33,8 @@
 const TOKENS_PER_WORD = 1.4;
 
 export const TARGET_TOKENS = 125;
-export const MAX_TOKENS = 150;
-export const MIN_TOKENS = 100;
+export const MAX_TOKENS = Number(process.env.CHUNK_MAX_TOKENS ?? 150);
+export const MIN_TOKENS = Number(process.env.CHUNK_MIN_TOKENS ?? 100);
 
 export function estimateTokens(text: string): number {
   const words = text.trim().split(/\s+/).filter(Boolean).length;
@@ -70,6 +70,8 @@ export type Passage = {
   ordinal: number;
   text: string;
   tokens: number;
+  /** One situating line from the semantic chunker (scripts/llm-chunk.ts); ranking only, never shown to the model as fact. */
+  context?: string;
 };
 
 function cosine(a: number[], b: number[]): number {
@@ -117,6 +119,24 @@ export const BREAK_BELOW = 0.47;
 const OVERLAP_SENTENCES = 1;
 
 /**
+ * The longest sentence that may be carried into the next passage as overlap.
+ *
+ * The card lines (Role, Stack, Measured, Links) carry no full stops, so the
+ * sentence splitter read the whole block as one 100-token "sentence", and the
+ * overlap copied it into every following passage. Three Questrom passages came
+ * out 98% identical by cosine and the sentence that answers "what did he build
+ * for Sikich" scored 0.17 against its own section. A claim sentence is short; a
+ * block that long is not overlap, it is duplication.
+ */
+const OVERLAP_MAX_TOKENS = 40;
+
+/** Lines that are structured facts rather than prose: indexed once, as their own passage. */
+const CARD_LINE = /^(Role|Stack|Measured|Links):/;
+
+/** Below this a card is too thin to rank alone and joins the first prose passage. */
+const CARD_MIN_TOKENS = 60;
+
+/**
  * Split one section into passages.
  *
  * `embeddings` are per-sentence and optional. Without them the split is
@@ -128,6 +148,48 @@ export function chunkSection(
   parent: string,
   body: string,
   embeddings?: (number[] | null)[],
+  breakBelow = BREAK_BELOW,
+): Passage[] {
+  // The card is split off first and indexed once. Its sentence vectors are the
+  // leading ones, so the prose keeps the vectors that belong to it.
+  const lines = body.split("\n");
+  let n = 0;
+  while (n < lines.length && CARD_LINE.test(lines[n].trim())) n++;
+  const card = lines.slice(0, n).join("\n").trim();
+  if (card && estimateTokens(card) >= CARD_MIN_TOKENS) {
+    const prose = lines.slice(n).join("\n");
+    const offset = sentences(body).length - sentences(prose).length;
+    const cards = splitCard(parent, card);
+    const rest = chunkProse(parent, prose, embeddings?.slice(offset), breakBelow);
+    return [...cards, ...rest].map((p, ordinal) => ({ ...p, ordinal }));
+  }
+  return chunkProse(parent, body, embeddings, breakBelow);
+}
+
+/** A card over the ceiling is divided between its lines, never inside one. */
+function splitCard(parent: string, card: string): Passage[] {
+  const out: Passage[] = [];
+  let buf: string[] = [];
+  for (const line of card.split("\n")) {
+    if (buf.length && estimateTokens([...buf, line].join("\n")) > MAX_TOKENS) {
+      const text = buf.join("\n");
+      out.push({ parent, ordinal: out.length, text, tokens: estimateTokens(text) });
+      buf = [];
+    }
+    buf.push(line);
+  }
+  if (buf.length) {
+    const text = buf.join("\n");
+    out.push({ parent, ordinal: out.length, text, tokens: estimateTokens(text) });
+  }
+  return out;
+}
+
+function chunkProse(
+  parent: string,
+  body: string,
+  embeddings?: (number[] | null)[],
+  breakBelow = BREAK_BELOW,
 ): Passage[] {
   const parts = sentences(body);
   if (parts.length === 0) return [];
@@ -142,8 +204,9 @@ export function chunkSection(
     passages.push({ parent, ordinal: passages.length, text, tokens: estimateTokens(text) });
     // Carry the tail forward so a claim and its evidence are never separated by
     // a boundary that belongs to neither.
-    const keep = current.slice(-OVERLAP_SENTENCES);
-    const keepIdx = currentIdx.slice(-OVERLAP_SENTENCES);
+    const carry = estimateTokens(current.slice(-OVERLAP_SENTENCES).join(" ")) <= OVERLAP_MAX_TOKENS;
+    const keep = carry ? current.slice(-OVERLAP_SENTENCES) : [];
+    const keepIdx = carry ? currentIdx.slice(-OVERLAP_SENTENCES) : [];
     current = [...keep];
     currentIdx = [...keepIdx];
   };
@@ -165,7 +228,7 @@ export function chunkSection(
     if (current.length && embeddings && estimateTokens(current.join(" ")) >= MIN_TOKENS) {
       const prev = embeddings[currentIdx[currentIdx.length - 1]];
       const next = embeddings[i];
-      if (prev && next && cosine(prev, next) < BREAK_BELOW) flush();
+      if (prev && next && cosine(prev, next) < breakBelow) flush();
     }
 
     current.push(parts[i]);

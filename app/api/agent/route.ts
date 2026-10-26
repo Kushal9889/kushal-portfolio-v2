@@ -1,5 +1,8 @@
 import { ask } from "@/lib/agent/graph";
 import { checkBudget } from "@/lib/agent/budget";
+import { loadContent } from "@/lib/content";
+
+const PROFILE = loadContent().profile;
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -33,7 +36,7 @@ export async function POST(req: Request) {
   if (!budget.ok) {
     return Response.json(
       {
-        answer: `That is the daily limit for this demo. Reach him directly at kushal7887pd@gmail.com.`,
+        answer: `That is the daily limit for this demo. Reach ${PROFILE.email} directly.`,
         route: "deflect",
         timings: {},
         total: 0,
@@ -52,7 +55,7 @@ export async function POST(req: Request) {
     return Response.json(
       {
         answer:
-          "That request did not complete. The rest of this page does not depend on me, and he is reachable at kushal7887pd@gmail.com.",
+          `That request did not complete. The rest of this page does not depend on me; reach ${PROFILE.email} directly.`,
         route: "error",
         timings: {},
         total: 0,

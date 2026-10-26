@@ -86,7 +86,7 @@ export function offersFor(chunks: Chunk[], limit = 3): Offer[] {
   // Nothing openable, but the answer was about code. Show the code that is
   // running underneath the answer. Placed before the authored questions so a
   // code question ends in code rather than in more prose.
-  if (!offers.length && picked.some((s) => CODE.test(s.body))) {
+  if (!offers.length && profile.repo && picked.some((s) => CODE.test(s.body))) {
     offers.push({
       kind: "open",
       label: "Want to see the code for this page?",

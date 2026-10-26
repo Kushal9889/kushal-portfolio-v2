@@ -1,33 +1,35 @@
-/* Vertical rhythm is set by the shorter end of the clamp now. Seven sections at
-   96px of padding on each side spent more than a screen and a half on empty
-   space alone, and the section rules already separate them. */
+/* Was 40-64px, cut so seven sections would not spend a screen and a half on
+   empty space. Measured against the wrong thing: page length is not a cost a
+   reader pays, and a 1px rule with 40px either side draws a table, not a
+   boundary. 72-120px. The rule comes out when the ground change divides
+   sections instead. */
+/* Bottom exceeds top. Symmetric padding is mathematically right and optically
+   wrong: a heading reads as belonging to what follows it, so the gap that
+   closes a section has to beat the one that opens the next. */
 .section {
-  padding-block: clamp(2.5rem, 6vh, 4rem);
-  border-bottom: 1px solid var(--rule);
+  /* Was two vh clamps. The section frame is the page's largest single piece
+     of rhythm and it resolved to whatever the window was tall: 90/103.5 at a
+     900px viewport, 70/80.5 at 700, 136/156 at 1400. DESIGN.md recorded the
+     900px pair as if it were the rule. Both terms are scale steps now, and the
+     bottom stays the larger of the two because equal padding reads
+     bottom-heavy. */
+  padding-block: var(--s-9) calc(var(--s-9) + var(--s-3));
+  border-bottom: var(--border-hair) solid var(--rule);
 }
 
 .head {
-  margin-bottom: clamp(1.5rem, 4vh, 2.5rem);
+  margin-bottom: var(--s-7);
 }
 
-/* The section numeral, stacked above its heading at display size and held
-   light. It is the page's position marker: scanning the left edge gives a
-   reader depth without reading a word, and stacking keeps it working at every
-   width rather than only above a breakpoint. */
-.index {
-  display: block;
-  font-family: var(--font-mono), monospace;
-  font-size: clamp(1.75rem, 1.2rem + 2.2vw, 3rem);
-  font-weight: 300;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  color: var(--ink-faint);
-  margin-bottom: 0.2rem;
-}
+/* Interface face, not the reading face. Serif is reserved for prose, the one
+   thing here set to be read rather than scanned.
 
+   Positioned, so the copy-link mark can hang in the trailing margin without
+   entering the flow and moving the heading's wrap point. */
 .title {
-  font-family: var(--font-serif), Georgia, serif;
-  font-weight: 400;
+  position: relative;
+  font-weight: 600;
+  letter-spacing: -0.025em;
   /* Sized to the rail it sits in, not to the page.
    *
    * At --step-2 this rendered 41.6px inside a 176px column, and "LangChain" -- 
@@ -35,10 +37,77 @@
    * heading read "A bug in LangChair" with the last letter clipped off, which
    * is the same failure the role titles had before they were sized to their
    * own column. A long single word now breaks rather than escaping. */
-  font-size: clamp(1.45rem, 1.05rem + 1.4vw, 2.05rem);
-  line-height: 1.12;
+  /* One size for this role, from the scale, and no per-family override.
+   *
+   * There were five: 2.05rem here, 3.4rem under banner, 3rem under rule,
+   * 3.4rem under bank and 3.25rem under closing. Five clamps for one job, none
+   * of them a scale step, all of them landing between 33 and 54px against a
+   * headline at 64. Seven section headings within 18% of the page's own
+   * headline is seven headlines, which is why nothing on the page led. */
+  font-size: var(--step-2);
+  line-height: 1.15;
   overflow-wrap: break-word;
   hyphens: auto;
+}
+
+/*
+ * The two registers.
+ *
+ * Measured on the rendered page before this existed: h1 at 68px, six of seven
+ * h2 at 32px, and every one of the seven sections carrying identical 96/108
+ * padding. Seven equal chapters, and below 62rem where the layout families do
+ * not apply, a single column of seven identical blocks.
+ *
+ * The frame is where the density actually lives. DESIGN.md has claimed
+ * "bimodal, never uniform" since it was written and the stylesheet was uniform:
+ * one padding pair for every section on the page. These are 160/172 against
+ * 64/76, which is a ratio of two and a half and is visible without measuring.
+ *
+ * Both values are still sums of scale steps. No fluid clamp for spacing: it
+ * opts out of the scale at every viewport at once, and produced 36, 43.2, 45
+ * and 57.6px on one page the last time it was tried.
+ *
+ * Outside the desktop media query on purpose, so the phone gets the same
+ * oscillation. It is the width where the page had none at all.
+ */
+.section[data-register="chapter"] {
+  /*
+   * Trimmed from 160/172 to 96/108.
+   *
+   * The larger pair was set when the page had two grounds and a chapter had to
+   * announce a change of surface as well as a change of subject. There is one
+   * ground now, the macro heading is doing the announcing on its own, and what
+   * the old padding actually produced was a screen and a half of empty ground
+   * above a single word. Still roughly double the instrument register, so the
+   * density still oscillates; it just no longer oscillates into nothing.
+   */
+  padding-block: var(--s-9) calc(var(--s-9) + var(--s-3));
+}
+
+.section[data-register="instrument"] {
+  padding-block: var(--s-8) calc(var(--s-8) + var(--s-3));
+}
+
+/*
+ * The macro step, and the only place it is used.
+ *
+ * Tracking stops at -0.04em. Tighter is available and the industrial register
+ * asks for it, but past that the glyphs start touching at display size and the
+ * heading reads as damaged rather than as set.
+ *
+ * Leading goes under 1 because at this size the line gap is the loudest piece
+ * of spacing on the screen, and 1.15 leaves a two-line heading looking like two
+ * headings.
+ */
+.section[data-register="chapter"] .title {
+  font-size: var(--step-5);
+  font-weight: 700;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+}
+
+.section[data-register="chapter"] .head {
+  margin-bottom: var(--s-7);
 }
 
 .subhead {
@@ -47,72 +116,33 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink-soft);
-  margin-bottom: 0.75rem;
-}
-
-/* The rail copy of a role's identity. Hidden below 62rem, where .roleContent
-   carries its own copy instead -- see roleHeadMobile below and the comment
-   on .roleRail in the desktop media query. */
-.roleHead {
-  display: none;
-  margin-bottom: 1.25rem;
+  margin-bottom: var(--s-3);
 }
 
 .roleContent {
-  padding-block: clamp(1.5rem, 4vh, 2.5rem);
-  border-top: 1px solid var(--rule);
+  padding-block: 0;
 }
 
-.roleContent:first-of-type {
-  border-top: none;
-  padding-top: 0;
-}
-
-.roleHeadMobile {
-  margin-bottom: 1.25rem;
-}
-
-/* The job title leads. It is the line a recruiter is actually looking for, so
-   it is set at heading scale rather than as a caption under the employer.
- *
- * Set in the serif, and sized to the rail it actually occupies. At --step-2 in
- * the mono it rendered 41.6px inside a 240px column: "AI Engineer, Graduate
- * Researcher" broke across four lines and still overflowed its column by 43px,
- * because mono runs about 0.6em per character and a rail that width holds
- * fourteen of them. The serif carries roughly a third more characters per line
- * at the same size, which is the whole reason headings on this page are set in
- * it, and this one had been left behind in the body face. */
-.roleName {
-  font-family: var(--font-serif), Georgia, serif;
-  font-size: clamp(1.45rem, 1.15rem + 1vw, 2rem);
-  font-weight: 500;
-  line-height: 1.12;
-  letter-spacing: -0.015em;
-  text-wrap: balance;
-  /* A long title shortens rather than escaping its column. */
-  overflow-wrap: break-word;
-}
-
-.roleMeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.35rem 0.9rem;
-  margin: 0.3rem 0 0;
-}
-
+/* The employer line under the role title: the mono register, like a channel
+   tag on an instrument, so title and employer never compete. */
 .company {
-  font-size: var(--step-0);
-  color: var(--ink);
+  flex-basis: 100%;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
 }
 
 /* Technologies as a scannable row rather than a sentence. Set in mono so they
-   read as names of things, with a rule between rather than a comma. */
+   read as names of things, each in its own hairline chip so a wrapped row
+   keeps one pattern instead of a rule that only some entries carry. */
 .stack {
   list-style: none;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem 0.9rem;
+  gap: var(--s-2);
   margin: 0 0 1.5rem;
   padding: 0;
   font-family: var(--font-mono), monospace;
@@ -120,31 +150,62 @@
   color: var(--ink-soft);
 }
 
-.stack li + li {
-  border-left: 1px solid var(--rule);
-  padding-left: 0.9rem;
+.stack li {
+  /* The mark sits on the text baseline beside the name, not above it. `gap`
+     rather than a margin so an entry with no mark -- six of the brands named
+     here were withdrawn from simple-icons by their owners -- closes up instead
+     of carrying an empty slot. */
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 2px var(--s-2);
+  border: var(--border-hair) solid var(--rule);
+  transition: border-color var(--t-fast) var(--ease-out);
 }
+
+.stack li:hover {
+  border-color: var(--ink-faint);
+}
+
+.stack li svg {
+  /* Optical, not mathematical: a 24-grid logo centres slightly high against a
+     mono lowercase, and the marks read as floating without this. */
+  translate: 0 0.5px;
+  flex: none;
+  opacity: 0.85;
+}
+
 
 
 .split {
   display: grid;
-  gap: clamp(2rem, 5vh, 3rem);
-  margin-top: clamp(2rem, 5vh, 3rem);
-  padding-top: clamp(2rem, 5vh, 3rem);
-  border-top: 1px solid var(--rule);
+  gap: var(--s-7);
+  margin-top: var(--s-7);
+  padding-top: var(--s-7);
+  border-top: var(--border-hair) solid var(--rule);
 }
 
 
 .footer {
-  padding-block: clamp(2.5rem, 8vh, 4rem);
+  padding-block: var(--s-7);
   color: var(--ink-soft);
 }
 
+/* Prose, in the prose face. This rule used to re-declare the family as mono,
+   which took the whole colophon -- its lead, its claims and eight paragraphs
+   averaging 56 words -- out of the reading face and set it as data. Mono is
+   for code, identifiers and figures; this is none of the three. */
 .footerNote {
   font-size: var(--step--1);
-  font-family: var(--font-mono), monospace;
   max-width: var(--measure);
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--s-5);
+}
+
+/* Emphasis inside a footnote is weight and colour, not size. `inherit` reads
+   as the guaranteed-invalid value here, which sends var() to its fallback and
+   changes nothing; the block's own step is the value. */
+.footerNote {
+  --lead-step: var(--step--1);
 }
 
 @media (min-width: 62rem) {
@@ -177,7 +238,7 @@
   .grid {
     display: grid;
     grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr);
-    column-gap: clamp(1.5rem, 3vw, 3.5rem);
+    column-gap: var(--s-7);
     align-items: start;
   }
 
@@ -185,8 +246,9 @@
     grid-column: 2;
   }
 
-  /* Shared with .roleHead below, so both rails land on the same line when
-     stuck and a role's stacked offset is additive to one number, not two. */
+  /* Where a rack header comes to rest when it sticks. Shared with the section
+     head so both land on the same line rather than on two numbers that have to
+     be kept equal by hand. */
   .grid {
     --role-stack-base: clamp(1.5rem, 6vh, 3rem);
   }
@@ -201,59 +263,136 @@
   }
 
   /*
-   * Rail and content, as two columns of one grid -- not three self-contained
-   * role cards.
+   * The second layout family.
    *
-   * A sticky element can only stay stuck within its own containing block, and
-   * a per-role grid (the earlier version of this) gives each role's identity
-   * a containing block scoped to that one role's height. It stuck correctly
-   * while scrolling through its own role, then let go the moment the reader
-   * scrolled into the next one -- measured live: the identity block vanished
-   * partway down IMG Systems and left blank space in the rail where AI
-   * Engineer had been, because AI Engineer's own containing block had already
-   * ended.
+   * Seven sections shared one shape: sticky heading in a narrow left rail,
+   * everything else in the column beside it. It is a good shape and it was the
+   * only one, so the page had a single rhythm from the first section to the
+   * last and nothing marked which of them carried the argument.
    *
-   * Every role's identity is meant to stay visible once reached, piling up as
-   * the reader scrolls through Work, not swapping out for the next one. That
-   * needs one containing block shared by every role, tall enough to hold all
-   * three, and .roleRail below is what supplies it: with only two children in
-   * this grid (.roleRail, .roleContentCol), the row auto-sizes to the taller
-   * one, which is always .roleContentCol -- so the rail's own box stretches to
-   * match it (the grid default is align-items: stretch, left alone here on
-   * purpose) and its three .roleHead children, normal flow inside that tall
-   * box, can each stick anywhere within the whole thing.
+   * Banner spans the heading across both columns and lets the content run at
+   * full width underneath. It is given to the two sections whose job is not the
+   * same as the middle five: the one that opens the case, and the one that asks
+   * for the reply.
+   */
+  .section[data-layout="banner"] .grid > * {
+    grid-column: 1 / -1;
+  }
+
+  .section[data-layout="banner"] .head {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    position: static;
+    margin-bottom: var(--s-7);
+    max-width: none;
+  }
+
+  /* The heading is no longer competing with a rail for width, so it takes the
+     size the rail was denying it. */
+  /*
+   * The third family, and the fourth.
+   *
+   * Two shapes across seven sections meant the page had one rhythm from the
+   * first section to the last: a sticky heading in a narrow rail, content
+   * beside it, five times running. Nothing marked which section carried the
+   * argument, because every section looked like the one before it.
+   *
+   * These two are chosen to have different silhouettes rather than different
+   * measurements. A reader scrolling past at speed reads the shape, not the
+   * width: a rail is a heading floating beside a column, a banner is a heading
+   * over a column, a rule is a heading sitting on a line that crosses the page,
+   * and a bank is a wall of panels with the heading out of the way above it.
+   */
+
+  /* RULE. The heading sits on a line that runs the full width, with its key on
+     the far end of the same baseline. It is the section head as a printed rule
+     rather than as a floating label, and it is the one shape here that draws a
+     horizontal across the page, which is what makes it read as a chapter
+     opening rather than as another column heading. */
+  .section[data-layout="rule"] .grid > * {
+    grid-column: 1 / -1;
+  }
+
+  .section[data-layout="rule"] .head {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    position: static;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-6);
+    max-width: none;
+    padding-block-end: var(--s-4);
+    border-block-end: var(--border-emphasis) solid var(--ink);
+    margin-bottom: var(--s-7);
+  }
+
+  /* BANK. The heading clears out above and the instruments run two abreast.
+     Section 02 held four panels in one column and was 3,791px tall on its own,
+     which is four screens of scrolling for a section whose whole argument is
+     that the numbers sit beside each other and agree. Two columns is not a
+     saving in height, it is the argument: a bank of readouts is one object. */
+  .section[data-layout="bank"] .head {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    position: static;
+    max-width: none;
+    margin-bottom: var(--s-7);
+  }
+
+  .section[data-layout="bank"] .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--s-6);
+    align-items: start;
+  }
+
+  /* Auto-placed into the two columns rather than assigned, so the section can
+     gain or lose a panel without anything here changing.
+
+     The head is excluded rather than overridden: a child selector outranks the
+     class rule above it, so `.grid > *` was quietly putting the heading back
+     into column one after the head rule had spanned it. */
+  .section[data-layout="bank"] .grid > *:not(.head) {
+    grid-column: auto;
+  }
+
+  /*
+   * A block that spans says so.
+   *
+   * This was `:nth-child(2)`, which is a layout rule written as a fact about
+   * DOM order. The comment on it explained that `:first-of-type` had matched
+   * two elements because the children are a mix of div and section, and the
+   * conclusion drawn was to count positions instead. That trades one fragile
+   * selector for another: adding a block, reordering two, or wrapping one moves
+   * the span onto whatever lands in slot two, and nothing anywhere fails. The
+   * section renders, it is simply wrong.
+   *
+   * The element that spans carries the attribute. Order is free again.
+   */
+  .section[data-layout="bank"] .grid > [data-span="full"] {
+    grid-column: 1 / -1;
+  }
+
+  /*
+   * Three racks in one column.
+   *
+   * This was a two-column grid: a sticky identity rail on the left and the
+   * evidence on the right, kept in step by a shared containing block, a depth
+   * index and a revealed flag. Four earlier shapes are described in the history
+   * of this file and each failed a different way, all of them for the same
+   * underlying reason -- the title and the figures it labels were two elements
+   * that had to be positioned against each other.
+   *
+   * A rack has no such problem, because the title is part of the unit. Each
+   * role's own header strip sticks, so the identity of the role a reader is
+   * inside is on screen because it belongs to the thing they are reading, not
+   * because a second column is holding a copy of it in place.
    */
   .roles {
     display: grid;
-    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
-    column-gap: clamp(1.5rem, 2.5vw, 2.5rem);
+    gap: var(--s-6);
   }
 
-  .roleRail {
-    grid-column: 1;
-  }
-
-  .roleContentCol {
-    grid-column: 2;
-  }
-
-  .roleHead {
-    display: block;
-    position: sticky;
-    /*
-     * --role-stack-offset is a per-role cumulative height set by
-     * WorkStack.tsx: the first role gets 0, the second gets the first role's
-     * rendered height, and so on, so each role's line sits directly under
-     * the one before it rather than on top of it. The fallback of 0px covers
-     * the instant before that script has measured anything, which is also
-     * exactly right for the first role.
-     */
-    top: calc(var(--role-stack-base) + var(--role-stack-offset, 0px));
-  }
-
-  .roleHeadMobile {
-    display: none;
-  }
 
   .stack {
     margin-bottom: 0;
@@ -281,33 +420,56 @@
   background: var(--paper-sunk);
 }
 
-/* The closing section is set up a step. Peak-end: the last thing read carries
-   disproportionate weight in what a reader remembers. */
-.section[data-weight="closing"] .title {
-  font-size: clamp(2rem, 1.4rem + 2.6vw, 3.25rem);
+/* With the film lane open, the recessed ground stays on the panel only; a
+   full-bleed one would paint over the film beside it (D35). */
+@media (min-width: 56rem) {
+  :global(html[data-film="live"]) .section[data-tone="sunk"] {
+    background: transparent;
+  }
 }
+
+/* The closing section is set up a step. The last thing read carries
+   disproportionate weight in what a reader remembers. */
+/* The closing heading no longer needs its own size.
+ *
+ * This set --step-3 because contact was "the one heading allowed off the h2
+ * step", which was the only way to mark a section when all seven shared one
+ * size. The register does that properly now and this override only fought it:
+ * measured with both in place, contact rendered at 48px while the other two
+ * chapters were at 96, so the section the page is actually asking for was the
+ * smallest of the three. */
 
 .section[data-weight="closing"] .links {
   /* Steps up on a wide screen, holds at body size on a phone: the email address
      is a single unbreakable token and at step-2 it is wider than 375px. */
   font-size: clamp(var(--step-0), 0.7rem + 1.6vw, var(--step-2));
-  gap: 1.25rem 2rem;
+  gap: var(--s-5) var(--s-6);
 }
 
 /* The open-source section leads with the artifact rather than prose, so its
    heading sits tighter to the diff below it. */
 .section[data-lead="artifact"] .title {
-  margin-bottom: clamp(1rem, 2.5vh, 1.5rem);
+  margin-bottom: var(--s-5);
 }
 
 /* A project that runs but is not the argument.
    Separated from the credentials above it by a rule rather than a heading level,
    so it reads as an appendix to this section instead of competing with the work
    that earned its own. */
+/*
+ * The one thing in this section that is running rather than filed.
+ *
+ * It was a hairline and a heading, which is the same treatment as the education
+ * block below it, and it holds a live reachability probe: the only element in
+ * the section that can come back with a different answer than it had a minute
+ * ago. The ladder has a tier for that and this is what it is for.
+ */
 .alsoBuilt {
-  margin-top: clamp(1.5rem, 4vh, 2.5rem);
-  padding-top: clamp(1.25rem, 3vh, 2rem);
-  border-top: 1px solid var(--rule);
+  margin-top: var(--s-6);
+  /* No padding of its own: the shell is the same as every other panel (work
+     racks, measured), so the header strip meets the frame and the content sits
+     one inset in. A padded shell put the strip 24 px inside the frame and the
+     figures 49 px, three edges where the other panels have two. */
 }
 
 /* The section index, now a permalink. It has to stay quiet: a reader is not
@@ -319,13 +481,11 @@
 }
 
 /* Pre-2025 roles. Context rather than evidence, so they occupy less of the
-   reader's attention without losing anything a screener searches for.
-   Two selectors each below because the identity now renders twice -- once
-   into .roleHead for the desktop rail, once into .roleHeadMobile inside
-   .roleContent for narrow screens -- and data-past is set on both. */
-.roleHead[data-past] .roleName,
-.roleContent[data-past] .roleName {
-  font-size: var(--step-0);
+   reader's attention without losing anything a screener searches for. The
+   identity renders once now, in the rack's own header strip, so this is one
+   selector rather than the pair it needed when a rail held a second copy. */
+.roleContent[data-past] :global(.panel[data-kind="rack"]) {
+  --rack-weight: 500;
 }
 
 /* Opacity was the wrong instrument. Fading the whole article dimmed the
@@ -333,9 +493,7 @@
    quiet, and left two of his three jobs looking like disabled UI. De-emphasis
    is a typographic decision: the heading steps down a size, the body steps back
    one tone, and everything stays at full opacity so nothing reads as broken. */
-.roleContent[data-past] .roleBody,
-.roleHead[data-past] .roleMeta,
-.roleContent[data-past] .roleMeta {
+.roleContent[data-past] .roleBody {
   color: var(--ink-soft);
 }
 
@@ -347,4 +505,582 @@
    hero's wrap, which carries no grid class by design. */
 .roleBody {
   max-width: 62ch;
+}
+
+/* The four terms the roles are written in, moved here from the hero.
+
+   Not pills. A bordered capsule per capability is the shape a skills cloud
+   takes, and it says the same thing about four items that a row of four items
+   says, using four more borders to say it. A row with hairlines between the
+   cells reads as one object with four parts, which is what this is. Drawn by
+   the grid gap rather than by borders, so no cell has to know whether it is
+   first or last. */
+.focus {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--border-hair);
+  margin: 0 0 var(--s-6);
+  padding: 0;
+  background: var(--rule);
+  border-block: var(--border-hair) solid var(--rule);
+}
+
+.focus li {
+  background: var(--paper);
+  padding: var(--s-3) var(--s-4) var(--s-3) 0;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+
+/*
+ * The closing wordmark: the name, solid, in the claim white. The outline it replaced was a 2px
+ * stroke at 36 to 64 percent that vanished over the bright end of the film.
+ * Sized so the whole name fits inside the gutters at every width; the footer
+ * clips rather than scrolls, so a cut name would read as a bug.
+ */
+.wordmark {
+  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  margin: var(--s-8) 0 var(--s-4);
+  padding-inline: clamp(1.25rem, 5vw, 4rem);
+  font-size: clamp(1.5rem, 8.2vw, 13rem);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  text-wrap: nowrap;
+  color: var(--ink);
+  -webkit-text-fill-color: var(--ink);
+  -webkit-text-stroke: 0;
+  text-shadow: 0 2px 28px color-mix(in oklch, var(--paper) 85%, transparent);
+  user-select: none;
+}
+
+html[data-film="live"] .wordmark {
+  -webkit-text-stroke: 0;
+}
+
+/* The page ends on a graphite band, so the name reads over any frame. */
+.footer {
+  overflow-x: clip;
+  background: linear-gradient(to bottom, transparent, color-mix(in oklch, var(--paper) 92%, transparent) 28%);
+}
+
+/* One line in place of the session card: the published latency from the eval run. */
+.latency {
+  margin: 0;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: var(--track-caps);
+  color: var(--ink-faint);
+}
+
+/* Work racks sit on the film in the lane layout, so their fill lets it through
+   instead of a near-black slab. Below the lane breakpoint the section is solid
+   and the film is not visible behind it. */
+@media (min-width: 896px) {
+  .roleContent [data-kind="rack"] {
+    background: color-mix(in oklch, var(--paper) 52%, transparent);
+  }
+  /* The head sticks while the body scrolls under it, so it stays opaque: at
+     72% the paragraph below read straight through the role title. */
+  .roleContent [data-kind="rack"] > :first-child {
+    background: var(--paper-high);
+  }
+}
+
+
+/* A role is a pair: the figures that identify it, then the proof. Side by side
+   where there is room, stacked on a phone. */
+.rolePair {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.roleFigures,
+.roleProof {
+  min-width: 0;
+}
+
+@media (min-width: 62rem) {
+  .rolePair {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: var(--s-6);
+    align-items: start;
+  }
+
+  /* The figures stay beside the proof while it is read, below the sticky
+     role strip, instead of leaving an empty column under them. */
+  .rolePair .roleFigures {
+    position: sticky;
+    top: calc(var(--role-stack-base, 0px) + 6rem);
+  }
+
+  :global(html[data-film="live"]) .rolePair .roleFigures {
+    top: calc(var(--role-stack-base, 0px) + var(--s-6));
+  }
+}
+
+/* The figures recede as their role leaves instead of hanging on the screen
+   after the text has gone: they shrink back and fade over the first part of
+   the exit. The text and the paragraph stay with the reader. Scroll-driven, so
+   it follows the thumb or the wheel exactly; skipped without support and under
+   reduced motion, where they simply scroll away. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .roleFigures {
+      transform-origin: 50% 0;
+      animation: figures-recede linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 75%;
+    }
+  }
+}
+
+@keyframes figures-recede {
+  to {
+    opacity: 0;
+    transform: translateY(-1.25rem) scale(0.94);
+  }
+}
+
+/* On a phone each box leads with one figure; the rest of the readings stay
+   on the desktop, where there is time to read them. */
+@media (max-width: 767px) {
+  .roleFigures dl > *:nth-child(n + 2) {
+    display: none;
+  }
+}
+
+/* Phone, shown face to face: the same sections, packed. Section frames, the
+   macro heading and the gaps between role boxes shrink so a whole role reads
+   in one screen; nothing is cut that the desktop reader relies on. */
+@media (max-width: 767px) {
+  .section,
+  .section[data-register="chapter"],
+  .section[data-register="instrument"] {
+    padding-block: var(--s-6) var(--s-7);
+  }
+
+  .head,
+  .section[data-register="chapter"] .head {
+    margin-bottom: var(--s-4);
+  }
+
+  .section[data-register="chapter"] .title {
+    font-size: var(--step-3);
+  }
+
+  .roles {
+    gap: var(--s-4);
+  }
+
+  .rolePair {
+    gap: var(--s-2);
+  }
+}
+
+.panelStack {
+  display: grid;
+  gap: var(--s-4);
+}
+
+.panelStack > * {
+  margin-top: 0;
+}
+
+/* ---- Role racks: frame, tone, colour (2026-10-01) ------------------------
+ * One rack per role, told apart by colour rather than by fill: a 1px rule
+ * down the left edge (the craft floor allows a coloured side edge at 1px, no wider) in the product hue the role is built on (Azure, Django,
+ * Docker, AWS), the same hue its phrase figures take. The rest of the frame
+ * is a hairline; the ground is the film. */
+.roleContent [data-kind="rack"] {
+  border-left: 1px solid var(--role-tint);
+}
+
+.roleContent [data-kind="rack"] > :first-child {
+  border-bottom: var(--border-hair) solid color-mix(in oklab, var(--role-tint) 45%, transparent);
+}
+
+/* The status line reads in the role's hue too, so dates belong to the role. */
+.roleContent [data-kind="rack"] > :first-child [class*="status"] {
+  color: var(--role-tint);
+}
+
+/* Phone: the role's first paragraph shows three lines, then the fold opens
+   the rest, and opening it releases the clamp too. */
+@media (max-width: 767px) {
+  .roleLead {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+  }
+
+  .roleProof:has(details[open]) .roleLead {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: none;
+  }
+}
+
+/* Phone: a role's stack is its first five tools, marks first, on one or two
+   lines; the desktop reader gets the whole list. */
+@media (max-width: 767px) {
+  .roleProof .stack {
+    margin-bottom: var(--s-3);
+  }
+
+  .roleProof .stack li:nth-child(n + 6) {
+    display: none;
+  }
+}
+
+/* One chip, everywhere a tool is named: mono at label size, full ink, a
+   hairline frame that takes the box's hue when pointed at. */
+.stack,
+.stack li {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--1);
+  color: var(--ink);
+}
+
+.stack li {
+  border-color: color-mix(in oklab, var(--ink) 28%, transparent);
+}
+
+.stack li:hover {
+  border-color: var(--role-tint, var(--box-hue, var(--ink-soft)));
+}
+
+/* The education record: every figure shows, on a phone too (the role boxes
+   keep one). Compartments as everywhere on the console surface, two columns on
+   a phone and three from a tablet up; the last cell of a row that would end
+   short takes the remaining width, so no compartment is left empty. */
+.eduFigures dl {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.eduFigures dl > div:last-child:nth-child(odd) {
+  grid-column: span 2;
+}
+
+@media (min-width: 48rem) {
+  .eduFigures dl {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .eduFigures dl > div:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  .eduFigures dl > div:last-child:nth-child(3n + 1) {
+    grid-column: span 3;
+  }
+
+  .eduFigures dl > div:last-child:nth-child(3n + 2) {
+    grid-column: span 2;
+  }
+
+  /* Two readings fill the row on their own. */
+  .eduFigures dl:has(> :nth-child(2):last-child) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .eduFigures dl:has(> :nth-child(2):last-child) > div:last-child {
+    grid-column: auto;
+  }
+}
+
+/* ---- Beside the prose (2026-10-21) -----------------------------------------
+ * A reading column stops at its measure, which left the other half of five
+ * sections empty. That half now carries what the paragraph describes, drawn:
+ * the path of a fix, the figures of a paper, the dates of a degree, the page a
+ * reader will forward. Stacked below 62rem, the drawing after the words. */
+.beside {
+  display: grid;
+  gap: var(--s-6);
+  align-items: start;
+}
+
+@media (min-width: 62rem) {
+  .beside {
+    grid-template-columns: minmax(0, 1.4fr) minmax(15rem, 1fr);
+    column-gap: var(--s-7);
+  }
+}
+
+.figures {
+  display: grid;
+  gap: var(--s-6);
+  align-content: start;
+  padding: var(--s-4);
+  background: var(--graphite);
+  border: var(--border-hair) solid var(--rule);
+}
+
+.figures > .stack {
+  margin: 0;
+}
+
+/* The fix, as a path: report, the hours between, the merge. */
+.chain {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+
+.chainNode {
+  display: grid;
+  gap: 2px;
+  min-height: 44px;
+  padding: var(--s-3) var(--s-4);
+  background: var(--graphite);
+  border: var(--border-hair) solid var(--rule);
+  border-inline-start: 1px solid var(--tone, var(--ink));
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.chainKind {
+  font-size: var(--step--1);
+  font-weight: 600;
+}
+
+.chainLabel {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.chainState {
+  justify-self: start;
+  margin-block-start: var(--s-1);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: var(--track-caps);
+  text-transform: uppercase;
+  color: var(--tone, var(--ink));
+}
+
+.chainGap {
+  padding: var(--s-4) var(--s-4) var(--s-4) var(--s-6);
+  margin-inline-start: var(--s-4);
+  border-inline-start: var(--border-hair) dashed var(--tone, var(--ink));
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.chainHours {
+  font-family: var(--font-plate, inherit);
+  font-weight: 750;
+  font-size: var(--step-1);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .chainNode {
+    transition: border-color var(--t-fast) ease;
+  }
+  .chainNode:hover {
+    border-color: var(--tone, var(--ink));
+  }
+}
+
+/* Every section by its heading, from the end of the page. */
+.footIndex {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-4) var(--s-7);
+  padding-block: var(--s-5);
+  border-block-end: var(--border-hair) solid var(--rule);
+}
+
+.footIndex ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(12rem, 45%), 1fr));
+  gap: 0 var(--s-5);
+  flex: 1 1 36rem;
+}
+
+.footIndex a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink-soft);
+  font-size: var(--step--1);
+  text-decoration: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .footIndex a:hover {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+}
+
+.footIndex a:focus-visible {
+  color: var(--ink);
+}
+
+.top {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+
+.journeyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-block-start: var(--s-4);
+}
+.journeyActions a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  padding: var(--s-2) var(--s-3);
+  border: var(--border-hair) solid var(--rule);
+  color: var(--ink);
+  text-decoration: none;
+}
+.journeyActions a[data-primary] { background: var(--ink); color: var(--paper); }
+.journeyActions a:hover { text-decoration: underline; text-underline-offset: 0.2em; }
+@media (max-width: 47.99rem) {
+  .journeyActions { flex-direction: column; align-items: stretch; }
+}
+
+/* Older roles: the figures and the fold, nothing else on screen. Side by side
+   where there is room, so two-year-old work costs one row instead of two. */
+.roleContent[data-compact] .rolePair {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-3);
+}
+
+.roleContent[data-compact] .roleFigures {
+  position: static;
+}
+
+@media (min-width: 62rem) {
+  .roles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .roles > :not([data-compact]) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* The section's point, directly under its heading, in the reading size. */
+.claim {
+  margin: var(--s-3) 0 0;
+  max-width: 40rem;
+  font-size: var(--step-1);
+  line-height: 1.35;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+/* Arriving from a route or a link: the claim takes the section's tone for a
+   moment, so the reader sees where they landed. */
+@media (prefers-reduced-motion: no-preference) {
+  .section:target .claim {
+    animation: claim-arrive 600ms var(--ease-out, ease-out);
+  }
+}
+
+@keyframes claim-arrive {
+  from {
+    background: color-mix(in oklch, var(--tone, var(--ink)) 28%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+.footTools {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+/* The claim sits close under its heading, one idea with it. */
+.head:has(+ .claim) {
+  margin-bottom: var(--s-3);
+}
+
+.claim {
+  margin-top: 0;
+  margin-bottom: var(--s-5);
+  width: fit-content;
+}
+
+/* Over the moving film a claim gets the same graphite plate every card uses. */
+:global(html[data-film="live"]) .claim {
+  padding: var(--s-2) var(--s-4);
+  background: var(--graphite);
+}
+
+/* The bug's title is the argument, but not a whole screen of it: capped so the
+   result line and the start of the diff share the first view. */
+@media (min-width: 62rem) {
+  .section[data-lead="artifact"] .title {
+    font-size: clamp(2.75rem, 1.5rem + 3vw, 4.5rem);
+  }
+}
+
+/* The section index reads on a plate rather than straight off the footage. */
+:global(html[data-film="live"]) .footIndex {
+  background: var(--graphite);
+}
+
+/* Phone: the wordmark is decoration; a third of a screen is enough. */
+@media (max-width: 767px) {
+  .wordmark {
+    font-size: 9vw;
+    margin-top: var(--s-6);
+  }
+}
+
+.roleIndex {
+  list-style: none;
+  margin: 0 0 var(--s-5);
+  padding: 0;
+  display: grid;
+  gap: 1px;
+  background: var(--rule);
+  border: var(--border-hair) solid var(--rule);
+}
+
+.roleIndex a {
+  display: grid;
+  gap: 2px;
+  min-height: 44px;
+  padding: var(--s-2) var(--s-3);
+  background: var(--graphite, var(--paper));
+  color: var(--ink);
+  font-size: var(--step--1);
+  text-decoration: none;
+}
+
+.roleIndex span {
+  color: var(--ink-soft);
+}
+
+/* Phone: the section list is already one tap away in the Sections menu. */
+@media (max-width: 767px) {
+  .footIndex ol {
+    display: none;
+  }
 }

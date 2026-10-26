@@ -1,0 +1,638 @@
+.stage {
+  min-height: 100vh;
+}
+
+.flash {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 2px var(--voltage);
+}
+
+/* ---- Bar --------------------------------------------------------------- */
+
+.bar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 clamp(24px, 5vw, 88px);
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.bar > * {
+  pointer-events: auto;
+}
+
+/* The ground under the bar is the same everywhere, so the bar never changes
+   colour between chapters. It is solid, so a chapter scrolling under it never
+   prints through the wordmark, and clear over the hero, where the field
+   runs up to the top edge. Without a script it keeps the ground. The attribute
+   is `data-bar` and not `data-ground` on purpose: `data-ground` paints a
+   full-width surface, which on a fixed bar is the wrong object. */
+.bar {
+  background: color-mix(in oklch, var(--void) 100%, transparent);
+  transition: background-color 400ms var(--ease-glass);
+}
+
+.bar[data-clear] {
+  background: color-mix(in oklch, var(--void) 0%, transparent);
+}
+
+.bar[data-bar="voltage"] {
+  background: var(--voltage);
+}
+
+.bar[data-bar="voltage"],
+.ticks[data-bar="voltage"] {
+  --ink: oklch(0.14 0.002 90);
+  --hair: oklch(0.14 0.002 90 / 0.32);
+  --tick-ground: var(--voltage);
+}
+
+.wordmark {
+  font-family: var(--font-signature), var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 560;
+  font-stretch: 100%;
+  letter-spacing: 0;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.barNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.barButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--hair);
+  background: transparent;
+  color: var(--ink);
+  font: 500 0.875rem/1 var(--font-display);
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 150ms linear;
+}
+
+.barButton:hover {
+  border-color: var(--ink);
+}
+
+/* Holds its place in the bar while it has nothing to offer. */
+.barButton[data-away] {
+  visibility: hidden;
+}
+
+.wordmark:focus-visible,
+.barButton:focus-visible,
+.tick:focus-visible {
+  outline: 2px solid var(--voltage);
+  outline-offset: 3px;
+}
+
+/* ---- Chapter ticks ----------------------------------------------------- */
+
+/* The rail: the compiled agent graph on the right edge, with each chapter's
+   segment hanging under the node that reads it. Segment height is the
+   chapter's share of the page's words. */
+.ticks {
+  --tick-ground: var(--void);
+  position: fixed;
+  top: 96px;
+  bottom: 48px;
+  right: clamp(12px, 1.6vw, 28px);
+  z-index: 40;
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  align-items: stretch;
+  gap: 0 8px;
+  width: 64px;
+}
+
+.railGraph {
+  grid-row: 1;
+  width: 16px;
+  height: 100%;
+  overflow: visible;
+}
+
+.railGraph line {
+  stroke: var(--hair);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.railBranch {
+  stroke-dasharray: 2 2;
+}
+
+.railGraph rect {
+  fill: var(--hair-strong);
+  transition: fill 180ms linear;
+}
+
+.railGraph rect[data-on] {
+  fill: var(--ink);
+}
+
+.railGraph rect[data-current] {
+  fill: var(--signal);
+}
+
+.railBars {
+  grid-row: 1;
+  display: grid;
+  gap: 6px;
+  align-content: center;
+}
+
+.railStatus {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin: 8px 0 0;
+  font: 400 0.6875rem/1 var(--font-mono);
+  color: var(--ink-soft);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  white-space: nowrap;
+}
+
+.railStatus span {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.railStatus[data-full="yes"] {
+  color: var(--ink);
+}
+
+.tick {
+  position: relative;
+  display: block;
+  width: 32px;
+  /* Proportional to the chapter's words, floored so a short chapter is still a
+     target, capped so a long one does not own the rail. */
+  height: clamp(10px, calc(var(--weight, 200) * 0.13px), 92px);
+  color: var(--ink);
+}
+
+.tick::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 3px;
+  height: auto;
+  background: var(--hair);
+  opacity: 1;
+  transition:
+    width 200ms var(--ease-arrive),
+    opacity 150ms linear;
+}
+
+.tick:hover::before,
+.tick:focus-visible::before {
+  width: 5px;
+}
+
+.tick[data-read="true"]::before {
+  background: var(--ink-soft);
+}
+
+.tick[aria-current="true"]::before {
+  width: 5px;
+  background: var(--signal);
+}
+
+.ticks[data-bar="voltage"] .tick[aria-current="true"]::before {
+  background: currentColor;
+}
+
+.tickLabel i {
+  font: 400 0.6875rem/1 var(--font-mono);
+  font-style: normal;
+  color: var(--ink-soft);
+}
+
+.tickLabel {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  display: grid;
+  gap: 2px;
+  border: 1px solid var(--hair-strong);
+  border-radius: 2px;
+  z-index: 1;
+  padding: 6px 8px;
+  white-space: nowrap;
+  background: var(--tick-ground);
+  font: 500 0.8125rem/1 var(--font-display);
+  opacity: 0;
+  transform: translateY(-50%);
+  pointer-events: none;
+  transition: opacity 150ms linear;
+}
+
+.tick:hover .tickLabel,
+.tick:focus-visible .tickLabel {
+  opacity: 1;
+}
+
+/* The ticks step out of the way while the camera travels through the field,
+   and come back at either end of the dive. */
+.ticks {
+  transition: opacity 200ms linear;
+}
+
+:global(:root[data-diving="yes"]) .ticks {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---- Agent drawer ------------------------------------------------------ */
+
+.drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  width: min(620px, 46vw);
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-left: 1px solid var(--hair);
+  background: var(--void-raised);
+  color: var(--ink);
+  transform: translateX(100%);
+  transition:
+    transform 380ms var(--ease-glass),
+    overlay 380ms allow-discrete,
+    display 380ms allow-discrete;
+}
+
+.drawer[open] {
+  display: flex;
+  flex-direction: column;
+  transform: translateX(0);
+}
+
+@starting-style {
+  .drawer[open] {
+    transform: translateX(100%);
+  }
+}
+
+.drawer::backdrop {
+  background: oklch(0 0 0 / 0.5);
+}
+
+.drawerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.drawerTitle {
+  margin: 0;
+  font: 600 1rem/1.2 var(--font-display);
+}
+
+.drawerClose {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--hair-strong);
+  background: transparent;
+  color: var(--ink);
+  font: 500 0.875rem/1 var(--font-display);
+  cursor: pointer;
+}
+
+.drawerClose:focus-visible {
+  outline: 2px solid var(--voltage);
+  outline-offset: 2px;
+}
+
+.drawerBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 24px 32px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer {
+    transition: none;
+  }
+}
+
+/* ---- Reading meter and shortcut ---------------------------------------- */
+
+/* Width for the longest reading, so the controls beside it never move. */
+.meter {
+  min-width: 20ch;
+  text-align: right;
+  margin: 0 12px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+
+/* The space is held from first paint, so the bar does not shift when the meter
+   starts reading. It stays invisible when motion is off. */
+.meter:not([data-live]) {
+  visibility: hidden;
+}
+
+.kbd {
+  margin-left: 10px;
+  padding: 3px 6px;
+  border: 1px solid var(--hair);
+  font: 500 0.75rem/1 var(--font-mono);
+  color: var(--ink-soft);
+}
+
+/* ---- Footer ------------------------------------------------------------ */
+
+.footer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 32px;
+  padding: 28px clamp(24px, 5vw, 88px);
+  border-top: 1px solid var(--hair);
+  background: var(--void);
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+}
+
+.footer p {
+  margin: 0;
+}
+
+.footer a {
+  margin-right: 20px;
+  color: var(--ink);
+  text-underline-offset: 4px;
+}
+
+.footer a:focus-visible {
+  outline: 2px solid var(--voltage);
+  outline-offset: 3px;
+}
+
+/* ---- Field layers -------------------------------------------------------- */
+
+/* Chapters read above the field and its seam labels (canvas 0, labels 1, main 2). */
+.main {
+  position: relative;
+  z-index: 2;
+}
+
+/*
+ * Seam labels. Each names a corpus cluster at the point its particles sit, so
+ * the field between chapters says what it is. A 4px square marks the centroid;
+ * the name sets off to its right with the passage count beneath it.
+ */
+.seam {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.seamLabel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  gap: 2px;
+  margin: -6px 0 0;
+  padding-left: 14px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 400ms var(--ease-glass);
+  will-change: transform;
+}
+
+.seamLabel::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: -2px;
+  width: 4px;
+  height: 4px;
+  background: var(--ink);
+}
+
+.seamLabel span:first-child {
+  color: var(--ink);
+}
+
+.seamLabel span:last-child {
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.seamLabel[data-on="true"] {
+  opacity: 1;
+}
+
+.fieldOff {
+  margin: 0 12px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 767px) {
+  .seam,
+  .fieldOff {
+    display: none;
+  }
+}
+
+/* A frozen or lost field no longer follows the camera, so its names are withdrawn. */
+canvas[data-frozen="true"] ~ .seam,
+canvas[data-lost="true"] ~ .seam {
+  display: none;
+}
+
+/* Film grain: a blue-noise tile from scripts/build-grain.ts on a fixed layer.
+   One texel per device pixel on a 2x screen, so the grain stays fine. */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: url("/stage/grain.png") 0 0 / 256px repeat;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+@media (min-resolution: 2dppx) {
+  .grain {
+    background-size: 128px;
+  }
+}
+
+@media (forced-colors: active) {
+  .grain {
+    display: none;
+  }
+}
+
+/* The sound toggle: a 36px keycap in the bar's right cluster. Its state word is
+   shown at narrow widths, where the icon alone is not enough. */
+.soundToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--hair-strong);
+  border-bottom-width: 2px;
+  border-radius: 2px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.soundToggle span {
+  display: none;
+  font: 400 0.6875rem/1 var(--font-mono);
+}
+
+.soundToggle[aria-pressed="true"] {
+  transform: translateY(1px);
+  border-bottom-width: 1px;
+  background: var(--paper-high);
+}
+
+.soundToggle:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
+
+/* The rail is a graph on a wide screen and a progress line under the bar on a
+   narrow one, where 64px of right edge is a third of the reading column. */
+/*
+ * The bar on a phone. Measured at 375px: the right cluster ran to 791px, so the
+ * palette, the agent and the contact link were all off the screen and the sound
+ * toggle was cut in half. The palette goes first, because it opens a keyboard
+ * filter on a device with no keyboard; the rest keep their icons and drop their
+ * labels, which is what fits.
+ */
+@media (max-width: 767px) {
+  .bar {
+    gap: 8px;
+    padding-inline: 16px;
+  }
+
+  .barNav {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  /* The name gives way to the controls rather than running under them. */
+  .wordmark {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  /* The reading meter is dropped rather than squeezed: the rail's own progress
+     line under this bar already reports the same thing at this width. */
+  .meter {
+    display: none;
+  }
+
+  .barButton[data-bar-key="commands"],
+  .barButton .kbd {
+    display: none;
+  }
+
+  .barButton {
+    gap: 0;
+    padding: 0 10px;
+    font-size: 0;
+  }
+
+  .barButton svg {
+    font-size: 1rem;
+  }
+
+  .ticks {
+    top: 64px;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    display: block;
+    width: auto;
+    height: 2px;
+  }
+
+  .railGraph,
+  .railStatus,
+  .tickLabel {
+    display: none;
+  }
+
+  .railBars {
+    display: flex;
+    gap: 0;
+    height: 2px;
+  }
+
+  .tick {
+    flex: var(--weight, 200);
+    width: auto;
+    height: 2px;
+  }
+
+  .tick::before {
+    inset: 0;
+    width: auto;
+  }
+
+  .soundToggle {
+    width: auto;
+    padding: 0 10px;
+  }
+
+  .soundToggle span {
+    display: inline;
+  }
+}

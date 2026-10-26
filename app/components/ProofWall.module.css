@@ -1,0 +1,346 @@
+/* The evidence wall: round seals at four sizes and three depths, in one
+   composition. At rest this is the whole design; the rise below is an
+   enhancement for browsers with scroll-driven animation. */
+.stage {
+  list-style: none;
+  margin: var(--s-6) 0 0;
+  padding: var(--s-6) 0 var(--s-8, 5rem);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: var(--s-7, 3.5rem) var(--s-5);
+  perspective: 900px;
+  perspective-origin: 50% 100%;
+  /* Seals rise from below the stage and must not stretch the page while they wait. */
+  overflow: clip;
+}
+
+.item {
+  --d: 5.25rem;
+  display: grid;
+  justify-items: center;
+  transform: translateY(var(--lift, 0));
+}
+
+.item[data-size="lg"] {
+  --d: 6.75rem;
+}
+
+.item[data-size="xl"] {
+  --d: 9.5rem;
+}
+
+.item a {
+  display: grid;
+  justify-items: center;
+  gap: var(--s-2);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* Round by nature: a seal, like the callout stamp. The one place on the page
+   that is not square, because the brief for this wall was bubbles. */
+.disc {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--d);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  /* A light plate, like the official NVIDIA and Anthropic badges, so every
+     mark shows in its own colours; the section tone rims it. */
+  border: 2px solid color-mix(in oklab, var(--tone, var(--ink)) 70%, transparent);
+  background: var(--ink);
+  color: var(--on-signal);
+  box-shadow: 0 6px 18px oklch(0 0 0 / 0.35);
+  transition: transform var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out);
+}
+
+/* The gleam on the upper left: a thin arc, not a gradient. */
+.disc::before {
+  content: "";
+  position: absolute;
+  top: 11%;
+  left: 15%;
+  width: 34%;
+  height: 34%;
+  border: 2px solid transparent;
+  border-top-color: color-mix(in oklab, var(--on-signal) 12%, transparent);
+  border-radius: 50%;
+  rotate: -38deg;
+  pointer-events: none;
+}
+
+/* The ring that pops when the seal lands. Invisible at rest. */
+.disc::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--signal);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.item a:hover .disc,
+.item a:focus-visible .disc {
+  border-color: var(--tone, var(--ink-soft));
+  transform: translateY(-2px);
+}
+
+.item a:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 4px;
+  border-radius: 50%;
+}
+
+.logo {
+  width: calc(var(--d) * 0.5);
+  height: auto;
+}
+
+.mark {
+  display: inline-grid;
+  line-height: 0;
+  /* A glyph with no brand colour of its own stays dark on the light plate. */
+  color: var(--on-signal);
+}
+
+/* A ranking with no logo shows its figure: "Top 1%", "70+". */
+.seal {
+  font-family: var(--font-plate, inherit);
+  font-weight: 800;
+  font-size: calc(var(--d) * 0.24);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-align: center;
+  color: var(--on-signal);
+  padding: 0 var(--s-1);
+}
+
+.mark :global(img),
+.mark :global(svg) {
+  width: calc(var(--d) * 0.42);
+  height: calc(var(--d) * 0.42);
+}
+
+.text,
+.cap {
+  font-family: var(--font-mono), monospace;
+  font-size: var(--step--2);
+  text-align: center;
+  line-height: 1.25;
+}
+
+.text {
+  padding: 0 var(--s-2);
+  color: var(--on-signal);
+}
+
+/* The caption sits on its own plate, the seal's fill, so it reads over any
+   frame of the film without dimming the footage around the wall. */
+.cap {
+  max-width: calc(var(--d) + 1.5rem);
+  padding: 2px 6px;
+  background: color-mix(in oklab, var(--ink) 6%, var(--paper));
+}
+
+/* The medallion: no disc, the badge is its own outline. */
+.medal {
+  position: relative;
+  display: block;
+  width: var(--d);
+  aspect-ratio: 1;
+}
+
+.medalImg,
+.medalCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.medalImg {
+  /* The artwork is a wide plate with the badge in its middle: crop to the badge. */
+  object-fit: cover;
+}
+
+.medalImg[data-shape="hex"] {
+  clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+}
+
+.medalImg[data-3d] {
+  opacity: 0;
+}
+
+.medalCanvas {
+  display: block;
+}
+
+.medalCanvas[hidden] {
+  display: none;
+}
+
+.medal:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 4px;
+}
+
+/* The rise. Scroll-driven, so it follows the thumb or the wheel exactly; only
+   where the browser supports it and the reader allows motion. Each seal
+   finishes by half of its entry, so text is at full strength before the reading
+   zone. A spring on the easing makes it overshoot and settle. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .item {
+      animation: seal-rise linear(0.0, 0.117, 0.363, 0.623, 0.834, 0.977, 1.054, 1.082, 1.079, 1.061, 1.039, 1.019, 1.005, 0.997, 0.994, 0.993, 0.994, 0.996, 0.998, 0.999, 1.0, 1.0, 1) both;
+      animation-timeline: view();
+      animation-range: entry calc(var(--i) * 2%) entry calc(40% + var(--i) * 2%);
+    }
+
+    .disc::after {
+      animation: seal-pop linear both;
+      animation-timeline: view();
+      animation-range: entry calc(26% + var(--i) * 2%) entry calc(52% + var(--i) * 2%);
+    }
+  }
+}
+
+@keyframes seal-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 46vh, calc(var(--depth, 0px) * -1)) scale(0.45);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, var(--lift, 0), 0) scale(1);
+  }
+}
+
+@keyframes seal-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  35% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.65);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disc {
+    transition: none;
+  }
+}
+
+/* Phone: every seal on one screen, so the end of the page reads as one
+   picture of everything he can prove. Three equal columns (13
+   seals, 5 rows), each seal and its caption inside its own
+   cell: no stagger (a lifted seal landed on the caption above it at 390),
+   sizes still carry the rank. A third of 390 holds the longest caption
+   word, DEEPAGENTS, on one line at the 12px floor. */
+@media (max-width: 767px) {
+  .stage {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-items: center;
+    gap: var(--s-4) var(--s-2);
+    padding-block: var(--s-4) var(--s-6);
+  }
+
+  .item {
+    --d: 4.25rem;
+    --lift: 0rem !important;
+  }
+
+  /* 13 seals leave one alone on the last row: it takes the middle column. */
+  .item:last-child:nth-child(3n + 1) {
+    grid-column: 2;
+  }
+
+  .item[data-size="lg"] {
+    --d: 5rem;
+  }
+
+  .item[data-size="xl"] {
+    --d: 5.5rem;
+  }
+
+  .cap {
+    max-width: 100%;
+    font-size: 0.75rem;
+  }
+
+  .text {
+    padding-inline: 2px;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+  }
+}
+
+/* The count of each kind, read before the seals. */
+.legend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin: var(--s-7) 0 var(--s-3);
+  padding: 0;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4em;
+  padding: var(--s-1) var(--s-3);
+  background: var(--graphite);
+  border: var(--border-hair) solid var(--rule);
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.legend b {
+  font-family: var(--font-plate, inherit);
+  font-size: var(--step-0);
+  font-weight: 800;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+/* Desktop: one level row, so the record reads as one set rather than a cloud. */
+@media (min-width: 768px) {
+  .stage {
+    gap: var(--s-5);
+    padding-bottom: var(--s-6);
+  }
+
+  .item {
+    --lift: 0 !important;
+  }
+}
+
+/* Phone: one row the thumb swipes through, so the close is not a screen away. */
+@media (max-width: 767px) {
+  .stage {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: clip;
+    scroll-snap-type: x mandatory;
+    gap: var(--s-4);
+    padding: var(--s-4) 0 var(--s-5);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .item {
+    --lift: 0 !important;
+    flex: none;
+    scroll-snap-align: start;
+  }
+}
