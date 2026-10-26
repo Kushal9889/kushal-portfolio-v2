@@ -1,6 +1,9 @@
 import { ask } from "@/lib/agent/graph";
 import { listPrice, modelOf } from "@/lib/agent/model";
 import type { RetrievalTrace } from "@/lib/agent/retrieve";
+import prewarm from "@/lib/agent/prewarm.json";
+import { loadContent } from "@/lib/content";
+import { noteDegraded } from "@/lib/agent/degraded";
 import { LOAD_QUESTION, LOAD_CACHE_MS } from "@/lib/journeys";
 
 export const runtime = "nodejs";
@@ -59,9 +62,58 @@ type Demo = {
   listPrice: number | null;
   /** When this run finished, epoch ms. A cache hit returns the same value, so the age a reader is shown is the age of the run. */
   ranAt: number;
+  /** Set when no model answered: the answer is the authored brief, not a run. */
+  degraded?: true;
+  note?: string;
 };
 
 let cached: { at: number; demo: Demo } | null = null;
+
+/**
+ * What a visitor gets when no model answered.
+ *
+ * A degraded run used to be cached for the full window like any other, so one
+ * provider blip at the wrong second served the top retrieved paragraph, word for
+ * word, to every visitor for a minute. The authored brief is the honest stand-in:
+ * it is what he wrote, it is labeled as such, and it is never cached.
+ */
+function resting(): Response {
+  noteDegraded();
+  // One countable line per fallback, so degraded answers per day is a grep -c.
+  console.log(JSON.stringify({ level: "warn", degraded: true, route: "demo", at: new Date().toISOString() }));
+  const demo: Demo = {
+    question: QUESTION,
+    answer: loadContent().profile.brief ?? "",
+    sources: [],
+    timings: {},
+    total: 0,
+    usage: null,
+    provider: null,
+    trace: null,
+    listPrice: null,
+    ranAt: Date.now(),
+    degraded: true,
+    note: "Models resting, showing the summary",
+  };
+  return Response.json(demo, { headers: { "cache-control": "no-store" } });
+}
+
+/**
+ * The build-time run, when the bake has one for this question. Serving it means a
+ * cold start or an expired cache costs no model call, and `ranAt` is the bake's
+ * own time, so the age a reader is shown is the true age of the run.
+ */
+type Warm = Omit<Demo, "question" | "listPrice"> & { route?: string };
+function baked(): Demo | null {
+  const w = (prewarm as unknown as Record<string, Warm>)[QUESTION.toLowerCase().trim()];
+  if (!w?.provider || !w.ranAt) return null;
+  const model = modelOf(w.provider);
+  return {
+    ...w,
+    question: QUESTION,
+    listPrice: w.usage && model ? listPrice(model, w.usage) : null,
+  };
+}
 
 export async function GET() {
   if (cached && Date.now() - cached.at < TTL_MS) {
@@ -70,8 +122,16 @@ export async function GET() {
     });
   }
 
+  const warm = baked();
+  if (warm) {
+    cached = { at: Date.now(), demo: warm };
+    return Response.json(warm, { headers: { "cache-control": "public, max-age=30" } });
+  }
+
   try {
-    const { answer, sources, timings, total, usage, provider, trace } = await ask(QUESTION);
+    const { answer, sources, timings, total, usage, provider, trace, route } = await ask(QUESTION);
+    // No provider means the graph fell back to a retrieved paragraph: never cache it.
+    if (!provider || route !== "answer") return resting();
     const demo: Demo = {
       question: QUESTION,
       answer: (answer ?? "").toString(),
@@ -91,7 +151,6 @@ export async function GET() {
     cached = { at: Date.now(), demo };
     return Response.json(demo, { headers: { "cache-control": "public, max-age=30" } });
   } catch {
-    // The hero handles this by showing the graph structure with no numbers.
-    return new Response(null, { status: 503 });
+    return resting();
   }
 }

@@ -1,3 +1,4 @@
+import { GROUNDEDNESS_TARGET } from "../lib/agent/ground";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -329,7 +330,7 @@ async function main() {
     } else {
       const bars: [string, number | null, number][] = [
         ["precision@5", s.precision5, 0.8], ["recall@5", s.recall5, 0.85], ["nDCG@5", s.ndcg5, 0.85],
-        ["abstain", s.abstainAccuracy, 0.9], ["injection", s.injectionBlock, 1], ["completeness", s.completeness, 1], ["groundedness", s.groundedness, 0.95],
+        ["abstain", s.abstainAccuracy, 0.9], ["injection", s.injectionBlock, 1], ["completeness", s.completeness, 1], ["groundedness", s.groundedness, GROUNDEDNESS_TARGET],
         ["aggregation recall@5", s.aggregationRecall, 0.9],
       ];
       const prev = readdirSync(dir).filter((f) => f.endsWith(".json") && !f.includes("-fault-") && join(dir, f) !== out).sort().at(-1);

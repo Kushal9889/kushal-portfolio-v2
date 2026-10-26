@@ -21,6 +21,9 @@
 export type Grounding = { claims: number; found: number; g: number; unsupported: string[] };
 
 /** Capitalised words that start sentences and name nothing. */
+/** The release gate's floor for groundedness (scripts/agent-scenarios.ts), served by /api/health so the page shows the target beside the score. */
+export const GROUNDEDNESS_TARGET = 0.95;
+
 const COMMON = new Set([
   "he", "his", "him", "i", "it", "its", "the", "a", "an", "this", "that", "these", "those", "there",
   "they", "their", "she", "her", "we", "you", "your", "in", "on", "at", "for", "from", "with", "by",

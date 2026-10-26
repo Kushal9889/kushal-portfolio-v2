@@ -162,3 +162,8 @@ button.side[aria-pressed="true"] {
     display: none;
   }
 }
+
+/* Phone, typing: the dock slides away while a field has focus, so it never stacks on the composer (F29). */
+@media (max-width: 767px) {
+  :global(body:has(textarea:focus, input:focus)) .dock { transform: translateY(100%); }
+}

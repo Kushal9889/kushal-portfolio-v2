@@ -61,10 +61,15 @@
   margin-block-start: 6px;
   background: oklch(0.28 0.012 258);
   border: var(--border-hair) solid oklch(1 0 0 / 0.18);
+  --eye: var(--ink-soft);
+}
+
+/* The eyes name the provider state: ready or cooling off (audit 13.1). */
+.bot[data-state="ready"] {
   --eye: var(--live);
 }
 
-.bot[data-state="resting"] {
+.bot[data-state="cooling"] {
   --eye: var(--warn);
 }
 
@@ -178,10 +183,14 @@
   width: 8px;
   height: 8px;
   border-radius: var(--r-pill);
+  background: var(--ink-soft);
+}
+
+.board li[data-state="ready"] .pip {
   background: var(--live);
 }
 
-.board li[data-state="resting"] .pip {
+.board li[data-state="cooling"] .pip {
   background: var(--warn);
 }
 
@@ -337,4 +346,9 @@
 .facts dd {
   margin: 0;
   text-align: end;
+}
+
+/* Phone, typing: the keyboard leaves little room, so the chip steps aside until the field is left (F29). */
+@media (max-width: 767px) {
+  :global(body:has(textarea:focus, input:focus)) .dotBar { display: none; }
 }

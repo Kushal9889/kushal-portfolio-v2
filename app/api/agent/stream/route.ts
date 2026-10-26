@@ -1,5 +1,6 @@
 import { runStream, type Exchange } from "@/lib/agent/stream";
 import { checkBudget } from "@/lib/agent/budget";
+import { noteDegraded } from "@/lib/agent/degraded";
 
 import { loadContent } from "@/lib/content";
 
@@ -52,7 +53,7 @@ export async function GET(req: Request) {
     return Response.json({ error: "ask something" }, { status: 400 });
   }
 
-  const budget = checkBudget(ip, question);
+  const budget = await checkBudget(ip, question);
 
   const encoder = new TextEncoder();
   const body = new ReadableStream({
@@ -80,6 +81,8 @@ export async function GET(req: Request) {
         // header, so a reader's report maps to the run that produced it.
         const log: Record<string, unknown> = { level: "info", requestId, at: new Date().toISOString() };
         const failed: string[] = [];
+        // What is left of today's ceiling, so the card can warn before the wall.
+        send({ type: "budget", remaining: budget.remaining, limit: budget.limit });
         for await (const event of runStream(question, history)) {
           send(event);
           if (event.type === "route") log.route = event.route;
@@ -87,6 +90,7 @@ export async function GET(req: Request) {
           else if (event.type === "step" && event.state === "failed") failed.push(event.name);
           else if (event.type === "done") Object.assign(log, { provider: event.provider, total: event.total, degraded: !!event.degraded, prompt: event.promptVersion });
         }
+        if (log.degraded) noteDegraded();
         if (failed.length || log.degraded) Object.assign(log, { level: "warn", failed });
         console.log(JSON.stringify(log));
       } catch (err) {

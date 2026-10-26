@@ -55,6 +55,13 @@
  *   --signal      6.9:1   interactive targets
  */
 :root {
+  /* Mask stops: only alpha counts in a mask, so this is "fully shown", not a colour on screen. */
+  --mask-solid: #000;
+  /* The island capsule: a near-black pill with near-white type on every scene, footage or not. */
+  --island-ink: oklch(0.97 0 0);
+  --island-ground: oklch(0.1 0.004 250);
+  --island-edge: oklch(1 0 0 / 0.1);
+  --island-rule: oklch(1 0 0 / 0.3);
   /* Apple's type: San Francisco through the system stack, so a Mac, an iPhone
      and an iPad render the real face and nothing is self-hosted (SF Pro's
      licence does not cover the web). Elsewhere it falls to Helvetica Neue,

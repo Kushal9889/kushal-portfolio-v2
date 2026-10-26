@@ -391,7 +391,7 @@ export default function Page() {
         name={profile.name}
         tagline={profile.tagline}
         location={profile.location}
-        current={`${backend.roleParts.title}, ${backend.title.replace(/, backend$/, "")}.${start ? ` Full-time from ${start.label}.` : ""}`}
+        current={`${backend.roleParts.title}, ${backend.title.replace(/, backend$/, "")}.${start ? ` Full-time from ${start.label}.` : ""}${profile.sponsorship ? ` ${profile.sponsorship}.` : ""}`}
         evidence={evidence}
         email={profile.email}
         site={profile.site.replace("https://", "")}

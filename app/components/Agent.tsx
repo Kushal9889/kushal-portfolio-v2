@@ -7,7 +7,8 @@ import type { ToolResult } from "@/lib/agent/tools";
 import { answerScore, SENTENCE, type Grounding, type Citation } from "@/lib/agent/ground";
 import tested from "@/lib/agent/test-score.json";
 import { listen, speak, silence, speechSupported, synthesisSupported, warmNeural } from "@/lib/voice/speech";
-import { track, trackOnce } from "@/lib/analytics";
+import { hashOf, track, trackOnce } from "@/lib/analytics";
+import { relativeTime } from "@/lib/numbers";
 import { mailtoLink } from "@/lib/reach";
 import { redact as scrubPii } from "@/lib/redact";
 import Glyph from "./stage/Glyph";
@@ -44,6 +45,8 @@ type Result = {
   failover?: { name: string; coolingOffFor: number }[];
   /** Served from the build-time cache rather than generated. */
   warm?: boolean;
+  /** When that cache was baked, epoch ms, from the server. */
+  ranAt?: number;
   /** No provider was reachable; the retrieved source was served unsummarised. */
   degraded?: boolean;
   /** The system prompt, context elided. */
@@ -109,6 +112,20 @@ function remember(key: string, r: Result) {
     sessionStorage.setItem(STORE_KEY, JSON.stringify(Object.fromEntries([...ANSWERS].slice(-20))));
   } catch {
     // Storage blocked or full; the in-memory copy still serves this visit.
+  }
+}
+
+/**
+ * The thread itself, in order, so a reload does not throw the conversation
+ * away. Finished turns only, newest ten; a shared link starts its own thread.
+ */
+const THREAD_KEY = "agent:thread:v1";
+function savedThread(): Turn[] {
+  try {
+    const t = JSON.parse(sessionStorage.getItem(THREAD_KEY) ?? "[]") as Turn[];
+    return Array.isArray(t) ? t.filter((x) => x.result && !x.result.failed) : [];
+  } catch {
+    return [];
   }
 }
 
@@ -229,6 +246,15 @@ export default function Agent({
 }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [pending, setPending] = useState(false);
+  // Written after each finished turn, read back once on mount (F16).
+  useEffect(() => {
+    if (pending || !turns.length) return;
+    try {
+      sessionStorage.setItem(THREAD_KEY, JSON.stringify(turns.filter((x) => x.result && !x.result.failed).slice(-10)));
+    } catch {
+      // Storage blocked; the thread lasts this visit only.
+    }
+  }, [turns, pending]);
   const [tab, setTab] = useState<Tab>("answer");
   /** The conversation's window: the card lifted into the top layer, the page
    *  still visible around it. Phones keep the card as the screen instead. */
@@ -373,6 +399,15 @@ export default function Agent({
   useEffect(() => {
     setCanVoice(speechSupported() && synthesisSupported());
     trackOnce("view");
+    // Read 80%: the funnel step between landing and acting.
+    const onScroll = () => {
+      const seen = (scrollY + innerHeight) / document.documentElement.scrollHeight;
+      if (seen < 0.8) return;
+      trackOnce("scroll_deep");
+      removeEventListener("scroll", onScroll);
+    };
+    addEventListener("scroll", onScroll, { passive: true });
+    return () => removeEventListener("scroll", onScroll);
   }, []);
 
   /* "/" puts the caret in the field from anywhere on the page, unless the
@@ -492,6 +527,10 @@ export default function Agent({
    */
   useEffect(() => {
     const shared = new URLSearchParams(window.location.search).get("q");
+    if (!shared) {
+      const kept = savedThread();
+      if (kept.length) setTurns(kept);
+    }
     if (shared) {
       // Flagged so the wait can say what is happening. A visitor who followed a
       // link someone sent them arrives mid-conversation with no idea the page is
@@ -640,7 +679,8 @@ export default function Agent({
     pendingOpen.current = null;
 
     trackOnce("agent_opened");
-    track("agent_asked", question);
+    // Length only: the question itself never leaves for the log.
+    track("agent_asked", `len=${question.length}`);
     if (!win) revealAgent();
 
     const replace = (opts.replace || editing) && turns.length > 0;
@@ -820,6 +860,7 @@ export default function Agent({
           listPrice: data.listPrice,
           failover: data.failover,
           warm: data.warm,
+          ranAt: data.ranAt,
           degraded: data.degraded,
           policy: data.policy,
           grounding: data.grounding,
@@ -908,6 +949,7 @@ export default function Agent({
   async function copy(kind: string, text: string, what: string) {
     try {
       await navigator.clipboard.writeText(text);
+      track("ui", `copy-${what}`);
       setFlash(kind);
       setTimeout(() => setFlash((f) => (f === kind ? null : f)), 2400);
       track("contact", what);
@@ -948,7 +990,8 @@ export default function Agent({
 
   function vote(turn: Turn, v: "up" | "down", reason?: string) {
     setVotes((m) => ({ ...m, [turn.question]: { v, reason } }));
-    if (v === "up" || reason) track("agent_feedback", `${v}${reason ? `:${reason}` : ""}`);
+    const why = reason ? `:${reason.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : "";
+    track("agent_feedback", `${v}${why}|p=${turn.result?.promptVersion ?? "na"}|r=${turn.result?.degraded ? "degraded" : turn.result?.warm ? "cached" : "answer"}|q=${hashOf(turn.question)}`);
   }
 
   /** Lifts the card into its window or sets it back in the hero. Returns
@@ -987,6 +1030,7 @@ export default function Agent({
 
   /** Opens a detail view: a tab, the window's side panel, or a bottom sheet for Trace on a phone. */
   function open(next: Tab, target?: string) {
+    track("ui", `open-${next}${target ? `-${target.replace(/^agent-/, "")}` : ""}`);
     if (next === "trace" && phone) {
       sheetRef.current?.showModal();
     } else if (split && next !== "answer") {
@@ -1064,6 +1108,7 @@ export default function Agent({
 
   /* The island: one capsule that names where the run is, then how it went. */
   const ms = (n?: number) => (n === undefined ? "" : n < 1000 ? `${n} ms` : `${(n / 1000).toFixed(1)} s`);
+  const ago = (at: number) => relativeTime(new Date(at));
   const phase = pending
     ? stage === "answering" && run.firstToken !== undefined
       ? "writing"
@@ -1079,26 +1124,28 @@ export default function Agent({
           : "idle";
   const island =
     phase === "idle"
-      ? "Ready. Ask about his work"
+      ? "Ask about his work"
       : phase === "routing"
         ? fromLink && turns.length === 1
-          ? "Re-asking the shared question live"
+          ? "Asking shared question"
           : "Routing the question"
         : phase === "retrieving"
           ? "Searching his record"
           : phase === "answering"
-            ? `Writing · searched ${run.store === "neon" ? "Neon pgvector" : "the index"} in ${ms(run.retrieveMs)}`
+            ? `Searched in ${ms(run.retrieveMs)}`
             : phase === "writing"
-              ? `Writing · first word in ${ms(run.firstToken)}`
+              ? `First word in ${ms(run.firstToken)}`
               : phase === "stopped"
                 ? "Stopped"
                 : phase === "failed"
                   ? "Connection dropped"
                   : latest?.local
-                    ? "Instant · answered earlier in this tab"
+                    ? "Instant · from this tab"
                     : phase === "degraded"
-                        ? `Answered from his record in ${ms(latest?.total)}`
-                        : `Done in ${ms(latest?.total)}${latest?.firstToken !== undefined ? ` · first word ${ms(latest.firstToken)}` : ""}${latest?.model ? ` · ${latest.model.split("/").pop()}` : latest?.provider ? ` · ${latest.provider}` : ""}`;
+                        ? "Answered, no model"
+                        : latest?.warm
+                          ? `Cached run · ${ms(latest.total)}${latest.ranAt ? ` · ${ago(latest.ranAt)}` : ""}`
+                          : `Done in ${ms(latest?.total)}`;
 
   /** Takes the reader to an earlier turn: its question in the window, its folded line opened inline. */
   function goTurn(j: number) {
@@ -1137,7 +1184,7 @@ export default function Agent({
         data-live={streaming || undefined}
       >
         {streaming ? (
-          <Paced text={r.answer} live marks={r.grounding?.unsupported} markClass={styles.unsupported} />
+          <Paced text={r.answer} live marks={r.grounding?.unsupported} markClass={styles.unsourced} />
         ) : (
           <Formatted
             text={r.answer}
@@ -1159,7 +1206,7 @@ export default function Agent({
         const st = run.steps.find((x) => x.name === name);
         const running = !st && PIPELINE.find(([n]) => !run.steps.some((x) => x.name === n))?.[0] === name;
         return (
-          <li key={name} data-state={st ? st.state : running ? "running" : "waiting"}>
+          <li key={name} data-state={st ? (st.state === "done" ? "pass" : st.state) : running ? "running" : "waiting"}>
             <span className={styles.pipeMark} aria-hidden="true" />
             <span>{label}</span>
             <span className="tabular">{st ? ms(st.ms) : running ? "…" : ""}</span>
@@ -1191,7 +1238,7 @@ export default function Agent({
             <dl className={styles.stats} data-fit="narrow">
               <div><dt>Source match</dt><dd className="tabular">{parts.match}/40</dd></div>
               <div><dt>Facts found</dt><dd className="tabular">{parts.facts}/40</dd></div>
-              <div><dt>Sentences sourced</dt><dd className="tabular">{parts.sourced}/20</dd></div>
+              <div><dt>Sentences with a source</dt><dd className="tabular">{parts.sourced}/20</dd></div>
             </dl>
             <p className={styles.dim}>{why ? why.detail : band === "answer" ? "Strong match, and every figure was found in his record." : "The closest match in his record is shown."}</p>
           </section>
@@ -1210,8 +1257,7 @@ export default function Agent({
             <dl className={styles.stats}>
               <div><dt>Searched</dt><dd className="tabular">{t.passages ?? t.rows.length} passages</dd></div>
               <div><dt>Kept</dt><dd className="tabular">{r.sources.length} sections</dd></div>
-              <div><dt>Legs</dt><dd>{t.denseUsed ? "BM25 + dense" : "BM25"}</dd></div>
-              {t.confidence && <div><dt>Evidence</dt><dd className="tabular">tier {t.confidence.tier} of 3</dd></div>}
+              <div><dt>Matched by</dt><dd>{t.denseUsed ? "words and meaning" : "words"}</dd></div>
             </dl>
           )}
           {rejected.length > 0 && <p className={styles.dim}>Also ranked: {rejected.map((x) => x.title).join(", ")}</p>}
@@ -1249,6 +1295,12 @@ export default function Agent({
             {r.promptVersion && <span className={styles.badge}>prompt {r.promptVersion}</span>}
           </header>
           <dl className={styles.stats} data-cols="1">
+            {!r.provider && (
+              <div>
+                <dt>Served by</dt>
+                <dd>Answered from his record, no model</dd>
+              </div>
+            )}
             {r.provider && (
               <div>
                 <dt>Served by</dt>
@@ -1301,7 +1353,7 @@ export default function Agent({
             </header>
             <ul className={styles.coverage}>
               {r.coverage!.map((c, n) => (
-                <li key={n} data-status={c.status}>
+                <li key={n} data-state={c.status === "covered" ? "pass" : c.status}>
                   <b>{c.status}</b>
                   <span>{c.req}</span>
                   <span className={styles.dim}>{c.section ?? "not in profile"}</span>
@@ -1420,7 +1472,7 @@ export default function Agent({
           ))}
         </ul>
         <div className={styles.actions}>
-          <button className={styles.ghost} data-done={flash === `sources:${i}` || undefined} onClick={() => copy(`sources:${i}`, withSources(turn), "copy-sources")}>
+          <button className={styles.ghost} data-ok={flash === `sources:${i}` || undefined} onClick={() => copy(`sources:${i}`, withSources(turn), "copy-sources")}>
             <Glyph name={flash === `sources:${i}` ? "CheckCircle:regular" : "ListChecks:regular"} size={18} />
             {flash === `sources:${i}` ? "Copied with sources" : "Copy with sources"}
           </button>
@@ -1438,15 +1490,15 @@ export default function Agent({
     return (
       <>
         <div className={styles.actions} role="group" aria-label="Answer actions">
-          <button className={styles.ghost} data-done={flash === k("answer") || undefined} onClick={() => copy(k("answer"), `${turn.question}\n\n${r.answer}`, "copy-answer")}>
+          <button className={styles.ghost} data-ok={flash === k("answer") || undefined} onClick={() => copy(k("answer"), `${turn.question}\n\n${r.answer}`, "copy-answer")}>
             <Glyph name={flash === k("answer") ? "CheckCircle:regular" : "Copy:regular"} size={18} />
             {flash === k("answer") ? "Copied" : "Copy"}
           </button>
-          <button className={styles.ghost} data-done={flash === k("sources") || undefined} onClick={() => copy(k("sources"), withSources(turn), "copy-sources")}>
+          <button className={styles.ghost} data-ok={flash === k("sources") || undefined} onClick={() => copy(k("sources"), withSources(turn), "copy-sources")}>
             <Glyph name={flash === k("sources") ? "CheckCircle:regular" : "ListChecks:regular"} size={18} />
             {flash === k("sources") ? "Copied" : "With sources"}
           </button>
-          <button className={styles.ghost} data-done={flash === k("link") || undefined} onClick={() => copy(k("link"), shareUrl(turn), "share")}>
+          <button className={styles.ghost} data-ok={flash === k("link") || undefined} onClick={() => copy(k("link"), shareUrl(turn), "share")}>
             <Glyph name={flash === k("link") ? "CheckCircle:regular" : "LinkSimple:regular"} size={18} />
             {flash === k("link") ? "Link copied" : "Share"}
           </button>
@@ -1515,6 +1567,24 @@ export default function Agent({
           </div>
         ) : (
           <>
+            {/* match_job leads: the rows a pasted job description asked for, then the prose. */}
+            {r?.action?.ok && r.action.kind === "match" && (
+              <section className={styles.match} aria-label="Job description match">
+                <p className={styles.matchHead}>
+                  <b className="tabular">{r.action.covered}/{r.action.total}</b> requirements covered
+                  {r.action.partial > 0 && <span className={styles.dim}> · {r.action.partial} partly</span>}
+                </p>
+                <ul className={styles.coverage}>
+                  {r.action.rows.map((c, n) => (
+                    <li key={n} data-state={c.status === "covered" ? "pass" : c.status}>
+                      <b>{c.status}</b>
+                      <span>{c.req}</span>
+                      <span className={styles.dim}>{c.section ?? "not in his record"}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
             {!live && r && !r.answer.trim() ? <p className={styles.dim}>Stopped before any answer was written.</p> : body(turn, i, isLast)}
 
             {r && !live && isLast && (r.failed || r.degraded || !r.answer.trim()) && (
@@ -1578,7 +1648,7 @@ export default function Agent({
                   </a>
                   <button
                     className={styles.ghost}
-                    data-done={flash === "draft" || undefined}
+                    data-ok={flash === "draft" || undefined}
                     onClick={() => {
                       const d = r.action as { subject: string; body: string };
                       copy("draft", `${d.subject}\n\n${d.body}`, "copy-draft");
@@ -1600,7 +1670,7 @@ export default function Agent({
               <ul className={styles.proofList} aria-label="How this answer was produced">
                 {(r.steps?.length ?? 0) > 0 && (
                   <li>
-                    <button type="button" className={styles.step} data-state={r.steps!.some((x) => x.state === "failed") ? "partial" : "done"} onClick={() => openAt(i, "trace")}>
+                    <button type="button" className={styles.step} data-state={r.steps!.some((x) => x.state === "failed") ? "partial" : "pass"} onClick={() => openAt(i, "trace")}>
                       <Glyph name="ListChecks:regular" size={16} />
                       {r.steps!.filter((x) => x.state === "done").length}/{r.steps!.length} steps
                     </button>
@@ -1615,7 +1685,7 @@ export default function Agent({
                 )}
                 {(r.coverage?.length ?? 0) > 0 && (
                   <li>
-                    <button type="button" className={styles.step} data-state={covered === r.coverage!.length ? "done" : "partial"} onClick={() => openAt(i, "trace")}>
+                    <button type="button" className={styles.step} data-state={covered === r.coverage!.length ? "pass" : "partial"} onClick={() => openAt(i, "trace")}>
                       <span className="tabular">{covered}/{r.coverage!.length}</span> requirements covered
                     </button>
                   </li>
@@ -1662,8 +1732,8 @@ export default function Agent({
                 )}
                 {turns.length < 3 && (
                   <li>
-                    <button className={styles.chip} data-kind="probe" onClick={() => submit(ADVERSARIAL.q)} title="The policy layer classifies this before any model sees it">
-                      Try to break it
+                    <button className={styles.chip} data-kind="probe" onClick={() => submit(ADVERSARIAL.q)} aria-label="Try to break it: ask something it should refuse">
+                      Try to break it <span className={styles.dim}>· ask something it should refuse</span>
                     </button>
                   </li>
                 )}
@@ -1721,11 +1791,11 @@ export default function Agent({
       {/* The bar: the island says where the run is; the tabs open its detail. */}
       <div className={styles.topBar}>
         {win && <h2 id="agent-win-title" className={styles.winTitle}>Conversation</h2>}
-        <p className={styles.island} data-phase={phase} role="status" aria-live="polite" aria-atomic="true">
+        <p className={styles.island} data-phase={phase} role="status" aria-live={pending ? "off" : "polite"} aria-atomic="true">
           <span className="live-dot" data-state={pending || phase === "routing" ? "running" : undefined} />
           <span key={phase} className={styles.islandText}>{island}</span>
           {!pending && band && !latest?.local && (
-            <button type="button" className={styles.islandBand} data-band={band} onClick={() => open("trace", "agent-confidence")} aria-label={`${BAND_LABEL[band]}${score !== null ? `, ${score}%` : ""}. Open confidence`}>
+            <button type="button" className={styles.islandBand} data-band={band} data-pass={band === "answer" || undefined} onClick={() => open("trace", "agent-confidence")} aria-label={`${BAND_LABEL[band]}${score !== null ? `, ${score}%` : ""}. Open confidence`}>
               {BAND_LABEL[band]}{score !== null && <span className="tabular"> {score}%</span>}
             </button>
           )}
@@ -1757,7 +1827,10 @@ export default function Agent({
             data-wide={compact || undefined}
             aria-label={win ? "Close the window" : "Open in a window"}
             title={win ? "Close (Esc)" : "Open in a window"}
-            onClick={() => setWindow(!win)}
+            onClick={() => {
+              track("ui", win ? "fullview-close" : "fullview-open");
+              setWindow(!win);
+            }}
           >
             <Glyph name={win ? "X:regular" : "CornersOut:regular"} size={18} />
             {/* The one way into the full view inline, named, at the top of the card. */}
@@ -1773,6 +1846,7 @@ export default function Agent({
         <div
           ref={viewRef}
           className={styles.view}
+          data-gutter={win || undefined}
           onScroll={measure}
           data-top={edges.top || undefined}
           data-bottom={edges.bottom || undefined}
@@ -1824,8 +1898,12 @@ export default function Agent({
                       )}
                     </li>
                   );
+                  const shelf = order.filter((key) => key === "oss" ? oss.length > 0 : highlights.some((x) => x.label === key)).length;
                   return (
-                    <ul className={styles.recordList}>
+                    <>
+                    {/* Phone: the row scrolls sideways, so it says how many there are (F30). */}
+                    <p className={styles.shelfCount} aria-hidden="true">{shelf} records · swipe</p>
+                    <ul className={styles.recordList} aria-label={`${shelf} records`}>
                       {order.map((key) => {
                         const h = key === "oss" ? oss[0] : highlights.find((x) => x.label === key);
                         if (!h) return null;
@@ -1843,6 +1921,7 @@ export default function Agent({
                         );
                       })}
                     </ul>
+                    </>
                   );
                 })()}
               </section>
@@ -1865,6 +1944,24 @@ export default function Agent({
                         </button>
                       </li>
                     ))}
+                    {/* The job-description path exists end to end (policy.ts, retrieve.ts,
+                        stream.ts coverage rows) but nothing said so beyond a placeholder. */}
+                    <li>
+                      <button
+                        type="button"
+                        className={styles.opener}
+                        disabled={pending}
+                        onClick={() => {
+                          track("ui", "paste-jd");
+                          setInputError("Paste the job description, then press Enter. It answers with what he covers.");
+                          inputRef.current?.focus();
+                        }}
+                      >
+                        <span className={styles.openerFor}>Hiring for a role</span>
+                        <span className={styles.openerQ}>Paste a job description</span>
+                        <Glyph name="ArrowUpRight:regular" size={18} />
+                      </button>
+                    </li>
                   </ul>
                 )}
 
@@ -1916,16 +2013,9 @@ export default function Agent({
           so in words, names what the answer read, and opens the full view; it
           sits below the text, never on it. */}
       {compact && edges.bottom && latest && !pending && (
-        <button type="button" className={styles.moreStrip} aria-label={`The answer continues. Read it in the full view${latest.sources.length ? `, with ${latest.sources.length} ${latest.sources.length === 1 ? "section" : "sections"} it read` : ""}`}>
+        <button type="button" className={styles.moreStrip} onClick={() => track("ui", "strip")} aria-label={`The answer continues. Read it in the full view${latest.sources.length ? `, with ${latest.sources.length} ${latest.sources.length === 1 ? "section" : "sections"} it read` : ""}`}>
           <Glyph name="ArrowDown:regular" size={16} />
-          <span className={styles.moreText}>Continues below</span>
-          {latest.sources.length > 0 && (
-            <span className={styles.moreReads}>
-              Read: {latest.sources.slice(0, 3).join(" · ")}
-              {latest.sources.length > 3 && ` · +${latest.sources.length - 3}`}
-            </span>
-          )}
-          <span className={styles.moreGo}>Full view</span>
+          <span className={styles.moreText}>Read the rest</span>
         </button>
       )}
       {split && (
@@ -1952,16 +2042,15 @@ export default function Agent({
       {glance && latest && !pending && latest.answer.trim() && (() => {
         const r = latest;
         const done = r.steps?.filter((x) => x.state === "done").length ?? 0;
-        const covered = r.coverage?.filter((c) => c.status === "covered").length ?? 0;
         const next = r.offers?.length ?? 0;
         return (
           <div className={styles.glance}>
             <div className={styles.glanceActions} role="group" aria-label="Answer actions">
-              <button className={styles.ghost} data-done={flash === `answer:${turns.length - 1}` || undefined} onClick={() => copy(`answer:${turns.length - 1}`, `${last.question}\n\n${r.answer}`, "copy-answer")}>
+              <button className={styles.ghost} data-ok={flash === `answer:${turns.length - 1}` || undefined} onClick={() => copy(`answer:${turns.length - 1}`, `${last.question}\n\n${r.answer}`, "copy-answer")}>
                 <Glyph name={flash === `answer:${turns.length - 1}` ? "CheckCircle:regular" : "Copy:regular"} size={18} />
                 {flash === `answer:${turns.length - 1}` ? "Copied" : "Copy"}
               </button>
-              <button className={styles.ghost} data-done={flash === `link:${turns.length - 1}` || undefined} onClick={() => copy(`link:${turns.length - 1}`, shareUrl(last), "share")}>
+              <button className={styles.ghost} data-ok={flash === `link:${turns.length - 1}` || undefined} onClick={() => copy(`link:${turns.length - 1}`, shareUrl(last), "share")}>
                 <Glyph name={flash === `link:${turns.length - 1}` ? "CheckCircle:regular" : "LinkSimple:regular"} size={18} />
                 {flash === `link:${turns.length - 1}` ? "Link copied" : "Share"}
               </button>
@@ -1977,34 +2066,41 @@ export default function Agent({
               </button>
             </div>
             <p className={styles.glanceHints} aria-label="More in the full view">
-              {(r.steps?.length ?? 0) > 0 && (
-                <button type="button" onClick={() => open("trace")}>
-                  <span className="tabular">{done}/{r.steps!.length}</span> steps
-                </button>
-              )}
-              {(r.coverage?.length ?? 0) > 0 && (
-                <button type="button" onClick={() => open("trace", "agent-confidence")}>
-                  <span className="tabular">{covered}/{r.coverage!.length}</span> covered
-                </button>
-              )}
-              <button type="button" onClick={() => open("trace")}>
-                <span className="tabular">{ms(r.total)}</span> trace
-              </button>
-              {r.aside && (
-                <button type="button" onClick={() => open("answer", "agent-aside")}>
-                  second take
-                </button>
-              )}
-              {turns.length > 1 && (
-                <button type="button" onClick={() => open("answer")}>
-                  <span className="tabular">{turns.length - 1}</span> earlier
-                </button>
-              )}
-              {next > 0 && (
-                <button type="button" onClick={() => open("answer", "agent-next")}>
-                  <span className="tabular">{next}</span> next questions
-                </button>
-              )}
+              {(() => {
+                // Two hints at a glance; the rest wait behind one "more" (F33).
+                // Steps and timing open the same trace, so they are one hint.
+                const hints = [
+                  <button key="trace" type="button" onClick={() => open("trace")}>
+                    {(r.steps?.length ?? 0) > 0 && <><span className="tabular">{done}/{r.steps!.length}</span> steps · </>}
+                    <span className="tabular">{ms(r.total)}</span> trace
+                  </button>,
+                  next > 0 && (
+                    <button key="next" type="button" onClick={() => open("answer", "agent-next")}>
+                      <span className="tabular">{next}</span> next questions
+                    </button>
+                  ),
+                  r.aside && (
+                    <button key="aside" type="button" onClick={() => open("answer", "agent-aside")}>
+                      second take
+                    </button>
+                  ),
+                  turns.length > 1 && (
+                    <button key="earlier" type="button" onClick={() => open("answer")}>
+                      <span className="tabular">{turns.length - 1}</span> earlier
+                    </button>
+                  ),
+                ].filter(Boolean);
+                return (
+                  <>
+                    {hints.slice(0, 2)}
+                    {hints.length > 2 && (
+                      <button type="button" onClick={() => open("answer")}>
+                        <span className="tabular">{hints.length - 2}</span> more
+                      </button>
+                    )}
+                  </>
+                );
+              })()}
             </p>
           </div>
         );
@@ -2085,7 +2181,7 @@ export default function Agent({
               <button
                 type="button"
                 className={styles.iconBtn}
-                data-on={listening || undefined}
+                data-live={listening || undefined}
                 onClick={startListening}
                 aria-pressed={listening}
                 aria-label={listening ? "Stop listening" : "Ask by voice"}
@@ -2118,7 +2214,11 @@ export default function Agent({
         {compact && health ? (
           <p className={styles.upLine} aria-label="Agent status">
             <span className="live-dot" data-state={health.ok ? undefined : "failed"} />
-            {health.ok ? "Up" : "Down"} · {health.providers.filter((x) => !x.coolingOffFor).length} of {health.providers.length} providers ready · {health.passages} passages · {health.store.replace("+", " + ")} · prompt {health.prompt}
+            {(() => {
+              const ready = health.providers.filter((x) => !x.coolingOffFor).length;
+              if (!health.ok) return "Down · email him directly";
+              return ready ? `Up · ${ready} of ${health.providers.length} models ready` : "Running on cached answers";
+            })()}
           </p>
         ) : (
         <p className={styles.hint} aria-hidden="true">
@@ -2192,7 +2292,7 @@ function Formatted({
       if (n % 2 === 0) return part;
       if (unsupported.includes(part))
         return (
-          <mark key={n} className={styles.unsupported} tabIndex={0} data-tip="Not found in his record">
+          <mark key={n} className={styles.unsourced} tabIndex={0} data-tip="Not found in his record">
             {part}
             <span className={styles.srOnly}> (not found in his record)</span>
           </mark>

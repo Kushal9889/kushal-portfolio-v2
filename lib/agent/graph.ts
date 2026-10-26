@@ -1,7 +1,7 @@
 import { Annotation, StateGraph, START, END } from "@langchain/langgraph";
 import { trace, SpanStatusCode, type Attributes } from "@opentelemetry/api";
 import { invokeWithFailover, activeProvider, chooseTool, modelOf, BUDGET_MS } from "./model";
-import { toolSchemas, openEvidence, composeIntro, runEval, type ToolResult } from "./tools";
+import { toolSchemas, openEvidence, composeIntro, matchJob, runEval, type ToolResult } from "./tools";
 import { retrieve, sourceTitles, type Chunk, type RetrievalTrace } from "./retrieve";
 import { analyze } from "./query";
 import { ground, type Grounding } from "./ground";
@@ -245,6 +245,8 @@ const act = timed("act", async (state) => {
     result = openEvidence(String(call.args.target ?? ""));
   } else if (call.name === "compose_intro") {
     result = composeIntro(String(call.args.about ?? "general"));
+  } else if (call.name === "match_job") {
+    result = matchJob(state.question);
   } else if (call.name === "run_eval") {
     // Not recursive: the suite is what calls this graph, and a case running
     // itself would be a loop with a model call in it.

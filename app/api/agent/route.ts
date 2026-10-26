@@ -32,7 +32,7 @@ export async function POST(req: Request) {
   // capped before the question reaches a model rather than after.
   const trimmed = question.slice(0, 500);
 
-  const budget = checkBudget(ip, trimmed);
+  const budget = await checkBudget(ip, trimmed);
   if (!budget.ok) {
     return Response.json(
       {

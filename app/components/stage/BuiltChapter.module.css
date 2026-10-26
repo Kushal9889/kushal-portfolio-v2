@@ -127,12 +127,12 @@
   border: 1px solid var(--hair-strong);
 }
 
-.word[data-status="live"] i {
+.word[data-state="live"] i {
   border-color: var(--live);
   background: var(--live);
 }
 
-.word[data-status="checking"] i {
+.word[data-state="checking"] i {
   animation: blink 1s steps(2, jump-none) infinite;
 }
 
@@ -248,7 +248,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .word[data-status="checking"] i {
+  .word[data-state="checking"] i {
     animation: none;
   }
 }

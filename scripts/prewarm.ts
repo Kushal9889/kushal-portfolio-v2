@@ -66,7 +66,8 @@ async function main() {
       const result = await ask(question);
       // No provider means the run fell back to the top passage word for word: never bake it.
       if (result.answer && result.route === "answer" && result.provider) {
-        warm[question.toLowerCase().trim()] = result;
+        // ranAt is the bake time, so a served entry shows its true age.
+        warm[question.toLowerCase().trim()] = { ...result, ranAt: Date.now() };
         console.log(`prewarm: ${result.total}ms  ${question}`);
       }
     } catch {

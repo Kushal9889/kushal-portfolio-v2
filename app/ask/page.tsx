@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { loadContent } from "@/lib/content";
 import Page from "../page";
 
 /**
@@ -25,16 +26,27 @@ export async function generateMetadata({
   // Bounded before it reaches an image served from his domain.
   const question = typeof q === "string" ? q.slice(0, 120) : null;
   const image = question ? `/og?q=${encodeURIComponent(question)}` : "/og";
+  const { profile } = loadContent();
+  // A nested openGraph replaces the root's rather than merging with it, so every
+  // field the card needs is set again here, and the question leads all three titles.
+  const title = question ? `${question} · ${profile.name}` : `${profile.name}, ${profile.role}`;
+  const description = `${profile.tagline} ${profile.proof}`;
 
   return {
+    title,
+    description,
     // Canonical points home. This route exists to carry a card, not to become a
     // second copy of the page in an index.
     alternates: { canonical: "/" },
     openGraph: {
+      type: "profile",
+      title,
+      description,
+      url: profile.site,
+      siteName: profile.name,
       images: [{ url: image, width: 1200, height: 630 }],
-      ...(question ? { title: question } : {}),
     },
-    twitter: { card: "summary_large_image", images: [image] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 

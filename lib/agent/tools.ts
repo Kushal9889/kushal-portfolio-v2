@@ -3,6 +3,7 @@ import { queryTokens } from "./tokenize";
 import { correct } from "./vocab";
 import { mailtoLink, mailDraft, type ReachContext } from "../reach";
 import { CASES } from "./evals";
+import { coverage } from "./retrieve";
 
 const { profile, sections } = loadContent();
 
@@ -181,7 +182,41 @@ export type ToolResult =
   | { ok: true; kind: "open"; url: string; label: string; say: string }
   | { ok: true; kind: "draft"; mailto: string; subject: string; body: string; say: string }
   | { ok: true; kind: "eval"; question: string; passed: boolean; asserts: string; say: string }
+  | { ok: true; kind: "match"; rows: CoverageRow[]; covered: number; partial: number; total: number; say: string }
   | { ok: false; say: string };
+
+export type CoverageRow = { req: string; status: "covered" | "partial" | "missing"; section: string | null };
+
+/**
+ * A pasted job description, mapped requirement by requirement against his record.
+ *
+ * A tool rather than a paragraph: the reader pasted a list and wants a list
+ * back, each line marked covered, partial or missing with the section that
+ * covers it. Local BM25 only (retrieve.ts coverage), so it runs with every model
+ * down and costs nothing. The verdict line names the gaps instead of hiding them.
+ */
+export function matchJob(text: string): ToolResult {
+  // The intro and the company pitch are not requirements; counting them inflates the score.
+  const rows = coverage(text)
+    .filter(({ req }) => !/^(about (the role|us|the team)|who we are|we('| a)re (looking|hiring)|the role|our mission)\b/i.test(req))
+    .map(({ req, status, section }) => ({ req, status, section }));
+  if (!rows.length) {
+    return { ok: false, say: "Paste the requirements as lines or bullets and it maps each one against his record." };
+  }
+  const covered = rows.filter((r) => r.status === "covered").length;
+  const partial = rows.filter((r) => r.status === "partial").length;
+  const missing = rows.filter((r) => r.status === "missing").map((r) => r.req);
+  const gaps = missing.length ? ` Not in his record: ${missing.slice(0, 3).join("; ")}${missing.length > 3 ? `; and ${missing.length - 3} more` : ""}.` : "";
+  return {
+    ok: true,
+    kind: "match",
+    rows,
+    covered,
+    partial,
+    total: rows.length,
+    say: `Covers ${covered} of ${rows.length} requirements${partial ? `, partly ${partial} more` : ""}.${gaps}`,
+  };
+}
 
 /**
  * The schemas the model sees.
@@ -256,6 +291,30 @@ export function toolSchemas(question = "") {
             },
           },
           required: ["about"],
+        },
+      },
+    },
+    {
+      type: "function" as const,
+      function: {
+        name: "match_job",
+        description:
+          "Map a job description against his record, one requirement per line, and mark each " +
+          "covered, partial or missing with the section that covers it. Use when the reader " +
+          "pastes a job description or asks whether he fits a role they describe. Returns the " +
+          "rows and a one-line verdict that names the gaps.",
+        parameters: {
+          type: "object",
+          properties: {
+            // The tool reads the reader's own message on the server. A model that
+            // retyped the description could drop or invent a requirement.
+            from: {
+              type: "string",
+              enum: ["reader_message"],
+              description: "Always reader_message: the description is read from what the reader sent, never retyped.",
+            },
+          },
+          required: ["from"],
         },
       },
     },

@@ -4,12 +4,13 @@ import {
   toolSchemas,
   openEvidence,
   composeIntro,
+  matchJob,
   runEval,
   EVAL_SESSION_CAP,
   type ToolResult,
 } from "./tools";
 import type { RetrievalTrace } from "./retrieve";
-import { coverage, passagesOf, retrieve, sourceTitles } from "./retrieve";
+import { passagesOf, retrieve, sourceTitles } from "./retrieve";
 import {
   classify,
   systemPrompt,
@@ -101,6 +102,8 @@ export type StreamEvent =
       failover?: { name: string; coolingOffFor: number }[];
       /** True when the turn was answered from the build-time cache. */
       warm?: boolean;
+      /** When that cached run was baked, epoch ms. */
+      ranAt?: number;
       /** True when no provider was reachable and the retrieved source was
        *  served unsummarised instead of failing. */
       degraded?: boolean;
@@ -138,6 +141,8 @@ type Warm = Record<
     usage: { in: number; out: number } | null;
     provider: string | null;
     trace?: RetrievalTrace;
+    /** When the bake ran (scripts/prewarm.ts), so the card can say how old the answer is. */
+    ranAt?: number;
   }
 >;
 
@@ -257,6 +262,7 @@ export async function* runStream(
       listPrice: null,
       failover: failoverState(),
       warm: true,
+      ranAt: warm.ranAt,
       policy: POLICY_PREVIEW,
       // Checked against the whole sections the cache names: the passages the
       // build-time run saw are a subset, so this can only pass more, never less.
@@ -316,6 +322,8 @@ export async function* runStream(
       result = openEvidence(String(call.args.target ?? ""));
     } else if (call.name === "compose_intro") {
       result = composeIntro(String(call.args.about ?? "general"));
+    } else if (call.name === "match_job") {
+      result = matchJob(question);
     } else if (call.name === "run_eval") {
       // Capped per conversation. Each case is a real model call on a free tier
       // shared with the next visitor, and a reader who finds the button
@@ -360,6 +368,15 @@ export async function* runStream(
     // considered the question and declined.
     yield { type: "done", total: Date.now() - started, usage: null, policy: POLICY_PREVIEW };
     return;
+  }
+
+  // A pasted job description is answered by the match_job tool first, so the
+  // coverage rows lead and arrive with every model down; the prose follows.
+  if (isJobDescription(question)) {
+    const t0 = Date.now();
+    const match = matchJob(question);
+    yield { type: "step", name: "match_job", state: match.ok ? "done" : "failed", ms: Date.now() - t0, detail: match.ok && match.kind === "match" ? `${match.covered}/${match.total} covered` : "no requirement lines" };
+    yield { type: "action", result: match };
   }
 
   const retrieveStart = Date.now();
@@ -487,7 +504,7 @@ export async function* runStream(
     }
 
     yield { type: "offers", offers: offersFor(chunks) };
-    if (isJobDescription(question)) yield { type: "coverage", rows: coverage(question) };
+    // Coverage rows now arrive once, from match_job ahead of the answer.
     const g = ground(cleaned, context, question);
     yield { type: "step", name: "generate", state: "done", ms: Date.now() - retrieveStart, detail: `${(served as { provider?: string } | null)?.provider ?? "?"} · prompt ${PROMPT_VERSION} · ${length.name} answer` };
     yield { type: "step", name: "ground", state: g.g === 1 ? "done" : "failed", ms: 0, detail: `G ${g.g} over ${g.claims} claims${g.unsupported.length ? ` · unsupported ${g.unsupported.join(", ")}` : ""}` };

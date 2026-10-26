@@ -73,7 +73,7 @@ export default function Certifications({
         {issuers(rest).map((g) => (
           <li key={g.issuer} className={styles.logo}>
             {g.links.length === 1 ? (
-              <a className={styles.logoHead} href={g.links[0].url} target="_blank" rel="noreferrer" title={g.links[0].name}>
+              <a className={styles.logoHead} href={g.links[0].url} target="_blank" rel="noreferrer" title={g.links[0].name} aria-label={g.links[0].name}>
                 <LogoHead g={g} />
               </a>
             ) : (

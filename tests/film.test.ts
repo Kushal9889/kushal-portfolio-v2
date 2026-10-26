@@ -92,7 +92,12 @@ test("every point of every beat shows a clip, so the film never drops to black (
   assert.deepEqual(gaps, []);
 });
 
-test("every clip the map names is a shipped file", () => {
+// A sparse checkout leaves the clips out on purpose; say so instead of failing.
+// Some clips present but others missing is a real gap and still fails.
+const clipFiles = [...new Set(rows.map((r) => r.file))];
+const filmSkip = clipFiles.every((f) => !existsSync(`public/film/clips/${f}.mp4`)) && "film clips are not checked out (sparse checkout)";
+
+test("every clip the map names is a shipped file", { skip: filmSkip }, () => {
   for (const f of new Set(rows.map((r) => r.file))) assert.ok(existsSync(`public/film/clips/${f}.mp4`), `${f}.mp4 missing`);
 });
 

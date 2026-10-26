@@ -1,0 +1,72 @@
+# Elite pass plan (2026-10-26)
+
+## Decisions from Kushal
+- Branch stands alone. checkpoint-elite.sh no longer merges wip/agent-card-2026-10-26; Kushal merges both later.
+- Safe files first. Fixes in files the other session edits (Agent.tsx, Agent.module.css, Hero.*, ClassicPage.tsx, *.module.css, globals/base/scenes/stage.css, stage/*, film/*, chips.ts, events.ts, stream.ts, DESIGN.md) come last, as small separate edits.
+- F4 wording: "LangChain's deepagents SDK" everywhere.
+
+## Baseline (before any change)
+screen check PASS · tsc 0 · unit 163 pass, 0 fail, 3 skipped · survivors 13/13 · lint:tokens 4 · audit 91/107 (handoff says 92; 91 is the measured start, gate is "no worse than 91")
+
+## Batch A: safe files
+| id | evidence | fix | pass condition |
+|---|---|---|---|
+| F4 | facts.md:15 "LangChain's Python SDK" vs facts.md:250 "deepagents SDK" | facts.md:15 to "deepagents SDK" | grep "LangChain's Python SDK" in content/app/lib = 0; MCP "Python SDK" lines unchanged |
+| F14 | survivors.sh:11 literal 'PROMPT_VERSION = "v3.5"' | read version from policy.ts, floor v3.5 | bump to v3.6 keeps survivors n/n; v3.4 fails |
+| F15 | film.test.ts:95 fails when clips not checked out | skip only when every clip is absent | sparse checkout: skipped with message; partial missing still fails |
+| F1 | demo/route.ts:91 caches any answer incl. provider null | cache only provider != null and route answer; else serve authored brief + note | AGENT_FAULT=chat: brief + "Models resting, showing the summary", not cached |
+| F2 | demo route calls ask() on cold start; prewarm.json has no hero entry, no timestamp | route serves prewarm entry when present with ranAt; prewarm.ts writes ranAt | cold GET with entry makes no model call. Re-bake needs a live run (not allowed): PENDING Kushal |
+| F9 | track/route.ts:43 logs detail; Agent.tsx:643 sends raw question | server drops detail for agent_asked and any non-allowlisted event | free-text ask logs "agent_asked" with no text |
+| F10 | budget.ts in-memory Map | Neon counter (hashed IP) with memory fallback | two instances share count; works with Neon unset |
+| F13 | health has no degraded or seed age | add degraded24h, seedAgeMs; scripts/smoke.ts | smoke fails on providers=0 or degraded seed |
+| N31 | ask/page.tsx only sets og title | title, twitter title, descriptions | /ask?q=foo: title, og:title, twitter:title contain foo |
+| N32 | layout.tsx:192 Person JSON-LD exists | none | verified, skip |
+
+## Needs Kushal
+- F18: facts.md:435 marks visa under "@kind private, answered only when asked". Showing it in the UI breaks that rule.
+- F2 re-bake: needs one live prewarm run.
+
+## Batch B on (other session's files, last)
+F3 F5-F8 F11 F12 F16-F44 N1-N30 N33 N34, each a small edit; listed per batch with evidence when started.
+
+## Batch A result (gates: build ok, screen PASS, tsc 0, unit 163/0/3 skip, survivors 13/13, tokens 4, audit 91/107)
+| id | state | evidence |
+|---|---|---|
+| F4 | DONE | facts.md:15 now "deepagents SDK"; grep "LangChain's Python SDK" = 0 |
+| F14 | DONE | survivors reads policy.ts; 3.5/3.10/4.0 pass, 3.4 fails |
+| F15 | DONE | skips only when every clip is absent; a partial gap still fails |
+| F1 | DONE | no providers here: /api/agent/demo twice = brief + "Models resting, showing the summary", no-store, never cached. Hero.tsx ignores a degraded reply (1 line) so no fake 0 ms |
+| F2 | PARTIAL | route serves the baked entry with its bake time; prewarm.ts writes ranAt. The bake has no hero entry and re-baking needs a live run: Kushal |
+| F9 | DONE | agent_asked logs len=N only; a non-token detail ("jane@x.com call me") is dropped |
+| F10 | DONE server | Neon upsert on hashed IP, 400 ms cap, memory fallback (bad URL falls back in 17 ms; 60 asks hit the wall). Stream sends {type:"budget"}; the "N left" line is Agent.tsx, batch B |
+| F13 | DONE | health: degraded24h, seedAgeMs; `npm run smoke <origin>` fails on providers=0 or no seed |
+| N31 | DONE | /ask?q= title, og:title, twitter:title lead with the question; site name and description restored |
+| N32 | SKIP | Person JSON-LD already at layout.tsx:192 |
+| N34 | DONE server | degraded counter + one "degraded" warn line per fallback (grep -c per day) |
+| F18 | DONE | facts.md frontmatter `sponsorship:` (Kushal's wording, 2026-10-26); hero role line in ClassicPage.tsx:394 appends it. Gates: screen PASS, unit 0, survivors 13/13, facts ok, tokens 4, audit 91/107. Phone: line adds one row, Email button moves down about 14px |
+
+## Batch C: agent card words, trust, flows (gates: build ok, screen PASS, unit 165/0/3, survivors 13/13, tokens 4, audit 91/107)
+| id | state | evidence |
+|---|---|---|
+| F3 | DONE | warm answers read "Cached run · N ms · <age>"; age from the bake's ranAt, sent by the server in the done event |
+| F5 | DONE | "in 57 hours" cut from the brief (facts.md brief). Kept: hero proof line and the opensource section claim, which is the evidence with its link (N4/N6) |
+| F6 | DONE | free-tier note: "92% of a 95% target"; target served live by /api/health targets.groundedness from ground.ts GROUNDEDNESS_TARGET (also used by the release gate) |
+| F7 | DONE | trace board: "Matched by words and meaning", tier row removed, "Sentences with a source", no-model answers say "Answered from his record, no model" |
+| F8 | DONE | footer from /api/health live: "Running on cached answers" when 0 models ready, "Up · N of M models ready" otherwise |
+| F11 | DONE | vote beacon: down/up + reason slug + prompt version + route + FNV hash of the question, never its text; vote already visible inline |
+| F12 | DONE | track("ui"): journeys, tally, full view open/close, strip, sources, trace, free-tier chip, copy/share, paste-jd |
+| F16 | DONE | thread saved to sessionStorage after each finished turn, restored on reload (verified by shot) |
+| F17 | DONE, as a tool | match_job: fourth agent tool (tools.ts), enum-only param per the repo rule, runs first on any pasted job description with no model, rows lead the answer; "Paste a job description" opener; unit tests |
+| F21 | DONE | brief spells out "Lead Backend Engineer (Research Assistant)" once |
+| F22 | DONE | island states 24 chars or fewer; "Neon pgvector" gone from the island |
+| F23 | DONE | "A draft is ready to send" |
+| F24 | DONE | strip reads "Read the rest"; the Read: list and second Full view removed |
+| F25 | DONE | tally "tests it never saw, Oct 26", date never wraps |
+| F26 | DONE | chip "Free models · why slow?" |
+| F27 | DONE | "Try to break it · ask something it should refuse", visible, not a hover title |
+| F34 | DONE | island aria-live off while running, polite on the final state |
+| F35 | DONE | tally buttons named "4 tools it can call. Ask: ..." |
+| F36 | DONE | Résumé button shows "PDF · 1 page" |
+| N33 | DONE | read-80% fires scroll_deep (was never fired); funnel now land, interact (ui), ask, read 80%, contact |
+| F28 | REJECTED for now | "RECORDED · 2 S AGO" lives in app/components/film/*, the other session's film files |
+| F19 | VERIFIED | recruiter journey already opens experience + résumé path; no change |

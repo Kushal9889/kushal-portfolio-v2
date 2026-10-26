@@ -1004,11 +1004,11 @@ describe("tools fail as answers, not as exceptions", () => {
   });
 
   test("no two tools could answer the same request", () => {
-    // The consolidation test, asserted rather than assumed: three tools, three
+    // The consolidation test, asserted rather than assumed: four tools, four
     // distinct verbs, and no shared parameter name that would let a model
-    // confuse one for another.
+    // confuse one for another. match_job joined on 2026-10-26.
     const names = toolSchemas().map((t) => t.function.name);
-    assert.deepEqual(names, ["open_evidence", "compose_intro", "run_eval"]);
+    assert.deepEqual(names, ["open_evidence", "compose_intro", "match_job", "run_eval"]);
     assert.equal(new Set(names).size, names.length);
     for (const schema of toolSchemas()) {
       assert.ok(schema.function.description.length > 120, `${schema.function.name} is described too thinly`);
@@ -1262,4 +1262,31 @@ test("history: at most two earlier turns, only the ones the question leans on", 
   assert.deepEqual(relatedHistory("Where did he study computer science?", [imgTurn, certTurn]), []);
   // Never more than two, whatever the tab sends.
   assert.ok(relatedHistory("Tell me more", [imgTurn, certTurn, imgTurn]).length <= 2);
+});
+
+describe("match_job tool", () => {
+  const JD = [
+    "About the role: we are looking for an AI engineer.",
+    "Requirements:",
+    "- Build retrieval-augmented generation pipelines with hybrid search",
+    "- Design agent orchestration with LangGraph",
+    "- 5+ years of experience with Kubernetes operators in Rust",
+  ].join("\n");
+
+  test("maps each requirement and names the gaps, with no model call", async () => {
+    const { matchJob, toolSchemas } = await import("../lib/agent/tools");
+    assert.ok(isJobDescription(JD));
+    const r = matchJob(JD);
+    assert.ok(r.ok && r.kind === "match");
+    if (!(r.ok && r.kind === "match")) return;
+    assert.ok(r.total >= 3, `only ${r.total} rows`);
+    assert.equal(r.covered + r.partial + r.rows.filter((x) => x.status === "missing").length, r.total);
+    assert.match(r.say, /^Covers \d+ of \d+ requirements/);
+    assert.ok(toolSchemas().some((t) => t.function.name === "match_job"));
+  });
+
+  test("text with no requirement lines says what to paste", async () => {
+    const { matchJob } = await import("../lib/agent/tools");
+    assert.equal(matchJob("hi").ok, false);
+  });
 });

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Glyph from "./stage/Glyph";
+import { track } from "@/lib/analytics";
 import { TELEMETRY_EVENT, type TelemetryPing } from "@/lib/agent/events";
 import styles from "./FreeTierNote.module.css";
 
@@ -17,6 +18,7 @@ type Health = {
     outage: { at: string; cases: number; pass: number; degraded: number | null; p95ms: number } | null;
     retrieval: { p50ms: number; p95ms: number } | null;
   };
+  targets?: { groundedness: number };
 };
 
 const secs = (n: number) => (n < 1000 ? `${n} ms` : `${+(n / 1000).toFixed(1)} s`);
@@ -91,9 +93,9 @@ export default function FreeTierNote() {
   if (state === "dot") {
     return (
       <div className={styles.dotBar}>
-        <button type="button" className={styles.dot} onClick={() => setState("open")} aria-label="Why answers can take a moment">
+        <button type="button" className={styles.dot} onClick={() => { track("ui", "free-tier-open"); setState("open"); }} aria-label="Why answers can take a moment">
           <span className="live-dot" />
-          Free tier
+          Free models · why slow?
         </button>
         <button type="button" className={styles.x} onClick={dismiss} aria-label="Dismiss">
           <Glyph name="X:regular" size={16} />
@@ -112,7 +114,7 @@ export default function FreeTierNote() {
     <aside className={styles.note} aria-labelledby="free-tier-title" data-surface="console">
       <header className={styles.head}>
         {/* The bot's eyes report the providers: lime when all are ready, amber when one rests. */}
-        <span className={styles.bot} data-state={ready === health.providers.length ? "ready" : "resting"} aria-hidden="true">
+        <span className={styles.bot} data-state={ready === health.providers.length ? "ready" : "cooling"} aria-hidden="true">
           <i className={styles.antenna} />
           <i className={styles.eye} />
           <i className={styles.eye} />
@@ -130,7 +132,7 @@ export default function FreeTierNote() {
 
       <ul className={styles.board} aria-label="Providers right now">
         {health.providers.map((p) => (
-          <li key={p.name} data-state={p.coolingOffFor ? "resting" : "ready"}>
+          <li key={p.name} data-state={p.coolingOffFor ? "cooling" : "ready"}>
             <span className={styles.pip} />
             <b>{p.name}</b>
             <span>{p.coolingOffFor ? `rests ${Math.ceil(p.coolingOffFor / 60)} min` : "ready"}</span>
@@ -184,7 +186,12 @@ export default function FreeTierNote() {
             <div><dt>Held-out questions</dt><dd className="tabular">{m.endToEnd.pass}/{m.endToEnd.cases} pass</dd></div>
             <div><dt>Answer time</dt><dd className="tabular">p50 {secs(m.endToEnd.p50ms)} · p95 {secs(m.endToEnd.p95ms)}</dd></div>
             {m.retrieval && <div><dt>Search alone</dt><dd className="tabular">p50 {secs(m.retrieval.p50ms)} · p95 {secs(m.retrieval.p95ms)}</dd></div>}
-            {m.endToEnd.groundedness !== null && <div><dt>Figures found in sources</dt><dd className="tabular">{pct(m.endToEnd.groundedness)}</dd></div>}
+            {m.endToEnd.groundedness !== null && (
+              <div>
+                <dt>Figures found in sources</dt>
+                <dd className="tabular">{pct(m.endToEnd.groundedness)}{health.targets ? ` of a ${pct(health.targets.groundedness)} target` : ""}</dd>
+              </div>
+            )}
             {m.endToEnd.citeCoverage !== null && <div><dt>Sentences with a source</dt><dd className="tabular">{pct(m.endToEnd.citeCoverage)}</dd></div>}
           </dl>
         </>

@@ -23,15 +23,6 @@
   min-height: 44px;
 }
 
-.mark {
-  grid-row: 1 / span 2;
-  /* The GitHub mark ships in its own brand black, which disappears against the
-     dark scheme's paper. Here it is doing the job of an icon rather than of a
-     logo, so it takes the page's ink. */
-  fill: var(--ink-soft);
-  transition: fill var(--t-fast) var(--ease-standard);
-}
-
 .kind {
   font-size: var(--step--1);
   color: var(--ink-soft);
@@ -71,10 +62,6 @@
   text-underline-offset: 0.18em;
 }
 
-.link:hover .mark,
-.link:focus-visible .mark {
-  fill: var(--ink);
-}
 
 @media (max-width: 34rem) {
   .link {

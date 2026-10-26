@@ -247,6 +247,11 @@ def main():
             if phone:
                 page.locator("#ask").focus(); page.wait_for_timeout(300)
                 page.screenshot(path=str(OUT / f"{name}-10-composer-focus.png"))
+                # Typing on a phone: the chip and the dock step aside so nothing stacks on the composer (F29).
+                row["typingClear"] = page.evaluate("""() => [...document.querySelectorAll('[class*="dotBar"], [class*="ReachDock"][class*="dock"]')]
+                  .filter((e) => { const r = e.getBoundingClientRect(); return getComputedStyle(e).display !== 'none' && r.top < innerHeight && r.bottom > 0 && r.height > 0; }).length === 0""")
+                if not row["typingClear"]: fails.append(f"{name}: the chip or dock stays on screen while typing")
+                page.locator("#ask").blur(); page.wait_for_timeout(300)
             # Closed once, the note stays closed across a reload (a dot on a phone, the card on a wide screen).
             page.evaluate("scrollTo(0, 0)")
             x = page.locator(f'{CHIP} button[aria-label="Dismiss"], {NOTE} button[aria-label="Close"]')

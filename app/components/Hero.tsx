@@ -42,6 +42,12 @@ type Props = {
  * Nothing here ever displays a placeholder value, because a fabricated latency
  * is the easiest claim on a page like this to disprove.
  */
+/** "2026-10-26" as "Oct 26": the tally's date reads as a date, not a code. */
+function shortDate(iso: string) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
+
 export default function Hero({
   name,
   tagline,
@@ -81,7 +87,10 @@ export default function Hero({
           usage: { in: number; out: number } | null;
           provider: string | null;
           ranAt?: number;
+          degraded?: true;
         } = await res.json();
+        // No model answered, so there is no run to report: show no numbers.
+        if (demo.degraded) return;
         const measured = demo.timings;
         // A recorded run, not the visitor's: the film labels it with its age.
         window.dispatchEvent(
@@ -160,7 +169,7 @@ export default function Hero({
             picks by recognising themselves rather than by guessing a section. */}
         <nav className={styles.journeys} aria-label="Find what you need">
           {VISITOR_JOURNEYS.map((journey) => (
-            <a key={journey.label} href={journey.href} data-only={"phone" in journey ? "phone" : undefined}>
+            <a key={journey.label} href={journey.href} data-only={"phone" in journey ? "phone" : undefined} onClick={() => track("ui", `journey-${journey.label.toLowerCase().replace(/[^a-z]+/g, "-")}`)}>
               <b>{journey.label}</b>
               <span>{journey.promise}</span>
             </a>
@@ -174,12 +183,15 @@ export default function Hero({
             {[
               { n: `${counts.tools}`, what: "tools it can call", ask: "Which tools can the agent call, and when does it use each one?" },
               { n: `${counts.steps}`, what: "traced steps per answer", ask: "What happens in each traced step of a run, from routing to the grounding check?" },
-              { n: `${counts.tested.pass}/${counts.tested.cases}`, what: `held-out evals, ${counts.tested.at}`, ask: "How is the agent tested, and what does the held-out split check?" },
+              { n: `${counts.tested.pass}/${counts.tested.cases}`, what: "tests it never saw", when: shortDate(counts.tested.at), ask: "How is the agent tested, and what does the held-out split check?" },
               { n: `${counts.passages}`, what: "passages it searches", ask: "What is in the record the agent searches, and how is it split into passages?" },
             ].map((c) => (
-              <button key={c.what} type="button" onClick={() => window.dispatchEvent(new CustomEvent<string>(ASK_EVENT, { detail: c.ask }))}>
+              <button key={c.what} type="button" aria-label={`${c.n} ${c.what}. Ask: ${c.ask}`} onClick={() => {
+                track("ui", `tally-${c.what.split(" ")[0].toLowerCase().replace(/[^a-z]+/g, "")}`);
+                window.dispatchEvent(new CustomEvent<string>(ASK_EVENT, { detail: c.ask }));
+              }}>
                 <b className="tabular">{c.n}</b>
-                <span>{c.what}</span>
+                <span>{c.what}{"when" in c && c.when ? <span className={styles.nowrap}>, {c.when}</span> : null}</span>
               </button>
             ))}
           </div>
@@ -191,11 +203,14 @@ export default function Hero({
           <a className={styles.cta} href={mailtoLink(email, site, "general", tag, who)} onClick={() => track("contact", "hero-email")} data-pull>
             <span className={styles.ctaText}>
               Email him
-              <span className={styles.ctaHint}>draft written · compose_intro</span>
+              <span className={styles.ctaHint}>A draft is ready to send</span>
             </span>
           </a>
           <a className={styles.secondary} href={resumeHref} target="_blank" rel="noreferrer" onClick={() => track("contact", "hero-resume")}>
-            Résumé
+            <span className={styles.ctaText}>
+              Résumé
+              <span className={styles.ctaHint}>PDF · 1 page</span>
+            </span>
           </a>
         </div>
 

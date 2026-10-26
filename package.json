@@ -23,6 +23,7 @@
     "prewarm": "tsx scripts/prewarm.ts",
     "decision-matrix": "tsx scripts/decision-matrix.ts",
     "audit": "tsx scripts/audit.ts",
+    "smoke": "tsx scripts/smoke.ts",
     "build:graph": "tsx scripts/build-graph.ts",
     "test:unit": "tsx --test tests/unit.test.ts tests/chips.test.ts tests/grammar.test.ts tests/film.test.ts tests/serving.test.ts tests/redact.test.ts tests/claims.test.ts",
     "test:integration": "tsx --test tests/integration.test.ts",
