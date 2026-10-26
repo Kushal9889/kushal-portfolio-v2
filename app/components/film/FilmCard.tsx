@@ -12,8 +12,10 @@ export type CardProps = {
   line: string;
   /** T3's three acts; the one on screen follows html[data-film-act]. */
   acts?: { title: string; line: string }[];
-  /** Typical sizes from content/film.json scale[]. */
-  scale: { label: string; text: string }[];
+  /** Fixed rows: this site's measured or coded facts, then typical sizes (content/film.json). */
+  rows: { label: string; text: string; tag: string; note?: string }[];
+  /** The line as a small drawing (FilmSketch.tsx). */
+  sketch?: React.ReactNode;
   /** Values from the request the orange light is drawing. */
   live: { key: LiveKey; label: string }[];
 };
@@ -32,7 +34,7 @@ function valueOf(r: RequestState, key: LiveKey) {
  * Arrives when its window is a third on screen and leaves at 0.6x the speed
  * it came (C5.7); the ceremony is CSS, keyed on data-state.
  */
-export default function FilmCard({ stage, stages, title, line, acts, scale, live }: CardProps) {
+export default function FilmCard({ stage, stages, title, line, acts, rows: fixed, live, sketch }: CardProps) {
   const ref = useRef<HTMLElement>(null);
   const [state, setState] = useState<"idle" | "in" | "out">("idle");
   const request = useSyncExternalStore(subscribe, getRequest, () => NONE);
@@ -58,9 +60,9 @@ export default function FilmCard({ stage, stages, title, line, acts, scale, live
   const rows = [
     ...live.flatMap(({ key, label }) => {
       const v = settled ? valueOf(request, key) : undefined;
-      return typeof v === "number" ? [{ label, value: String(v), text: v.toLocaleString("en-US"), tag }] : [];
+      return typeof v === "number" ? [{ label, value: String(v), text: v.toLocaleString("en-US"), tag, note: undefined as string | undefined }] : [];
     }),
-    ...scale.map((s) => ({ label: s.label, value: s.text, text: s.text, tag: "Typical" })),
+    ...fixed.map((s) => ({ label: s.label, value: s.text, text: s.text, tag: s.tag, note: s.note })),
   ];
 
   return (
@@ -88,6 +90,7 @@ export default function FilmCard({ stage, stages, title, line, acts, scale, live
             <p className={styles.line}>{line}</p>
           </div>
         )}
+        {sketch}
       </div>
       {rows.length > 0 && (
         <dl className={styles.values}>
@@ -96,7 +99,7 @@ export default function FilmCard({ stage, stages, title, line, acts, scale, live
               <dt>{r.label}</dt>
               <dd>
                 <data value={r.value}>{r.text}</data>
-                <span className={styles.tag}>{r.tag}</span>
+                <span className={styles.tag} title={r.note}>{r.tag}</span>
               </dd>
             </div>
           ))}

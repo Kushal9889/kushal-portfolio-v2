@@ -742,7 +742,7 @@ blockquote.body {
 }
 
  /* The merge is the chapter's one outcome, so it is set as a state plate:
-   monument weight, a live-square beside it, and its own orange rule. */
+   monument weight, a live-square beside it, and its own blue rule. */
 .prState {
   position: relative;
   display: inline-flex;

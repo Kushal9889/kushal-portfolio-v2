@@ -47,18 +47,19 @@ python3 scripts/ui-agent-screen.py          # must print PASS (5 sizes)
 - Frosted glass needs `backdrop-filter`, which audit 2.6 bans. Ask Kushal before changing the audit.
 - In the film "Network fabric" card (`content/film.json`), "About 3 mm thick..." overlaps the big "FIBRE".
 
-## 3. Queue (Kushal's priority, top first)
+## 3. Queue
 
-1. **Load view (A6).** Kushal wants the brief ("AI Engineer, now Lead Backend Engineer (RA) at Boston University's Questrom Computational Lab... agentic SDLC harness... Claude Code...") to be the main and only first view, with the "What did he ship?" load turn removed from view. The "What did he build at IMG Systems?" he saw in screenshots is the screen check's own offline question, not product UI. Tell him that. Removing the seed turn affects `#agent-q-0`, the island text "Answered live on load" and `ui-agent-screen.py`, so confirm in one line, then do it.
-2. **Record chips (A4).** In the window, chips such as "NVIDIA-CERTIFIED NVIDIA-Certified Professional: Agentic AI" and "RA AI Engineer" come from `highlights` in `app/components/Agent.tsx` (around lines 241 and 1840). They are shuffled per load. Instead:
-   - Pick them by the current answer: deterministic first (the answer's cited source sections and keyword overlap with the chip's terms), then a semantic tie-break computed at build time. No runtime embedding, since the cloud has no keys.
-   - Kill the redundancy: kind = issuer ("NVIDIA" with its logo), name = the remainder ("Professional: Agentic AI"), derived from `content/certifications.json`. Same rule for every chip.
-3. **Memory UI (A7).** `relatedHistory` (`lib/agent/stream.ts`) sends up to 2 related earlier turns. Show it: a quiet "Used 1 earlier answer" on the turn, linking to that turn. Leave a slot for cross-session memory later; build no storage now.
-4. **10 agent UX features (A8).** Propose 10, one line each with the law it applies (progressive disclosure, Hick, Fitts, Jakob, Miller, Doherty, Zeigarnik, peak-end, von Restorff, aesthetic-usability). Get his pick, then build them. Nothing that looks AI-generated.
-5. **Film card copy (A5).** 8 to 9 cards in `content/film.json` (12 titles there). Per card: look at its frame, then write one production insight a 2-year engineer knows that HR can also relate to. Keep it neutral across recruiter, interviewer and hiring manager. Write about the field, not about Kushal's problems. Flag any number you are not sure of. Plan all the cards first, then write.
-6. **Finish the Apple pass:** the leftovers in section 2, then B1 (home page `app/stage.css` and `components/stage/*`, orange to Apple blue), then C1 (rewrite `DESIGN.md` to the Apple system so other sessions keep it).
+Done on 2026-10-26 (checkpointed, screen check PASS, tsc clean, token lint clean, audit 91/107):
+1. A6: the brief is the only first view on the main page; the load turn and SEED_EVENT are gone (Hero still fetches the recorded run for the film).
+2. A4: record chips ranked by the answer in view (`lib/agent/chips.ts`, tests in `tests/chips.test.ts`), issuer/name split, Apple pills.
+3. A7: "Used N earlier answers" on a turn (stream.ts `memory` event, scope "tab"; slot for cross-session later).
+4. A8: starters by visitor (3 on phone), "Reading ..." line on search, up-arrow edits the last question, "Email him about this", first figure only highlighted, at most 5 points, "(1)" tab title when an answer lands in a background tab, rounded starter tiles. Not done: changing the prompt to force short points (needs the agent gate and model calls).
+5. A5: 9 film cards rewritten, each with a drawing (`FilmSketch.tsx`) and rows from `film.json` facts (`app/components/film/facts.ts`); "Fibre" overlap fixed.
+6. Apple leftovers on the main page: phone free-tier chip in flow, agent colour literals to tokens, scene glow off, lime/cream/CTA sheen removed. C1: DESIGN.md section 0.
 
-Gates after each step: tsc, `npm run test:unit`, `bash scripts/survivors.sh` (13/13), `npm run lint:tokens` and `npm run audit` (no worse than baseline), screen check PASS, shots sent, checkpoint.
+Kushal said /stage is a separate lab page: stay on the main page (`/`, ClassicPage). B1 recoloured /stage to blue before he said so; those edits only touch `app/stage.css` and `app/components/stage/*` and can be reverted if he asks.
+
+Open: frosted glass (needs audit 2.6 change, ask Kushal); the unit test for film clips fails only where public/film clips are skipped.
 
 ## 4. Pending for Kushal (not yours)
 Agent gate on prompt v3.5 (needs model calls and his go). Netlify env vars NEON_DATABASE_URL, GROQ_API_KEY, GEMINI_API_KEY, NVIDIA_API_KEY. Rotate the LangSmith, OpenRouter and NVIDIA keys. His local docs board (gitignored). Merge and deploy.

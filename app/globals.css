@@ -90,6 +90,9 @@
      above those, #f5f5f7 text, #424245 separators. */
   --paper: #000000;
   --paper-high: #2c2c2e;
+  /* Behind a sheet or the full view: the page dimmed, never tinted. */
+  --scrim: rgb(0 0 0 / 0.55);
+  --scrim-deep: rgb(0 0 0 / 0.86);
   --ink: #f5f5f7;
   --rule: #424245;
 

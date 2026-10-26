@@ -178,7 +178,7 @@
   align-items: center;
   height: 52px;
   padding: 0 28px;
-  background: var(--voltage);
+  background: var(--fill, var(--voltage));
   color: var(--on-signal);
   font-size: 1rem;
   font-weight: 600;
@@ -217,7 +217,7 @@
   margin-top: clamp(88px, 12vh, 132px);
   padding: 6px;
   border: 1px solid var(--hair);
-  background: oklch(0.16 0.002 90 / 0.94);
+  background: oklch(0.16 0.003 286 / 0.94);
 }
 
 /* Sized to the tallest real content: question, four answer lines, three rows of
@@ -292,7 +292,7 @@
   color: var(--ink-soft);
 }
 
-/* The orange lives on the wire; the chip carries only its end mark. */
+/* The blue lives on the wire; the chip carries only its end mark. */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -342,7 +342,7 @@
   outline: none;
 }
 
-/* One filled orange control per screen, and it is "Get in touch". */
+/* One filled blue control per screen, and it is "Get in touch". */
 .askSubmit {
   height: 44px;
   padding: 0 20px;
@@ -414,7 +414,7 @@
   margin: -10px 0 0 22px;
   padding: 6px 10px;
   border: 1px solid var(--voltage);
-  background: oklch(0.16 0.002 90 / 0.8);
+  background: oklch(0.16 0.003 286 / 0.8);
   font-family: var(--font-mono);
   font-size: 0.8125rem;
   white-space: nowrap;
@@ -514,7 +514,7 @@
   display: grid;
   gap: 2px;
   padding: 6px 10px 7px;
-  background: oklch(0.16 0.002 90);
+  background: oklch(0.16 0.003 286);
 }
 
 .gauge dt {

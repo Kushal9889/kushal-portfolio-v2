@@ -129,6 +129,19 @@ export function mailtoLink(email: string, site: string, context: ReachContext = 
 }
 
 /**
+ * A draft about one answer: the question goes in the subject, so the reply
+ * starts from what the reader just read rather than from a blank page.
+ */
+export function mailtoAbout(email: string, site: string, question: string, tag: string | null = null, who?: string) {
+  const q = question.length > 80 ? `${question.slice(0, 77).trimEnd()}...` : question;
+  const params = new URLSearchParams({
+    subject: tag ? `About "${q}" (via ${tag})` : `About "${q}"`,
+    body: `Hi${who ? ` ${who.split(",")[0].split(" ")[0]}` : ""},\n\nI asked the agent on ${site}: "${question}"\n\nI would like to talk about it.\n\n`,
+  });
+  return `mailto:${email}?${params.toString().replace(/\+/g, "%20")}`;
+}
+
+/**
  * The same draft as plain text.
  *
  * A `mailto:` press on a machine with no mail client registered raises no event,

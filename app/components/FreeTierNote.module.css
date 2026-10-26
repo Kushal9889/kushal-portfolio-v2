@@ -1,5 +1,5 @@
-/* A small card that slides in at the lower right, above the dock. Graphite like
-   the agent console, a gold top light like the record chips, square corners. */
+/* A small card at the top right on a wide screen, a raised tile like the
+   agent console; on a phone it sits in the page under the card. */
 .note {
   position: fixed;
   z-index: 60;
@@ -257,20 +257,25 @@
   margin: 0;
 }
 
+/* Phone: in the page, under the agent card it explains, not floating. A fixed
+   chip on a 390px screen always sits on something: the tally, an answer, the
+   ask box once the keyboard is up. */
 @media (max-width: 767px) {
   .dotBar {
-    inset-inline-end: var(--s-3);
-    inset-block-start: auto;
-    inset-block-end: calc(4rem + var(--s-3) + env(safe-area-inset-bottom, 0px));
+    position: static;
+    width: max-content;
+    margin: var(--s-3) var(--s-3) 0 auto;
+    box-shadow: none;
   }
 
   .note {
-    inset-inline: var(--s-3);
-    inset-block-start: auto;
+    position: static;
     width: auto;
-    inset-block-end: calc(4rem + var(--s-3) + env(safe-area-inset-bottom, 0px));
-    max-height: calc(100dvh - 8rem);
-    overflow: auto;
+    max-height: none;
+    margin: var(--s-3) var(--s-3) 0;
+    overflow: visible;
+    box-shadow: none;
+    animation: none;
   }
 }
 

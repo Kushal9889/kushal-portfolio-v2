@@ -3,13 +3,13 @@
   z-index: 2;
   height: 100vh;
   min-height: 760px;
-  /* Soft ink on the orange is set darker than the stage default so the
-     14px lines under each contact row stay above 4.5:1. */
-  --ink-soft: oklch(0.14 0.002 90 / 0.86);
+  /* Soft ink on the blue stays near white so the 14px lines under each
+     contact row keep their contrast on the fill blue. */
+  --ink-soft: oklch(1 0 0 / 0.86);
 }
 
 /* While the motion runs, the chapter is clear glass over the field until the
-   orange floods it from the gathered point. */
+   blue floods it from the gathered point. */
 .finale.finale[data-flood="on"] {
   background: transparent;
 }
@@ -25,7 +25,7 @@
   height: 170vmax;
   margin: -85vmax 0 0 -85vmax;
   border-radius: 50%;
-  background: var(--voltage);
+  background: var(--fill, var(--voltage));
   transform: scale(0);
   pointer-events: none;
 }
@@ -70,7 +70,7 @@
 .register {
   display: grid;
   margin: 0;
-  border-top: 1px solid oklch(0.14 0.002 90 / 0.3);
+  border-top: 1px solid oklch(1 0 0 / 0.3);
 }
 
 .register div {
@@ -78,7 +78,7 @@
   grid-template-columns: 7rem minmax(0, 1fr);
   gap: 16px;
   padding: 6px 0;
-  border-bottom: 1px solid oklch(0.14 0.002 90 / 0.3);
+  border-bottom: 1px solid oklch(1 0 0 / 0.3);
 }
 
 .register dt {
@@ -93,11 +93,11 @@
   line-height: 1.5;
 }
 
-/* The contact rows are the shared Reach component; on the orange its hairlines
-   and hover wash are restated in ink. */
+/* The contact rows are the shared Reach component; on the blue its hairlines
+   and hover wash are restated in white. */
 .reach {
-  --rule: oklch(0.14 0.002 90 / 0.38);
-  --paper-sunk: oklch(0.14 0.002 90 / 0.08);
+  --rule: oklch(1 0 0 / 0.38);
+  --paper-sunk: oklch(1 0 0 / 0.08);
 }
 
 .reach :global(.wrap),
@@ -105,20 +105,20 @@
   margin-top: 0;
 }
 
-/* The one filled control on the chapter: square, ink on orange, reversed. */
+/* The one filled control on the chapter: white on the blue, reversed. */
 .reach a[href^="mailto:"] {
-  --ink: var(--voltage);
-  --ink-soft: oklch(0.975 0.004 90 / 0.82);
-  border-color: oklch(0.16 0.002 90);
-  background: oklch(0.16 0.002 90);
-  color: var(--voltage);
+  --ink: var(--fill, var(--voltage));
+  --ink-soft: oklch(0.2316 0.0038 286.1 / 0.82);
+  border-color: oklch(1 0 0);
+  background: oklch(1 0 0);
+  color: var(--fill, var(--voltage));
 }
 
 .reach a[href^="mailto:"]:hover {
-  background: oklch(0.22 0.002 90);
+  background: oklch(0.9707 0.0027 286.35);
 }
 
-/* A second saturated hue beside the orange reads as noise; the mark takes the ink. */
+/* A second saturated hue beside the blue reads as noise; the mark takes the ink. */
 .reach button svg,
 .reach button svg * {
   fill: currentColor;
@@ -126,7 +126,7 @@
 
 .reach a:focus-visible,
 .reach button:focus-visible {
-  outline: 2px solid oklch(0.14 0.002 90);
+  outline: 2px solid oklch(1 0 0);
   outline-offset: 3px;
 }
 
@@ -145,13 +145,13 @@
 .forward {
   margin: 0;
   padding-top: 12px;
-  border-top: 1px solid oklch(0.14 0.002 90 / 0.3);
+  border-top: 1px solid oklch(1 0 0 / 0.3);
 }
 
 .forwardText {
   margin: 0 0 6px;
   padding: 8px 10px;
-  border: 1px solid oklch(0.14 0.002 90 / 0.3);
+  border: 1px solid oklch(1 0 0 / 0.3);
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   line-height: 1.35;
@@ -176,7 +176,7 @@
 
 .forwardCopy {
   padding: 6px 12px;
-  border: 1px solid oklch(0.14 0.002 90 / 0.4);
+  border: 1px solid oklch(1 0 0 / 0.4);
   background: transparent;
   color: var(--ink);
   font: 600 0.75rem/1 var(--font-display);
@@ -184,11 +184,11 @@
 }
 
 .forwardCopy:hover {
-  border-color: oklch(0.14 0.002 90 / 0.7);
+  border-color: oklch(1 0 0 / 0.7);
 }
 
 .forwardCopy:focus-visible {
-  outline: 2px solid oklch(0.14 0.002 90);
+  outline: 2px solid oklch(1 0 0);
   outline-offset: 3px;
 }
 

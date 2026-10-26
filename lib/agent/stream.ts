@@ -1,4 +1,5 @@
 import { streamWithFailover, listPrice, failoverState, chooseTool, BUDGET_MS } from "./model";
+import { HISTORY_TURNS, HISTORY_ANSWER_CHARS } from "./limits";
 import { aside, ASIDE_VERSION } from "./aside";
 import {
   toolSchemas,
@@ -82,6 +83,12 @@ export type StreamEvent =
    * sentence a reader gets -- the failure is an answer, never a broken control.
    */
   | { type: "action"; result: ToolResult }
+  /**
+   * The earlier exchanges this answer was given (relatedHistory), by question.
+   * `scope` is "tab" today: the server keeps no session. A memory that outlives
+   * the tab would arrive here with its own scope.
+   */
+  | { type: "memory"; scope: "tab"; questions: string[] }
   | {
       type: "done";
       total: number;
@@ -152,8 +159,6 @@ type Warm = Record<
  */
 export type Exchange = { question: string; answer: string };
 
-const HISTORY_TURNS = 2;
-const HISTORY_ANSWER_CHARS = 400;
 
 /**
  * Only the earlier turns this question leans on, at most two.
@@ -209,6 +214,7 @@ export async function* runStream(
   // Everything the tab sent, for the per-session eval cap; the prompt gets only what relates.
   const sent = history;
   history = relatedHistory(question, history);
+  if (history.length) yield { type: "memory", scope: "tab", questions: history.map((h) => h.question) };
 
   // Openers were answered at build time. Serving them from the bundle costs a
   // map lookup instead of an embedding call plus a model round trip, which is

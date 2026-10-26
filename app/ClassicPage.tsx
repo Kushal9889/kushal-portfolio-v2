@@ -32,6 +32,7 @@ import { loadContent, section, loadCertifications, type Section } from "@/lib/co
 import { TARGETS, toolSchemas } from "@/lib/agent/tools";
 import { index as corpusIndex } from "@/lib/agent/corpus-index";
 import { PIPELINE } from "@/lib/agent/events";
+import { profileChips, remainder } from "@/lib/agent/chips";
 import tested from "@/lib/agent/test-score.json";
 import styles from "./page.module.css";
 import FilmLine from "./components/film/FilmLine";
@@ -307,13 +308,24 @@ export default function Page() {
     redactNames: (profile.private ?? "").split(",").map((x) => x.trim()).filter(Boolean),
     highlights: (() => {
       const wall = section("Proof wall").badges;
-      return [
-        { kind: "Lead Backend", label: "Agentic SDLC harness", href: "", ask: "What is the agentic SDLC harness he built, and how is it shipped as a plugin?" },
-        { kind: "RA", label: "AI Engineer", href: "/kushal-gaddamwar-resume.pdf", ask: `What did he build as ${section("Boston University, Questrom Computational Lab").roleParts.title}?` },
-        ...wall.filter((b) => b.group === "Shipped").map((b) => ({ kind: "Open source", label: b.label, href: b.href, ask: `Tell me about ${b.label}: ${b.name}.` })),
-        ...certs.filter((c) => c.pinned && c.url).map((c) => ({ kind: `${c.issuer}-certified`, label: c.name, href: c.url!, image: c.image, cert: true, ask: `What does the ${c.name} certification cover, and how was it earned?` })),
-        ...wall.filter((b) => b.group === "Ranked").slice(0, 1).map((b) => ({ kind: "Ranked", label: b.label, href: b.href, ask: `${b.name}: what does that rank mean?` })),
-      ];
+      const titles = loadContent().sections.map((x) => x.title);
+      // A badge's home is the section named for its project, else the wall itself.
+      const homeOf = (label: string) => {
+        const project = label.split(" #")[0].toLowerCase();
+        const named = titles.filter((t) => t.toLowerCase().includes(project));
+        return named.length ? named : ["Proof wall"];
+      };
+      // Source order is the order before any answer: a role, a credential, then upstream work.
+      return profileChips(
+        [
+          { kind: "Lead Backend", label: "Agentic SDLC harness", href: "", ask: "What is the agentic SDLC harness he built, and how is it shipped as a plugin?", group: "role" as const, homes: ["Boston University, Questrom Computational Lab, backend"] },
+          { kind: "RA", label: "AI Engineer", href: "/kushal-gaddamwar-resume.pdf", ask: `What did he build as ${section("Boston University, Questrom Computational Lab").roleParts.title}?`, group: "role" as const, homes: ["Boston University, Questrom Computational Lab"] },
+          ...certs.filter((c) => c.pinned && c.url).map((c) => ({ kind: c.issuer, label: remainder(c.issuer, c.name), href: c.url!, image: c.image, cert: true, ask: `What does the ${c.name} certification cover, and how was it earned?`, group: "cert" as const, homes: ["Certifications"] })),
+          ...wall.filter((b) => b.group === "Shipped").map((b) => ({ kind: "Open source", label: b.label, href: b.href, ask: `Tell me about ${b.label}: ${b.name}.`, group: "oss" as const, homes: homeOf(b.label) })),
+          ...wall.filter((b) => b.group === "Ranked").slice(0, 1).map((b) => ({ kind: "Ranked", label: b.label, href: b.href, ask: `${b.name}: what does that rank mean?`, group: "last" as const, homes: ["Proof wall", "Achievements"] })),
+        ],
+        corpusIndex,
+      );
     })(),
   };
 
