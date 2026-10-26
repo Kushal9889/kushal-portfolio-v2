@@ -74,3 +74,6 @@ facts. Adapter-packaged size and preview delivery still require verification.
 | Server trace union | 80.6 MB to 64.0 MB after the sharp dedupe |
 | Unit / release smoke + media / gate self-tests | 156 pass, 0 fail, 2 skips that were already there / 10 pass / OK |
 | Integration | 20 pass, 2 fail, same failures as before this pass |
+| Media origin deployed | `kushal-film.film-worker.workers.dev`: 10,817/10,817 files 200 as images; 133 samples byte-identical with CORS and the cache headers |
+| Film from the origin (merged build, headless Chrome) | 1440x900: 1,741 frames, p95 61 ms; 390x844: 2,122 frames, p95 45 ms; every frame from the origin, 0 HTTP or console errors |
+| Netlify env | `NEXT_PUBLIC_FILM_ORIGIN` set on site 5a02ef1d (all contexts); applies on the next deploy |

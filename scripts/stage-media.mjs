@@ -1,9 +1,7 @@
 // Stages the film's frames and flow maps as a static site for a separate media
-// origin (Cloudflare Pages: unmetered bandwidth on the free plan, 20,000 files
-// and 25 MiB per file per deploy). Bytes are copied as they are; nothing is
-// re-encoded. Deploy with:
-//   node scripts/stage-media.mjs .media && npx wrangler pages deploy .media --project-name <name>
-// then set NEXT_PUBLIC_FILM_ORIGIN on the app host and rebuild it.
+// origin (Cloudflare Workers static assets: unmetered on the free plan, 20,000
+// files and 25 MiB per file). Bytes are copied as they are; nothing is
+// re-encoded. Deploy steps: release/adr-media-origin.md.
 import { cpSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { verify } from "./verify-media.mjs";

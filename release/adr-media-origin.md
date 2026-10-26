@@ -1,6 +1,6 @@
 # ADR: film frames on a separate static origin
 
-Status: Accepted (code), deploy pending. Date: 2026-10-25.
+Status: Accepted and deployed 2026-10-25: `https://kushal-film.film-worker.workers.dev` (Workers static assets). Date: 2026-10-25.
 
 ## Context
 
@@ -51,12 +51,21 @@ to the CDN with no runtime reference.
 - Frame requests become cross-origin: preconnect is emitted in `app/layout.tsx`.
 - Rollback: unset `NEXT_PUBLIC_FILM_ORIGIN` and redeploy; the app serves frames itself.
 
-## Deploy steps (need the Cloudflare account)
+## Deploy steps
+
+Cloudflare now folds new Pages projects into Workers, so the origin is a Worker
+with static assets only (free, unmetered static requests, 20,000 files and
+25 MiB per file per version). Run wrangler from a folder outside the repo:
+inside it, wrangler detects Next.js, installs OpenNext, edits `package.json`
+and `next.config.ts`, and runs the authoring build that rewrites the
+committed index. That happened once on 2026-10-25 and was reverted.
 
 ```bash
 node scripts/stage-media.mjs .media
-npx wrangler pages deploy .media --project-name kushal-film
-NEXT_PUBLIC_FILM_ORIGIN=https://kushal-film.pages.dev node scripts/verify-media.mjs
+# elsewhere: wrangler.jsonc = {"name":"kushal-film","compatibility_date":"2026-10-01","assets":{"directory":"<repo>/.media"}}
+npx wrangler deploy        # rerun on upload resets; uploads dedupe by hash
+NEXT_PUBLIC_FILM_ORIGIN=https://kushal-film.film-worker.workers.dev node scripts/verify-media.mjs
 ```
 
-Then set `NEXT_PUBLIC_FILM_ORIGIN` in Netlify and redeploy.
+`NEXT_PUBLIC_FILM_ORIGIN` is set on the Netlify site; it takes effect on the
+next deploy of this app.
