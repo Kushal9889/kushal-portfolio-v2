@@ -476,6 +476,14 @@
     display: block;
     text-wrap: balance;
   }
+  /* `clip`, not `hidden`: a hidden box is a scroll container, and the agent's
+     sticky composer would stick to it instead of to the screen. */
+  .console {
+    overflow: clip;
+  }
+  .console .agentSlot {
+    padding-inline: var(--s-3);
+  }
 }
 
 /* ---- Agent console: instrument behaviour (2026-10-08) --------------------
@@ -623,6 +631,37 @@
 .journeys b { font-weight: 600; }
 .journeys span { color: var(--ink-soft); }
 .journeys a:hover, .journeys a:focus-visible { background: var(--paper-sunk); border-color: var(--ink); }
+
+/* The agent counted: four numbers from four parts of the system. Quiet type,
+   the figure carries the weight; each cell asks the agent about itself. */
+.tally {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: var(--border-hair) solid var(--rule);
+  margin-block-end: var(--s-3);
+}
+.tally button {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-block-size: 44px;
+  padding: var(--s-2) var(--s-3);
+  font: inherit;
+  text-align: start;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.tally button + button { border-inline-start: var(--border-hair) solid var(--rule); }
+.tally b { font-size: var(--step-1); font-weight: 700; line-height: 1.1; }
+.tally span { font-size: var(--step--2); line-height: 1.25; color: var(--ink-soft); }
+.tally button:hover, .tally button:focus-visible { background: var(--paper-sunk); }
+@media (max-width: 30rem) {
+  .tally { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tally button:nth-child(3) { border-inline-start: 0; }
+  .tally button:nth-child(n + 3) { border-block-start: var(--border-hair) solid var(--rule); }
+}
 
 .actions {
   display: grid;

@@ -1,0 +1,22 @@
+{
+ "endToEnd": {
+  "at": "2026-10-26",
+  "cases": 32,
+  "pass": 32,
+  "p50ms": 1704,
+  "p95ms": 2722,
+  "groundedness": 0.915,
+  "citeCoverage": 0.96
+ },
+ "outage": {
+  "at": "2026-10-25",
+  "cases": 32,
+  "pass": 27,
+  "degraded": 26,
+  "p95ms": 22
+ },
+ "retrieval": {
+  "p50ms": 65,
+  "p95ms": 256
+ }
+}

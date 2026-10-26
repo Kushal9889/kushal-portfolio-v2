@@ -4,6 +4,7 @@ import { join } from "node:path";
 const envFile = join(process.cwd(), ".env.local");
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 import { retrieve, sectionEvidence } from "../lib/agent/retrieve";
+import { LOAD_QUESTION } from "../lib/journeys";
 
 /**
  * Where relevant and irrelevant sections sit on raw cosine and BM25, dev split only
@@ -147,7 +148,7 @@ async function bandsMode() {
   const fit = youden(pts);
   const maxNeg = Math.max(...pts.filter((d) => !d.y).map((d) => d.x));
   const ci = [cuts[Math.floor(cuts.length * 0.025)], cuts[Math.floor(cuts.length * 0.975)]];
-  const heroQ = "What has he shipped on Azure?";
+  const heroQ = LOAD_QUESTION;
   const hero = (await retrieve(analyze(heroQ).query, { floor: analyze(heroQ).floor, question: heroQ })).trace.relevance ?? null;
   const result = {
     at: new Date().toISOString().slice(0, 19),

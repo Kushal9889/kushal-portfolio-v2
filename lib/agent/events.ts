@@ -57,3 +57,12 @@ export type SeedDetail = {
   provider: string | null;
   timings: Record<string, number>;
 } | null;
+
+/** The run's stages in the order stream.ts emits them, named for the reader. Counted on the page, so it lives outside the client component. */
+export const PIPELINE = [
+  ["route", "Route the question"],
+  ["retrieve", "Search his record"],
+  ["generate", "Write the answer"],
+  ["ground", "Check every figure"],
+  ["aside", "Add context"],
+] as const;

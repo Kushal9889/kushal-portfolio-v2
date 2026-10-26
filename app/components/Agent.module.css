@@ -65,7 +65,7 @@
 
 .composer:focus-within {
   border-color: var(--signal);
-  box-shadow: 0 0 0 3px color-mix(in oklch, var(--signal) 28%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--signal) 14%, transparent);
 }
 
 .input {
@@ -1221,43 +1221,67 @@
   background: var(--signal);
 }
 
-/* ---------- Featured answer: the load-time question, set as a headline ---------- */
+/* ---------- The thread: every exchange in order, the load answer first ---------- */
 
-.featured {
-  position: relative;
+/* One quiet line under a question: when and how it was answered. */
+.turnMeta {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+}
+
+.thread {
   display: grid;
-  gap: var(--s-4);
-  min-width: 0;
-  padding: var(--s-5);
-  background-color: color-mix(in oklch, var(--paper) 90%, var(--signal) 4%);
-  /* A fine dot grid, the console's plotting paper. */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http:%2F%2Fwww%2Ew3%2Eorg%2F2000%2Fsvg' width='14' height='14'%3E%3Ccircle cx='1' cy='1' r='1' fill='%23ffffff' fill-opacity='0.07'/%3E%3C/svg%3E");
-  border: var(--border-hair) solid color-mix(in oklch, var(--signal) 40%, var(--rule));
+  gap: var(--s-6, 2.5rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-/* Registration marks at two corners, in the accent. */
-.featured::before,
-.featured::after {
-  content: "";
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  pointer-events: none;
-  border: 0 solid var(--signal);
+/* A hairline between exchanges, and a rule at the edge of the one the side
+   panel is showing, so the panel's turn is always findable in the thread. */
+.thread > li + li {
+  padding-top: var(--s-5);
+  border-top: var(--border-hair) solid var(--rule);
+}
+.thread > li {
+  padding-inline-start: var(--s-3);
+  border-inline-start: 2px solid transparent;
+  transition: border-color var(--t-fast) var(--ease-out);
+}
+.agent[data-split] .thread > li[data-on] {
+  border-inline-start-color: var(--mark-rule, var(--rule));
 }
 
-.featured::before {
-  inset-block-start: -1px;
-  inset-inline-start: -1px;
-  border-block-start-width: 2px;
-  border-inline-start-width: 2px;
+@media (prefers-reduced-motion: no-preference) {
+  /* A new exchange rises into the thread; under reduced motion it is simply there. */
+  .thread > li:last-child {
+    animation: turnIn 320ms var(--ease-out) both;
+  }
 }
 
-.featured::after {
-  inset-block-end: -1px;
-  inset-inline-end: -1px;
-  border-block-end-width: 2px;
-  border-inline-end-width: 2px;
+@keyframes turnIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* A tool call says it is one: which tool ran and what it did not do. */
+.toolHead {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  margin: 0 0 var(--s-2);
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+.toolHead code {
+  color: var(--ink);
 }
 
 .kicker {
@@ -1270,45 +1294,6 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--signal);
-}
-
-.featuredQ {
-  margin: 0;
-  font-family: var(--font-plate, inherit);
-  font-size: clamp(1.35rem, 2.1vw, 1.75rem);
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  text-wrap: balance;
-}
-
-.featured .leadLine {
-  font-size: 1.3em;
-}
-
-.grounded {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-family: var(--mono);
-  font-size: var(--step--2);
-}
-
-.grounded li {
-  padding: 0.3em 0.7em;
-  color: var(--ink-soft);
-  border: var(--border-hair) solid var(--mark-rule, var(--rule));
-  background: var(--mark-wash, transparent);
-}
-
-.featuredCta {
-  display: grid;
-  gap: var(--s-3);
-  justify-items: start;
 }
 
 .invite {
@@ -1707,20 +1692,25 @@ button.step:hover {
 }
 
 @media (max-width: 767px) {
-  /* Once the reader has asked, the card is the screen: bar on top, composer at
-     the bottom, the answer scrolling between. */
-  .agent[data-asked] {
-    height: calc(100dvh - 4.5rem);
-    min-height: 26rem;
+  /* The page is the only scroller: a screen-high card with its own scroller
+     swallowed every swipe that started on it, so the page moved only from the
+     gutters beside it. The card grows with the answer and the composer rides
+     the bottom edge, above the 4rem reach bar. */
+  .agent:not([data-window]) .view {
+    overflow: visible;
+    overscroll-behavior: auto;
+  }
+  .agent[data-asked] .dock {
+    position: sticky;
+    bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+    z-index: 2;
+    background: var(--paper);
   }
   .hint {
     display: none;
   }
   .tab {
     min-height: var(--tap);
-  }
-  .featured {
-    padding: var(--s-4);
   }
   .island {
     min-height: var(--tap);
@@ -1966,10 +1956,10 @@ button.step:hover {
   font-family: inherit;
   font-size: var(--step--1);
   font-weight: 600;
-  color: var(--on-signal);
-  background: var(--signal);
-  border: none;
-  box-shadow: var(--lift-2);
+  color: var(--ink);
+  background: var(--paper-raised, var(--paper));
+  border: var(--border-hair) solid color-mix(in oklch, var(--signal) 55%, transparent);
+  box-shadow: var(--lift-1);
   text-shadow: none;
 }
 
@@ -2178,8 +2168,8 @@ button.step:hover {
   background: color-mix(in oklch, var(--mark) 8%, oklch(0.18 0.012 258));
   border: var(--border-hair) solid color-mix(in oklch, var(--mark) 38%, transparent);
   box-shadow:
-    inset 0 1px 0 color-mix(in oklch, var(--mark) 70%, transparent),
-    0 -1px 12px -4px color-mix(in oklch, var(--mark) 60%, transparent);
+    inset 0 1px 0 color-mix(in oklch, var(--mark) 45%, transparent),
+    0 -1px 6px -3px color-mix(in oklch, var(--mark) 30%, transparent);
   transition: box-shadow var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out);
 }
 
@@ -2187,7 +2177,7 @@ button.step:hover {
   border-color: var(--mark);
   box-shadow:
     inset 0 1px 0 var(--mark),
-    0 0 20px -4px color-mix(in oklch, var(--mark) 75%, transparent);
+    0 0 10px -3px color-mix(in oklch, var(--mark) 38%, transparent);
 }
 
 .agent.agent .litAsk {
@@ -2261,14 +2251,6 @@ button.step:hover {
     width: var(--tap);
   }
 
-  /* The load-time answer reads at body size plus one step on a phone. */
-  .featured .leadLine {
-    font-size: 1.08em;
-  }
-
-  .featured {
-    font-size: var(--step-0);
-  }
 }
 
 /* The brief: two sentences in reading type, the first words of the thread. */
@@ -2315,8 +2297,8 @@ button.step:hover {
 .lit[data-cert] {
   border-color: color-mix(in oklch, var(--mark) 70%, transparent);
   box-shadow:
-    inset 0 1px 0 var(--mark),
-    0 0 18px -4px color-mix(in oklch, var(--mark) 80%, transparent);
+    inset 0 1px 0 color-mix(in oklch, var(--mark) 70%, transparent),
+    0 0 9px -3px color-mix(in oklch, var(--mark) 40%, transparent);
 }
 
 .lit[data-cert] .litBadge {
@@ -2346,7 +2328,39 @@ button.step:hover {
   cursor: pointer;
 }
 
+/* A phone finger needs 44px: the hit area grows by padding the negative margin
+   takes back, so the sentence keeps its line spacing. */
+@media (max-width: 767px) {
+  .agent.agent .term {
+    padding: 0.75em 0.1em;
+    margin: -0.75em -0.1em;
+  }
+}
+
 .agent.agent .term:is(:hover, :focus-visible) {
   text-decoration-style: solid;
   text-decoration-color: var(--ink);
+}
+
+/* Tools the model may call: name, what it does, a sentence that triggers it. */
+.toolList {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.toolList li {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+}
+.toolList code {
+  font-family: var(--mono);
+  font-size: var(--step--1);
+  color: var(--ink);
+}
+.toolList span {
+  font-size: var(--step--1);
+  color: var(--ink-soft);
 }

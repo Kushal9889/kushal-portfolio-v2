@@ -15,6 +15,7 @@ import {
   NOT_IN_PROFILE,
   PARTIAL_NOTE,
   AGGREGATE_NOTE,
+  answerLength,
 } from "./policy";
 
 /**
@@ -182,15 +183,16 @@ const answer = timed("answer", async (state) => {
 
   try {
     const { text, usage, provider } = await invokeWithFailover([
-      { role: "system", content: systemPrompt(context) },
+      { role: "system", content: systemPrompt(context, answerLength(state.question)) },
       { role: "user", content: state.asked || state.question },
-    ]);
+    ], undefined, answerLength(state.question).tokens);
     // Stripped here rather than inside the provider adapter: the adapter's job
     // is transport, and reasoning leakage is a property of the answer.
     // A limit is only welcome when the question asked for one.
     const reply = cleanAnswer(
       state.intent === "handoff" ? handoffAnswer(text) : text,
       analyze(state.question).intent === "limitation",
+      Math.round(answerLength(state.question).words * 1.2),
     );
 
     // Nothing survived the clean, so the reply was scratchpad end to end. The

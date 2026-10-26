@@ -29,7 +29,10 @@ import Panel from "./components/Panel";
 import Artifacts2 from "./components/Artifacts";
 import evals from "@/content/evals.json";
 import { loadContent, section, loadCertifications, type Section } from "@/lib/content";
-import { TARGETS } from "@/lib/agent/tools";
+import { TARGETS, toolSchemas } from "@/lib/agent/tools";
+import { index as corpusIndex } from "@/lib/agent/corpus-index";
+import { PIPELINE } from "@/lib/agent/events";
+import tested from "@/lib/agent/test-score.json";
 import styles from "./page.module.css";
 import FilmLine from "./components/film/FilmLine";
 import Redact from "./components/Redact";
@@ -274,7 +277,18 @@ export default function Page() {
    * the hero by measuring the distance from `<Agent` to `</Hero>`, and four
    * inline props push it out of range.
    */
+  // The agent counted, each number read from the code or file that decides it:
+  // the tool schemas the model is given, the stages a run emits, the held-out
+  // split's last result and the passages in the index.
+  const tools = toolSchemas().map((t) => ({ name: t.function.name, does: t.function.description.split(". ")[0] + "." }));
+  const counts = {
+    tools: tools.length,
+    steps: PIPELINE.length,
+    tested,
+    passages: (corpusIndex as { passages: unknown[] }).passages.length,
+  };
   const agentProps = {
+    tools,
     email: profile.email,
     linkedin: profile.linkedin,
     site: profile.site.replace("https://", ""),
@@ -372,6 +386,7 @@ export default function Page() {
         who={`${profile.name}, ${profile.role}`}
         certified={certs.filter((c) => c.pinned && c.url).map((c) => c.name)}
         resumeHref="/kushal-gaddamwar-resume.pdf"
+        counts={counts}
       >
         <Agent {...agentProps} loop={false} />
       </Hero>

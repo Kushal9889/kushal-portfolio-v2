@@ -203,6 +203,8 @@ const coolingOff = new Map<ProviderName, number>();
 
 export const RATE_LIMIT_COOLDOWN_MS = 15 * 60_000;
 export const TRANSIENT_COOLDOWN_MS = 30_000;
+/** How long one provider may take before failover moves on (read by the client and /api/health). */
+export const ANSWER_TIMEOUT_MS = Number(process.env.AGENT_TIMEOUT_MS ?? 20_000);
 
 function benchProvider(name: ProviderName, err: unknown) {
   const message = String((err as Error)?.message ?? err);
@@ -257,7 +259,7 @@ export function activeProvider(): ProviderName | null {
   return availableProviders()[0] ?? null;
 }
 
-function build(name: ProviderName, streaming: boolean) {
+function build(name: ProviderName, streaming: boolean, maxTokens?: number) {
   const provider = PROVIDERS[name];
   /*
    * The model id is read per call, not once at import.
@@ -296,7 +298,8 @@ function build(name: ProviderName, streaming: boolean) {
      * has to be, in `cleanAnswer`, which drops an unterminated final sentence
      * rather than showing one.
      */
-    maxTokens: Number(process.env.AGENT_MAX_OUTPUT_TOKENS ?? 260),
+    // Per question when the caller chose a length (policy.ts answerLength); 260 is medium.
+    maxTokens: maxTokens ?? Number(process.env.AGENT_MAX_OUTPUT_TOKENS ?? 260),
     // One retry only. A visitor is waiting, and a provider that failed twice is
     // better swapped than waited on.
     maxRetries: 1,
@@ -315,7 +318,7 @@ function build(name: ProviderName, streaming: boolean) {
      * moves to the next provider, and if they all miss the reader gets the
      * grounded paragraph in seconds rather than minutes.
      */
-    timeout: Number(process.env.AGENT_TIMEOUT_MS ?? 20_000),
+    timeout: ANSWER_TIMEOUT_MS,
     // Without this the final chunk carries no usage_metadata and the token
     // count on screen stays empty, which is the number a reader most wants
     // when the page is claiming to be cost-aware.
@@ -356,6 +359,7 @@ function build(name: ProviderName, streaming: boolean) {
 export async function invokeWithFailover(
   messages: { role: string; content: string }[],
   deadline = Infinity,
+  maxTokens?: number,
 ): Promise<{ text: string; provider: ProviderName; usage: { in: number; out: number } | null }> {
   const providers = availableProviders();
   if (providers.length === 0) throw new Error("no provider configured");
@@ -363,7 +367,7 @@ export async function invokeWithFailover(
   let lastError: unknown;
   for (const name of providers) {
     try {
-      const res = await withDeadline(() => build(name, false).invoke(messages), "answer", left(deadline, ANSWER_MS, FALLBACK_MS));
+      const res = await withDeadline(() => build(name, false, maxTokens).invoke(messages), "answer", left(deadline, ANSWER_MS, FALLBACK_MS));
       const meta = (res.response_metadata?.tokenUsage ?? res.usage_metadata ?? null) as {
         promptTokens?: number;
         completionTokens?: number;
@@ -469,6 +473,7 @@ export async function* streamWithFailover(
   onUsage?: (usage: { in: number; out: number }) => void,
   onProvider?: (provider: ProviderName, model: string) => void,
   deadline = Infinity,
+  maxTokens?: number,
 ): AsyncGenerator<string> {
   const providers = availableProviders();
   if (providers.length === 0) throw new Error("no provider configured");
@@ -480,7 +485,7 @@ export async function* streamWithFailover(
       // with both providers refusing: the request timeout alone left the reader
       // watching "writing the answer" for 40 seconds before the degraded answer
       // it could have had immediately. Whichever is shorter wins.
-      const stream = await withDeadline(() => build(name, true).stream(messages), "first token", left(deadline, FIRST_TOKEN_MS, FALLBACK_MS));
+      const stream = await withDeadline(() => build(name, true, maxTokens).stream(messages), "first token", left(deadline, FIRST_TOKEN_MS, FALLBACK_MS));
       // Reported once the provider has actually produced a stream rather than
       // when it was selected, so a provider that fails on connect is never
       // credited with an answer it did not give.
@@ -616,7 +621,7 @@ export async function embedTexts(texts: string[], kind: "query" | "passage", mod
   return out;
 }
 
-const EMBED_TIMEOUT_MS = Number(process.env.EMBED_TIMEOUT_MS ?? 1_500);
+export const EMBED_TIMEOUT_MS = Number(process.env.EMBED_TIMEOUT_MS ?? 1_500);
 
 /**
  * Query vectors already computed, kept for the life of the process.

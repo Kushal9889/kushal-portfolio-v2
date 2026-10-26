@@ -369,7 +369,7 @@ function confidenceOf(logit: number | null, cos: number, lex: number, structural
 
 /** The Neon table built from this exact index, and how long it may take. */
 const TABLE = tableFor(idx as unknown as { hashes?: Record<string, string>; passages: { text: string }[] });
-const STORE_CAP_MS = 250;
+export const STORE_CAP_MS = 250;
 
 /** The corpus term a misspelt token was meant as, or null. */
 const nearestCorpusTerm = (t: string) => correct(t).fixes[0]?.[1] ?? null;

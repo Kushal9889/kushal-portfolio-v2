@@ -1,6 +1,7 @@
 import { ask } from "@/lib/agent/graph";
 import { listPrice, modelOf } from "@/lib/agent/model";
 import type { RetrievalTrace } from "@/lib/agent/retrieve";
+import { LOAD_QUESTION, LOAD_CACHE_MS } from "@/lib/journeys";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -24,8 +25,8 @@ export const maxDuration = 30;
  * The timings stay honest because they are the timings of a real run; the cache
  * window just decides how recent that run was.
  */
-const QUESTION = "What has he shipped on Azure?";
-const TTL_MS = 60_000;
+const QUESTION = LOAD_QUESTION;
+const TTL_MS = LOAD_CACHE_MS;
 
 /**
  * Past this, the request did not succeed slowly -- it failed and took its time.

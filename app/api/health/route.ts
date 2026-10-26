@@ -1,4 +1,7 @@
-import { failoverState, RATE_LIMIT_COOLDOWN_MS, TRANSIENT_COOLDOWN_MS } from "@/lib/agent/model";
+import { failoverState, RATE_LIMIT_COOLDOWN_MS, TRANSIENT_COOLDOWN_MS, ANSWER_TIMEOUT_MS, EMBED_TIMEOUT_MS } from "@/lib/agent/model";
+import { STORE_CAP_MS } from "@/lib/agent/retrieve";
+import { LOAD_CACHE_MS } from "@/lib/journeys";
+import vitals from "@/lib/agent/vitals.json";
 import { calibration, index } from "@/lib/agent/corpus-index";
 import { PROMPT_VERSION } from "@/lib/agent/policy";
 
@@ -25,6 +28,10 @@ export function GET() {
     prompt: PROMPT_VERSION,
     // How long a refusing provider rests before it is tried first again.
     cooldown: { rateLimitedMs: RATE_LIMIT_COOLDOWN_MS, transientMs: TRANSIENT_COOLDOWN_MS },
+    // The time budgets the code enforces, read from the constants themselves.
+    limits: { answerMs: ANSWER_TIMEOUT_MS, embedMs: EMBED_TIMEOUT_MS, storeMs: STORE_CAP_MS, loadCacheMs: LOAD_CACHE_MS },
+    // The last measured runs, written by scripts/vitals.ts from docs/agent-bench.
+    measured: vitals,
   };
   return Response.json(body, { status: body.ok ? 200 : 503, headers: { "cache-control": "no-store" } });
 }

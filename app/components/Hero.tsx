@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { SENT_EVENT, TELEMETRY_EVENT, type SentDetail, type TelemetryPing } from "./Agent";
+import { SENT_EVENT, TELEMETRY_EVENT, ASK_EVENT, type SentDetail, type TelemetryPing } from "./Agent";
 import { SEED_EVENT, type SeedDetail } from "@/lib/agent/events";
 import { VISITOR_JOURNEYS } from "@/lib/journeys";
 import { useReferralTag } from "./Reach";
@@ -26,6 +26,8 @@ type Props = {
   /** The two pinned certifications, named on a phone where a referrer reads first. */
   certified?: string[];
   resumeHref: string;
+  /** The agent counted across four domains (tools, trace, evaluation, retrieval), each read from code. */
+  counts?: { tools: number; steps: number; tested: { pass: number; cases: number; at: string }; passages: number };
   /** The agent itself, rendered under the graph it just traced. */
   children?: React.ReactNode;
 };
@@ -53,6 +55,7 @@ export default function Hero({
   who,
   certified = [],
   resumeHref,
+  counts,
   children,
 }: Props) {
   const tag = useReferralTag();
@@ -187,13 +190,31 @@ export default function Hero({
           ))}
         </nav>
 
+        {/* The agent below, counted. Four numbers from four parts of the system,
+            each one a question the agent answers about itself. */}
+        {counts && (
+          <div className={styles.tally} role="group" aria-label="The agent, counted">
+            {[
+              { n: `${counts.tools}`, what: "tools it can call", ask: "Which tools can the agent call, and when does it use each one?" },
+              { n: `${counts.steps}`, what: "traced steps per answer", ask: "What happens in each traced step of a run, from routing to the grounding check?" },
+              { n: `${counts.tested.pass}/${counts.tested.cases}`, what: `held-out evals, ${counts.tested.at}`, ask: "How is the agent tested, and what does the held-out split check?" },
+              { n: `${counts.passages}`, what: "passages it searches", ask: "What is in the record the agent searches, and how is it split into passages?" },
+            ].map((c) => (
+              <button key={c.what} type="button" onClick={() => window.dispatchEvent(new CustomEvent<string>(ASK_EVENT, { detail: c.ask }))}>
+                <b className="tabular">{c.n}</b>
+                <span>{c.what}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* One filled action and one plain one. The draft is already written,
             so pressing it costs the reader a send, not a message. */}
         <div className={styles.actions}>
           <a className={styles.cta} href={mailtoLink(email, site, "general", tag, who)} onClick={() => track("contact", "hero-email")} data-pull>
             <span className={styles.ctaText}>
               Email him
-              <span className={styles.ctaHint}>draft written</span>
+              <span className={styles.ctaHint}>draft written · compose_intro</span>
             </span>
           </a>
           <a className={styles.secondary} href={resumeHref} target="_blank" rel="noreferrer" onClick={() => track("contact", "hero-resume")}>

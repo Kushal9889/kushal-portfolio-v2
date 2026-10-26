@@ -68,18 +68,16 @@ type Result = {
   failed?: boolean;
 };
 
-/** `seed`: the page's load-time answer, shown as the featured card until someone asks. */
+/** `seed`: the page's load-time answer, the first turn of the thread. */
 type Turn = { question: string; result: Result | null; seed?: boolean };
 type Tab = "answer" | "sources" | "trace";
 
-/** The run's stages in the order stream.ts emits them, named for the reader. */
-const PIPELINE = [
-  ["route", "Route the question"],
-  ["retrieve", "Search his record"],
-  ["generate", "Write the answer"],
-  ["ground", "Check every figure"],
-  ["aside", "Add context"],
-] as const;
+/** One sentence per tool that makes the model call it, offered as a try. */
+const TRY: Record<string, string> = {
+  open_evidence: "Open the merged LangChain fix",
+  compose_intro: "Draft an email to him",
+  run_eval: "Prove you do not make things up",
+};
 
 /** Why a reader marked an answer down, as the beacon detail (no free text, nothing personal). */
 const REASONS = ["Missed the question", "Wrong detail", "Too long", "Too short"];
@@ -162,7 +160,7 @@ export const ROUTE_EVENT = "corpus:route";
 // The request's outbound and completed events live in lib/agent/events.ts so
 // code outside React (the film) can read the same contract.
 export { SENT_EVENT, TELEMETRY_EVENT, type SentDetail, type TelemetryPing } from "@/lib/agent/events";
-import { SENT_EVENT, TELEMETRY_EVENT, SEED_EVENT, type SentDetail, type TelemetryPing, type SeedDetail } from "@/lib/agent/events";
+import { SENT_EVENT, TELEMETRY_EVENT, SEED_EVENT, PIPELINE, type SentDetail, type TelemetryPing, type SeedDetail } from "@/lib/agent/events";
 
 type Openable = { key: string; label: string; url: string; about: string };
 
@@ -202,6 +200,7 @@ export default function Agent({
   linkedin,
   site,
   openable,
+  tools = [],
   highlights = [],
   brief,
   redactNames = [],
@@ -213,6 +212,8 @@ export default function Agent({
   site: string;
   /** The tool registry, as things a reader can open without asking first. */
   openable: Openable[];
+  /** The functions the model may call, named and described by tools.ts itself. */
+  tools?: { name: string; does: string }[];
   /** Checkable record shown before the first question; each asks the agent about itself. */
   highlights?: { kind: string; label: string; href: string; ask: string; image?: string; cert?: boolean }[];
   /** Names (clients) replaced in any passage text shown to a reader. */
@@ -233,6 +234,8 @@ export default function Agent({
   /** Wide enough to set Sources and Trace beside the answer, not behind tabs. */
   const [roomy, setRoomy] = useState(false);
   const [side, setSide] = useState<"sources" | "trace">("sources");
+  /** In the window, the turn whose Sources and Trace the side panel shows; null follows the latest. */
+  const [focusTurn, setFocusTurn] = useState<number | null>(null);
   /** The open-source chips are one chip until a reader opens the set. */
   const [ossOpen, setOssOpen] = useState(false);
   /** Chip order, shuffled once per load after mount (server markup stays in source order). */
@@ -432,8 +435,8 @@ export default function Agent({
     };
   }, []);
 
-  /* The page's load-time answer becomes the first turn: the featured card
-     until the reader asks, then one line in the history. */
+  /* The page's load-time answer becomes the first turn of the thread, set
+     like any other answer, then one line in the history once the reader asks. */
   useEffect(() => {
     const onSent = (e: Event) => {
       if ((e as CustomEvent<SentDetail>).detail?.question === null) setSeedPending(true);
@@ -478,9 +481,28 @@ export default function Agent({
     const v = viewRef.current;
     const q = document.getElementById(`agent-q-${turns.length - 1}`);
     if (!v || !q || turns.at(-1)?.seed) return;
-    v.scrollTo({ top: Math.max(0, q.offsetTop - 8), behavior: reducedMotion() ? "auto" : "smooth" });
+    // On a phone the page is the scroller (the card has none), so the page moves to the question.
+    if (phone && !win) q.scrollIntoView({ block: "start", behavior: reducedMotion() ? "auto" : "smooth" });
+    else v.scrollTo({ top: Math.max(0, q.offsetTop - 8), behavior: reducedMotion() ? "auto" : "smooth" });
     measure();
   }, [turns.length]);
+
+  /* In the window the side panel follows the turn being read. */
+  useEffect(() => {
+    const v = viewRef.current;
+    if (!win || !v || typeof IntersectionObserver === "undefined") return;
+    const seen = new Map<number, number>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) seen.set(Number((e.target as HTMLElement).dataset.turn), e.intersectionRatio);
+        const best = [...seen].sort((a, b) => b[1] - a[1])[0];
+        if (best && best[1] > 0) setFocusTurn(best[0]);
+      },
+      { root: v, threshold: [0, 0.25, 0.5, 0.75, 1] },
+    );
+    v.querySelectorAll("[data-turn]").forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [win, turns.length]);
 
   useEffect(() => {
     if (pending || !focusAnswer.current) return;
@@ -557,7 +579,10 @@ export default function Agent({
    * already worked; it only fires the scroll it already decided was needed.
    */
   function revealAgent() {
-    const root = rootRef.current;
+    // On a phone the card grows with the answer, so its top is above the screen
+    // while it is being read; the current question is what has to be in view.
+    const asked = rootRef.current?.querySelectorAll<HTMLElement>('[id^="agent-q-"]');
+    const root = phone && !win && asked?.length ? asked[asked.length - 1] : rootRef.current;
     if (!root) return;
 
     const box = root.getBoundingClientRect();
@@ -565,7 +590,7 @@ export default function Agent({
     if (!offscreen) return;
 
     const calm = reducedMotion();
-    root.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "center" });
+    root.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: phone && !win ? "start" : "center" });
 
     /*
      * A smooth scroll has no completion event, and it has been measured doing
@@ -592,7 +617,7 @@ export default function Agent({
           root.getBoundingClientRect().top < 0 ||
           root.getBoundingClientRect().top > window.innerHeight * 0.6;
         if (neverMoved && offscreenNow) {
-          root.scrollIntoView({ behavior: "auto", block: "center" });
+          root.scrollIntoView({ behavior: "auto", block: phone && !win ? "start" : "center" });
         }
       }, 700);
     }
@@ -670,6 +695,7 @@ export default function Agent({
     const base = replace ? turns.slice(0, -1) : turns;
     const index = base.length;
     setTab("answer");
+    setFocusTurn(null);
     sheetRef.current?.close();
     focusAnswer.current = true;
 
@@ -1014,6 +1040,12 @@ export default function Agent({
     if (target) requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView({ block: "nearest", behavior: reducedMotion() ? "auto" : "smooth" }));
   }
 
+  /** Opens one turn's Sources or Trace: the side panel follows that turn. */
+  function openAt(i: number, next: Tab, target?: string) {
+    setFocusTurn(i);
+    open(next, target);
+  }
+
   /** Arrow keys move between tabs, as a tab list does. */
   function onTabKey(e: React.KeyboardEvent) {
     const order: Tab[] = split ? ["sources", "trace"] : ["answer", "sources", "trace"];
@@ -1035,25 +1067,33 @@ export default function Agent({
 
   const last = turns[turns.length - 1];
   const latest = last?.result ?? null;
-  const featured = turns.length === 1 && last?.seed && latest;
   const asked = turns.some((t) => !t.seed);
 
-  // "sure" is about the sources; an answer with a figure the sources do not
-  // hold is at most partly sure (ground.ts).
-  const bandOf = (r: Result | null) =>
-    r?.trace?.band ? (r.trace.band === "answer" && (r.grounding?.g ?? 1) < 1 ? "partial" : r.trace.band) : null;
-  const band = bandOf(latest);
-  const score = band && latest ? answerScore(band, latest.grounding, latest.citations) : null;
-  const why = band === "partial" && latest ? partlyWhy(latest) : null;
-  const parts =
-    band && latest && score !== null
-      ? {
-          match: band === "answer" ? 40 : 24,
-          facts: Math.round(40 * (latest.grounding?.g ?? 1)),
-          sourced: Math.round(20 * (latest.citations?.length ? latest.citations.filter((c) => c.source).length / latest.citations.length : 0)),
-        }
-      : null;
-  const hasDetail = !!latest && !pending && !last?.seed && (!!latest.trace || (latest.steps?.length ?? 0) > 0 || (latest.citations?.length ?? 0) > 0);
+  /** One turn's confidence: the band, its score and the three parts it is built from. */
+  const conf = (r: Result | null) => {
+    // "sure" is about the sources; an answer with a figure the sources do not
+    // hold is at most partly sure (ground.ts).
+    const band = r?.trace?.band ? (r.trace.band === "answer" && (r.grounding?.g ?? 1) < 1 ? "partial" : r.trace.band) : null;
+    const score = band && r ? answerScore(band, r.grounding, r.citations) : null;
+    const why = band === "partial" && r ? partlyWhy(r) : null;
+    const parts =
+      band && r && score !== null
+        ? {
+            match: band === "answer" ? 40 : 24,
+            facts: Math.round(40 * (r.grounding?.g ?? 1)),
+            sourced: Math.round(20 * (r.citations?.length ? r.citations.filter((c) => c.source).length / r.citations.length : 0)),
+          }
+        : null;
+    return { band, score, why, parts };
+  };
+  const { band, score } = conf(latest);
+  /** Whether a finished turn has a trace or sources to open. */
+  const detailOf = (t: Turn | undefined) =>
+    !!t?.result && !t.seed && (!!t.result.trace || (t.result.steps?.length ?? 0) > 0 || (t.result.citations?.length ?? 0) > 0);
+  const hasDetail = !pending && detailOf(last);
+  /** The turn the side panel shows: the one in view in the window, else the latest. */
+  const shownAt = focusTurn !== null && detailOf(turns[focusTurn]) ? focusTurn : turns.length - 1;
+  const shown = turns[shownAt];
   const benched = (latest?.failover ?? []).filter((f) => f.coolingOffFor > 0).map((f) => f.name);
 
   /* The island: one capsule that names where the run is, then how it went. */
@@ -1100,7 +1140,7 @@ export default function Agent({
                         ? `Answered from his record in ${ms(latest?.total)}`
                         : `Done in ${ms(latest?.total)}${latest?.firstToken !== undefined ? ` · first word ${ms(latest.firstToken)}` : ""}${latest?.model ? ` · ${latest.model.split("/").pop()}` : latest?.provider ? ` · ${latest.provider}` : ""}`;
 
-  /** One turn's answer body, shared by the featured card, the current turn and expanded history. */
+  /** One turn's answer body, shared by every turn in the thread and expanded history. */
   const body = (turn: Turn, i: number, current: boolean) => {
     const r = turn.result;
     const streaming = current && pending;
@@ -1166,6 +1206,7 @@ export default function Agent({
     const max = Math.max(...(r.steps ?? []).map((x) => x.ms), 1);
     let cell = 0;
     const at = () => ({ "--i": cell++ }) as React.CSSProperties;
+    const { band, score, why, parts } = conf(r);
     return (
       <div className={styles.board}>
         {parts && (
@@ -1311,6 +1352,28 @@ export default function Agent({
             {openPolicy && <pre className={styles.policy}>{r.policy}</pre>}
           </section>
         )}
+        {tools.length > 0 && (
+          <section className={styles.card} data-span="full" style={at()} aria-label="Tools">
+            <header className={styles.cardHead}>
+              <h4>Tools it can call</h4>
+              <span className={`${styles.badge} tabular`}>{tools.length}</span>
+            </header>
+            <ul className={styles.toolList}>
+              {tools.map((t) => (
+                <li key={t.name}>
+                  <code>{t.name}</code>
+                  <span>{t.does}</span>
+                  {TRY[t.name] && (
+                    <button type="button" className={styles.chip} onClick={() => submit(TRY[t.name])}>
+                      {TRY[t.name]}
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p className={styles.dim}>The model picks a tool only when the question asks for one; every call shows here as a step.</p>
+          </section>
+        )}
         <section className={styles.card} data-span="full" style={at()} aria-label="Opens directly">
           <header className={styles.cardHead}>
             <h4>Opens directly</h4>
@@ -1387,9 +1450,9 @@ export default function Agent({
           ))}
         </ul>
         <div className={styles.actions}>
-          <button className={styles.ghost} data-done={flash === "sources" || undefined} onClick={() => copy("sources", withSources(turn), "copy-sources")}>
-            <Glyph name={flash === "sources" ? "CheckCircle:regular" : "ListChecks:regular"} size={18} />
-            {flash === "sources" ? "Copied with sources" : "Copy with sources"}
+          <button className={styles.ghost} data-done={flash === `sources:${i}` || undefined} onClick={() => copy(`sources:${i}`, withSources(turn), "copy-sources")}>
+            <Glyph name={flash === `sources:${i}` ? "CheckCircle:regular" : "ListChecks:regular"} size={18} />
+            {flash === `sources:${i}` ? "Copied with sources" : "Copy with sources"}
           </button>
         </div>
       </div>
@@ -1397,23 +1460,25 @@ export default function Agent({
   };
 
   /** Copy, share, edit, regenerate and feedback for the finished answer. */
-  const actions = (turn: Turn) => {
+  const actions = (turn: Turn, i: number) => {
     const r = turn.result!;
+    // Keyed per turn, so one Copy confirms and the others in the thread stay put.
+    const k = (kind: string) => `${kind}:${i}`;
     const v = votes[turn.question];
     return (
       <>
         <div className={styles.actions} role="group" aria-label="Answer actions">
-          <button className={styles.ghost} data-done={flash === "answer" || undefined} onClick={() => copy("answer", `${turn.question}\n\n${r.answer}`, "copy-answer")}>
-            <Glyph name={flash === "answer" ? "CheckCircle:regular" : "Copy:regular"} size={18} />
-            {flash === "answer" ? "Copied" : "Copy"}
+          <button className={styles.ghost} data-done={flash === k("answer") || undefined} onClick={() => copy(k("answer"), `${turn.question}\n\n${r.answer}`, "copy-answer")}>
+            <Glyph name={flash === k("answer") ? "CheckCircle:regular" : "Copy:regular"} size={18} />
+            {flash === k("answer") ? "Copied" : "Copy"}
           </button>
-          <button className={styles.ghost} data-done={flash === "sources" || undefined} onClick={() => copy("sources", withSources(turn), "copy-sources")}>
-            <Glyph name={flash === "sources" ? "CheckCircle:regular" : "ListChecks:regular"} size={18} />
-            {flash === "sources" ? "Copied" : "With sources"}
+          <button className={styles.ghost} data-done={flash === k("sources") || undefined} onClick={() => copy(k("sources"), withSources(turn), "copy-sources")}>
+            <Glyph name={flash === k("sources") ? "CheckCircle:regular" : "ListChecks:regular"} size={18} />
+            {flash === k("sources") ? "Copied" : "With sources"}
           </button>
-          <button className={styles.ghost} data-done={flash === "link" || undefined} onClick={() => copy("link", shareUrl(turn), "share")}>
-            <Glyph name={flash === "link" ? "CheckCircle:regular" : "LinkSimple:regular"} size={18} />
-            {flash === "link" ? "Link copied" : "Share"}
+          <button className={styles.ghost} data-done={flash === k("link") || undefined} onClick={() => copy(k("link"), shareUrl(turn), "share")}>
+            <Glyph name={flash === k("link") ? "CheckCircle:regular" : "LinkSimple:regular"} size={18} />
+            {flash === k("link") ? "Link copied" : "Share"}
           </button>
           {!turn.seed && (
             <button className={styles.ghost} onClick={() => editLast(turn)}>
@@ -1443,6 +1508,201 @@ export default function Agent({
         )}
         {v && (v.v === "up" || v.reason) && <p className={styles.dim} role="status">Thanks, noted.</p>}
       </>
+    );
+  };
+
+  /** One exchange: question, answer, its trace line and actions. The window
+   *  renders every turn through this, the card renders the latest. */
+  const turnView = (turn: Turn, i: number) => {
+    const r = turn.result;
+    const isLast = i === turns.length - 1;
+    const live = pending && isLast;
+    const covered = r?.coverage?.filter((c) => c.status === "covered").length ?? 0;
+    return (
+      <article className={styles.sheet} aria-labelledby={`agent-q-${i}`}>
+        <h3 className={styles.question} id={`agent-q-${i}`}>
+          {turn.question}
+        </h3>
+        {turn.seed && r && (
+          <p className={styles.turnMeta}>
+            Asked on load · <span className="tabular">{ms(r.total)}</span>
+            {r.provider ? ` · ${r.provider}` : ""}
+          </p>
+        )}
+
+        {live && steps}
+
+        {!r && !pending && isLast ? (
+          <div className={styles.note} data-tone="warn">
+            <span>Stopped before an answer arrived.</span>
+            <button type="button" className={styles.retry} onClick={() => submit(turn.question, { replace: true })}>Retry</button>
+          </div>
+        ) : (
+          <>
+            {!live && r && !r.answer.trim() ? <p className={styles.dim}>Stopped before any answer was written.</p> : body(turn, i, isLast)}
+
+            {r && !live && isLast && (r.failed || r.degraded || !r.answer.trim()) && (
+              <div className={styles.note} data-tone="warn">
+                <span>
+                  {r.failed
+                    ? "The connection dropped before the answer finished."
+                    : r.degraded
+                      ? `The models are resting${benched.length ? ` (${benched.join(", ")})` : ""}, so this is the passage his record ranks first, word for word.`
+                      : "Nothing was written before the stop."}
+                </span>
+                <button type="button" className={styles.retry} onClick={() => submit(turn.question, { replace: true, fresh: true })}>Retry</button>
+              </div>
+            )}
+            {r && !live && !!r.grounding?.unsupported.length && (
+              <p className={styles.note} data-tone="warn">
+                {r.grounding.unsupported.length === 1 ? "1 figure or name" : `${r.grounding.unsupported.length} figures or names`} to check against his record: {r.grounding.unsupported.join(", ")}
+              </p>
+            )}
+
+            {/* The second voice: a separate warm call that sees only the
+                finished answer, guarded so it can add no fact. */}
+            {r?.aside && !live && !compact && (() => {
+              const temp = r.steps?.find((x) => x.name === "aside")?.detail.match(/temp ([\d.]+)/)?.[1];
+              return (
+                <aside className={styles.asideCard} id={isLast ? "agent-aside" : undefined} aria-label="Second take">
+                  <p className={styles.asideHead}>
+                    <Glyph name="Waveform:regular" size={16} />
+                    Second take{temp ? ` · temperature ${temp}` : ""} · adds no facts
+                  </p>
+                  <p className={styles.asideLine}>{r.aside}</p>
+                  <button type="button" className={styles.asideCta} onClick={() => inputRef.current?.focus()}>
+                    Ask him something sharper
+                    <Glyph name="ArrowUpRight:bold" size={16} />
+                  </button>
+                </aside>
+              );
+            })()}
+
+            {/* What the agent did, always also a control: the automatic attempt is usually blocked as a popup. */}
+            {r?.action?.ok && r.action.kind === "open" && (
+              <a className={styles.lead} href={r.action.url} target="_blank" rel="noreferrer" onClick={() => track("contact", `tool-${(r.action as { label: string }).label}`)}>
+                Open {r.action.label}
+              </a>
+            )}
+            {r?.action?.ok && r.action.kind === "draft" && (
+              <div className={styles.draft}>
+                {/* The draft is a tool call, named as one: what ran, and that nothing was sent. */}
+                <p className={styles.toolHead}>
+                  <Glyph name="EnvelopeSimple:regular" size={16} />
+                  Tool call · <code>compose_intro</code> · drafted here, sent only by you
+                </p>
+                <p className={styles.draftHead}>
+                  <span>Subject</span>
+                  {r.action.subject}
+                </p>
+                <pre className={styles.draftText}>{r.action.body}</pre>
+                <div className={styles.actions}>
+                  <a className={styles.lead} href={r.action.mailto} onClick={() => track("contact", "tool-mailto")}>
+                    Open in your mail app
+                  </a>
+                  <button
+                    className={styles.ghost}
+                    data-done={flash === "draft" || undefined}
+                    onClick={() => {
+                      const d = r.action as { subject: string; body: string };
+                      copy("draft", `${d.subject}\n\n${d.body}`, "copy-draft");
+                    }}
+                  >
+                    {flash === "draft" ? "Copied" : "Copy draft"}
+                  </button>
+                </div>
+              </div>
+            )}
+            {r?.action?.ok && r.action.kind === "eval" && (
+              <p className={styles.note} data-tone={r.action.passed ? "live" : "fail"}>
+                <b>Check {r.action.passed ? "passed" : "failed"}.</b> {r.action.question} {r.action.asserts}
+              </p>
+            )}
+
+            {/* The proof, one line of controls: each opens its detail. */}
+            {r && !live && detailOf(turn) && !glance && (
+              <ul className={styles.proofList} aria-label="How this answer was produced">
+                {(r.steps?.length ?? 0) > 0 && (
+                  <li>
+                    <button type="button" className={styles.step} data-state={r.steps!.some((x) => x.state === "failed") ? "partial" : "done"} onClick={() => openAt(i, "trace")}>
+                      <Glyph name="ListChecks:regular" size={16} />
+                      {r.steps!.filter((x) => x.state === "done").length}/{r.steps!.length} steps
+                    </button>
+                  </li>
+                )}
+                {r.sources.length > 0 && (
+                  <li>
+                    <button type="button" className={styles.step} onClick={() => openAt(i, "sources")}>
+                      <span className="tabular">{r.sources.length}</span> {r.sources.length === 1 ? "source" : "sources"}
+                    </button>
+                  </li>
+                )}
+                {(r.coverage?.length ?? 0) > 0 && (
+                  <li>
+                    <button type="button" className={styles.step} data-state={covered === r.coverage!.length ? "done" : "partial"} onClick={() => openAt(i, "trace")}>
+                      <span className="tabular">{covered}/{r.coverage!.length}</span> requirements covered
+                    </button>
+                  </li>
+                )}
+                <li>
+                  <button type="button" className={styles.step} onClick={() => openAt(i, "trace")}>
+                    <Glyph name="Timer:regular" size={16} />
+                    <span className="tabular">{ms(r.total)}</span>
+                  </button>
+                </li>
+              </ul>
+            )}
+
+            {r && !live && r.answer.trim() && !glance && actions(turn, i)}
+
+            {/* Next questions, computed from the sections this answer was grounded in. */}
+            {r && !live && isLast && !compact && ((r.offers?.length ?? 0) > 0 || r.route === "answer") && (
+              <ul className={styles.offers} id="agent-next" aria-label="Next">
+                {/* The load answer has no offers of its own: the visitor openers stand in. */}
+                {turn.seed &&
+                  OPENERS.slice(0, 3).map((o) => (
+                    <li key={o.q}>
+                      <button className={styles.chip} onClick={() => submit(o.q)}>{o.q}</button>
+                    </li>
+                  ))}
+                {(r.offers ?? []).map((o, n) =>
+                  o.kind === "open" ? (
+                    <li key={o.url}>
+                      <a
+                        className={styles.chip}
+                        data-kind="open"
+                        href={o.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ "--n": n } as React.CSSProperties}
+                        onClick={() => {
+                          pendingOpen.current = null;
+                          track("contact", `offer-${o.what}`);
+                        }}
+                      >
+                        {o.label}
+                      </a>
+                    </li>
+                  ) : (
+                    <li key={o.question}>
+                      <button className={styles.chip} style={{ "--n": n } as React.CSSProperties} onClick={() => submit(o.question)}>
+                        {o.label}
+                      </button>
+                    </li>
+                  ),
+                )}
+                {turns.length < 3 && (
+                  <li>
+                    <button className={styles.chip} data-kind="probe" onClick={() => submit(ADVERSARIAL.q)} title="The policy layer classifies this before any model sees it">
+                      Try to break it
+                    </button>
+                  </li>
+                )}
+              </ul>
+            )}
+          </>
+        )}
+      </article>
     );
   };
 
@@ -1563,7 +1823,7 @@ export default function Agent({
                       const re = new RegExp(`(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "g");
                       return brief.split(re).map((part, i) =>
                         terms.includes(part) ? (
-                          <button key={i} type="button" className={styles.term} onClick={() => submit(`What is ${part} in his work, and what did he do with it?`)}>
+                          <button key={i} type="button" className={styles.term} aria-label={`Ask the agent about ${part}`} onClick={() => submit(`What is ${part} in his work, and what did he do with it?`)}>
                             {part}
                           </button>
                         ) : (
@@ -1615,10 +1875,10 @@ export default function Agent({
                 })()}
               </section>
             )}
-            {!split && hasDetail && tab === "sources" && last ? (
-              sourcesPanel(last, turns.length - 1)
-            ) : !split && hasDetail && tab === "trace" && latest && !phone ? (
-              board(latest)
+            {!split && hasDetail && tab === "sources" && shown ? (
+              sourcesPanel(shown, shownAt)
+            ) : !split && hasDetail && tab === "trace" && shown?.result && !phone ? (
+              board(shown.result)
             ) : (
               <>
                 {/* Empty: one card per kind of visitor, each naming what its answer shows. */}
@@ -1636,227 +1896,39 @@ export default function Agent({
                   </ul>
                 )}
                 {!turns.length && seedPending && (
-                  <article className={styles.featured} aria-busy="true">
-                    <p className={styles.kicker}>Asked live on load</p>
+                  <article className={styles.sheet} aria-busy="true">
+                    <p className={styles.turnMeta}>Asking on load</p>
                     {body({ question: "", result: null }, 0, true)}
                   </article>
                 )}
 
-                {/* The load-time answer, set as the featured card until the reader asks. */}
-                {featured && (
-                  <article className={styles.featured} aria-labelledby="agent-q-0">
-                    <p className={styles.kicker}>
-                      <Glyph name="SealCheck:fill" size={16} /> Asked live on load · {ms(latest.total)}
-                      {latest.provider ? ` · ${latest.provider}` : ""}
-                    </p>
-                    <h3 className={styles.featuredQ} id="agent-q-0">{last.question}</h3>
-                    {body(last, 0, true)}
-                    {latest.sources.length > 0 && (
-                      <ul className={styles.grounded} aria-label="Grounded in">
-                        {latest.sources.map((s) => <li key={s}>{s}</li>)}
-                      </ul>
-                    )}
-                    <div className={styles.featuredCta}>
-                      {!glance && actions(last)}
-                    </div>
-                    <ul className={styles.followups} aria-label="Or ask">
-                      {OPENERS.slice(0, 3).map((o) => (
-                        <li key={o.q}>
-                          <button type="button" className={styles.chip} onClick={() => submit(o.q)}>{o.q}</button>
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-                )}
-
-                {/* Earlier turns: one line each, the answer one tap away. */}
-                {!featured && turns.length > 1 && (
-                  <ul className={styles.history} aria-label="Earlier questions">
-                    {turns.slice(0, -1).map((turn, i) => (
-                      <li key={i}>
-                        <details className={styles.pastTurn}>
-                          <summary>{turn.question}</summary>
-                          {body(turn, i, false)}
-                        </details>
+                {win ? (
+                  /* The full view is one thread: every turn in full, in order, each with its trace. */
+                  <ol className={styles.thread} aria-label="Conversation">
+                    {turns.map((turn, i) => (
+                      <li key={i} data-turn={i} data-on={i === shownAt || undefined}>
+                        {turnView(turn, i)}
                       </li>
                     ))}
-                  </ul>
+                  </ol>
+                ) : (
+                  <>
+                    {/* Earlier turns: one line each, the answer one tap away. */}
+                    {turns.length > 1 && (
+                      <ul className={styles.history} aria-label="Earlier questions">
+                        {turns.slice(0, -1).map((turn, i) => (
+                          <li key={i}>
+                            <details className={styles.pastTurn}>
+                              <summary>{turn.question}</summary>
+                              {body(turn, i, false)}
+                            </details>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {last && turnView(last, turns.length - 1)}
+                  </>
                 )}
-
-                {!featured && last && turns.length > 0 && (() => {
-                  const i = turns.length - 1;
-                  const r = last.result;
-                  const live = pending;
-                  const covered = r?.coverage?.filter((c) => c.status === "covered").length ?? 0;
-                  return (
-                    <article className={styles.sheet} aria-labelledby={`agent-q-${i}`}>
-                      <h3 className={styles.question} id={`agent-q-${i}`}>
-                        {last.question}
-                      </h3>
-
-                      {live && steps}
-
-                      {!r && !pending ? (
-                        <div className={styles.note} data-tone="warn">
-                          <span>Stopped before an answer arrived.</span>
-                          <button type="button" className={styles.retry} onClick={() => submit(last.question, { replace: true })}>Retry</button>
-                        </div>
-                      ) : (
-                        <>
-                          {!live && r && !r.answer.trim() ? <p className={styles.dim}>Stopped before any answer was written.</p> : body(last, i, true)}
-
-                          {r && !live && (r.failed || r.degraded || !r.answer.trim()) && (
-                            <div className={styles.note} data-tone="warn">
-                              <span>
-                                {r.failed
-                                  ? "The connection dropped before the answer finished."
-                                  : r.degraded
-                                    ? `The models are resting${benched.length ? ` (${benched.join(", ")})` : ""}, so this is the passage his record ranks first, word for word.`
-                                    : "Nothing was written before the stop."}
-                              </span>
-                              <button type="button" className={styles.retry} onClick={() => submit(last.question, { replace: true, fresh: true })}>Retry</button>
-                            </div>
-                          )}
-                          {r && !live && !!r.grounding?.unsupported.length && (
-                            <p className={styles.note} data-tone="warn">
-                              {r.grounding.unsupported.length === 1 ? "1 figure or name" : `${r.grounding.unsupported.length} figures or names`} to check against his record: {r.grounding.unsupported.join(", ")}
-                            </p>
-                          )}
-
-                          {/* The second voice: a separate warm call that sees only the
-                              finished answer, guarded so it can add no fact. */}
-                          {r?.aside && !live && !compact && (() => {
-                            const temp = r.steps?.find((x) => x.name === "aside")?.detail.match(/temp ([\d.]+)/)?.[1];
-                            return (
-                              <aside className={styles.asideCard} id="agent-aside" aria-label="Second take">
-                                <p className={styles.asideHead}>
-                                  <Glyph name="Waveform:regular" size={16} />
-                                  Second take{temp ? ` · temperature ${temp}` : ""} · adds no facts
-                                </p>
-                                <p className={styles.asideLine}>{r.aside}</p>
-                                <button type="button" className={styles.asideCta} onClick={() => inputRef.current?.focus()}>
-                                  Ask him something sharper
-                                  <Glyph name="ArrowUpRight:bold" size={16} />
-                                </button>
-                              </aside>
-                            );
-                          })()}
-
-                          {/* What the agent did, always also a control: the automatic attempt is usually blocked as a popup. */}
-                          {r?.action?.ok && r.action.kind === "open" && (
-                            <a className={styles.lead} href={r.action.url} target="_blank" rel="noreferrer" onClick={() => track("contact", `tool-${(r.action as { label: string }).label}`)}>
-                              Open {r.action.label}
-                            </a>
-                          )}
-                          {r?.action?.ok && r.action.kind === "draft" && (
-                            <div className={styles.draft}>
-                              <p className={styles.draftHead}>
-                                <span>Subject</span>
-                                {r.action.subject}
-                              </p>
-                              <pre className={styles.draftText}>{r.action.body}</pre>
-                              <div className={styles.actions}>
-                                <a className={styles.lead} href={r.action.mailto} onClick={() => track("contact", "tool-mailto")}>
-                                  Open in your mail app
-                                </a>
-                                <button
-                                  className={styles.ghost}
-                                  data-done={flash === "draft" || undefined}
-                                  onClick={() => {
-                                    const d = r.action as { subject: string; body: string };
-                                    copy("draft", `${d.subject}\n\n${d.body}`, "copy-draft");
-                                  }}
-                                >
-                                  {flash === "draft" ? "Copied" : "Copy draft"}
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                          {r?.action?.ok && r.action.kind === "eval" && (
-                            <p className={styles.note} data-tone={r.action.passed ? "live" : "fail"}>
-                              <b>Check {r.action.passed ? "passed" : "failed"}.</b> {r.action.question} {r.action.asserts}
-                            </p>
-                          )}
-
-                          {/* The proof, one line of controls: each opens its detail. */}
-                          {r && !live && hasDetail && !glance && (
-                            <ul className={styles.proofList} aria-label="How this answer was produced">
-                              {(r.steps?.length ?? 0) > 0 && (
-                                <li>
-                                  <button type="button" className={styles.step} data-state={r.steps!.some((x) => x.state === "failed") ? "partial" : "done"} onClick={() => open("trace")}>
-                                    <Glyph name="ListChecks:regular" size={16} />
-                                    {r.steps!.filter((x) => x.state === "done").length}/{r.steps!.length} steps
-                                  </button>
-                                </li>
-                              )}
-                              {r.sources.length > 0 && (
-                                <li>
-                                  <button type="button" className={styles.step} onClick={() => open("sources")}>
-                                    <span className="tabular">{r.sources.length}</span> {r.sources.length === 1 ? "source" : "sources"}
-                                  </button>
-                                </li>
-                              )}
-                              {(r.coverage?.length ?? 0) > 0 && (
-                                <li>
-                                  <button type="button" className={styles.step} data-state={covered === r.coverage!.length ? "done" : "partial"} onClick={() => open("trace")}>
-                                    <span className="tabular">{covered}/{r.coverage!.length}</span> requirements covered
-                                  </button>
-                                </li>
-                              )}
-                              <li>
-                                <button type="button" className={styles.step} onClick={() => open("trace")}>
-                                  <Glyph name="Timer:regular" size={16} />
-                                  <span className="tabular">{ms(r.total)}</span>
-                                </button>
-                              </li>
-                            </ul>
-                          )}
-
-                          {r && !live && r.answer.trim() && !glance && actions(last)}
-
-                          {/* Next questions, computed from the sections this answer was grounded in. */}
-                          {r && !live && !compact && ((r.offers?.length ?? 0) > 0 || r.route === "answer") && (
-                            <ul className={styles.offers} id="agent-next" aria-label="Next">
-                              {(r.offers ?? []).map((o, n) =>
-                                o.kind === "open" ? (
-                                  <li key={o.url}>
-                                    <a
-                                      className={styles.chip}
-                                      data-kind="open"
-                                      href={o.url}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      style={{ "--n": n } as React.CSSProperties}
-                                      onClick={() => {
-                                        pendingOpen.current = null;
-                                        track("contact", `offer-${o.what}`);
-                                      }}
-                                    >
-                                      {o.label}
-                                    </a>
-                                  </li>
-                                ) : (
-                                  <li key={o.question}>
-                                    <button className={styles.chip} style={{ "--n": n } as React.CSSProperties} onClick={() => submit(o.question)}>
-                                      {o.label}
-                                    </button>
-                                  </li>
-                                ),
-                              )}
-                              {turns.length < 3 && (
-                                <li>
-                                  <button className={styles.chip} data-kind="probe" onClick={() => submit(ADVERSARIAL.q)} title="The policy layer classifies this before any model sees it">
-                                    Try to break it
-                                  </button>
-                                </li>
-                              )}
-                            </ul>
-                          )}
-                        </>
-                      )}
-                    </article>
-                  );
-                })()}
               </>
             )}
           </div>
@@ -1878,8 +1950,8 @@ export default function Agent({
       </div>
       {split && (
         <aside className={styles.inspector} id="agent-inspector" role={hasDetail ? "tabpanel" : undefined} aria-labelledby={hasDetail ? `agent-tab-${side}` : undefined}>
-          {hasDetail && latest && last ? (
-            side === "sources" ? sourcesPanel(last, turns.length - 1) : board(latest)
+          {hasDetail && shown?.result ? (
+            side === "sources" ? sourcesPanel(shown, shownAt) : board(shown.result)
           ) : (
             <p className={styles.dim}>Sources and the trace open here when the answer lands.</p>
           )}
@@ -1905,13 +1977,13 @@ export default function Agent({
         return (
           <div className={styles.glance}>
             <div className={styles.glanceActions} role="group" aria-label="Answer actions">
-              <button className={styles.ghost} data-done={flash === "answer" || undefined} onClick={() => copy("answer", `${last.question}\n\n${r.answer}`, "copy-answer")}>
-                <Glyph name={flash === "answer" ? "CheckCircle:regular" : "Copy:regular"} size={18} />
-                {flash === "answer" ? "Copied" : "Copy"}
+              <button className={styles.ghost} data-done={flash === `answer:${turns.length - 1}` || undefined} onClick={() => copy(`answer:${turns.length - 1}`, `${last.question}\n\n${r.answer}`, "copy-answer")}>
+                <Glyph name={flash === `answer:${turns.length - 1}` ? "CheckCircle:regular" : "Copy:regular"} size={18} />
+                {flash === `answer:${turns.length - 1}` ? "Copied" : "Copy"}
               </button>
-              <button className={styles.ghost} data-done={flash === "link" || undefined} onClick={() => copy("link", shareUrl(last), "share")}>
-                <Glyph name={flash === "link" ? "CheckCircle:regular" : "LinkSimple:regular"} size={18} />
-                {flash === "link" ? "Link copied" : "Share"}
+              <button className={styles.ghost} data-done={flash === `link:${turns.length - 1}` || undefined} onClick={() => copy(`link:${turns.length - 1}`, shareUrl(last), "share")}>
+                <Glyph name={flash === `link:${turns.length - 1}` ? "CheckCircle:regular" : "LinkSimple:regular"} size={18} />
+                {flash === `link:${turns.length - 1}` ? "Link copied" : "Share"}
               </button>
               {r.sources.length > 0 && (
                 <button className={styles.ghost} onClick={() => open("sources")}>
@@ -2086,7 +2158,7 @@ export default function Agent({
                 <Glyph name="X:regular" size={18} />
               </button>
             </header>
-            {board(latest)}
+            {board(shown?.result ?? latest)}
           </div>
         </dialog>
       )}

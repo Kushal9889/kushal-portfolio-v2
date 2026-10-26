@@ -1240,3 +1240,26 @@ describe("absentNames", () => {
     assert.deepEqual(absentNames("Did he work with Databricks?"), ["Databricks"]);
   });
 });
+
+test("answer length: four sizes chosen from the question, medium by default", async () => {
+  const { answerLength } = await import("../lib/agent/policy");
+  assert.equal(answerLength("Did he use Rust?").name, "short");
+  assert.equal(answerLength("What certifications does he hold?").name, "medium");
+  assert.equal(answerLength("What did he ship?").name, "long");
+  assert.equal(answerLength("How does retrieval work here?").name, "long");
+  assert.equal(answerLength("Walk me through every project he has shipped.").name, "very long");
+});
+
+test("history: at most two earlier turns, only the ones the question leans on", async () => {
+  const { relatedHistory } = await import("../lib/agent/stream");
+  const imgTurn = { question: "What did he build at IMG Systems?", answer: "An Apache Tika pipeline with Pydantic validation." };
+  const certTurn = { question: "Which certifications does he hold?", answer: "NVIDIA and Anthropic certifications." };
+  // A follow-up keeps the last turn.
+  assert.deepEqual(relatedHistory("Why did he do it that way?", [certTurn, imgTurn]), [imgTurn]);
+  // A question sharing a term keeps that turn, even when it is not the last.
+  assert.deepEqual(relatedHistory("What schema accuracy did the Pydantic validation reach?", [imgTurn, certTurn]), [imgTurn]);
+  // An unrelated question goes alone.
+  assert.deepEqual(relatedHistory("Where did he study computer science?", [imgTurn, certTurn]), []);
+  // Never more than two, whatever the tab sends.
+  assert.ok(relatedHistory("Tell me more", [imgTurn, certTurn, imgTurn]).length <= 2);
+});
