@@ -80,22 +80,6 @@
   padding-block-end: 0.08em;
 }
 
-/* The graph is the one signature moment on the page. It gets the space that a
-   hero image would normally take, because unlike an image it is the work.
-
-   .label and .ms are declared once, further down with the graph they belong to.
-   There were two of each in this file: the pair here set --step-0 and
-   --ink-soft, the pair below set --step--1 and --ink-faint, and the later pair
-   won every property it named. The one declaration that was doing real work,
-   the reserved timing width, is folded into the surviving .ms rather than left
-   in a block whose other half never rendered. */
-
-.caption {
-  margin: var(--s-3) 0 0;
-  font-size: var(--step--1);
-  color: var(--ink-soft);
-}
-
 /* One primary action, larger than anything near it, and the only thing on the
  * page wearing the accent. Competing calls to action cost more than they add.
  *
@@ -143,14 +127,6 @@
   transform: scale(0.98);
 }
 
-
-
-@media (min-width: 40rem) {
-  .graph {
-    gap: 0 var(--s-5);
-  }
-}
-
 /* The agent has to start inside the first screen.
  *
  * The comment in Hero.tsx has always claimed the demo sits above the fold
@@ -166,92 +142,9 @@
   border-top: var(--border-hair) solid var(--rule);
 }
 
-/* The graph row.
-   A three-column grid so the rails between nodes are continuous rather than
-   per-node arrows, which is what makes it read as one system instead of three
-   labels. Node order is fixed, so the columns are too. */
-.graph {
-  display: grid;
-  /* Column flow rather than an explicit three-column template: the node count
-     comes from the graph, not from the layout, so adding a node needs no CSS
-     change. It also keeps this from matching the three-card feature row the
-     silhouette test looks for. */
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-}
-
-.cell {
-  display: grid;
-  justify-items: center;
-  gap: var(--s-1);
-}
-
-.rail {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  width: 100%;
-  /* Was 1rem plus 0.45rem gaps plus two text rows: 106px of panel for three
-     numbers, most of it air. The rail only has to read as a line through a
-     node. */
-  height: 0.65rem;
-}
-
-.railLine {
-  height: 2px;
-  background: var(--rule);
-}
-
-/* First and last cells have a rail on one side only, so the empty grid slot
-   keeps the dot centred without a line running off the edge. */
-.rail > .railLine:only-of-type:first-child {
-  grid-column: 1;
-}
-
-.dot {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: var(--paper);
-  box-shadow: inset 0 0 0 2px var(--ink-soft);
-  grid-column: 2;
-  transition:
-    background var(--t-normal) var(--ease-out),
-    box-shadow var(--t-normal) var(--ease-out),
-    transform var(--t-normal) var(--ease-spring);
-}
-
-.label {
-  transition: color var(--t-normal) var(--ease-out);
-}
-
-/* Completed: the node is filled and its label steps up to full ink. */
-.cell[data-state="done"] .dot {
-  background: var(--ink);
-  box-shadow: inset 0 0 0 2px var(--ink);
-}
-
-.cell[data-state="done"] .label {
-  color: var(--ink);
-}
-
-/* Running. The colour is set with the rest of the graph further down, in the
-   block that supersedes this one; only the pulse and the scale live here. The
-   pulse loops only while the state does, which is what check 13.4 asks. */
-.cell[data-state="running"] .dot {
-  transform: scale(1.35);
-  animation: node-pulse 1s var(--ease-out) infinite;
-}
-
 @keyframes node-pulse {
   50% {
     opacity: 0.45;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cell[data-state="running"] .dot {
-    animation: none;
   }
 }
 
@@ -265,20 +158,14 @@
  * caption under it already reports the same measurement in words.
  */
 @media (max-width: 40rem) {
-  .graph {
-    display: none;
-  }
+  
 
-  .caption {
-    margin-block-start: var(--s-4);
-  }
+  
 
   .proof {
     margin-block-start: var(--s-3);
   }
 }
-
-
 
 /* Current employer and title, directly under the headline.
    Two of the first things a recruiter's eye looks for were absent from the only
@@ -334,64 +221,6 @@
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-
-
-
-/* The graph carries the page's only live claim and was its faintest object.
- *
- * Every timing on it is measured on the request the reader just triggered, which
- * makes it the one thing here that cannot be faked -- and it was drawn in rule
- * grey at label scale, quieter than the availability line beneath it. The node
- * that is running takes the accent, completed rails take ink, and the figures
- * step up to body size so they read as data rather than as a caption. */
-.graph .dot {
-  width: 9px;
-  height: 9px;
-}
-
-.cell[data-state="done"] .dot {
-  background: var(--ink);
-}
-
-/* --live, not the accent. ADR-005 splits the two: --signal means "press this",
-   --live means "happening now", and a node mid-request is the second. */
-.cell[data-state="running"] .dot {
-  background: var(--live);
-}
-
-.cell[data-state="done"] .railLine {
-  background: var(--ink);
-}
-
-.cell .label {
-  font-size: var(--step--1);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.cell[data-state="done"] .label {
-  color: var(--ink);
-}
-
-.cell[data-state="running"] .label {
-  color: var(--live);
-}
-
-/* Scoped to the cell. Unscoped, this shadowed an earlier .ms in the same file
-   and took its reserved width with it, which is the width that stops the row
-   shifting when a timing lands. */
-.cell .ms {
-  font-size: var(--step-0);
-  color: var(--ink-soft);
-  min-height: 1em;
-  min-width: 4.5ch;
-}
-
-.cell[data-state="done"] .ms {
-  color: var(--ink);
-}
-
-
 /*
  * The console: the graph and the agent as one instrument.
  *
@@ -418,93 +247,6 @@
   overflow: hidden;
   position: relative;
   isolation: isolate;
-}
-
-/* The racks behind the console: the loop the answer is served from. Quiet enough
-   that the text on top keeps AAA; gone under reduced motion. */
-.loop {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--t-slow, 0.6s) var(--ease-out);
-}
-
-.loop[data-on] {
-  opacity: 0.3;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .loop {
-    display: none;
-  }
-}
-
-/* The header strip. Every instrument on this page gets one: what it is on the
-   left, what it is doing on the right. */
-.consoleHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s-4);
-  padding: var(--s-2) var(--s-5);
-  border-block-end: var(--border-hair) solid var(--rule);
-  background: var(--paper-sunk);
-}
-
-.consoleLabel {
-  font-size: var(--step--2);
-  color: var(--ink-soft);
-}
-
-/* State, in the colour that means it. Green while a real request is in flight,
-   ink once it has landed with a measured number, warn when the endpoint is
-   unreachable. Nothing here is a placeholder. */
-.consoleState {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-2);
-  font-size: var(--step--2);
-  letter-spacing: var(--track-wide);
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  font-variant-numeric: tabular-nums;
-}
-
-.consoleState[data-state="running"] {
-  color: var(--live);
-}
-
-.consoleState[data-state="running"] .live-dot,
-.consoleState[data-state="running"] :global(.live-dot) {
-  background: var(--live);
-}
-
-.consoleState[data-state="done"] {
-  color: var(--ink);
-}
-
-/* Degraded, not down. The demo endpoint being unreachable does not stop the
-   agent underneath answering, so this is a caveat rather than a failure, and
-   --warn is the token that means caveat. Audit 13.1 caught the earlier
-   spelling: a semantic colour has to sit on a selector that names the state it
-   encodes, and "down" named a state this is not in. */
-.consoleState[data-state="degraded"] {
-  color: var(--warn);
-}
-
-.console .graph {
-  padding: var(--s-5) var(--s-5) 0;
-  border: none;
-}
-
-.console .caption {
-  padding: var(--s-3) var(--s-5) 0;
-  margin: 0;
 }
 
 .console .agentSlot {
@@ -572,100 +314,10 @@
 /* Inline padding, which this block was the only one in the console without.
    Its text started 1px inside the panel edge while every sibling row sat --s-5
    in, so the answer read as text that had escaped its container. */
-.said {
-  padding: var(--s-3) var(--s-5);
-  border-block-start: var(--border-hair) solid var(--rule);
-  min-height: 7.5rem;
-}
-
-.saidQ {
-  margin: 0 0 var(--s-2);
-  font-size: var(--step--1);
-  color: var(--ink-faint);
-}
-
 /* Serif, because this is the one thing in the console meant to be read rather
    than scanned. Everything else here is a label or a number. */
-.saidA {
-  margin: 0;
-  font-family: var(--font-serif), Georgia, serif;
-  font-size: var(--step-1);
-  line-height: 1.45;
-  color: var(--ink);
-  max-width: var(--measure-tight);
-  text-wrap: pretty;
-  /* Bounded, because the height of this block is decided by a language model.
-   *
-   * The prompt asks for one or two sentences and the model does not always
-   * agree: one run returned 438px of answer, which pushed the ask bar and the
-   * suggested questions off the first screen entirely. A hero that is only
-   * correct when the model is terse is not correct.
-   *
-   * Scrolled rather than truncated. Clipping would hide part of a real answer
-   * on a page whose whole argument is that nothing here needs to be taken on
-   * trust; this keeps every word reachable and the layout fixed.
-   *
-   * A fixed height rather than a ceiling. As a ceiling the pane was whatever
-   * the model had just written, so the panel resized under the reader when the
-   * answer replaced the bars waiting for it -- measured at 1440, the console
-   * jumped 79px and took the ask bar with it. A pane that is always the same
-   * size is also what an instrument looks like. */
-  height: 5.4rem;
-  /* Three whole lines. 5.4rem was 2.8 of them, so the third line showed cut
-     through its middle above the fade. */
-  height: 3lh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
 /* A scrollbar only when there is something to scroll to, and in the panel's own
    tones rather than the platform's. */
-.saidA::-webkit-scrollbar {
-  width: 3px;
-}
-
-.saidA::-webkit-scrollbar-thumb {
-  background: var(--rule);
-  border-radius: var(--r-pill);
-}
-
-.saidPending {
-  /* The same box the question occupies once there is one, so the block below
-     starts at the same line in both states. Short enough to hold one line at
-     320px: the longer wording wrapped there and the question it stands in for
-     did not, so the panel dropped 21px when the answer landed. */
-  margin: 0 0 var(--s-2);
-  font-size: var(--step--1);
-  color: var(--ink-faint);
-}
-
-.saidSrc {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--s-1) var(--s-2);
-  margin: var(--s-2) 0 0;
-  /* Reserved, for the same reason the answer pane above it is a fixed height:
-     the chip count comes from the retriever, so the row is one line or two
-     depending on what it grounded against, and the panel moved under the
-     reader when the answer landed. Measured 0.00198 of layout shift. */
-  min-height: 3.4rem;
-  align-content: start;
-}
-
-.saidSrcLabel {
-  font-size: var(--step--2);
-  color: var(--ink-faint);
-}
-
-.saidChip {
-  font-size: var(--step--2);
-  color: var(--ink-soft);
-  padding: 0.2em 0.55em;
-  border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-sm);
-}
-
 /* The console fills before it answers.
  *
  * The graph reports three latencies within a second or so; the answer they
@@ -674,57 +326,13 @@
  * serif measure, then the grounding chips -- so the panel is doing something
  * visible for the whole time it is working, and nothing shifts when the words
  * replace them. */
-.skel {
-  display: grid;
-  /* Four rows at the answer's own line pitch, in the pane the answer will
-     occupy. Same height either way, so nothing below moves when the words
-     arrive. */
-  gap: var(--s-5);
-  align-content: start;
-  height: 8.2rem;
-}
-
-.skelBar {
-  height: 0.62rem;
-  border-radius: var(--r-sm);
-  background: var(--rule);
-}
-
 /* The last line of a two-sentence answer rarely fills its measure. */
-.skelBar[data-short] {
-  width: 46%;
-}
-
-.skelChips {
-  display: flex;
-  gap: var(--s-2);
-  margin-block-start: var(--s-3);
-}
-
 /* Sized from the same font step and padding the real chip uses, so the row is
    the height it will be rather than a guess that shifts. */
-.skelChip {
-  width: 4.5rem;
-  font-size: var(--step--2);
-  height: calc(1.9em + 2 * var(--border-hair));
-  border-radius: var(--r-sm);
-  border: var(--border-hair) solid var(--rule);
-}
-
-.skelChip[data-wide] {
-  width: 6.5rem;
-}
-
 /* The loop names the state it reports, which is the rule every animation on
    this page is held to: these run only while a request is in flight, and the
    selector says so. Opacity alone, so the sweep costs a composite and not a
    paint. */
-.said[data-state="running"] .skelBar,
-.said[data-state="running"] .skelChip {
-  animation: skel 1.6s var(--ease-out) infinite;
-  animation-delay: calc(var(--skel-n, 0) * 130ms);
-}
-
 @keyframes skel {
   0%,
   100% {
@@ -735,51 +343,8 @@
   }
 }
 
-/* The tools, for the phone reader only: one wrapped run of marked chips under
-   the role line. The desktop reader gets them in every role's stack. */
-.skills {
-  display: none;
-}
-
-@media (max-width: 767px) {
-  .skills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-2);
-    margin: var(--s-3) 0 0;
-    padding: 0;
-    list-style: none;
-    font-family: var(--font-mono), ui-monospace, monospace;
-    font-size: var(--step--1);
-    color: var(--ink);
-  }
-
-  /* Labels, not controls: a bordered box here read as something to press, and
-     pressing it did nothing. */
-  .skills li {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--s-2);
-    padding: 2px 0;
-    margin-inline-end: var(--s-2);
-  }
-}
-
 /* The answer types over a transparent copy of itself, so the box is its final
    size from the first frame and nothing below it moves while the words arrive. */
-.typed {
-  display: grid;
-}
-
-.ghost,
-.type {
-  grid-area: 1 / 1;
-}
-
-.ghost {
-  opacity: 0;
-}
-
 
 /* Desktop: the hero ends above the dock (the 4rem gutter, globals.css).
  *
@@ -835,19 +400,20 @@
     min-height: 26rem;
   }
 
-  /* The answer keeps its full height; only the block below it gives way. As a
-     shrinkable flex item it was squeezed to its 7.5rem floor on a short window
-     and its sources row overflowed onto the ask bar (1920x900). */
-  .console .said {
-    flex: none;
-  }
-
+  /* The slot hands its height to the agent card, which keeps the one scroller
+     (its answer view) between its bar and its composer. The slot itself never
+     scrolls: two nested scrollers hid which one moved. */
   .console .agentSlot {
     flex: 1 1 auto;
     min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .console .agentSlot > * {
+    flex: 1 1 auto;
+    min-height: 0;
   }
 }
 
@@ -867,6 +433,38 @@
      that height and scrolls its answer inside, as it does on tall windows. */
   .body > .console {
     contain: size;
+    /* Still ends above the dock: 19rem is the headline block above the row
+       plus the 4rem dock (measured 236px + 64px at 1280x800). */
+    max-height: calc(100svh - 19rem);
+    align-self: start;
+  }
+}
+
+/* Medium windows (62 to 80rem wide, or under 52rem tall): the agent is the
+   working surface, so it takes the width and the height. The identity column
+   narrows to 22rem, the headline drops one step, and the console runs from its
+   row to just above the dock instead of stopping at its 26rem floor. */
+@media (min-width: 62rem) and (max-width: 80rem), (min-width: 62rem) and (max-height: 52rem) {
+  .body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+    gap: var(--s-6);
+  }
+}
+
+@media (min-width: 62rem) and (max-height: 52rem) {
+  .line {
+    font-size: var(--step-3);
+  }
+
+  .body > .console {
+    /* 12.25rem: the row's top edge at this headline size (196px measured at
+       1280x800 and 1366x768). */
+    height: calc(100svh - 12.25rem - 4rem - var(--s-3));
+    max-height: none;
+  }
+
+  .body > .identity {
+    gap: var(--s-2);
   }
 }
 
@@ -942,11 +540,6 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .console:has(.consoleState[data-state="done"])::after {
-    animation: beam 1.4s var(--ease-out) 1 both;
-  }
-
-  .console:has(.consoleState[data-state="running"])::after,
   .console:has([class*="thinking"])::after,
   .console:has([data-live])::after {
     animation: beam 1.6s var(--ease-out) infinite;
@@ -954,7 +547,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .console:has(.consoleState[data-state="running"])::after,
   .console:has([class*="thinking"])::after,
   .console:has([data-live])::after {
     width: 100%;
@@ -978,28 +570,6 @@
   }
 }
 
-/* A packet travels the rail into the node that is running. */
-.railLine {
-  position: relative;
-  overflow: hidden;
-}
-
-.railLine::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  width: 45%;
-  background: var(--live);
-  opacity: 0;
-  transform: translateX(-100%);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .cell[data-state="running"] .railLine::after {
-    animation: packet 0.9s var(--ease-out) infinite;
-  }
-}
-
 @keyframes packet {
   0% {
     opacity: 0;
@@ -1011,28 +581,6 @@
   100% {
     opacity: 0;
     transform: translateX(230%);
-  }
-}
-
-/* Lock-in: a ring leaves the node once, the moment it finishes. Feedback,
-   not decoration, so it plays once and stays quiet after. */
-.graph .dot {
-  position: relative;
-}
-
-.graph .dot::after {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  border: var(--border-hair) solid var(--live);
-  opacity: 0;
-  transform: scale(0.6);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .cell[data-state="done"] .dot::after {
-    animation: lock 0.7s var(--ease-out) 1 both;
   }
 }
 
@@ -1051,11 +599,6 @@
 }
 
 /* The answer pane is a fixed height, so say when more text waits below. */
-.saidA[data-more] {
-  -webkit-mask-image: linear-gradient(to bottom, oklch(0 0 0) calc(100% - 1.5rem), transparent);
-  mask-image: linear-gradient(to bottom, oklch(0 0 0) calc(100% - 1.5rem), transparent);
-}
-
 
 .name { display: inline-flex; align-items: center; min-block-size: 44px; text-decoration: none; }
 .journeys {
@@ -1124,4 +667,19 @@
   .journeys a[data-only="phone"] {
     order: -1;
   }
+}
+
+/* The agent console is a solid instrument on every width: an opaque graphite
+   ground a step above the page, so no footage or page text shows through it,
+   and its own hairline frame. Two classes deep to outrank the film's
+   attribute rules (globals.css, scenes.css). */
+.hero .body > .console {
+  background: oklch(0.205 0.012 258);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: oklch(0.955 0.03 86 / 0.28);
+}
+
+.hero .body > .console :global(#agent:not(:popover-open)) {
+  background: transparent;
 }

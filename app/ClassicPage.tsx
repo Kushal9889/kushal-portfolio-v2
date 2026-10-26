@@ -1,5 +1,6 @@
 // The classic document's full system. The root layout ships only the shared
 // base, so this page brings the rest with it.
+import { CASE_QUESTIONS } from "@/lib/agent/evals";
 import "./globals.css";
 import "./scenes.css";
 import Hero from "./components/Hero";
@@ -612,7 +613,7 @@ export default function Page() {
             proves he finds failures and this proves he checks for them. */}
         <Section id="measured" beat="proof" title="How this is measured" claim={`${evals.passed} of ${evals.cases} eval cases pass on every run.`} data-layout="bank" data-register="instrument" data-sweep="on">
           <Measured>
-            <EvalMatrix />
+            <EvalMatrix questions={[...CASE_QUESTIONS]} />
             <ModelChoice />
             <Vitals />
             <Defects />

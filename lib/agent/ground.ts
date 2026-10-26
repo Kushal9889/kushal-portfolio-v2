@@ -91,7 +91,8 @@ const words = (s: string) => new Set(s.toLowerCase().replace(/\*\*/g, "").split(
  * so the answer can carry an inline marker per sentence and the marker links
  * to the one passage it came from.
  */
-export type Citation = { sentence: string; source: string | null; id?: string; n?: number };
+/** `text`: the cited passage, on the first sentence that cites it, so a marker can preview it. */
+export type Citation = { sentence: string; source: string | null; id?: string; n?: number; text?: string };
 
 export const SENTENCE = /(?<=[.!?])\s+/;
 
@@ -102,23 +103,24 @@ export function cite(
   indexed?: { title: string; ordinal: number; text: string }[],
 ): Citation[] {
   const passages = indexed?.length
-    ? indexed.map((p) => ({ title: p.title, id: `${p.title}#${p.ordinal}`, w: words(p.text) }))
-    : sections.flatMap((s) => s.body.split(/\n\n+/).map((p) => ({ title: s.title, id: undefined as string | undefined, w: words(p) })));
+    ? indexed.map((p) => ({ title: p.title, id: `${p.title}#${p.ordinal}`, text: p.text, w: words(p.text) }))
+    : sections.flatMap((s) => s.body.split(/\n\n+/).map((p) => ({ title: s.title, id: undefined as string | undefined, text: p, w: words(p) })));
   const order = new Map<string, number>();
   return answer
     .split(SENTENCE)
     .filter((s) => s.trim())
     .map((sentence) => {
       const w = words(sentence);
-      let best = { c: 0, title: null as string | null, id: undefined as string | undefined };
+      let best = { c: 0, title: null as string | null, id: undefined as string | undefined, text: "" };
       for (const p of passages) {
         const c = w.size ? [...w].filter((x) => p.w.has(x)).length / w.size : 0;
-        if (c > best.c) best = { c, title: p.title, id: p.id };
+        if (c > best.c) best = { c, title: p.title, id: p.id, text: p.text };
       }
       if (best.c < min) return { sentence, source: null };
       const key = best.id ?? best.title!;
-      if (!order.has(key)) order.set(key, order.size + 1);
-      return { sentence, source: best.title, id: best.id, n: order.get(key) };
+      const first = !order.has(key);
+      if (first) order.set(key, order.size + 1);
+      return { sentence, source: best.title, id: best.id, n: order.get(key), ...(first ? { text: best.text.replace(/\*\*/g, "").slice(0, 360) } : {}) };
     });
 }
 

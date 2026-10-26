@@ -1,7 +1,10 @@
 # Next.js on Netlify. The plugin wires the App Router's server routes to
 # Netlify Functions; without it the API routes 404 and the agent is a dead box.
 [build]
-  command = "npm run build:index && npm run build:graph && npm run build"
+  # The search index and graph are built locally and committed; rebuilding
+  # here re-embedded the corpus with whatever key the build had and replaced
+  # the index the evals were measured on. Next only.
+  command = "npx next build"
   publish = ".next"
 
 [[plugins]]
