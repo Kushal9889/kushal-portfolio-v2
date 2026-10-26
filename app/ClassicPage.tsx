@@ -283,6 +283,19 @@ export default function Page() {
       url: value.url,
       about: value.about,
     })),
+    // What an outsider can check, lit on the card before anyone asks: the
+    // upstream work, the two pinned certifications and the first ranking.
+    // Each one asks the agent about itself; its link opens the record.
+    brief: profile.brief,
+    highlights: (() => {
+      const wall = section("Proof wall").badges;
+      return [
+        { kind: "Lead Backend", label: "Agentic SDLC harness", href: "", ask: "What is the agentic SDLC harness he built, and how is it shipped as a plugin?" },
+        ...wall.filter((b) => b.group === "Shipped").map((b) => ({ kind: "Open source", label: b.label, href: b.href, ask: `Tell me about ${b.label}: ${b.name}.` })),
+        ...certs.filter((c) => c.pinned && c.url).map((c) => ({ kind: "Certified", label: `${c.issuer} ${c.short ?? c.name}`, href: c.url!, ask: `What does the ${c.name} certification cover, and how was it earned?` })),
+        ...wall.filter((b) => b.group === "Ranked").slice(0, 1).map((b) => ({ kind: "Ranked", label: b.label, href: b.href, ask: `${b.name}: what does that rank mean?` })),
+      ];
+    })(),
   };
 
   // Parsed once and handed to the racks, rather than each one reading the

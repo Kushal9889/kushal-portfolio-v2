@@ -201,6 +201,8 @@ export default function Agent({
   linkedin,
   site,
   openable,
+  highlights = [],
+  brief,
   loop = true,
 }: {
   email: string;
@@ -208,6 +210,10 @@ export default function Agent({
   site: string;
   /** The tool registry, as things a reader can open without asking first. */
   openable: Openable[];
+  /** Checkable record shown before the first question; each asks the agent about itself. */
+  highlights?: { kind: string; label: string; href: string; ask: string }[];
+  /** Two sentences that open the conversation: inline on the card, and the first thing in the full view's thread. */
+  brief?: string;
   /** Draws the racks behind the console while an answer is written. Off where the host draws its own. */
   loop?: boolean;
 }) {
@@ -1507,6 +1513,30 @@ export default function Agent({
           aria-busy={pending}
         >
           <div className={styles.content}>
+            {/* The brief opens the thread: on the card before the first question, and
+                in the full view always, above every exchange, as one continuous flow. */}
+            {(!asked || win) && (brief || highlights.length > 0) && (
+              <section className={styles.record} aria-label="In brief">
+                {brief && <p className={styles.brief}>{brief}</p>}
+                {highlights.length > 0 && (
+                  <ul className={styles.recordList}>
+                    {highlights.map((h) => (
+                      <li key={h.label} className={styles.lit}>
+                        <button type="button" className={styles.litAsk} onClick={() => submit(h.ask)}>
+                          <span className={styles.litKind}>{h.kind}</span>
+                          <b className={styles.litName}>{h.label}</b>
+                        </button>
+                        {h.href && (
+                          <a className={styles.litOpen} href={h.href} target="_blank" rel="noreferrer" aria-label={`Open ${h.label}`} onClick={() => track("contact", `record-${h.label}`)}>
+                            <Glyph name="ArrowUpRight:regular" size={14} />
+                          </a>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )}
             {!split && hasDetail && tab === "sources" && last ? (
               sourcesPanel(last, turns.length - 1)
             ) : !split && hasDetail && tab === "trace" && latest && !phone ? (
@@ -1956,7 +1986,7 @@ export default function Agent({
           </div>
         </form>
         {compact && health ? (
-          <p className={styles.status} aria-label="Agent status">
+          <p className={styles.upLine} aria-label="Agent status">
             <span className="live-dot" data-state={health.ok ? undefined : "failed"} />
             {health.ok ? "Up" : "Down"} · {health.providers.filter((x) => !x.coolingOffFor).length} of {health.providers.length} providers ready · {health.passages} passages · {health.store.replace("+", " + ")} · prompt {health.prompt}
           </p>

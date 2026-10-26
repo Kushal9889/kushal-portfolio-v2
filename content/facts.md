@@ -1,7 +1,7 @@
 ---
 name: Kushal Gaddamwar
 role: AI Engineer
-current: AI Engineer and Lead Backend Engineer at Boston University's Questrom Computational Lab
+current: Lead Backend Engineer at Boston University's Questrom Computational Lab, and Graduate Teaching Assistant for MET CS 664
 tagline: I engineer the systems around LLMs. Not the prompts inside them.
 location: Boston, MA
 email: kushal7887pd@gmail.com
@@ -13,6 +13,7 @@ site: https://kushal-portfolio-223.netlify.app
 available: January 2027, earlier for the right team
 focus: Agentic orchestration · RAG retrieval · Evals and observability · Production deploys
 proof: He found a silent error-swallowing bug in LangChain's Python SDK. A maintainer merged the fix in 57 hours.
+brief: Lead Backend Engineer at Boston University's Questrom Computational Lab, where he built the agentic SDLC harness that holds Claude Code agents to the same gates as human engineers, shipped as a plugin. A LangChain maintainer merged the fix for the deepagents bug he reported in 57 hours, and NVIDIA and Anthropic certify him in agentic AI.
 lastVerified: 2026-10-02
 ---
 
@@ -21,8 +22,8 @@ lastVerified: 2026-10-02
 @source resume
 
 **Kushal Gaddamwar builds AI agents, then makes them answer to the same rules as the engineers
-around them.** At Boston University's Questrom Computational Lab he is the AI Engineer behind a
-14-tool LangGraph agent for Sikich, and the Lead Backend Engineer whose harness holds Claude Code
+around them.** At Boston University's Questrom Computational Lab he was the AI Engineer behind a
+14-tool LangGraph agent for Sikich, and is now the Lead Backend Engineer whose harness holds Claude Code
 agents to the gates human code has to pass. He also teaches as a Graduate Teaching Assistant for
 MET CS 664 Artificial Intelligence, and finishes his M.S. in Computer Science at BU in December
 2026. NVIDIA certifies him in agentic AI; Anthropic certifies him as a Claude developer.
@@ -99,7 +100,7 @@ Stack: Claude Code, Model Context Protocol, Django REST Framework, PostgreSQL, D
 @kind role
 @source resume
 
-Role: AI Engineer, Graduate Researcher. May 2026 to present. Boston, MA.
+Role: AI Engineer, Graduate Researcher. May 2026 to August 2026. Boston, MA.
 
 @metric 14 | tools on one LangGraph agent | resume
 @metric BM25 + vector | hybrid retrieval, Cohere reranked | resume
@@ -258,6 +259,8 @@ request body.
 @artifact Fix a maintainer wrote | merged | langchain-ai/deepagents#4925 | https://github.com/langchain-ai/deepagents/pull/4925
 @artifact Pull request he opened | open | vllm-project/vllm#56846 | https://github.com/vllm-project/vllm/pull/56846
 @artifact Issue he filed | open | modelcontextprotocol/python-sdk#3490 | https://github.com/modelcontextprotocol/python-sdk/issues/3490
+@artifact Pull request he opened | open | PrefectHQ/fastmcp#5980 | https://github.com/PrefectHQ/fastmcp/pull/5980
+@artifact Pull request he opened | open | PrefectHQ/fastmcp#5978 | https://github.com/PrefectHQ/fastmcp/pull/5978
 
 `CompositeBackend.ls("/")` and `als("/")` aggregated results at the root and discarded errors from
 the default backend, returning a successful-looking listing containing only virtual route
@@ -273,10 +276,12 @@ Filed 19 July 2026 at 15:20 UTC. Mason Daugherty, a LangChain maintainer, wrote 
 22 July at 00:45 UTC, 57 hours later, in 29 added lines across 2 files with nothing deleted. The pull
 request body reads: Credit to @Kushal9889 for reporting the issue and providing the reproduction.
 
-Two more are open and under review. In vLLM he opened pull request #56846, which makes the pythonic
+Four more are open and under review. In vLLM he opened pull request #56846, which makes the pythonic
 tool-call parsers agree across streaming modes. On the Model Context Protocol
 Python SDK he filed issue #3490: a rejected `connect_to_server` in `ClientSessionGroup` leaves its
 transport running, because the session is established before its components are validated.
+In FastMCP he opened two pull requests on 21 October 2026: #5980 forwards URL-mode elicitation
+through the proxy, and #5978 forwards sampling tools through the proxy's sampling relay.
 
 **Fifty-seven hours from a stranger's bug report to a merged fix in a LangChain SDK.** He offered in
 the issue to write the patch himself. The maintainer wrote it instead, which is the ordinary outcome
@@ -384,13 +389,13 @@ Frontend: React, Redux, Next.js.
 ## Achievements
 @kind award
 
-@metric 99.1 | percentile in JEE Mains 2020, top 1 percent of candidates | resume
+@metric 99.1 | percentile in JEE Mains 2020, All India top 1 percent of candidates | resume
 @metric 70+ | members in the coding community he co-founded | resume
 @metric 200 | Google Kickstart top 200, where his mentees landed | resume
 @metric 64 | CodeChef global rank, February 2022 Long Challenge | resume
 @metric $12K | raised for Tarang Fest 2023, which he led | resume
 
-JEE Mains 2020: 99.1 percentile, top 1% of 860K+ candidates.
+JEE Mains 2020: 99.1 percentile, All India top 1% of 860K+ candidates.
 
 CodeChef global rank 64, February 2022 Long Challenge. Third place, Code Rumble 2023.
 
@@ -405,9 +410,11 @@ The public record behind the claims on this page, shown as badges: what he shipp
 @badge Shipped | deepagents #4925 | Fix merged in LangChain deepagents, written by a maintainer from his report | https://github.com/langchain-ai/deepagents/pull/4925 | LangChain
 @badge Shipped | vLLM #56846 | Pull request to vLLM, open | https://github.com/vllm-project/vllm/pull/56846 | vLLM
 @badge Shipped | MCP #3490 | Issue he filed in the Model Context Protocol Python SDK, open | https://github.com/modelcontextprotocol/python-sdk/issues/3490 | Model Context Protocol
+@badge Shipped | FastMCP #5980 | Pull request to FastMCP, open | https://github.com/PrefectHQ/fastmcp/pull/5980
+@badge Shipped | FastMCP #5978 | Pull request to FastMCP, open | https://github.com/PrefectHQ/fastmcp/pull/5978
 @badge Published | IEEE 2024 | First author, IEEE ICAICCIT 2024 | https://doi.org/10.1109/ICAICCIT64383.2024.10912101 | IEEE
 @badge Published | IGI 2024 | Co-author, IGI Global 2024 | https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities
-@badge Ranked | JEE top 1% of 860K+ | JEE Main 2020, 99.1 percentile, top 1% of 860K+ candidates | resume
+@badge Ranked | JEE All India top 1% | JEE Main 2020, 99.1 percentile, All India top 1% of 860K+ candidates | resume
 @badge Ranked | CodeChef 64 | CodeChef global rank 64, February 2022 | resume | CodeChef
 @badge Ranked | BITBYTE 70+ | Co-founded the BITBYTE coding community, 70+ members | resume
 

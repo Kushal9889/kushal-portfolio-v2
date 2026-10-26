@@ -2050,7 +2050,7 @@ button.step:hover {
   color: var(--ink-soft);
 }
 
-.status {
+.upLine {
   display: flex;
   align-items: center;
   gap: 0.5em;
@@ -2151,4 +2151,136 @@ button.step:hover {
   .leadLine {
     font-size: 1.04em;
   }
+}
+
+/* ---------- On the record: checkable claims, lit before the first question ----------
+ * --mark is the page's colour for a claim an outsider can check, so the light
+ * here means exactly that. Bold short names in lit chips: each asks the agent
+ * about itself (the full view opens on wide screens); the arrow opens the record. */
+.record {
+  flex: none;
+  padding-block: var(--s-3) var(--s-1);
+}
+
+.recordList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lit {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  background: color-mix(in oklch, var(--mark) 8%, oklch(0.18 0.012 258));
+  border: var(--border-hair) solid color-mix(in oklch, var(--mark) 38%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklch, var(--mark) 70%, transparent),
+    0 -1px 12px -4px color-mix(in oklch, var(--mark) 60%, transparent);
+  transition: box-shadow var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out);
+}
+
+.lit:is(:hover, :focus-within) {
+  border-color: var(--mark);
+  box-shadow:
+    inset 0 1px 0 var(--mark),
+    0 0 20px -4px color-mix(in oklch, var(--mark) 75%, transparent);
+}
+
+.agent.agent .litAsk {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  min-height: 36px;
+  padding: 0 0.3em 0 0.75em;
+  font: inherit;
+  color: var(--ink);
+  background: none;
+  border: none;
+  box-shadow: none;
+  white-space: nowrap;
+  cursor: pointer;
+  align-self: center;
+}
+
+.litKind {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--mark) 80%, var(--ink));
+}
+
+.litName {
+  font-size: var(--step--1);
+  font-weight: 700;
+}
+
+.litOpen {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  color: var(--ink-soft);
+}
+
+.litOpen:hover {
+  color: var(--mark);
+}
+
+/* Inline on a wide screen the kind words repeat five times; the name and the
+   light carry it, and the kind stays for screen readers in the full view. */
+.agent[data-compact] .litKind {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  /* Phone: one swipeable row, the way a phone shows a shelf, so the answer
+     below is not pushed under a second grid. */
+  .recordList {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding: 2px 0 var(--s-2);
+  }
+
+  .lit {
+    flex: none;
+    scroll-snap-align: start;
+  }
+
+  .agent.agent .litAsk {
+    min-height: var(--tap);
+  }
+
+  .litOpen {
+    width: var(--tap);
+  }
+
+  /* The load-time answer reads at body size plus one step on a phone. */
+  .featured .leadLine {
+    font-size: 1.08em;
+  }
+
+  .featured {
+    font-size: var(--step-0);
+  }
+}
+
+/* The brief: two sentences in reading type, the first words of the thread. */
+.brief {
+  margin: 0 0 var(--s-3);
+  max-width: 68ch;
+  font-size: var(--step-0);
+  line-height: 1.55;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.agent.agent .lit:not(:has(.litOpen)) .litAsk {
+  padding-inline-end: 0.75em;
 }
