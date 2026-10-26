@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import type { RetrievalTrace } from "@/lib/agent/retrieve";
 import { isAcceptance, type Offer } from "@/lib/agent/offers";
 import type { ToolResult } from "@/lib/agent/tools";
@@ -62,14 +62,15 @@ type Result = {
   promptVersion?: string;
   /** Milliseconds from asking to the first streamed word. */
   firstToken?: number;
+  /** The earlier exchanges this answer was given, by question (stream.ts "memory"). */
+  memory?: { scope: "tab"; questions: string[] };
   /** Served again from this tab's own answers, no request made. */
   local?: boolean;
   /** The stream ended before the answer finished. */
   failed?: boolean;
 };
 
-/** `seed`: the page's load-time answer, the first turn of the thread. */
-type Turn = { question: string; result: Result | null; seed?: boolean };
+type Turn = { question: string; result: Result | null };
 type Tab = "answer" | "sources" | "trace";
 
 /** One sentence per tool that makes the model call it, offered as a try. */
@@ -160,7 +161,8 @@ export const ROUTE_EVENT = "corpus:route";
 // The request's outbound and completed events live in lib/agent/events.ts so
 // code outside React (the film) can read the same contract.
 export { SENT_EVENT, TELEMETRY_EVENT, type SentDetail, type TelemetryPing } from "@/lib/agent/events";
-import { SENT_EVENT, TELEMETRY_EVENT, SEED_EVENT, PIPELINE, type SentDetail, type TelemetryPing, type SeedDetail } from "@/lib/agent/events";
+import { rankChips, type Chip } from "@/lib/agent/chips";
+import { SENT_EVENT, TELEMETRY_EVENT, PIPELINE, type SentDetail, type TelemetryPing } from "@/lib/agent/events";
 
 type Openable = { key: string; label: string; url: string; about: string };
 
@@ -215,7 +217,7 @@ export default function Agent({
   /** The functions the model may call, named and described by tools.ts itself. */
   tools?: { name: string; does: string }[];
   /** Checkable record shown before the first question; each asks the agent about itself. */
-  highlights?: { kind: string; label: string; href: string; ask: string; image?: string; cert?: boolean }[];
+  highlights?: Chip[];
   /** Names (clients) replaced in any passage text shown to a reader. */
   redactNames?: string[];
   /** Two sentences that open the conversation: inline on the card, and the first thing in the full view's thread. */
@@ -238,13 +240,10 @@ export default function Agent({
   const [focusTurn, setFocusTurn] = useState<number | null>(null);
   /** The open-source chips are one chip until a reader opens the set. */
   const [ossOpen, setOssOpen] = useState(false);
-  /** Chip order, shuffled once per load after mount (server markup stays in source order). */
-  const [order, setOrder] = useState<string[] | null>(null);
   /** Which copy or share control just worked, for its confirmation state. */
   const [flash, setFlash] = useState<string | null>(null);
   const [openPolicy, setOpenPolicy] = useState(false);
   /** The load-time question is running in the hero; its answer arrives as the first turn. */
-  const [seedPending, setSeedPending] = useState(false);
   /** What the island reports while a run is in flight, from the stream's own events. */
   const [run, setRun] = useState<{ store?: string; storeMs?: number; retrieveMs?: number; firstToken?: number; steps: Step[] }>({ steps: [] });
   /** Thumbs per answer, keyed by its question. */
@@ -348,28 +347,6 @@ export default function Agent({
     return () => c.abort();
   }, []);
 
-  /* Shuffle the record chips on every load so no item always leads, with two
-     rules: chips of one kind (two credentials, two roles) never sit side by
-     side, and the ranking stays last. Retries a bounded number of times and
-     keeps the last try if no arrangement fits. */
-  useEffect(() => {
-    const unit = (h: (typeof highlights)[number]) => (h.kind === "Open source" ? "oss" : h.label);
-    const group = (h: (typeof highlights)[number]) => (h.cert ? "cert" : h.kind === "Open source" ? "oss" : h.kind === "Ranked" ? "last" : "role");
-    const keys = [...new Set(highlights.map(unit))];
-    const groupOf = new Map(highlights.map((h) => [unit(h), group(h)]));
-    const tail = keys.filter((k) => groupOf.get(k) === "last");
-    let pick = keys.filter((k) => groupOf.get(k) !== "last");
-    for (let tries = 0; tries < 24; tries++) {
-      const a = [...pick];
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-      }
-      pick = a;
-      if (a.every((k, i) => i === 0 || groupOf.get(k) !== groupOf.get(a[i - 1]))) break;
-    }
-    setOrder([...pick, ...tail]);
-  }, [highlights]);
 
   // A tab picked in the click that opened the window moves to the side panel.
   useEffect(() => {
@@ -435,30 +412,6 @@ export default function Agent({
     };
   }, []);
 
-  /* The page's load-time answer becomes the first turn of the thread, set
-     like any other answer, then one line in the history once the reader asks. */
-  useEffect(() => {
-    const onSent = (e: Event) => {
-      if ((e as CustomEvent<SentDetail>).detail?.question === null) setSeedPending(true);
-    };
-    const onSeed = (e: Event) => {
-      const d = (e as CustomEvent<SeedDetail>).detail;
-      setSeedPending(false);
-      if (!d) return;
-      setTurns((t) =>
-        t.length
-          ? t
-          : [{ question: d.question, seed: true, result: { answer: d.answer, route: "answer", timings: d.timings, total: d.total, sources: d.sources, provider: d.provider, warm: true } }],
-      );
-    };
-    window.addEventListener(SENT_EVENT, onSent);
-    window.addEventListener(SEED_EVENT, onSeed);
-    return () => {
-      window.removeEventListener(SENT_EVENT, onSent);
-      window.removeEventListener(SEED_EVENT, onSeed);
-    };
-  }, []);
-
   /* Scroll edges for the fade masks and the "more below" cue. */
   function measure() {
     const v = viewRef.current;
@@ -480,7 +433,7 @@ export default function Agent({
   useEffect(() => {
     const v = viewRef.current;
     const q = document.getElementById(`agent-q-${turns.length - 1}`);
-    if (!v || !q || turns.at(-1)?.seed) return;
+    if (!v || !q) return;
     // On a phone the page is the scroller (the card has none), so the page moves to the question.
     if (phone && !win) q.scrollIntoView({ block: "start", behavior: reducedMotion() ? "auto" : "smooth" });
     else v.scrollTo({ top: Math.max(0, q.offsetTop - 8), behavior: reducedMotion() ? "auto" : "smooth" });
@@ -739,6 +692,7 @@ export default function Agent({
     const steps: Step[] = [];
     let asideLine: string | undefined;
     let coverageRows: Coverage[] | undefined;
+    let memory: Result["memory"];
     const timings: Record<string, number> = {};
     const startedAt = performance.now();
     let firstToken: number | undefined;
@@ -757,6 +711,7 @@ export default function Agent({
         steps: [...steps],
         aside: asideLine,
         coverage: coverageRows,
+        memory,
         ...extra,
       };
       setTurns((t) => t.map((turn, i) => (i === index ? { ...turn, result } : turn)));
@@ -835,6 +790,9 @@ export default function Agent({
         settle();
       } else if (data.type === "coverage") {
         coverageRows = data.rows;
+        settle();
+      } else if (data.type === "memory") {
+        memory = { scope: data.scope, questions: data.questions ?? [] };
         settle();
       } else if (data.type === "offers") {
         offers = data.offers ?? [];
@@ -1067,7 +1025,7 @@ export default function Agent({
 
   const last = turns[turns.length - 1];
   const latest = last?.result ?? null;
-  const asked = turns.some((t) => !t.seed);
+  const asked = turns.length > 0;
 
   /** One turn's confidence: the band, its score and the three parts it is built from. */
   const conf = (r: Result | null) => {
@@ -1089,11 +1047,19 @@ export default function Agent({
   const { band, score } = conf(latest);
   /** Whether a finished turn has a trace or sources to open. */
   const detailOf = (t: Turn | undefined) =>
-    !!t?.result && !t.seed && (!!t.result.trace || (t.result.steps?.length ?? 0) > 0 || (t.result.citations?.length ?? 0) > 0);
+    !!t?.result && (!!t.result.trace || (t.result.steps?.length ?? 0) > 0 || (t.result.citations?.length ?? 0) > 0);
   const hasDetail = !pending && detailOf(last);
   /** The turn the side panel shows: the one in view in the window, else the latest. */
   const shownAt = focusTurn !== null && detailOf(turns[focusTurn]) ? focusTurn : turns.length - 1;
   const shown = turns[shownAt];
+  /* Record chips in the order the answer in view picks (lib/agent/chips.ts);
+     before any answer, source order with no two of one kind side by side. Open
+     source is one unit, placed where its best project ranks. */
+  const order = useMemo(() => {
+    const r = win ? shown?.result : null;
+    const ranked = rankChips(highlights, r && !pending ? { sources: r.sources, answer: r.answer } : null);
+    return [...new Set(ranked.map((i) => (highlights[i].group === "oss" ? "oss" : highlights[i].label)))];
+  }, [highlights, win, shown?.result, pending]);
   const benched = (latest?.failover ?? []).filter((f) => f.coolingOffFor > 0).map((f) => f.name);
 
   /* The island: one capsule that names where the run is, then how it went. */
@@ -1102,9 +1068,7 @@ export default function Agent({
     ? stage === "answering" && run.firstToken !== undefined
       ? "writing"
       : stage
-    : seedPending && !turns.length
-      ? "routing"
-      : latest
+    : latest
         ? latest.failed
           ? "failed"
           : latest.degraded
@@ -1117,11 +1081,9 @@ export default function Agent({
     phase === "idle"
       ? "Ready. Ask about his work"
       : phase === "routing"
-        ? seedPending && !pending
-          ? "Answering the opening question"
-          : fromLink && turns.length === 1
-            ? "Re-asking the shared question live"
-            : "Routing the question"
+        ? fromLink && turns.length === 1
+          ? "Re-asking the shared question live"
+          : "Routing the question"
         : phase === "retrieving"
           ? "Searching his record"
           : phase === "answering"
@@ -1134,11 +1096,19 @@ export default function Agent({
                   ? "Connection dropped"
                   : latest?.local
                     ? "Instant · answered earlier in this tab"
-                    : last?.seed
-                      ? `Answered live on load in ${ms(latest?.total)}`
-                      : phase === "degraded"
+                    : phase === "degraded"
                         ? `Answered from his record in ${ms(latest?.total)}`
                         : `Done in ${ms(latest?.total)}${latest?.firstToken !== undefined ? ` · first word ${ms(latest.firstToken)}` : ""}${latest?.model ? ` · ${latest.model.split("/").pop()}` : latest?.provider ? ` · ${latest.provider}` : ""}`;
+
+  /** Takes the reader to an earlier turn: its question in the window, its folded line opened inline. */
+  function goTurn(j: number) {
+    const behavior = reducedMotion() ? "auto" : "smooth";
+    if (win) return document.getElementById(`agent-q-${j}`)?.scrollIntoView({ block: "start", behavior });
+    const past = document.getElementById(`agent-past-${j}`) as HTMLDetailsElement | null;
+    if (!past) return;
+    past.open = true;
+    past.scrollIntoView({ block: "nearest", behavior });
+  }
 
   /** One turn's answer body, shared by every turn in the thread and expanded history. */
   const body = (turn: Turn, i: number, current: boolean) => {
@@ -1480,13 +1450,11 @@ export default function Agent({
             <Glyph name={flash === k("link") ? "CheckCircle:regular" : "LinkSimple:regular"} size={18} />
             {flash === k("link") ? "Link copied" : "Share"}
           </button>
-          {!turn.seed && (
-            <button className={styles.ghost} onClick={() => editLast(turn)}>
-              <Glyph name="PencilSimple:regular" size={18} />
-              Edit
-            </button>
-          )}
-          <button className={styles.ghost} onClick={() => submit(turn.question, { replace: !turn.seed, fresh: true })}>
+          <button className={styles.ghost} onClick={() => editLast(turn)}>
+            <Glyph name="PencilSimple:regular" size={18} />
+            Edit
+          </button>
+          <button className={styles.ghost} onClick={() => submit(turn.question, { replace: true, fresh: true })}>
             <Glyph name="ArrowCounterClockwise:regular" size={18} />
             Regenerate
           </button>
@@ -1523,12 +1491,20 @@ export default function Agent({
         <h3 className={styles.question} id={`agent-q-${i}`}>
           {turn.question}
         </h3>
-        {turn.seed && r && (
-          <p className={styles.turnMeta}>
-            Asked on load · <span className="tabular">{ms(r.total)}</span>
-            {r.provider ? ` · ${r.provider}` : ""}
-          </p>
-        )}
+        {(() => {
+          // The earlier answers this one was given, each the latest turn that asked it.
+          const used = (r?.memory?.questions ?? [])
+            .map((q) => turns.slice(0, i).map((t) => t.question).lastIndexOf(q))
+            .filter((j) => j >= 0);
+          if (!used.length) return null;
+          return (
+            <p className={styles.turnMeta}>
+              <button type="button" className={styles.recall} onClick={() => goTurn(used[used.length - 1])} title={`Used: ${used.map((j) => turns[j].question).join(" · ")}`}>
+                Used {used.length} earlier {used.length === 1 ? "answer" : "answers"}
+              </button>
+            </p>
+          );
+        })()}
 
         {live && steps}
 
@@ -1658,13 +1634,6 @@ export default function Agent({
             {/* Next questions, computed from the sections this answer was grounded in. */}
             {r && !live && isLast && !compact && ((r.offers?.length ?? 0) > 0 || r.route === "answer") && (
               <ul className={styles.offers} id="agent-next" aria-label="Next">
-                {/* The load answer has no offers of its own: the visitor openers stand in. */}
-                {turn.seed &&
-                  OPENERS.slice(0, 3).map((o) => (
-                    <li key={o.q}>
-                      <button className={styles.chip} onClick={() => submit(o.q)}>{o.q}</button>
-                    </li>
-                  ))}
                 {(r.offers ?? []).map((o, n) =>
                   o.kind === "open" ? (
                     <li key={o.url}>
@@ -1857,7 +1826,7 @@ export default function Agent({
                   );
                   return (
                     <ul className={styles.recordList}>
-                      {(order ?? [...new Set(highlights.map((h) => (h.kind === "Open source" ? "oss" : h.label)))]).map((key) => {
+                      {order.map((key) => {
                         const h = key === "oss" ? oss[0] : highlights.find((x) => x.label === key);
                         if (!h) return null;
                         if (h.kind !== "Open source") return chip(h);
@@ -1885,7 +1854,7 @@ export default function Agent({
             ) : (
               <>
                 {/* Empty: one card per kind of visitor, each naming what its answer shows. */}
-                {!turns.length && !seedPending && (
+                {!turns.length && (
                   <ul className={styles.openers} aria-label="Suggested questions">
                     {OPENERS.map((o) => (
                       <li key={o.q}>
@@ -1897,12 +1866,6 @@ export default function Agent({
                       </li>
                     ))}
                   </ul>
-                )}
-                {!turns.length && seedPending && (
-                  <article className={styles.sheet} aria-busy="true">
-                    <p className={styles.turnMeta}>Asking on load</p>
-                    {body({ question: "", result: null }, 0, true)}
-                  </article>
                 )}
 
                 {win ? (
@@ -1921,7 +1884,7 @@ export default function Agent({
                       <ul className={styles.history} aria-label="Earlier questions">
                         {turns.slice(0, -1).map((turn, i) => (
                           <li key={i}>
-                            <details className={styles.pastTurn}>
+                            <details className={styles.pastTurn} id={`agent-past-${i}`}>
                               <summary>{turn.question}</summary>
                               {body(turn, i, false)}
                             </details>
@@ -1969,12 +1932,6 @@ export default function Agent({
         <aside className={styles.inspector} id="agent-inspector" role={hasDetail ? "tabpanel" : undefined} aria-labelledby={hasDetail ? `agent-tab-${side}` : undefined}>
           {hasDetail && shown?.result ? (
             side === "sources" ? sourcesPanel(shown, shownAt) : board(shown.result)
-          ) : !pending && last?.seed && last.result ? (
-            /* The load answer keeps the sections it read but no step-by-step trace. */
-            <>
-              {last.result.sources.length > 0 && sourcesPanel(last, turns.length - 1)}
-              <p className={styles.dim}>The answer on load keeps no trace. Ask anything to see every step.</p>
-            </>
           ) : (
             <p className={styles.dim}>Sources and the trace open here when the answer lands.</p>
           )}
@@ -2014,7 +1971,7 @@ export default function Agent({
                   <span>Sources <span className="tabular">{r.sources.length}</span></span>
                 </button>
               )}
-              <button className={styles.ghost} onClick={() => submit(last.question, { replace: !last.seed, fresh: true })}>
+              <button className={styles.ghost} onClick={() => submit(last.question, { replace: true, fresh: true })}>
                 <Glyph name="ArrowCounterClockwise:regular" size={18} />
                 Regenerate
               </button>
@@ -2030,12 +1987,9 @@ export default function Agent({
                   <span className="tabular">{covered}/{r.coverage!.length}</span> covered
                 </button>
               )}
-              {/* The load answer keeps no trace, so it offers none. */}
-              {!last.seed && (
-                <button type="button" onClick={() => open("trace")}>
-                  <span className="tabular">{ms(r.total)}</span> trace
-                </button>
-              )}
+              <button type="button" onClick={() => open("trace")}>
+                <span className="tabular">{ms(r.total)}</span> trace
+              </button>
               {r.aside && (
                 <button type="button" onClick={() => open("answer", "agent-aside")}>
                   second take

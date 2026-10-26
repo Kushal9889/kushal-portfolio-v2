@@ -24,7 +24,7 @@
     "decision-matrix": "tsx scripts/decision-matrix.ts",
     "audit": "tsx scripts/audit.ts",
     "build:graph": "tsx scripts/build-graph.ts",
-    "test:unit": "tsx --test tests/unit.test.ts tests/grammar.test.ts tests/film.test.ts tests/serving.test.ts tests/redact.test.ts tests/claims.test.ts",
+    "test:unit": "tsx --test tests/unit.test.ts tests/chips.test.ts tests/grammar.test.ts tests/film.test.ts tests/serving.test.ts tests/redact.test.ts tests/claims.test.ts",
     "test:integration": "tsx --test tests/integration.test.ts",
     "test:system": "npm run build && tsx --test --test-timeout=120000 tests/system.test.ts",
     "test": "npm run test:unit && npm run test:integration",

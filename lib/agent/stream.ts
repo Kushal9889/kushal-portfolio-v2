@@ -82,6 +82,12 @@ export type StreamEvent =
    * sentence a reader gets -- the failure is an answer, never a broken control.
    */
   | { type: "action"; result: ToolResult }
+  /**
+   * The earlier exchanges this answer was given (relatedHistory), by question.
+   * `scope` is "tab" today: the server keeps no session. A memory that outlives
+   * the tab would arrive here with its own scope.
+   */
+  | { type: "memory"; scope: "tab"; questions: string[] }
   | {
       type: "done";
       total: number;
@@ -209,6 +215,7 @@ export async function* runStream(
   // Everything the tab sent, for the per-session eval cap; the prompt gets only what relates.
   const sent = history;
   history = relatedHistory(question, history);
+  if (history.length) yield { type: "memory", scope: "tab", questions: history.map((h) => h.question) };
 
   // Openers were answered at build time. Serving them from the bundle costs a
   // map lookup instead of an embedding call plus a model round trip, which is

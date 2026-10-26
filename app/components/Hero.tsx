@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import { SENT_EVENT, TELEMETRY_EVENT, ASK_EVENT, type SentDetail, type TelemetryPing } from "./Agent";
-import { SEED_EVENT, type SeedDetail } from "@/lib/agent/events";
 import { VISITOR_JOURNEYS } from "@/lib/journeys";
 import { useReferralTag } from "./Reach";
 import { mailtoLink } from "@/lib/reach";
@@ -33,14 +32,13 @@ type Props = {
 };
 
 /**
- * The hero runs one real query against the agent on mount and hands the answer
- * to the agent card, which shows it as its featured first turn.
+ * The hero reads the page's recorded load-time run on mount and hands its
+ * numbers to the film. The agent card opens on the brief, not on that answer.
  *
  * It is deliberately silent and requires no interaction: the first thing a
  * visitor sees has to work with the sound off, on a phone, before any permission
  * prompt. Voice is offered further down for anyone who wants it.
  *
- * If the agent is unreachable the card opens on its suggested questions.
  * Nothing here ever displays a placeholder value, because a fabricated latency
  * is the easiest claim on a page like this to disprove.
  */
@@ -60,8 +58,6 @@ export default function Hero({
 }: Props) {
   const tag = useReferralTag();
   const started = useRef(false);
-  /** The load-time answer goes to the agent as its first turn (SEED_EVENT); this only knows it finished. */
-  const seed = (detail: SeedDetail) => window.dispatchEvent(new CustomEvent<SeedDetail>(SEED_EVENT, { detail }));
 
   useEffect(() => {
     if (started.current) return;
@@ -75,10 +71,7 @@ export default function Hero({
           new CustomEvent<SentDetail>(SENT_EVENT, { detail: { question: null, t0: performance.now(), recorded: true } }),
         );
         const res = await fetch("/api/agent/demo", { signal: controller.signal });
-        if (!res.ok) {
-          seed(null);
-          return;
-        }
+        if (!res.ok) return;
         const demo: {
           question: string;
           answer: string;
@@ -90,16 +83,6 @@ export default function Hero({
           ranAt?: number;
         } = await res.json();
         const measured = demo.timings;
-        // A recorded model answer can carry markdown bold; the card prints text,
-        // so the markers would show as raw asterisks.
-        seed({
-          question: demo.question,
-          answer: demo.answer.replace(/\*\*/g, ""),
-          sources: demo.sources,
-          total: demo.total,
-          provider: demo.provider,
-          timings: measured,
-        });
         // A recorded run, not the visitor's: the film labels it with its age.
         window.dispatchEvent(
           new CustomEvent<TelemetryPing>(TELEMETRY_EVENT, {
@@ -118,15 +101,9 @@ export default function Hero({
             },
           }),
         );
-      } catch (err) {
-        // Offline, blocked, or the route is not deployed. The structure above
-        // still tells the story; it just does so without numbers. Stated rather
-        // than left hanging: the caption used to sit on "ask anything below" for
-        // ever, which reads as a page still loading rather than one whose demo
-        // endpoint is down.
-        if ((err as Error)?.name !== "AbortError") {
-          seed(null);
-        }
+      } catch {
+        // Offline, blocked, or the route is not deployed. The film shows no
+        // numbers rather than a made-up one.
       }
     })();
 
@@ -244,17 +221,15 @@ export default function Hero({
         {/* One instrument, not two.
             The graph and the agent were separated by the availability line and
             two buttons, so the thing that had just run and the box that runs it
-            again read as unrelated furniture. They are the same object: this
-            panel shows the request the page made on load, and the input under
-            it makes another. The console ground says the whole block is live. */}
+            again read as unrelated furniture. They are the same object: the
+            brief opens it and the input under it runs the agent. The console
+            ground says the whole block is live. */}
         <div className={styles.console} data-surface="console">
           {/* Framing ticks: the console is an instrument, and an instrument has corners. */}
           <i className={styles.tick} data-c="tl" aria-hidden="true" />
           <i className={styles.tick} data-c="tr" aria-hidden="true" />
           <i className={styles.tick} data-c="bl" aria-hidden="true" />
           <i className={styles.tick} data-c="br" aria-hidden="true" />
-          {/* What the load-time request said now opens the agent below as its
-              featured first turn: one answer surface, one scroller. */}
           <div className={styles.agentSlot}>{children}</div>
         </div>
 

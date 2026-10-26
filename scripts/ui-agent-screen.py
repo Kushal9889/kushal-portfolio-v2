@@ -5,8 +5,8 @@ Fails when: the card holds an inner scroller outside the full-view window, the
 card spills past the viewport or under the dock on desktop, the page scrolls
 sideways on a phone, the wheel over the card on a phone does not move the page,
 an agent control is under 44px on a phone (24px floor for inline cite markers),
-the load turn (#agent-q-0) or the island is missing, a featured box is back,
-the window drops a turn, the hero tally is not 4 buttons, the tools card is
+the brief is not the first view (a turn shows before anyone asks), the island is missing, a featured box is back,
+the window drops a turn, a follow-up does not name the earlier answer it used, the hero tally is not 4 buttons, the tools card is
 missing from Trace, the free-tier chip covers any control or comes back after
 it was closed, or a run does not reach "Done". Writes screenshots to
 docs/agent-card-shots/2026-10-26/.
@@ -130,15 +130,15 @@ def main():
             if row["tally"] != 4: fails.append(f"{name}: hero tally has {row['tally']} buttons, not 4")
             if name == "1024x768":
                 report[name] = row; ctx.close(); continue
-            page.wait_for_selector("#agent-q-0", timeout=20000)
-            page.wait_for_timeout(600)
+            # The brief is the first view: no turn until the reader asks.
+            page.wait_for_selector('#agent section[aria-label="In brief"]', timeout=20000)
+            page.wait_for_timeout(2500)
             page.locator("#agent").scroll_into_view_if_needed()
-            # The overlap probe reads the lead line, so it has to be on screen (a long load answer on a phone is not).
-            if page.locator('#agent [class*="leadLine"]').count():
-                page.locator('#agent [class*="leadLine"]').first.scroll_into_view_if_needed()
             page.screenshot(path=str(OUT / f"{name}-1-load.png"))
             r0 = page.evaluate(PROBE)
             row["load"] = r0
+            if r0["turns"]: fails.append(f"{name}: {r0['turns']} turn(s) on load; the brief should be the only first view")
+            if not page.locator('#agent section[aria-label="In brief"]').is_visible(): fails.append(f"{name}: the brief is not visible on load")
             if r0["featured"]: fails.append(f"{name}: a featured box is back")
             if not r0["island"]: fails.append(f"{name}: no island")
             if r0.get("onTop") is False: fails.append(f"{name}: something covers the answer text")
@@ -158,17 +158,6 @@ def main():
                 if row["inline"]["winText"] != "Full view": fails.append(f"{name}: the header button does not read Full view ({row['inline']['winText']!r})")
                 if row["inline"]["floating"]: fails.append(f"{name}: a floating cue sits on the inline answer")
                 if row["inline"]["strip"] and not row["inline"]["stripBelow"]: fails.append(f"{name}: the continues strip overlaps the answer")
-                # The load answer opens the sections it read.
-                src = page.locator('#agent [class*="glanceActions"] button', has_text="Sources")
-                if src.count():
-                    sb = src.first.bounding_box(); y0 = page.evaluate("scrollY")
-                    page.mouse.click(sb["x"] + sb["width"] / 2, sb["y"] + sb["height"] / 2); page.wait_for_timeout(500)
-                    row["loadSources"] = page.locator('#agent-inspector', has_text="Sections read").count()
-                    page.screenshot(path=str(OUT / f"{name}-1b-load-sources.png"))
-                    if not row["loadSources"]: fails.append(f"{name}: Sources on the load answer opens nothing")
-                    page.keyboard.press("Escape"); page.wait_for_timeout(300); page.evaluate(f"scrollTo(0, {y0})")
-                else:
-                    fails.append(f"{name}: the load answer offers no Sources")
             if not phone and r0["consoleBottom"] > vh - 60: fails.append(f"{name}: console bottom {r0['consoleBottom']} under the dock (vh {vh})")
             if r0["composerOver"] > 1: fails.append(f"{name}: composer runs {r0['composerOver']}px past the card")
             if phone and r0["pageOverflowX"] > 0: fails.append(f"{name}: page scrolls sideways by {r0['pageOverflowX']}px")
@@ -180,6 +169,14 @@ def main():
                 row["offline"] = ask(page, "What did he build at IMG Systems?")
                 page.screenshot(path=str(OUT / f"{name}-2-offline.png"))
                 if row["offline"] == "TIMEOUT": fails.append(f"{name}: offline run never finished")
+                # A follow-up is given the turn before it, and says so on the turn.
+                if name in ("1440x900", "android-390"):
+                    ask(page, "What was the measured result there?")
+                    recall = page.locator('#agent [class*="recall"]')
+                    row["recall"] = recall.first.inner_text() if recall.count() else None
+                    if recall.count(): recall.first.scroll_into_view_if_needed()
+                    page.screenshot(path=str(OUT / f"{name}-2b-memory.png"))
+                    if not row["recall"]: fails.append(f"{name}: the follow-up does not say it used the earlier answer")
             r1 = page.evaluate(PROBE); row["asked"] = r1
             # Outside the window the page is the only scroller.
             if r1["scrollers"]: fails.append(f"{name}: inner scrollers {r1['scrollers']}")
