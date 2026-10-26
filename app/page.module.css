@@ -1007,3 +1007,11 @@ html[data-film="live"] .wordmark {
     display: none;
   }
 }
+
+/* The closing proof: one sentence an outsider acted on, with its link. */
+.endProof {
+  max-width: 40ch;
+  margin: 0 0 var(--s-4);
+  font-size: var(--step-1);
+  line-height: 1.35;
+}

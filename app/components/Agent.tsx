@@ -1886,9 +1886,9 @@ export default function Agent({
                       const re = new RegExp(`(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "g");
                       return brief.split(re).map((part, i) =>
                         terms.includes(part) ? (
-                          <button key={i} type="button" className={styles.term} aria-label={`Ask the agent about ${part}`} onClick={() => submit(`What is ${part} in his work, and what did he do with it?`)}>
-                            {part}
-                          </button>
+                          // Emphasis, not nine more buttons in the first screen (N7): the
+                          // record chips below are the doors into the same things.
+                          <b key={i} className={styles.term}>{part}</b>
                         ) : (
                           part
                         ),

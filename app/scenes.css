@@ -764,7 +764,7 @@ main > section#contact h2 {
 /* The primary action: Apple's filled blue with a lit top edge. The lime sheen
    and link-blue fill it used to wear measured 3.0:1 under the hint (F38). */
 body > header a[class*="cta"] {
-  font-size: 1.125rem;
+  font-size: var(--step-0);
   font-weight: 650;
   padding-block: 1.05em;
   background: var(--fill, var(--signal));

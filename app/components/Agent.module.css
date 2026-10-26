@@ -497,7 +497,7 @@
 }
 
 .reads li {
-  padding: 0.35em 0.8em;
+  padding: var(--s-1) var(--s-3);
   border: var(--border-hair) solid var(--mark-rule, var(--rule));
   border-radius: var(--r-md);
   background: var(--mark-wash, transparent);
@@ -506,9 +506,9 @@
 .tools a {
   display: inline-flex;
   align-items: center;
-  gap: 0.45em;
+  gap: var(--s-2);
   min-height: var(--tap);
-  padding: 0 0.9em;
+  padding: 0 var(--s-4);
   color: var(--ink);
   text-decoration: none;
   border: var(--border-hair) solid var(--rule);
@@ -793,7 +793,7 @@
 }
 
 .chip {
-  gap: 0.45em;
+  gap: var(--s-2);
 }
 
 /*
@@ -1228,7 +1228,7 @@
 
 .tab {
   min-height: 36px;
-  padding: 0 0.9em;
+  padding: 0 var(--s-4);
   font: inherit;
   font-size: var(--step--1);
   font-weight: 600;
@@ -1323,7 +1323,7 @@
 .toolHead {
   display: flex;
   align-items: center;
-  gap: 0.45em;
+  gap: var(--s-2);
   margin: 0 0 var(--s-2);
   font-family: var(--mono);
   font-size: var(--step--2);
@@ -1337,7 +1337,7 @@
 .kicker {
   display: flex;
   align-items: center;
-  gap: 0.45em;
+  gap: var(--s-2);
   margin: 0;
   font-family: var(--mono);
   font-size: var(--step--2);
@@ -1779,7 +1779,7 @@ button.step:hover {
 .asideHead {
   display: flex;
   align-items: center;
-  gap: 0.45em;
+  gap: var(--s-2);
   margin: 0;
   font-family: var(--mono);
   font-size: var(--step--2);
@@ -1801,7 +1801,7 @@ button.step:hover {
 .asideCta {
   display: inline-flex;
   align-items: center;
-  gap: 0.45em;
+  gap: var(--s-2);
   min-height: var(--tap);
   padding: 0 1.1em;
   font: inherit;
@@ -2003,7 +2003,7 @@ button.step:hover {
 
 /* The one way into the full view inline: the header button, named. */
 .agent.agent .winBtn[data-wide] {
-  padding: 0 0.9em;
+  padding: 0 var(--s-4);
   color: var(--ink);
   border: var(--border-hair) solid color-mix(in oklch, var(--signal) 55%, transparent);
   border-radius: var(--r-md);
@@ -2015,7 +2015,7 @@ button.step:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.35em 0.75em;
+  gap: var(--s-1) var(--s-3);
   width: 100%;
   min-height: var(--tap);
   margin-block-start: var(--s-2);
@@ -2081,7 +2081,7 @@ button.step:hover {
 .glanceHints button {
   display: inline-flex;
   align-items: center;
-  gap: 0.35em;
+  gap: var(--s-1);
   min-height: 28px;
   padding: 0;
   font: inherit;
@@ -2262,9 +2262,9 @@ button.step:hover {
 .agent.agent .litAsk {
   display: inline-flex;
   align-items: center;
-  gap: 0.45em;
+  gap: var(--s-2);
   min-height: 36px;
-  padding: 0 0.3em 0 0.75em;
+  padding: 0 var(--s-1) 0 var(--s-3);
   font: inherit;
   color: var(--ink);
   background: none;
@@ -2379,36 +2379,11 @@ button.step:hover {
   min-height: 44px;
 }
 
-/* Terms in the brief: a quiet door each. Weight and a dotted rule, no colour,
-   so the sentence still reads as a sentence; the rule turns solid on hover. */
+/* Terms in the brief: weight only. They are emphasis, not doors (N7), so no
+   underline promises a click; the record chips below are the doors. */
 .agent.agent .term {
-  display: inline;
-  padding: 0;
-  font: inherit;
   font-weight: 600;
   color: var(--ink);
-  background: none;
-  border: none;
-  box-shadow: none;
-  text-shadow: none;
-  text-decoration: underline dotted;
-  text-decoration-color: color-mix(in oklch, var(--ink) 45%, transparent);
-  text-underline-offset: 3px;
-  cursor: pointer;
-}
-
-/* A phone finger needs 44px: the hit area grows by padding the negative margin
-   takes back, so the sentence keeps its line spacing. */
-@media (max-width: 767px) {
-  .agent.agent .term {
-    padding: 0.75em 0.1em;
-    margin: -0.75em -0.1em;
-  }
-}
-
-.agent.agent .term:is(:hover, :focus-visible) {
-  text-decoration-style: solid;
-  text-decoration-color: var(--ink);
 }
 
 /* Tools the model may call: name, what it does, a sentence that triggers it. */

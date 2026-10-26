@@ -114,3 +114,14 @@ F3 F5-F8 F11 F12 F16-F44 N1-N30 N33 N34, each a small edit; listed per batch wit
 | N31 | DONE | /og?q= renders (image/png); /ask title + og:title carry the question |
 | F28 | NOT DONE | film/* is the other session's |
 | F2 | PENDING KUSHAL | run `npm run prewarm` once with keys |
+
+## Close-out (Kushal: "do them here now")
+| id | state | before -> after |
+|---|---|---|
+| F28 | DONE | film caption "RECORDED · 40 S AGO" -> "SAMPLE QUESTION · 40 S AGO" (says what was recorded); film tests 10/10 |
+| N7 | PARTIAL | first-screen controls at 1440: 38 -> 28 (9 brief-term buttons became bold emphasis; the record chips are the doors). 7 would mean removing the agent card or chips from the hero |
+| N21 | DONE (agent card) | off-grid spacing in the first screen: 12 values, up to 6 uses each (7.65 px x6, 12.75 px x6) -> 8 single uses; agent em gaps now --s tokens |
+| N22 | DONE | font sizes in the first two screens 7 -> 6 (CTA label 18px -> type step 17px) |
+| N23/N24 | MEASURED PASS | 3 left edges at 1440 (176, 201, 816 px); journeys 52 px / r14, tally 44 px, hero actions 81 px / r12, each uniform |
+| N26 | DONE | contact end: 16 record links + 9 ways -> one proof sentence with "See the merged fix", Email as the one action; every record behind "Every record behind this page" |
+| F2 | PENDING KUSHAL | `npm run prewarm` once with keys (no live model calls allowed in this pass) |

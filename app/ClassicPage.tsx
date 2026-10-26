@@ -731,7 +731,15 @@ export default function Page() {
         >
           {/* The record first, then the close: when he can start and the one
               action, so the page ends on what the reader came to do. */}
-          <ProofWall certs={certs} badges={section("Proof wall").badges} />
+          {/* The end keeps one proof and one action (N26); every other record,
+              each still with its link, waits behind one fold. */}
+          <p className={styles.endProof}>
+            {evidence.sentence} <a href={evidence.href} target="_blank" rel="noreferrer">See the merged fix</a>
+          </p>
+          <details className="more">
+            <summary>Every record behind this page</summary>
+            <ProofWall certs={certs} badges={section("Proof wall").badges} />
+          </details>
           <Reach
             email={profile.email}
             phone={profile.phone}

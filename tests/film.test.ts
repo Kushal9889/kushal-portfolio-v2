@@ -13,14 +13,14 @@ function run(events: Parameters<typeof reduce>[2][]) {
   return s.provenance;
 }
 
-test("the load-time request is RECORDED with its age, never YOUR QUESTION", () => {
+test("the load-time request is a SAMPLE QUESTION with its age, never YOUR QUESTION", () => {
   const p = run([
     { type: "sent", detail: { question: null, t0: 10, recorded: true } },
     { type: "done", detail: { ...ping, recorded: true, ranAt: 1_000_000 } },
   ]);
   assert.deepEqual(p, { kind: "recorded", ranAt: 1_000_000 });
-  assert.equal(chipOf(p, 1_040_000)?.text, "RECORDED · 40 S AGO");
-  assert.equal(chipOf(p, 1_000_000 + 125_000)?.text, "RECORDED · 2 MIN AGO");
+  assert.equal(chipOf(p, 1_040_000)?.text, "SAMPLE QUESTION · 40 S AGO");
+  assert.equal(chipOf(p, 1_000_000 + 125_000)?.text, "SAMPLE QUESTION · 2 MIN AGO");
   assert.equal(chipOf(p)?.marker, "hollow");
 });
 
