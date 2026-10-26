@@ -79,3 +79,4 @@ facts. Adapter-packaged size and preview delivery still require verification.
 | Netlify env | `NEXT_PUBLIC_FILM_ORIGIN` set on site 5a02ef1d (all contexts); applies on the next deploy |
 | Motion default | Full motion on by default whatever the OS setting; only the dock's Motion button turns it off. Device-guess downgrades removed (data saver, 2G/3G phone, <=4 GB and <=4 cores, GPU-caveat probe, 4K to 1080p after a 400 ms stall). Locked by `tests/motion-default.test.mjs` |
 | Film with OS reduced motion | Live with 4K on desktop in Chrome (1,393 frames), WebKit (978) and Firefox (293), and live on 390-wide phones in all three; 0 failed film requests and 0 errors. Dock set to reduced: still frame, 0 frames requested |
+| Slow-link fallback | Kept by decision (2026-10-25): a link measured too slow to carry the film at its own frame rate shows one full-quality still frame instead of a frozen film |
