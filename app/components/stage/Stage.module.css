@@ -215,7 +215,7 @@
 
 .tick[aria-current="true"]::before {
   width: 5px;
-  background: var(--signal);
+  background: var(--fill, var(--signal));
 }
 
 .ticks[data-bar="voltage"] .tick[aria-current="true"]::before {

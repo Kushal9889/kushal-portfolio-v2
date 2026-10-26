@@ -50,7 +50,6 @@
   color: var(--paper);
   font: 500 var(--step--1) var(--font-mono), monospace;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
 }

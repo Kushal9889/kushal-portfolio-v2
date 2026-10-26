@@ -84,7 +84,6 @@
   font-size: 12px;
   line-height: 16px;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -186,7 +185,6 @@
 
 .values dt {
   letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink-faint);
 }
 
@@ -202,7 +200,6 @@
 
 .tag {
   letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: var(--ink-faint);
 }
 

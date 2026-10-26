@@ -737,7 +737,7 @@ blockquote.body {
   height: 28px;
   margin-left: 16px;
   border-radius: 50%;
-  background: var(--signal);
+  background: var(--fill, var(--signal));
   color: var(--on-signal);
 }
 
@@ -764,7 +764,7 @@ blockquote.body {
   content: "";
   width: 8px;
   height: 8px;
-  background: var(--signal);
+  background: var(--fill, var(--signal));
 }
 
 .prState::after {
@@ -774,7 +774,7 @@ blockquote.body {
   bottom: 0;
   left: 0;
   height: 2px;
-  background: var(--signal);
+  background: var(--fill, var(--signal));
 }
 
 .prLink {

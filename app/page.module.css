@@ -114,7 +114,6 @@
   font-size: var(--step-0);
   font-weight: 600;
   letter-spacing: 0.04em;
-  text-transform: uppercase;
   color: var(--ink-soft);
   margin-bottom: var(--s-3);
 }
@@ -131,7 +130,6 @@
   font-size: var(--step--2);
   font-weight: 500;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -548,7 +546,6 @@
   font-weight: 800;
   line-height: 0.9;
   letter-spacing: -0.05em;
-  text-transform: uppercase;
   text-wrap: nowrap;
   color: var(--ink);
   -webkit-text-fill-color: var(--ink);
@@ -863,7 +860,6 @@ html[data-film="live"] .wordmark {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--step--2);
   letter-spacing: var(--track-caps);
-  text-transform: uppercase;
   color: var(--tone, var(--ink));
 }
 

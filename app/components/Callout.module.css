@@ -54,6 +54,5 @@
 
 .sheet {
   color: var(--ink-faint);
-  text-transform: uppercase;
   padding-block-start: 0.28em;
 }

@@ -55,9 +55,14 @@
  *   --signal      6.9:1   interactive targets
  */
 :root {
-  /* Two families. Interface and reading text use the display face at text sizes. */
-  --font-sans: var(--font-display);
-  --font-serif: var(--font-display);
+  /* Apple's type: San Francisco through the system stack, so a Mac, an iPhone
+     and an iPad render the real face and nothing is self-hosted (SF Pro's
+     licence does not cover the web). Elsewhere it falls to Helvetica Neue,
+     then Arial. Text and Display are the two optical sizes Apple ships. */
+  --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-apple-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-sans: var(--font-apple);
+  --font-serif: var(--font-apple);
 
   /* Achromatic, very slightly cool.
    *
@@ -81,16 +86,18 @@
    * furniture, which is why the previous ground looked flat and over-ruled at
    * the same time. Each step is roughly 0.045 in L, which is the smallest
    * difference that still separates two panels sitting on each other. */
-  --paper: oklch(0.170 0.008 258);
-  --paper-high: oklch(0.265 0.012 258);
-  --ink: oklch(0.965 0.003 258);
-  --rule: oklch(0.320 0.008 258);
+  /* Apple's dark product pages: true black ground, #1d1d1f tiles, #2c2c2e
+     above those, #f5f5f7 text, #424245 separators. */
+  --paper: #000000;
+  --paper-high: #2c2c2e;
+  --ink: #f5f5f7;
+  --rule: #424245;
 
   /* Set explicitly rather than mixed, so the three steps stay three steps.
      Chroma rises slightly as they lighten, which keeps a pale tone from
      drifting toward grey and reading as disabled rather than as secondary. */
-  --ink-soft: oklch(0.884 0.005 258);
-  --ink-faint: oklch(0.800 0.008 258);
+  --ink-soft: #d2d2d7;
+  --ink-faint: #a1a1a6;
 
   /* The one accent. Every interactive target wears it and nothing else does.
    *
@@ -115,10 +122,17 @@
    * with an accent and a page with a palette. Red is released to --fail, where
    * it is unambiguous, and nothing else on the page is chromatic except two
    * strictly semantic states. */
-  --signal: oklch(0.830 0.085 205);
-  --signal-deep: oklch(0.780 0.115 258);
-  --on-signal: oklch(0.150 0.020 258);
-  --signal-wash: color-mix(in oklch, var(--signal) 10%, var(--paper));
+  /* Apple blue. #2997ff is the link and focus colour on dark; #0071e3 is the
+     filled button, with white text, and #0077ed its hover. --signal stays the
+     colour of anything to press or check; --fill is what a filled control is
+     painted with. */
+  --signal: #2997ff;
+  --signal-deep: #0077ed;
+  --on-signal: #ffffff;
+  --fill: #0071e3;
+  --fill-hover: #0077ed;
+  --on-fill: #ffffff;
+  --signal-wash: color-mix(in oklch, var(--signal) 14%, var(--paper));
 
   /* Checkable claim. Deep enough to sit in running prose without shouting,
      saturated enough that a scanning eye stops on it.
@@ -175,7 +189,7 @@
    * The dark theme already stated its own value literally for a different
    * reason. This one now does too, at the same warm hue as the paper it sits
    * against. */
-  --paper-sunk: oklch(0.135 0.007 258);
+  --paper-sunk: #0a0a0a;
 
   /* Raised, the direction that was missing: two surfaces meant nothing could
      sit above the ground, so three nested containers read as one flat area.
@@ -183,8 +197,8 @@
      lightness between schemes and mean the same thing in each. --edge is a 1px
      inset highlight, which is how a surface reads as lifted without a shadow
      under it. */
-  --paper-raised: oklch(0.215 0.010 258);
-  --edge: oklch(1 0 0 / 0.06);
+  --paper-raised: #1d1d1f;
+  --edge: oklch(1 0 0 / 0.08);
 
   /* The chassis.
    *
@@ -221,17 +235,18 @@
    *   --fail      a defect, a struck line, a failed assertion
    *   --mark      a claim an outsider can go and check
    */
-  --live: oklch(0.780 0.130 152);
+  /* Apple's system colours, dark appearance: green, orange, red. */
+  --live: #30d158;
   --live-wash: color-mix(in oklch, var(--live) 12%, var(--paper));
   /* Measured 3.77:1 against the new ground at L0.60, which is under the 4.5 body
      floor. The cool substrate is lighter than the cream it replaced, so every
      token had to be re-measured against it and this was the one that failed. */
-  --warn: oklch(0.820 0.110 78);
+  --warn: #ff9f0a;
   --warn-wash: color-mix(in oklch, var(--warn) 14%, var(--paper));
   /* Red belongs to failure and to nothing else now that the accent is cobalt.
      It no longer has to dodge the accent's hue, so it can be the red a struck
      line in a diff is expected to be. */
-  --fail: oklch(0.720 0.140 25);
+  --fail: #ff453a;
   --fail-wash: color-mix(in oklch, var(--fail) 11%, var(--paper));
 
   /* Motion.
@@ -310,11 +325,14 @@
      as very slightly rounded everywhere, which is the corner you pick when you
      have not decided. The page is an instrument; instruments have edges. The
      only round things are the ones that are round by nature. */
-  --r-sm: 0px;
-  --r-md: 0px;
-  --r-lg: 0px;
-  --r-panel: 0px;
-  --r-pill: 999px;
+  /* Apple's continuous corners, by size: 8 for marks and chips, 12 for
+     controls, 14 for surfaces inside a card, 18 for the card itself. Buttons
+     Apple makes pills, which --r-pill covers. */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 14px;
+  --r-panel: 18px;
+  --r-pill: 980px;
   --r-inner: max(var(--r-sm), calc(var(--r-out, var(--r-panel)) - var(--pad, 0px)));
 
   /* Layers.
@@ -488,30 +506,35 @@
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --paper: oklch(0.975 0.0015 250);
-  --paper-sunk: oklch(0.948 0.002 250);
-  --paper-raised: oklch(0.998 0.001 250);
-  --paper-high: oklch(1 0 0);
-  --ink: oklch(0.185 0.004 250);
-  --ink-soft: oklch(0.415 0.006 250);
-  --ink-faint: oklch(0.505 0.008 250);
-  --rule: oklch(0.885 0.002 250);
+  /* Apple's light pages: #f5f5f7 ground, white tiles, #1d1d1f text, #6e6e73
+     secondary, #d2d2d7 separators, #0066cc links, #0071e3 filled buttons. */
+  --paper: #f5f5f7;
+  --paper-sunk: #e8e8ed;
+  --paper-raised: #ffffff;
+  --paper-high: #ffffff;
+  --ink: #1d1d1f;
+  --ink-soft: #424245;
+  --ink-faint: #6e6e73;
+  --rule: #d2d2d7;
   --edge: oklch(1 0 0 / 0.72);
 
-  --signal: oklch(0.480 0.120 205);
-  --signal-deep: oklch(0.40 0.19 258);
-  --on-signal: oklch(0.99 0.001 250);
+  --signal: #0066cc;
+  --signal-deep: #0071e3;
+  --on-signal: #ffffff;
+  --fill: #0071e3;
+  --fill-hover: #0077ed;
+  --on-fill: #ffffff;
   --signal-wash: color-mix(in oklch, var(--signal) 10%, var(--paper));
   --mark: var(--signal);
   --mark-wash: color-mix(in oklch, var(--mark) 12%, var(--paper));
   --mark-rule: color-mix(in oklch, var(--mark) 38%, var(--paper));
   --mark-ink: var(--signal-deep);
 
-  --live: oklch(0.52 0.14 152);
+  --live: #248a3d;
   --live-wash: color-mix(in oklch, var(--live) 12%, var(--paper));
-  --warn: oklch(0.515 0.125 70);
+  --warn: #c93400;
   --warn-wash: color-mix(in oklch, var(--warn) 14%, var(--paper));
-  --fail: oklch(0.52 0.20 25);
+  --fail: #d70015;
   --fail-wash: color-mix(in oklch, var(--fail) 11%, var(--paper));
 
   --plate: oklch(0.145 0.006 258 / 0.30);
@@ -967,7 +990,8 @@ body {
  */
 h1,
 h2 {
-  font-family: var(--font-display), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-apple-display);
+  letter-spacing: -0.015em;
 }
 
 h3 {
@@ -1003,8 +1027,8 @@ h1 {
    identical weight read as one grey block; separating them gives the eye a
    first stop and a second, which is the whole job of the opening line. */
 h1 .quiet {
-  color: var(--ink-soft);
-  font-style: italic;
+  color: var(--ink-faint);
+  font-style: normal;
 }
 h2 {
   font-size: var(--step-2);
@@ -1232,7 +1256,6 @@ main :is(p, dd, li, blockquote):not([data-wide]) {
      reader. Light weight on top of that was the fourth penalty. */
   font-weight: 600;
   letter-spacing: var(--track-caps);
-  text-transform: uppercase;
   color: var(--ink-faint);
 }
 
@@ -1568,7 +1591,7 @@ a:has([class*="proofFigure"]):focus-visible {
   width: 0.45em;
   height: 0.45em;
   border-radius: 50%;
-  background: var(--signal);
+  background: var(--fill, var(--signal));
   vertical-align: 0.08em;
 }
 
@@ -1701,30 +1724,31 @@ html {
 [data-surface="console"] {
   color-scheme: dark;
 
-  --paper: oklch(0.192 0.004 250);
-  --paper-raised: oklch(0.238 0.005 250);
-  --paper-sunk: oklch(0.155 0.003 250);
-  --rule: oklch(0.352 0.005 250);
+  /* Apple's dark tile: #1d1d1f, a #2c2c2e step above it, #161617 below. */
+  --paper: #1d1d1f;
+  --paper-raised: #2c2c2e;
+  --paper-sunk: #161617;
+  --rule: #424245;
 
-  --ink: oklch(0.968 0.002 250);
-  --ink-soft: oklch(0.862 0.004 250);
-  --ink-faint: oklch(0.775 0.006 250);
+  --ink: #f5f5f7;
+  --ink-soft: #d2d2d7;
+  --ink-faint: #a1a1a6;
 
   /* Restated rather than mixed. The light values are tuned against a light
      ground; the same chroma at these lightnesses reads muddy on charcoal, and
      color-mix against a dark paper produces a different result than intended. */
-  --signal: oklch(0.83 0.09 205);
+  --signal: #2997ff;
   --signal-wash: color-mix(in oklch, var(--signal) 16%, var(--paper));
   --mark: var(--signal);
   --mark-wash: color-mix(in oklch, var(--mark) 16%, var(--paper));
   --mark-rule: color-mix(in oklch, var(--mark) 48%, var(--paper));
   --mark-ink: var(--signal-deep);
 
-  --live: oklch(0.80 0.17 152);
+  --live: #30d158;
   --live-wash: color-mix(in oklch, var(--live) 16%, var(--paper));
-  --warn: oklch(0.83 0.14 78);
+  --warn: #ff9f0a;
   --warn-wash: color-mix(in oklch, var(--warn) 16%, var(--paper));
-  --fail: oklch(0.79 0.17 25);
+  --fail: #ff453a;
   --fail-wash: color-mix(in oklch, var(--fail) 16%, var(--paper));
 
   /* Tinted to the ground, not black at opacity.
@@ -1734,10 +1758,10 @@ html {
    * and the two stop looking like the same material. Carrying the ground's own
    * hue keeps the shadow reading as less light on this surface rather than as a
    * different surface. */
-  --lift-1: 0 1px 2px oklch(0.06 0.012 258 / 0.44);
+  --lift-1: 0 1px 2px oklch(0 0 0 / 0.4);
   --lift-2:
-    0 2px 4px oklch(0.06 0.012 258 / 0.38),
-    0 8px 20px oklch(0.06 0.012 258 / 0.32);
+    0 2px 6px oklch(0 0 0 / 0.35),
+    0 12px 32px oklch(0 0 0 / 0.4);
 
   background: var(--paper);
   color: var(--ink);
@@ -1752,12 +1776,8 @@ html {
    * Deliberately at the edge of visible. It is there to give a dark panel the
    * surface quality of a physical instrument face rather than a flat fill, and
    * anything stronger would compete with the data drawn on top of it. */
-  background-image: conic-gradient(
-    from 90deg at 1px 1px,
-    color-mix(in oklch, var(--ink) 4%, transparent) 0 25%,
-    transparent 0 100%
-  );
-  background-size: 22px 22px;
+  /* Apple tiles are flat: no dot grid under the data. */
+  border-radius: var(--r-panel);
 }
 
 
@@ -1812,7 +1832,6 @@ main > section[data-register="chapter"] > .wrap h2 {
   font-size: clamp(3.5rem, 15vw, 14rem);
   line-height: 0.82;
   letter-spacing: -0.05em;
-  text-transform: uppercase;
   /*
    * The two axes the face was chosen for.
    *
@@ -2044,7 +2063,7 @@ main > section[data-register="chapter"][data-lead="artifact"] > .wrap h2 {
   inset-block-start: 0;
   inset-inline: 0;
   height: 2px;
-  background: var(--signal);
+  background: var(--fill, var(--signal));
   transform-origin: 0 50%;
   z-index: var(--z-overlay);
   /* Hidden unless the browser can actually drive it.
@@ -2418,19 +2437,9 @@ html[data-film="live"] main > section {
    header strip across them would flatten the rail, banner, rule and bank into
    one (docs/film-deviations.md, D17). */
 html[data-film="live"] main > section > .wrap {
-  --bracket: var(--ink-faint);
-  background:
-    linear-gradient(var(--bracket) 0 0) left top / 8px 1px no-repeat,
-    linear-gradient(var(--bracket) 0 0) left top / 1px 8px no-repeat,
-    linear-gradient(var(--bracket) 0 0) right top / 8px 1px no-repeat,
-    linear-gradient(var(--bracket) 0 0) right top / 1px 8px no-repeat,
-    linear-gradient(var(--bracket) 0 0) left bottom / 8px 1px no-repeat,
-    linear-gradient(var(--bracket) 0 0) left bottom / 1px 8px no-repeat,
-    linear-gradient(var(--bracket) 0 0) right bottom / 8px 1px no-repeat,
-    linear-gradient(var(--bracket) 0 0) right bottom / 1px 8px no-repeat,
-    linear-gradient(var(--rule) 0 0) 0 6px / 100% 1px no-repeat,
-    linear-gradient(var(--paper-raised) 0 0) top / 100% 6px no-repeat,
-    var(--panel-tint);
+  /* Apple pass: a plain tile, no corner brackets and no lid. */
+  background: var(--panel-tint);
+  border-radius: var(--r-panel);
   padding-block: var(--s-6);
 }
 

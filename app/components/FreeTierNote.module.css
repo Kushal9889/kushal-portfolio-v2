@@ -15,10 +15,11 @@
   gap: var(--s-2);
   padding: var(--s-4);
   color: var(--ink);
-  background: oklch(0.205 0.012 258);
-  border: var(--border-hair) solid oklch(0.955 0.03 86 / 0.24);
+  background: var(--paper-raised);
+  border: var(--border-hair) solid color-mix(in oklch, var(--ink) 14%, transparent);
+  border-radius: var(--r-panel);
   box-shadow:
-    inset 0 1px 0 oklch(0.83 0.14 78 / 0.4),
+    inset 0 1px 0 oklch(1 0 0 / 0.06),
     0 2px 6px oklch(0 0 0 / 0.3),
     0 24px 60px oklch(0 0 0 / 0.5);
 }
@@ -116,8 +117,7 @@
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 0.7rem;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: oklch(0.83 0.14 78);
+  color: var(--ink-faint);
 }
 
 .title {
@@ -232,8 +232,9 @@
   display: flex;
   align-items: center;
   color: var(--ink);
-  background: oklch(0.205 0.012 258);
-  border: var(--border-hair) solid oklch(0.83 0.14 78 / 0.6);
+  background: var(--paper-raised);
+  border: var(--border-hair) solid color-mix(in oklch, var(--ink) 14%, transparent);
+  border-radius: var(--r-pill);
   box-shadow: 0 8px 24px oklch(0 0 0 / 0.45);
 }
 
@@ -311,7 +312,6 @@
   font-size: 0.68rem;
   font-weight: 400;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: oklch(1 0 0 / 0.6);
 }
 

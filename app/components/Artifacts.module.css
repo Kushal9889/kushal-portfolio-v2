@@ -55,7 +55,6 @@
   grid-row: 1 / span 2;
   font-size: var(--step--2);
   letter-spacing: 0.1em;
-  text-transform: uppercase;
   color: var(--ink-faint);
   border: var(--border-hair) solid var(--rule);
   border-radius: var(--r-sm);

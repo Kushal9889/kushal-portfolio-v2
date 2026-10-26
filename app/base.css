@@ -639,7 +639,6 @@ button {
      reader. Light weight on top of that was the fourth penalty. */
   font-weight: 600;
   letter-spacing: var(--track-caps);
-  text-transform: uppercase;
   color: var(--ink-faint);
 }
 
@@ -710,7 +709,7 @@ pre {
   width: 0.45em;
   height: 0.45em;
   border-radius: 50%;
-  background: var(--signal);
+  background: var(--fill, var(--signal));
   vertical-align: 0.08em;
 }
 

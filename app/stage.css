@@ -289,7 +289,7 @@ html:has([data-stage]) {
   min-height: 52px;
   padding: 0 24px;
   border: 0;
-  background: var(--signal);
+  background: var(--fill, var(--signal));
   color: var(--on-signal);
   font-size: 1rem;
 }
