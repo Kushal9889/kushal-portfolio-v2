@@ -41,3 +41,19 @@ export type TelemetryPing = {
 export const SENT_EVENT = "corpus:sent";
 
 export type SentDetail = { question: string | null; t0: number; recorded?: boolean };
+
+/**
+ * The page's load-time answer, handed from the hero to the agent so it shows
+ * as the agent's first turn instead of in a second pane beside it. `null` when
+ * the load-time request failed.
+ */
+export const SEED_EVENT = "corpus:seed";
+
+export type SeedDetail = {
+  question: string;
+  answer: string;
+  sources: string[];
+  total: number;
+  provider: string | null;
+  timings: Record<string, number>;
+} | null;

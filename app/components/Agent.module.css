@@ -1,9 +1,10 @@
 /*
- * The agent card: one composer, one answer sheet, one proof rail.
+ * The agent card, sized to the screen: a bar (status island, tabs), one
+ * scroller, a pinned composer.
  *
- * Shape lock: everything a finger presses is a pill (--r-pill); containers are
- * --r-lg. One accent, --signal, spent on the primary action and the rail's
- * running state. Figures in an answer carry --mark, because a figure is a claim
+ * Shape lock: square like the page (--r-md and --r-lg are 0); --r-pill only
+ * for the island and dots. One accent, --signal, spent on the primary action
+ * and the running state. Figures in an answer carry --mark, because a figure is a claim
  * an outsider can check. Body text never drops below 16px.
  */
 
@@ -55,7 +56,7 @@
   padding: var(--s-2) var(--s-2) var(--s-2) var(--s-5);
   background: var(--paper-raised, var(--paper));
   border: var(--border-hair) solid var(--rule);
-  border-radius: 28px;
+  border-radius: var(--r-md);
   box-shadow: inset 0 1px 0 var(--console-ring, transparent);
   transition:
     border-color var(--t-fast) var(--ease-out),
@@ -109,7 +110,7 @@
   gap: 0.4em;
   min-width: var(--tap);
   min-height: var(--tap);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   font: inherit;
   font-size: var(--step--1);
   font-weight: 600;
@@ -155,11 +156,11 @@
   transform: scale(0.97);
 }
 
-/* ---------- Chips: openers, follow-ups, history ---------- */
+/* ---------- Chips: follow-ups and reasons ---------- */
 
-.openers,
 .offers,
-.history {
+.reasons,
+.followups {
   display: flex;
   flex-wrap: wrap;
   gap: var(--s-2);
@@ -169,30 +170,7 @@
 }
 
 .chip,
-.past {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--tap);
-  padding: 0.5em 1em;
-  max-width: 100%;
-  font: inherit;
-  font-size: var(--step--1);
-  line-height: 1.35;
-  text-align: start;
-  color: var(--ink);
-  background: transparent;
-  border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-pill);
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    border-color var(--t-fast) var(--ease-out),
-    background var(--t-fast) var(--ease-out),
-    transform var(--t-fast) var(--ease-out);
-}
-
-.chip:hover,
-.past:hover {
+.chip:hover {
   border-color: var(--ink-soft);
   background: color-mix(in oklch, var(--ink) 6%, transparent);
 }
@@ -208,25 +186,7 @@
   color: var(--ink-soft);
 }
 
-.past {
-  min-height: 36px;
-  color: var(--ink-soft);
-  /* One line each, so history never outweighs the answer under it. */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: min(100%, 28ch);
-  display: block;
-}
-
 /* ---------- Thread and answer sheet ---------- */
-
-.thread {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--s-3);
-  min-width: 0;
-}
 
 .sheet {
   display: grid;
@@ -236,7 +196,7 @@
   padding: var(--s-5);
   background: var(--paper-sunk, var(--paper));
   border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-lg, 20px);
+  border-radius: var(--r-lg);
 }
 
 .question {
@@ -307,13 +267,6 @@
   height: 0.55em;
 }
 
-.aside {
-  margin: 0;
-  font-size: var(--step--1);
-  font-style: italic;
-  color: var(--ink-soft);
-}
-
 .note {
   margin: 0;
   padding: var(--s-2) var(--s-3);
@@ -341,46 +294,10 @@
   gap: var(--s-3);
 }
 
-.island {
-  margin: 0;
-  font-size: var(--step-0);
-  color: var(--ink);
-}
-
-.waitSteps {
-  display: flex;
-  gap: var(--s-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-family: var(--mono);
-  font-size: var(--step--2);
-}
-
-.waitSteps li {
-  flex: 1;
-  padding-top: var(--s-2);
-  color: var(--ink-faint);
-  border-top: 2px solid var(--rule);
-  transition:
-    border-color var(--t-mid, 0.3s) var(--ease-out),
-    color var(--t-mid, 0.3s) var(--ease-out);
-}
-
-.waitSteps li[data-done] {
-  color: var(--ink-soft);
-  border-color: var(--ink-soft);
-}
-
-.waitSteps li[data-on] {
-  color: var(--ink);
-  border-color: var(--signal);
-}
-
 .skeleton {
   display: block;
   height: 0.9em;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   background: color-mix(in oklch, var(--ink) 9%, transparent);
 }
 
@@ -417,12 +334,6 @@
 
 /* ---------- Proof rail ---------- */
 
-.proof {
-  min-width: 0;
-  padding-top: var(--s-3);
-  border-top: var(--border-hair) solid var(--rule);
-}
-
 .proofList {
   display: flex;
   flex-wrap: wrap;
@@ -436,18 +347,6 @@
 }
 
 .step,
-.band {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45em;
-  min-height: 28px;
-  padding: 0 0.7em;
-  color: var(--ink-soft);
-  background: color-mix(in oklch, var(--ink) 6%, transparent);
-  border-radius: var(--r-pill);
-  white-space: nowrap;
-}
-
 .step[data-state="done"] > span:first-child {
   color: var(--live);
 }
@@ -463,23 +362,6 @@
 
 .step[data-state="partial"] {
   box-shadow: inset 0 0 0 1px var(--warn);
-}
-
-.band {
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.band[data-band="answer"] {
-  box-shadow: inset 0 0 0 1px var(--live);
-}
-
-.band[data-band="partial"] {
-  box-shadow: inset 0 0 0 1px var(--warn);
-}
-
-.band[data-band="unknown"] {
-  box-shadow: inset 0 0 0 1px var(--fail);
 }
 
 /* ---------- Actions ---------- */
@@ -501,7 +383,7 @@
   font: inherit;
   font-size: var(--step--1);
   font-weight: 600;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
@@ -556,8 +438,7 @@
   .composer {
     padding-inline-start: var(--s-4);
   }
-  .step,
-  .band {
+  .step {
     white-space: normal;
   }
 }
@@ -593,30 +474,6 @@
 
 /* ---------- Details disclosure ---------- */
 
-.drawer {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--s-5);
-  padding-top: var(--s-4);
-  border-top: var(--border-hair) solid var(--rule);
-  font-size: var(--step--1);
-  line-height: 1.5;
-  min-width: 0;
-}
-
-.group {
-  display: grid;
-  gap: var(--s-2);
-  min-width: 0;
-}
-
-.groupHead {
-  margin: 0;
-  font-size: var(--step--1);
-  font-weight: 600;
-  color: var(--ink);
-}
-
 .dim {
   margin: 0;
   color: var(--ink-faint);
@@ -635,7 +492,7 @@
 .reads li {
   padding: 0.35em 0.8em;
   border: var(--border-hair) solid var(--mark-rule, var(--rule));
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   background: var(--mark-wash, transparent);
 }
 
@@ -648,7 +505,7 @@
   color: var(--ink);
   text-decoration: none;
   border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
 }
 
 .tools a:hover {
@@ -732,33 +589,6 @@
   overflow-wrap: anywhere;
 }
 
-.facts {
-  display: grid;
-  gap: var(--s-2);
-  margin: 0;
-}
-
-.facts > div {
-  display: grid;
-  grid-template-columns: 11ch minmax(0, 1fr);
-  gap: var(--s-3);
-}
-
-.facts dt {
-  color: var(--ink-faint);
-}
-
-.facts dd {
-  margin: 0;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.facts code {
-  font-family: var(--mono);
-  font-size: var(--step--2);
-}
-
 .cites {
   margin: var(--s-1) 0 0;
   padding-inline-start: 1.4em;
@@ -840,14 +670,6 @@
   border-radius: var(--r-md, 12px);
 }
 
-.drawerFoot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s-3);
-}
-
 .toggle {
   display: inline-flex;
   align-items: center;
@@ -876,7 +698,7 @@
   color: var(--paper);
   background: var(--ink);
   border: none;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   box-shadow: var(--lift-2);
   white-space: nowrap;
   cursor: pointer;
@@ -884,7 +706,7 @@
 
 /* ---------- Focus and motion floors ---------- */
 
-.agent :is(button, a, input):focus-visible {
+.agent :is(button, a, input, textarea, summary, mark, [tabindex]):focus-visible {
   outline: 2px solid var(--signal);
   outline-offset: 2px;
 }
@@ -904,180 +726,6 @@
   .go,
   .lead {
     border: 1px solid ButtonText;
-  }
-}
-
-/* ---------- Glass, island, corners, split, history ----------
- *
- * Web: the hero's agent slot is its own scroll container, so the composer
- * sticks to its top and the conversation scrolls under frosted glass. Phone:
- * the page scrolls, and the composer sticks under the viewport top instead.
- * Either way the field stays in reach however long the thread grows.
- */
-
-.agent {
-  container-type: inline-size;
-}
-
-.composer {
-  position: sticky;
-  top: var(--s-2);
-  z-index: 2;
-  background: color-mix(in oklch, var(--paper-raised, var(--paper)) 70%, transparent);
-  backdrop-filter: blur(22px) saturate(170%);
-  -webkit-backdrop-filter: blur(22px) saturate(170%);
-  box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.12),
-    inset 0 -1px 0 oklch(0 0 0 / 0.18),
-    0 10px 30px -12px oklch(0 0 0 / 0.5);
-}
-
-.composer:focus-within {
-  box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.14),
-    0 0 0 3px color-mix(in oklch, var(--signal) 28%, transparent),
-    0 10px 30px -12px oklch(0 0 0 / 0.5);
-}
-
-.go,
-.lead {
-  box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.35),
-    inset 0 -1px 0 oklch(0 0 0 / 0.15);
-}
-
-.ghost,
-.chip,
-.past {
-  background: color-mix(in oklch, var(--ink) 4%, transparent);
-  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.06);
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .composer {
-    background: var(--paper-raised, var(--paper));
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-}
-
-/* The wait as an island: a black capsule that names the running stage. */
-.island {
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6em;
-  min-height: 40px;
-  padding: 0 1.1em 0 0.9em;
-  font-size: var(--step--1);
-  font-weight: 600;
-  color: oklch(0.97 0 0);
-  background: oklch(0.1 0.004 250);
-  border-radius: var(--r-pill);
-  box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.1),
-    0 8px 24px -10px oklch(0 0 0 / 0.6);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .island {
-    animation: island 420ms var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both;
-    transform-origin: left center;
-  }
-}
-
-@keyframes island {
-  from {
-    opacity: 0;
-    transform: scaleX(0.4);
-  }
-}
-
-/* Corner ticks: the sheet is an instrument reading, so it gets registration marks. */
-.sheet {
-  position: relative;
-}
-
-.sheet::before,
-.sheet::after {
-  content: "";
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  pointer-events: none;
-  border-color: var(--ink-faint);
-  border-style: solid;
-  border-width: 0;
-}
-
-.sheet::before {
-  top: -1px;
-  left: -1px;
-  border-top-width: 2px;
-  border-left-width: 2px;
-  border-top-left-radius: var(--r-lg, 20px);
-}
-
-.sheet::after {
-  right: -1px;
-  bottom: -1px;
-  border-right-width: 2px;
-  border-bottom-width: 2px;
-  border-bottom-right-radius: var(--r-lg, 20px);
-}
-
-.agent[data-state="busy"] .sheet::before,
-.agent[data-state="busy"] .sheet::after {
-  border-color: var(--signal);
-}
-
-/* Wide card: answer and proof side by side, three to one. */
-@container (min-width: 640px) {
-  .sheet {
-    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
-    column-gap: var(--s-5);
-  }
-  .sheet > * {
-    grid-column: 1;
-  }
-  .sheet > .proof {
-    grid-column: 2;
-    grid-row: 1 / span 4;
-    align-self: start;
-    padding: 0 0 0 var(--s-4);
-    border-top: none;
-    border-left: var(--border-hair) solid var(--rule);
-  }
-  .proofList {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .sheet > .drawer {
-    grid-column: 1 / -1;
-  }
-}
-
-/* Earlier questions: a scrolling shelf, so a long memory never pushes the
-   answer down. Horizontal with snap on phone, a capped column on web. */
-.history {
-  max-height: 92px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-@media (max-width: 560px) {
-  .history {
-    flex-wrap: nowrap;
-    max-height: none;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-    padding-bottom: 2px;
-  }
-  .history li {
-    scroll-snap-align: start;
-    flex: none;
   }
 }
 
@@ -1123,20 +771,6 @@
   background: var(--paper-sunk);
 }
 
-/* Phone: the five stage pills fold into one count; the full list is in the drawer. */
-.stepSum {
-  display: none;
-}
-
-@media (max-width: 560px) {
-  .stepSum {
-    display: inline-flex;
-  }
-  .step[data-stage] {
-    display: none;
-  }
-}
-
 /* Icons: one weight, one size, optically centred, never squeezed by a label. */
 .agent svg {
   flex: none;
@@ -1171,8 +805,8 @@
   border-radius: var(--r-md);
   box-shadow: var(--lift-1), inset 0 1px 0 color-mix(in oklch, var(--ink) 6%, transparent);
   transition: border-color var(--t-fast) var(--ease-out), box-shadow var(--t-fast) var(--ease-out);
-  animation: cardIn 420ms var(--ease-out) both;
-  animation-delay: calc(var(--i, 0) * 70ms);
+  animation: cardIn 200ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 25ms);
 }
 
 /* The signal edge: a 2px rule down the leading side, the one accent. */
@@ -1183,8 +817,8 @@
   width: 2px;
   background: var(--signal);
   transform-origin: top;
-  animation: edgeIn 520ms var(--ease-out) both;
-  animation-delay: calc(var(--i, 0) * 70ms + 120ms);
+  animation: edgeIn 240ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 25ms + 60ms);
 }
 
 .card:hover,
@@ -1220,7 +854,7 @@
   padding: 1px 8px;
   color: var(--ink-soft);
   border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-md);
   white-space: nowrap;
 }
 
@@ -1250,11 +884,6 @@
 
 .stats[data-fit="narrow"] {
   grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
-}
-
-.why {
-  font-weight: 400;
-  opacity: 0.85;
 }
 
 .stats[data-cols="1"] {
@@ -1298,8 +927,8 @@
 .card .bar {
   background: color-mix(in oklch, var(--signal) 70%, var(--ink-soft));
   transform-origin: left;
-  animation: barGrow 640ms var(--ease-out) both;
-  animation-delay: calc(var(--i, 0) * 70ms + var(--n, 0) * 60ms + 160ms);
+  animation: barGrow 300ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 25ms + var(--n, 0) * 30ms + 80ms);
 }
 
 .card .stepList li[data-state="failed"] .bar {
@@ -1360,14 +989,1166 @@
   color: var(--ink);
   background: var(--paper-sunk, transparent);
   border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+
+
+/* ==========================================================================
+ * Screen layout (2026-10-25)
+ *
+ * The card fills whatever height its host gives it (the hero console on a
+ * desktop, a full-height sheet on a phone once the reader asks) and keeps
+ * exactly one scroller: the view between the bar and the composer. Fades at
+ * its edges and the "More below" cue say when it holds more than it shows.
+ * ========================================================================== */
+
+.agent {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+}
+
+.topBar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-3);
+  padding-block-end: var(--s-3);
+  border-bottom: var(--border-hair) solid var(--rule);
+}
+
+.scrollBox {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.view {
+  --fade: 28px;
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  padding-block: var(--s-4);
+  outline: none;
+}
+
+.view[data-top] {
+  mask-image: linear-gradient(to bottom, transparent, #000 var(--fade));
+}
+
+.view[data-bottom] {
+  mask-image: linear-gradient(to top, transparent, #000 var(--fade));
+}
+
+.view[data-top][data-bottom] {
+  mask-image: linear-gradient(to bottom, transparent, #000 var(--fade), #000 calc(100% - var(--fade)), transparent);
+}
+
+.content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-4);
+  min-width: 0;
+}
+
+/* An icon-only round control in the corner of the bottom fade, where the text
+   under it is already fading out; it never sits over readable lines. */
+.moreCue {
+  position: absolute;
+  z-index: 2;
+  inset-block-end: var(--s-2);
+  inset-inline-end: var(--s-2);
+  display: inline-grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border-radius: var(--r-pill);
+  font: inherit;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  color: var(--ink);
+  background: var(--paper-raised, var(--paper));
+  border: var(--border-hair) solid var(--rule);
+  box-shadow: var(--lift-2);
+  cursor: pointer;
+}
+
+.dock {
+  flex: none;
+  display: grid;
+  gap: var(--s-2);
+  padding-block: var(--s-3) max(0px, env(safe-area-inset-bottom));
+  border-top: var(--border-hair) solid var(--rule);
+}
+
+.hint {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  color: var(--ink-faint);
+}
+
+.hint kbd {
+  font: inherit;
+  padding: 0 4px;
+  color: var(--ink-soft);
+  border: var(--border-hair) solid var(--rule);
+}
+
+/* ---------- Island: where the run is, then how it went ---------- */
+
+.island {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  max-width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 0.4em 0 1em;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: oklch(0.97 0 0);
+  background: oklch(0.1 0.004 250);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: var(--r-pill);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.1);
+}
+
+.islandText {
+  min-width: 0;
+  padding-inline-end: 0.6em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.island[data-phase="done"] :global(.live-dot) {
+  background: var(--live);
+}
+
+.island:is([data-phase="degraded"], [data-phase="stopped"]) :global(.live-dot) {
+  background: var(--warn);
+}
+
+.island[data-phase="failed"] :global(.live-dot) {
+  background: var(--fail);
+}
+
+.islandBand {
+  position: relative;
+  flex: none;
+  min-height: 30px;
+  padding: 0 0.8em;
+  font: inherit;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  color: oklch(0.97 0 0);
+  background: transparent;
+  border: var(--border-hair) solid oklch(1 0 0 / 0.3);
   border-radius: var(--r-pill);
   cursor: pointer;
 }
 
-/* What an opener's answer shows, beside the question. */
-.shows {
-  margin-inline-start: 0.6em;
+/* The hit area reaches 44px without making the badge bigger. */
+.islandBand::after {
+  content: "";
+  position: absolute;
+  inset: -7px -2px;
+}
+
+.islandBand[data-band="answer"] {
+  border-color: var(--live);
+}
+
+.islandBand[data-band="partial"] {
+  border-color: var(--warn);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The capsule keeps its place; its words swap with a short spring. */
+  .islandText {
+    animation: islandIn 360ms var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both;
+  }
+}
+
+@keyframes islandIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px) scale(0.97);
+  }
+}
+
+/* ---------- Tabs ---------- */
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: var(--border-hair) solid var(--rule);
+}
+
+.tab {
+  min-height: 36px;
+  padding: 0 0.9em;
+  font: inherit;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out);
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab[aria-selected="true"] {
+  color: var(--on-signal, var(--paper));
+  background: var(--signal);
+}
+
+/* ---------- Featured answer: the load-time question, set as a headline ---------- */
+
+.featured {
+  position: relative;
+  display: grid;
+  gap: var(--s-4);
+  min-width: 0;
+  padding: var(--s-5);
+  background-color: color-mix(in oklch, var(--paper) 90%, var(--signal) 4%);
+  /* A fine dot grid, the console's plotting paper. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http:%2F%2Fwww%2Ew3%2Eorg%2F2000%2Fsvg' width='14' height='14'%3E%3Ccircle cx='1' cy='1' r='1' fill='%23ffffff' fill-opacity='0.07'/%3E%3C/svg%3E");
+  border: var(--border-hair) solid color-mix(in oklch, var(--signal) 40%, var(--rule));
+}
+
+/* Registration marks at two corners, in the accent. */
+.featured::before,
+.featured::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  border: 0 solid var(--signal);
+}
+
+.featured::before {
+  inset-block-start: -1px;
+  inset-inline-start: -1px;
+  border-block-start-width: 2px;
+  border-inline-start-width: 2px;
+}
+
+.featured::after {
+  inset-block-end: -1px;
+  inset-inline-end: -1px;
+  border-block-end-width: 2px;
+  border-inline-end-width: 2px;
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+
+.featuredQ {
+  margin: 0;
+  font-family: var(--font-plate, inherit);
+  font-size: clamp(1.35rem, 2.1vw, 1.75rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.featured .leadLine {
+  font-size: 1.3em;
+}
+
+.grounded {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+}
+
+.grounded li {
+  padding: 0.3em 0.7em;
+  color: var(--ink-soft);
+  border: var(--border-hair) solid var(--mark-rule, var(--rule));
+  background: var(--mark-wash, transparent);
+}
+
+.featuredCta {
+  display: grid;
+  gap: var(--s-3);
+  justify-items: start;
+}
+
+.invite {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  min-height: 48px;
+  padding: 0 1.4em;
+  font: inherit;
+  font-size: var(--step-0);
+  font-weight: 700;
+  color: var(--on-signal, var(--paper));
+  background: var(--signal);
+  border: none;
+  box-shadow: inset 0 -2px 0 color-mix(in oklch, var(--ink) 22%, transparent);
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out);
+}
+
+.invite:hover {
+  background: var(--signal-deep, var(--signal));
+}
+
+.invite:active {
+  transform: translateY(1px);
+}
+
+.invite svg {
+  transition: transform var(--t-fast) var(--ease-out);
+}
+
+.invite:hover svg {
+  transform: translate(2px, -2px);
+}
+
+/* ---------- Empty state: one card per kind of visitor ---------- */
+
+.openers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.opener {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: start;
+  gap: var(--s-1) var(--s-2);
+  width: 100%;
+  height: 100%;
+  min-height: 88px;
+  padding: var(--s-3) var(--s-4);
+  font: inherit;
+  text-align: start;
+  color: var(--ink);
+  background: color-mix(in oklch, var(--ink) 4%, transparent);
+  border: var(--border-hair) solid var(--rule);
+  cursor: pointer;
+  transition: border-color var(--t-fast) var(--ease-out), background var(--t-fast) var(--ease-out);
+}
+
+.opener:hover {
+  border-color: color-mix(in oklch, var(--signal) 55%, var(--rule));
+  background: color-mix(in oklch, var(--ink) 7%, transparent);
+}
+
+.openerFor {
+  grid-column: 1;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+
+.openerQ {
+  grid-column: 1;
+  font-size: var(--step--1);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.opener svg {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: var(--ink-faint);
+}
+
+/* ---------- Answer formatting ---------- */
+
+.leadLine {
+  margin: 0 0 0.6em;
+  font-size: 1.2em;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.points {
+  display: grid;
+  gap: 0.4em;
+  margin: 0 0 0.75em;
+  padding-inline-start: 1.1em;
+  white-space: normal;
+}
+
+.points li::marker {
+  color: var(--signal);
+}
+
+/* A figure the record does not hold says so on hover or focus. */
+.unsupported {
+  position: relative;
+}
+
+.unsupported:is(:hover, :focus-visible)::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 3;
+  inset-inline-start: 0;
+  inset-block-end: calc(100% + 6px);
+  padding: 4px 8px;
+  font: 600 var(--step--2) / 1.3 var(--mono);
+  white-space: nowrap;
+  color: var(--paper);
+  background: var(--ink);
+  pointer-events: none;
+}
+
+.peek {
+  position: fixed;
+  z-index: var(--z-furniture, 50);
+  transform: translate(-50%, calc(-100% - 10px));
+  display: grid;
+  gap: 4px;
+  width: min(320px, calc(100vw - 32px));
+  padding: var(--s-3);
+  font-size: var(--step--1);
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--paper-raised, var(--paper));
+  border: var(--border-hair) solid color-mix(in oklch, var(--signal) 45%, var(--rule));
+  box-shadow: var(--lift-2);
+  pointer-events: none;
+}
+
+.peek b {
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.cite button {
+  min-width: 24px;
+  min-height: 24px;
+}
+
+/* ---------- Live pipeline and skeleton ---------- */
+
+.pipeline {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+}
+
+.pipeline li {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--ink-faint);
+  transition: color var(--t-fast) var(--ease-out);
+}
+
+.pipeline li[data-state="running"] {
+  color: var(--ink);
+}
+
+.pipeline li:is([data-state="done"], [data-state="skipped"], [data-state="failed"]) {
+  color: var(--ink-soft);
+}
+
+.pipeMark {
+  width: 8px;
+  height: 8px;
+  border: 1px solid currentColor;
+}
+
+.pipeline li[data-state="running"] .pipeMark {
+  background: var(--signal);
+  border-color: var(--signal);
+}
+
+.pipeline li[data-state="done"] .pipeMark {
+  background: var(--live);
+  border-color: var(--live);
+}
+
+.pipeline li[data-state="failed"] .pipeMark {
+  background: var(--warn);
+  border-color: var(--warn);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pipeline li[data-state="running"] .pipeMark {
+    animation: breathe 0.8s var(--ease-standard, ease-in-out) infinite alternate;
+  }
+}
+
+.skeleton[data-lead] {
+  width: 88%;
+  height: 1.2em;
+}
+
+.skeleton[data-chip] {
+  width: 6rem;
+  height: 28px;
+}
+
+.skelChips {
+  display: flex;
+  gap: var(--s-2);
+}
+
+/* ---------- History, proof, actions, sources ---------- */
+
+.history {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pastTurn > summary {
+  display: block;
+  min-height: var(--tap);
+  padding: 0.7em 1em;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  list-style: none;
+  border: var(--border-hair) solid var(--rule);
+  background: color-mix(in oklch, var(--ink) 4%, transparent);
+  cursor: pointer;
+}
+
+.pastTurn > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pastTurn[open] > summary {
+  color: var(--ink);
+  white-space: normal;
+}
+
+.pastTurn > .answer {
+  padding: var(--s-3) var(--s-4);
+  border: var(--border-hair) solid var(--rule);
+  border-top: none;
+  font-size: var(--step-0);
+}
+
+button.step {
+  font: inherit;
+  font-family: var(--mono);
+  min-height: 32px;
+  border: none;
+  cursor: pointer;
+}
+
+button.step:hover {
+  color: var(--ink);
+}
+
+.votes {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.votes .iconBtn[aria-pressed="true"] {
+  color: var(--ink);
+}
+
+.citedPanel {
+  display: grid;
+  gap: var(--s-3);
+}
+
+.panelHead {
+  margin: 0;
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.cites li + li {
+  margin-block-start: var(--s-2);
+}
+
+.cites li p {
+  margin: 4px 0 0;
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.cites li:target {
+  outline: 1px solid var(--signal);
+  outline-offset: 4px;
+}
+
+.note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+}
+
+/* ---------- Phone: full-height sheet once the reader asks, Trace as a bottom sheet ---------- */
+
+.sheetDialog {
+  position: fixed;
+  inset: auto 0 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: 85dvh;
+  margin: 0;
+  padding: 0;
+  color: var(--ink);
+  background: var(--paper);
+  border: none;
+  border-top: var(--border-hair) solid var(--rule);
+}
+
+.sheetDialog::backdrop {
+  background: oklch(0 0 0 / 0.55);
+}
+
+.sheetBody {
+  max-height: 85dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--s-4) calc(var(--s-5) + env(safe-area-inset-bottom));
+}
+
+.sheetHead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: var(--s-4) var(--s-3);
+  background: var(--paper);
+}
+
+.sheetHead h4 {
+  margin: 0;
+  font-size: var(--step-0);
+}
+
+.grabber {
+  position: absolute;
+  inset-block-start: 6px;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  width: 36px;
+  height: 4px;
+  background: var(--ink-faint);
+  border-radius: var(--r-pill);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sheetDialog[open] {
+    animation: sheetUp 260ms var(--ease-out) both;
+  }
+}
+
+@keyframes sheetUp {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+}
+
+@media (max-width: 767px) {
+  /* Once the reader has asked, the card is the screen: bar on top, composer at
+     the bottom, the answer scrolling between. */
+  .agent[data-asked] {
+    height: calc(100dvh - 4.5rem);
+    min-height: 26rem;
+  }
+  .hint {
+    display: none;
+  }
+  .tab {
+    min-height: var(--tap);
+  }
+  .featured {
+    padding: var(--s-4);
+  }
+  .island {
+    min-height: var(--tap);
+  }
+}
+
+/* ---------- Second take: the warm voice, set apart from the facts ---------- */
+
+.asideCard {
+  display: grid;
+  gap: var(--s-2);
+  justify-items: start;
+  padding: var(--s-4);
+  border: var(--border-hair) solid color-mix(in oklch, var(--signal) 50%, var(--rule));
+  background: color-mix(in oklch, var(--paper) 86%, var(--signal) 8%);
+}
+
+.asideHead {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.04em;
+  color: var(--signal);
+}
+
+.asideLine {
+  margin: 0;
+  font-family: var(--font-plate, inherit);
+  font-size: clamp(1.1rem, 1.6vw, 1.3rem);
+  font-weight: 700;
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.asideCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  min-height: var(--tap);
+  padding: 0 1.1em;
+  font: inherit;
+  font-size: var(--step--1);
+  font-weight: 700;
+  color: var(--ink);
+  background: transparent;
+  border: var(--border-hair) solid var(--signal);
+  cursor: pointer;
+  transition: background var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out);
+}
+
+.asideCta:hover {
+  color: var(--on-signal, var(--paper));
+  background: var(--signal);
+}
+
+/* Focus lands on the finished answer for screen readers; it is a region, not a
+   control, so it takes no ring. */
+.agent .answer[tabindex]:focus,
+.agent .answer[tabindex]:focus-visible {
+  outline: none;
+}
+
+/* Answer type at reading size inside a card, not a headline; the page's h3
+   stretch and tracking stay out of the question. */
+.question {
+  font-family: inherit;
+  font-stretch: normal;
+  letter-spacing: normal;
+}
+
+@media (min-width: 900px) {
+  .answer {
+    font-size: 1.0625rem;
+  }
+}
+
+.leadLine {
+  font-size: 1.12em;
+}
+
+/* The selected segment. The console's button sheen rule outranks a two-class
+   selector, so this one carries the component class twice. */
+.agent .tab[aria-selected="true"] {
+  color: var(--on-signal);
+  background: var(--signal);
+  text-shadow: none;
+}
+
+/* Ask stays an outline until there is something to send, then it is the one
+   filled control in the card, as a send button is once a draft exists. */
+.agent.agent form:has(textarea:not(:placeholder-shown)) .go:not([data-kind="stop"]) {
+  color: var(--on-signal);
+  background: var(--signal);
+  box-shadow: none;
+}
+
+@media (max-width: 767px) {
+  .islandBand,
+  button.step,
+  .chip[data-kind="probe"] {
+    min-height: var(--tap);
+  }
+  .islandBand::after {
+    content: none;
+  }
+}
+
+/* ---------- The window: the card lifted over the page ----------
+ * One element, two places. Closed, the popover is the inline card (author
+ * rules undo the UA popover box). Open, it sits in the top layer at about 70%
+ * of the width and 62% of the height, centred above the dock, with the page
+ * dimmed but visible and still scrollable around it. */
+:where(.agent[popover]:not(:popover-open)) {
+  width: auto;
+  height: auto;
+}
+
+.agent[popover]:not(:popover-open) {
+  inset: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  background: transparent;
+  color: var(--ink);
+}
+
+.agent:popover-open {
+  position: fixed;
+  inset: 0 0 4rem;
+  margin: auto;
+  width: min(70vw, 76rem);
+  min-width: min(44rem, calc(100vw - 2rem));
+  height: clamp(30rem, 62svh, calc(100svh - 7rem));
+  padding: var(--s-4) var(--s-5) var(--s-3);
+  overflow: hidden;
+  color: var(--ink);
+  background: oklch(0.205 0.012 258);
+  border: var(--border-hair) solid oklch(0.955 0.03 86 / 0.28);
+  box-shadow: 0 2px 6px oklch(0 0 0 / 0.3), 0 32px 90px oklch(0 0 0 / 0.55);
+}
+
+/* The film keeps moving behind the page; behind the window it is held to a
+   near-opaque dark so the conversation is the only thing in motion. */
+.agent:popover-open::backdrop {
+  background: oklch(0.12 0.01 258 / 0.86);
+}
+
+/* Beats the film-mode glass on header consoles (two classes, three elements),
+   which set this surface to 76% paper with a gradient over it. */
+.agent.agent.agent:popover-open[data-surface] {
+  background: oklch(0.205 0.012 258);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .agent:popover-open {
+    transition:
+      opacity 200ms var(--ease-out),
+      transform 240ms var(--ease-out);
+  }
+
+  @starting-style {
+    .agent:popover-open {
+      opacity: 0;
+      transform: translateY(12px) scale(0.985);
+    }
+  }
+}
+
+.winTitle {
+  margin: 0;
+  font-family: inherit;
+  font-size: var(--step-0);
+  font-weight: 600;
+  font-stretch: normal;
+  letter-spacing: normal;
+}
+
+.winBtn {
+  margin-inline-start: auto;
+}
+
+.stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Regular width inside the window: Sources and Trace stand beside the answer
+   instead of replacing it, so the reader never loses the text they are checking. */
+.agent[data-split] .stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
+  grid-template-rows: minmax(0, 1fr);
+  gap: var(--s-5);
+}
+
+.inspector {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--s-4) 0 var(--s-4) var(--s-5);
+  border-inline-start: var(--border-hair) solid var(--rule);
+}
+
+/* What the hero shows while the card is in its window. */
+.parked {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: var(--border-hair) dashed var(--rule);
+}
+
+.parkedQ {
+  margin: 0;
+  font-size: var(--step-1);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ---------- Inline on a wide screen: a live display ----------
+ * No inner scroller: the wheel scrolls the page, the answer is clipped under a
+ * fade, and reading further is the Full view button. */
+.agent[data-compact] .view {
+  overflow: hidden;
+  overscroll-behavior: auto;
+}
+
+.agent.agent .moreCue[data-label] {
+  display: inline-flex;
+  width: auto;
+  gap: 0.45em;
+  padding: 0 1em;
+  border-radius: 0;
+  font-family: inherit;
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--on-signal);
+  background: var(--signal);
+  border: none;
+  box-shadow: var(--lift-2);
+  text-shadow: none;
+}
+
+/* Inline, only the latest exchange shows; earlier turns and the view tabs live
+   in the full view, and the hint line below names them. */
+.agent[data-compact] :is(.history, .tabs) {
+  display: none;
+}
+
+/* The side panel is one column wide: the board stacks its cards. */
+.inspector .board {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.glance {
+  flex: none;
+  display: grid;
+  gap: var(--s-2);
+  padding-block: var(--s-3) var(--s-2);
+  border-top: var(--border-hair) solid var(--rule);
+}
+
+.glanceActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-2);
+}
+
+/* The rest, named once and quietly: mono, faint, a dotted rule under each word
+   that turns solid with an arrow on hover, so each reads as a door. */
+.glanceHints {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--s-3);
+  margin: 0;
   font-family: var(--mono);
   font-size: var(--step--2);
   color: var(--ink-faint);
+}
+
+.glanceHints button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  min-height: 28px;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;
+  text-decoration-color: color-mix(in oklch, var(--ink-faint) 60%, transparent);
+  cursor: pointer;
+  transition: color var(--t-fast) var(--ease-out);
+}
+
+.glanceHints button::after {
+  content: "\2197";
+  opacity: 0;
+  transform: translate(-2px, 2px);
+  transition: opacity var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out);
+}
+
+.glanceHints button:is(:hover, :focus-visible) {
+  color: var(--ink);
+  text-decoration-style: solid;
+  text-decoration-color: var(--signal);
+}
+
+.glanceHints button:is(:hover, :focus-visible)::after {
+  opacity: 1;
+  transform: none;
+}
+
+.glanceHints .tabular {
+  color: var(--ink-soft);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  color: var(--ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* One bar row inline: the island gives up width (its text truncates) before
+   the window button wraps onto a line of its own. */
+.agent[data-compact] .topBar {
+  flex-wrap: nowrap;
+}
+
+.agent[data-compact] .island {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.agent[data-compact] .islandText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Filled actions keep their fill under the console's button sheen, which sets
+   a transparent background shorthand at (0,2,3); the sheen image stays on top. */
+.agent.agent .invite,
+.parked.parked .invite {
+  color: var(--on-signal);
+  background-color: var(--signal);
+  text-shadow: none;
+}
+
+/* The answer toolbar: borderless symbols with their word, monochrome, one
+   hover fill. Four items; anything else is in the hint line. */
+.agent.agent .glanceActions .ghost {
+  min-height: var(--tap);
+  padding: 0 0.7em;
+  background-color: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.agent.agent .glanceActions .ghost:hover {
+  background-color: color-mix(in oklch, var(--ink) 8%, transparent);
+}
+
+@media (max-width: 767px) {
+  /* Phone: four equal cells, symbol over a short word, the way an iOS toolbar
+     labels its items. */
+  .glanceActions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .agent.agent .glanceActions .ghost {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-height: 52px;
+    padding: 4px 2px;
+    font-size: var(--step--2);
+    white-space: nowrap;
+  }
+
+  .glanceHints button {
+    min-height: var(--tap);
+  }
+}
+
+/* A textarea's intrinsic width (its default cols) is its flex minimum; at 390
+   it pushed the composer 45px past the card and clipped Ask. */
+.composer {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.composer .input {
+  min-width: 0;
+}
+
+/* Hint words are text, not buttons with a ground: the console sheen's
+   background never reaches them. */
+.agent.agent .glanceHints button {
+  background: none;
+  box-shadow: none;
+}
+
+@media (max-width: 767px) {
+  /* The lead is the answer's first sentence, one step above body, not a headline. */
+  .leadLine {
+    font-size: 1.04em;
+  }
 }

@@ -350,7 +350,7 @@ const PERSON = new RegExp(String.raw`\b(he|him|his|himself|she|her|hers|herself|
 const HIRING_TEXT = /\b(requirements?|responsibilit\w*|qualifications?|looking for|we need|we are hiring|seeking|must have|nice to have|years of (experience|\w+)|experience (with|in)|candidate)\b/i;
 
 /** "worked at X", "interned with X", "employed by X": X is the place asked about. */
-const EMPLOYER = /\b(work(ed|s|ing)?|intern(ed|ing)?|employed|job|position|role)\s+(?:at|for|with|by)\s+([A-Z][\w&.-]*(?:\s+[A-Z][\w&.-]*)*)/;
+const EMPLOYER = /\b(work(ed|s|ing)?|intern(ed|ing)?|employed|job|position|role)\s+(?:at|for|by)\s+([A-Z][\w&.-]*(?:\s+[A-Z][\w&.-]*)*)/;
 /** Titles and aliases of the template's role and project sections, lowercased. */
 const PLACES = loadContent()
   .sections.filter((s) => s.kind === "role" || s.kind === "project" || !s.kind)

@@ -1,5 +1,6 @@
 // The classic document's full system. The root layout ships only the shared
 // base, so this page brings the rest with it.
+import { CASE_QUESTIONS } from "@/lib/agent/evals";
 import "./globals.css";
 import "./scenes.css";
 import Hero from "./components/Hero";

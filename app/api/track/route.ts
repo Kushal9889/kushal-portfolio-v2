@@ -6,6 +6,7 @@ const ALLOWED = new Set([
   "agent_opened",
   "agent_asked",
   "voice_used",
+  "agent_feedback",
   "contact",
 ]);
 
@@ -31,6 +32,7 @@ const STAGE: Record<string, number> = {
   agent_opened: 3,
   agent_asked: 4,
   voice_used: 4,
+  agent_feedback: 4,
   contact: 5,
 };
 

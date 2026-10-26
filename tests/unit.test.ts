@@ -22,7 +22,7 @@ import {
   referralTag,
   type ReachContext,
 } from "../lib/reach";
-import { tokenize } from "../lib/agent/retrieve";
+import { absentNames, tokenize } from "../lib/agent/retrieve";
 import { nearestTerm, correct } from "../lib/agent/vocab";
 import { indexTokens, queryTokens, normalize } from "../lib/agent/tokenize";
 import {
@@ -1226,5 +1226,17 @@ describe("portfolio study evidence", () => {
     assert.doesNotMatch(section("Proof wall").body, /GRE|334/);
     assert.doesNotMatch(section("What he does not do").body, /does not present himself as an ML engineer|has no PyTorch/);
     assert.match(section("Boston University, Questrom Computational Lab").roleParts.dates, /August 2026/);
+  });
+});
+
+// "worked with PostgreSQL" was read as an employer question, so a tool the
+// corpus names many times was reported absent (main blind #77, #80).
+describe("absentNames", () => {
+  test("a tool after 'with' is not an employer", () => {
+    assert.deepEqual(absentNames("Where has he worked with PostgreSQL or pgvector, and what was he building in each instance?"), []);
+    assert.deepEqual(absentNames("What is the full scope of his experience working with Docker containers and deployment pipelines?"), []);
+  });
+  test("a name the corpus never uses is still caught", () => {
+    assert.deepEqual(absentNames("Did he work with Databricks?"), ["Databricks"]);
   });
 });

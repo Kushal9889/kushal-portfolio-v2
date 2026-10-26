@@ -84,6 +84,7 @@ function reachedModel(c: Case) {
   return !/routes to (deflect|authorisation)/.test(c.asserts);
 }
 
+/** `questions`: the current case set, read on the server (lib/agent/evals.ts reads the corpus from disk). */
 export default function EvalMatrix({ questions }: { questions: string[] }) {
   const current = new Set(questions);
   const cases = (evals.cases_detail ?? []).filter((c) => current.has(c.name)) as Case[];

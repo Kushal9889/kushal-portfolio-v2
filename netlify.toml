@@ -1,6 +1,9 @@
 # Next.js on Netlify. The plugin wires the App Router's server routes to
 # Netlify Functions; without it the API routes 404 and the agent is a dead box.
 [build]
+  # The search index and graph are built locally and committed; rebuilding
+  # here re-embedded the corpus with whatever key the build had and replaced
+  # the index the evals were measured on. Release build only.
   command = "node scripts/verify-media.mjs --prune public && npm run verify:facts && npm run build:release && npm run check && npm run test:unit"
   publish = ".next"
 
