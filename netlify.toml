@@ -1,7 +1,7 @@
 # Next.js on Netlify. The plugin wires the App Router's server routes to
 # Netlify Functions; without it the API routes 404 and the agent is a dead box.
 [build]
-  command = "npm run verify:facts && npm run build:release && npm run check && npm run test:unit"
+  command = "node scripts/verify-media.mjs --prune public && npm run verify:facts && npm run build:release && npm run check && npm run test:unit"
   publish = ".next"
 
 [[plugins]]
@@ -12,4 +12,11 @@
 
 # Previews are review artifacts; production retains all blocking checks above.
 [context.deploy-preview]
-  command = "npm run verify:facts && npm run build:release && npm run test:unit"
+  command = "node scripts/verify-media.mjs --prune public && npm run verify:facts && npm run build:release && npm run test:unit"
+
+# Film frames are not content-hashed, so not immutable: one day fresh, a week
+# stale-while-revalidate. Without this every frame revalidates on each visit.
+[[headers]]
+  for = "/film/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"

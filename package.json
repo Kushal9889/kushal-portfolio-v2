@@ -45,8 +45,10 @@
     "bench": "tsx scripts/bench-all.ts",
     "build:release": "next build && node scripts/verify-server-bundle.mjs",
     "test:gates": "python3 -m unittest discover -s tests -p \"test_release_gates.py\"",
-    "test:release-smoke": "node --test tests/release-smoke.test.mjs tests/server-bundle.test.mjs",
-    "verify:deployment": "node scripts/release-smoke.mjs"
+    "test:release-smoke": "node --test tests/release-smoke.test.mjs tests/server-bundle.test.mjs tests/media.test.mjs",
+    "verify:deployment": "node scripts/release-smoke.mjs",
+    "verify:media": "node scripts/verify-media.mjs",
+    "stage:media": "node scripts/stage-media.mjs .media"
   },
   "dependencies": {
     "@langchain/core": "^1.2.5",
@@ -82,5 +84,8 @@
     "tsx": "^4.19.2",
     "typescript": "^5",
     "wawoff2": "^2.0.1"
+  },
+  "overrides": {
+    "sharp": "0.35.5"
   }
 }

@@ -61,3 +61,16 @@ facts. Adapter-packaged size and preview delivery still require verification.
   numeric contract. No production load or smoothness claim is made here.
 - Verify previous deploy is available, rehearse rollback, promote and check the
   public resume URL. Production promotion has not been performed.
+
+## Media, dependency and drift pass (2026-10-25, evening)
+
+| Check | Observed result |
+| --- | --- |
+| Full-scroll bytes per visitor | desktop 4K 958 MiB, desktop 1080p 586 MiB, phone 163 MiB; see [ADR](adr-media-origin.md) |
+| Film media gate (`verify:media`) | Passed: 10,817 frames and flow maps for 29 clips, 0 missing, 0 corrupt |
+| Media staging for a separate origin | Passed: 10,818 files, largest 0.6 MiB (Pages limits 20,000 / 25 MiB) |
+| Unreferenced mp4 masters in deploy | 1.1 GiB, now pruned on Netlify only |
+| Production dependency audit | 3 high to 0: `sharp` overridden to 0.35.5 (patched), shared with Next |
+| Server trace union | 80.6 MB to 64.0 MB after the sharp dedupe |
+| Unit / release smoke + media / gate self-tests | 156 pass, 0 fail, 2 skips that were already there / 10 pass / OK |
+| Integration | 20 pass, 2 fail, same failures as before this pass |
