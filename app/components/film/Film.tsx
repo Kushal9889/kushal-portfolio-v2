@@ -7,8 +7,8 @@ import { reducedMotion } from "@/lib/verbs";
 
 /**
  * "off" is the page without the film (an explicit ?film=off). "still" is a device
- * that cannot or should not run the live film (data saver, a slow link, a small
- * machine, no WebGL2, or ?film=still to look at it): it gets one still frame of the
+ * that cannot run the live film (no WebGL2, a link measured too slow to carry
+ * it, or ?film=still to look at it): it gets one still frame of the
  * racks behind the page instead of a plain ground. "gpu" is the still plus a note
  * that graphics acceleration is off.
  */
@@ -16,12 +16,9 @@ function canRun(): boolean | "gpu" | "still" {
   const mode = new URLSearchParams(location.search).get("film");
   if (mode === "off") return false;
   if (mode === "still") return "still";
-  const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean; effectiveType?: string } };
-  if (nav.connection?.saveData) return "still";
-  // Phones load the small clip set, but not over a 2G or 3G link.
-  if (window.innerWidth < 768 && /^(slow-2g|2g|3g)$/.test(nav.connection?.effectiveType ?? "")) return "still";
-  if ((nav.deviceMemory ?? 8) <= 4 && (navigator.hardwareConcurrency ?? 8) <= 4) return "still";
-  const probe = document.createElement("canvas").getContext("webgl2", { failIfMajorPerformanceCaveat: true });
+  // No guess from data saver, link type, memory or core count: the film runs
+  // at full quality wherever WebGL2 exists, software renderers included.
+  const probe = document.createElement("canvas").getContext("webgl2");
   if (!probe) return "gpu";
   probe.getExtension("WEBGL_lose_context")?.loseContext();
   return true;

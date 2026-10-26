@@ -129,7 +129,7 @@ export default function Palette({
       hint: "remembered on this device",
       run: () => {
         try {
-          const reduced = document.documentElement.dataset.motionPref === "reduced" || (!document.documentElement.dataset.motionPref && matchMedia("(prefers-reduced-motion: reduce)").matches);
+          const reduced = document.documentElement.dataset.motionPref === "reduced";
           localStorage.setItem("motion", reduced ? "allowed" : "reduced");
         } catch {
           return;

@@ -227,23 +227,12 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers, onSlow?: () =>
   const tier = phone ? "p" : "d";
   const tierFps = phone ? 12 : 24;
   const liveClips = new Map<string, Live>();
-  // 4K first (d4/) where the canvas is wider than a 1080p frame, so the extra
-  // detail can reach the screen; a clip the reader has reached that shows no
-  // picture for 400 ms drops the rest of the film to 1080p for good.
+  // 4K (d4/) wherever the canvas is wider than a 1080p frame, so the extra
+  // detail reaches the screen. It is never traded down for speed: a clip still
+  // filling in shows its nearest decoded 4K frame.
   // The drawing buffer is the viewport at min(dpr, 2); a 16:9 frame covers it.
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  let hi = !phone && Math.max(window.innerWidth, (window.innerHeight * 16) / 9) * dpr > 1920;
-  const downgrade = () => {
-    if (!hi) return;
-    hi = false;
-    for (const l of liveClips.values()) {
-      if (l.tier !== "d4" || l === shown) continue;
-      const was = l.started;
-      release(l);
-      l.tier = tier;
-      if (was) load(l);
-    }
-  };
+  const hi = !phone && Math.max(window.innerWidth, (window.innerHeight * 16) / 9) * dpr > 1920;
   const slot = (): Slot => {
     const tex = new THREE.Texture();
     // Raw bytes, decoded in post.ts like the video was; bitmaps arrive flipped.
@@ -604,7 +593,6 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers, onSlow?: () =>
     const ok = l.ready && !l.pending;
     if (ok) l.waitSince = 0;
     else if (!l.waitSince) l.waitSince = performance.now();
-    else if (l.tier === "d4" && performance.now() - l.waitSince > 400) downgrade();
     return ok ? l : null;
   };
   const drawClip = (beat: string, progress: number, dt: number) => {

@@ -77,3 +77,5 @@ facts. Adapter-packaged size and preview delivery still require verification.
 | Media origin deployed | `kushal-film.film-worker.workers.dev`: 10,817/10,817 files 200 as images; 133 samples byte-identical with CORS and the cache headers |
 | Film from the origin (merged build, headless Chrome) | 1440x900: 1,741 frames, p95 61 ms; 390x844: 2,122 frames, p95 45 ms; every frame from the origin, 0 HTTP or console errors |
 | Netlify env | `NEXT_PUBLIC_FILM_ORIGIN` set on site 5a02ef1d (all contexts); applies on the next deploy |
+| Motion default | Full motion on by default whatever the OS setting; only the dock's Motion button turns it off. Device-guess downgrades removed (data saver, 2G/3G phone, <=4 GB and <=4 cores, GPU-caveat probe, 4K to 1080p after a 400 ms stall). Locked by `tests/motion-default.test.mjs` |
+| Film with OS reduced motion | Live with 4K on desktop in Chrome (1,393 frames), WebKit (978) and Firefox (293), and live on 390-wide phones in all three; 0 failed film requests and 0 errors. Dock set to reduced: still frame, 0 frames requested |

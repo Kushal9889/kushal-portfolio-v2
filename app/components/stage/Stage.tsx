@@ -1,5 +1,6 @@
 "use client";
 
+import { reducedMotion } from "@/lib/verbs";
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMotion } from "@/lib/motion";
@@ -126,7 +127,7 @@ export default function Stage({
 
   // The renderer arrives after first paint, never in front of the headline.
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (reducedMotion()) return;
     return onIdle(() => setMountCloud(true), 1500);
   }, []);
 
