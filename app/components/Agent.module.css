@@ -1818,6 +1818,12 @@ button.step:hover {
   .chip[data-kind="probe"] {
     min-height: var(--tap);
   }
+  /* An inline link otherwise: a full tap height, the arrow still beside it. */
+  .chip[data-kind="open"] {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+  }
   .islandBand::after {
     content: none;
   }
@@ -1941,26 +1947,65 @@ button.step:hover {
 
 /* ---------- Inline on a wide screen: a live display ----------
  * No inner scroller: the wheel scrolls the page, the answer is clipped under a
- * fade, and reading further is the Full view button. */
+ * fade, and reading further is the strip under it or the Full view button. */
 .agent[data-compact] .view {
   overflow: hidden;
   overscroll-behavior: auto;
 }
 
-.agent.agent .moreCue[data-label] {
-  display: inline-flex;
-  width: auto;
-  gap: 0.45em;
-  padding: 0 1em;
+/* The one way into the full view inline: the header button, named. */
+.agent.agent .winBtn[data-wide] {
+  padding: 0 0.9em;
+  color: var(--ink);
+  border: var(--border-hair) solid color-mix(in oklch, var(--signal) 55%, transparent);
   border-radius: 0;
-  font-family: inherit;
+}
+
+/* Under the cut text, in flow: it continues, what it read, where to read it. */
+.moreStrip {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35em 0.75em;
+  width: 100%;
+  min-height: var(--tap);
+  margin-block-start: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  font: inherit;
   font-size: var(--step--1);
+  text-align: start;
+  color: var(--ink-soft);
+  background: color-mix(in oklch, var(--ink) 4%, transparent);
+  border: var(--border-hair) solid var(--rule);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.moreStrip:hover {
+  color: var(--ink);
+  border-color: color-mix(in oklch, var(--signal) 55%, transparent);
+}
+
+.moreText {
   font-weight: 600;
   color: var(--ink);
-  background: var(--paper-raised, var(--paper));
-  border: var(--border-hair) solid color-mix(in oklch, var(--signal) 55%, transparent);
-  box-shadow: var(--lift-1);
-  text-shadow: none;
+}
+
+.moreReads {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: var(--step--2);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.moreGo {
+  margin-inline-start: auto;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 /* Inline, only the latest exchange shows; earlier turns and the view tabs live

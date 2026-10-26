@@ -30,9 +30,9 @@ const KEY = "note:free-tier:closed";
  * Every number here is read from /api/health, never written in: the providers
  * live (re-read every 30 s while the note is open and the tab is visible), the
  * budgets from the constants the code enforces, the measured runs from the last
- * gate report, and the last answer on this page as it lands. On a wide screen
- * the note slides in once, short; "Worth knowing" opens the rest. On a phone it
- * waits as a dot until tapped. Closing it is remembered in this browser only.
+ * gate report, and the last answer on this page as it lands. It waits as a chip
+ * until tapped (top right on a wide screen, above the dock on a phone); "Worth
+ * knowing" opens the rest. Closing it is remembered in this browser only.
  */
 export default function FreeTierNote() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -71,9 +71,9 @@ export default function FreeTierNote() {
       .then((r) => r.json())
       .then((h: Health) => {
         setHealth(h);
-        const phone = window.matchMedia("(max-width: 767px)").matches;
-        // After first paint settles, so the note never competes with the headline.
-        window.setTimeout(() => setState(phone ? "dot" : "open"), phone ? 600 : 1400);
+        // A chip after first paint settles. Opened by default, the card sat on the
+        // headline and the journey links at 1440, 1280 and 1024.
+        window.setTimeout(() => setState("dot"), 600);
       })
       .catch(() => {});
     return () => c.abort();

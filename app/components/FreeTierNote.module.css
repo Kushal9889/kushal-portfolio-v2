@@ -222,12 +222,13 @@
   color: var(--ink);
 }
 
-/* Phone: a dot until tapped, and an X to put it away. */
+/* A chip until tapped, and an X to put it away: top right beside the headline
+   on a wide screen, where the open card sits; above the dock on a phone. */
 .dotBar {
   position: fixed;
   z-index: 60;
-  inset-inline-end: var(--s-3);
-  inset-block-end: calc(4rem + var(--s-3) + env(safe-area-inset-bottom, 0px));
+  inset-inline-end: var(--s-5);
+  inset-block-start: 4.5rem;
   display: flex;
   align-items: center;
   color: var(--ink);
@@ -256,6 +257,12 @@
 }
 
 @media (max-width: 767px) {
+  .dotBar {
+    inset-inline-end: var(--s-3);
+    inset-block-start: auto;
+    inset-block-end: calc(4rem + var(--s-3) + env(safe-area-inset-bottom, 0px));
+  }
+
   .note {
     inset-inline: var(--s-3);
     inset-block-start: auto;

@@ -8,7 +8,7 @@ fail=0; n=0; ok=0
 hit() { n=$((n+1)); if grep -qF -- "$2" "$1"; then ok=$((ok+1)); else echo "MISS $1: $2"; fail=1; fi; }
 hit lib/agent/retrieve.ts 'passagesOf'
 hit app/components/Agent.tsx 'partlyWhy'
-hit lib/agent/policy.ts 'PROMPT_VERSION = "v3.4"'
+hit lib/agent/policy.ts 'PROMPT_VERSION = "v3.5"'
 hit lib/agent/index.json '"embedModel":"gemini-embedding-2"'
 hit app/components/Hero.module.css 'align-content: safe end'
 hit app/components/Hero.module.css 'contain: size'

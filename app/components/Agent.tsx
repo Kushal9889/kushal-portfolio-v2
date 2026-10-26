@@ -1785,11 +1785,14 @@ export default function Agent({
             type="button"
             data-inline
             className={`${styles.iconBtn} ${styles.winBtn}`}
+            data-wide={compact || undefined}
             aria-label={win ? "Close the window" : "Open in a window"}
             title={win ? "Close (Esc)" : "Open in a window"}
             onClick={() => setWindow(!win)}
           >
             <Glyph name={win ? "X:regular" : "CornersOut:regular"} size={18} />
+            {/* The one way into the full view inline, named, at the top of the card. */}
+            {compact && <span aria-hidden="true">Full view</span>}
           </button>
         )}
       </div>
@@ -1933,25 +1936,45 @@ export default function Agent({
             )}
           </div>
         </div>
-        {edges.bottom && (
+        {edges.bottom && !compact && (
           <button
             type="button"
             className={styles.moreCue}
             data-inline={win || undefined}
-            data-label={compact || undefined}
-            aria-label={compact ? "Open the full view" : "More below"}
-            title={compact ? "Open the full view" : "More below"}
+            aria-label="More below"
+            title="More below"
             onClick={() => viewRef.current?.scrollTo({ top: viewRef.current.scrollHeight, behavior: reducedMotion() ? "auto" : "smooth" })}
           >
-            <Glyph name={compact ? "CornersOut:regular" : "ArrowDown:regular"} size={18} />
-            {compact && "Full view"}
+            <Glyph name="ArrowDown:regular" size={18} />
           </button>
         )}
       </div>
+      {/* Inline, the answer is cut at the card's height. The strip under it says
+          so in words, names what the answer read, and opens the full view; it
+          sits below the text, never on it. */}
+      {compact && edges.bottom && latest && !pending && (
+        <button type="button" className={styles.moreStrip} aria-label={`The answer continues. Read it in the full view${latest.sources.length ? `, with ${latest.sources.length} ${latest.sources.length === 1 ? "section" : "sections"} it read` : ""}`}>
+          <Glyph name="ArrowDown:regular" size={16} />
+          <span className={styles.moreText}>Continues below</span>
+          {latest.sources.length > 0 && (
+            <span className={styles.moreReads}>
+              Read: {latest.sources.slice(0, 3).join(" · ")}
+              {latest.sources.length > 3 && ` · +${latest.sources.length - 3}`}
+            </span>
+          )}
+          <span className={styles.moreGo}>Full view</span>
+        </button>
+      )}
       {split && (
         <aside className={styles.inspector} id="agent-inspector" role={hasDetail ? "tabpanel" : undefined} aria-labelledby={hasDetail ? `agent-tab-${side}` : undefined}>
           {hasDetail && shown?.result ? (
             side === "sources" ? sourcesPanel(shown, shownAt) : board(shown.result)
+          ) : !pending && last?.seed && last.result ? (
+            /* The load answer keeps the sections it read but no step-by-step trace. */
+            <>
+              {last.result.sources.length > 0 && sourcesPanel(last, turns.length - 1)}
+              <p className={styles.dim}>The answer on load keeps no trace. Ask anything to see every step.</p>
+            </>
           ) : (
             <p className={styles.dim}>Sources and the trace open here when the answer lands.</p>
           )}
@@ -2007,9 +2030,12 @@ export default function Agent({
                   <span className="tabular">{covered}/{r.coverage!.length}</span> covered
                 </button>
               )}
-              <button type="button" onClick={() => open("trace")}>
-                <span className="tabular">{ms(r.total)}</span> trace
-              </button>
+              {/* The load answer keeps no trace, so it offers none. */}
+              {!last.seed && (
+                <button type="button" onClick={() => open("trace")}>
+                  <span className="tabular">{ms(r.total)}</span> trace
+                </button>
+              )}
               {r.aside && (
                 <button type="button" onClick={() => open("answer", "agent-aside")}>
                   second take
