@@ -1,0 +1,263 @@
+/* A small card that slides in at the lower right, above the dock. Graphite like
+   the agent console, a gold top light like the record chips, square corners. */
+.note {
+  position: fixed;
+  z-index: 60;
+  /* Top right, over the hero's picture, so it never covers a call to action. */
+  inset-inline-end: var(--s-5);
+  inset-block-start: 4.5rem;
+  width: min(20rem, calc(100vw - 2rem));
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  color: var(--ink);
+  background: oklch(0.205 0.012 258);
+  border: var(--border-hair) solid oklch(0.955 0.03 86 / 0.24);
+  box-shadow:
+    inset 0 1px 0 oklch(0.83 0.14 78 / 0.8),
+    0 2px 6px oklch(0 0 0 / 0.3),
+    0 24px 60px oklch(0 0 0 / 0.5);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .note {
+    animation: slideIn 380ms cubic-bezier(0.2, 0.9, 0.25, 1.1) both;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.head .x {
+  margin-inline-start: auto;
+}
+
+/* A small bot drawn in CSS: a square head, an antenna, two eyes. The eyes are
+   the provider state; the blink runs only where motion is welcome. */
+.bot {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 30px;
+  height: 24px;
+  margin-block-start: 6px;
+  background: oklch(0.28 0.012 258);
+  border: var(--border-hair) solid oklch(1 0 0 / 0.18);
+  --eye: var(--live);
+}
+
+.bot[data-state="resting"] {
+  --eye: var(--warn);
+}
+
+.antenna {
+  position: absolute;
+  inset-block-start: -7px;
+  inset-inline-start: 50%;
+  width: 2px;
+  height: 6px;
+  background: oklch(1 0 0 / 0.3);
+  transform: translateX(-50%);
+}
+
+.antenna::after {
+  content: "";
+  position: absolute;
+  inset-block-start: -3px;
+  inset-inline-start: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--eye);
+}
+
+.eye {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--eye);
+  box-shadow: 0 0 6px var(--eye);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .eye {
+    animation: blink 4.2s infinite;
+  }
+}
+
+@keyframes blink {
+  0%, 92%, 100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+.kicker {
+  margin: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: oklch(0.83 0.14 78);
+}
+
+.title {
+  margin: 0;
+  font-family: inherit;
+  font-size: var(--step-0);
+  font-weight: 700;
+  font-stretch: normal;
+  letter-spacing: normal;
+}
+
+.lede,
+.foot {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+
+.foot {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+}
+
+/* The board: one row per provider, as /api/health reports it right now. */
+.board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin: var(--s-1) 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.72rem;
+}
+
+.board li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.5em;
+  align-items: center;
+  padding: 6px 8px;
+  background: oklch(0.17 0.01 258);
+  border: var(--border-hair) solid oklch(1 0 0 / 0.08);
+}
+
+.board li > span:last-child {
+  grid-column: 2;
+  color: var(--ink-faint);
+}
+
+.board b {
+  font-weight: 600;
+}
+
+.pip {
+  grid-row: span 2;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--live);
+}
+
+.board li[data-state="resting"] .pip {
+  background: var(--warn);
+}
+
+.terms {
+  display: grid;
+  gap: var(--s-2);
+  margin: 0;
+}
+
+.terms dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-size: var(--step--1);
+  font-weight: 700;
+}
+
+.terms dd {
+  margin: 0 0 0 calc(16px + 0.4em);
+  font-size: var(--step--1);
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+.x {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: -10px -10px -10px 0;
+  color: var(--ink-soft);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.x:hover {
+  color: var(--ink);
+}
+
+/* Phone: a dot until tapped, and an X to put it away. */
+.dotBar {
+  position: fixed;
+  z-index: 60;
+  inset-inline-end: var(--s-3);
+  inset-block-end: calc(4rem + var(--s-3) + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  align-items: center;
+  color: var(--ink);
+  background: oklch(0.205 0.012 258);
+  border: var(--border-hair) solid oklch(0.83 0.14 78 / 0.6);
+  box-shadow: 0 8px 24px oklch(0 0 0 / 0.45);
+}
+
+.dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-height: 44px;
+  padding: 0 0.4em 0 0.9em;
+  font: inherit;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.75rem;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.dotBar .x {
+  margin: 0;
+}
+
+@media (max-width: 767px) {
+  .note {
+    inset-inline: var(--s-3);
+    inset-block-start: auto;
+    width: auto;
+    inset-block-end: calc(4rem + var(--s-3) + env(safe-area-inset-bottom, 0px));
+    max-height: calc(100dvh - 8rem);
+    overflow: auto;
+  }
+}

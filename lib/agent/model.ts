@@ -201,8 +201,8 @@ export function failoverState() {
  */
 const coolingOff = new Map<ProviderName, number>();
 
-const RATE_LIMIT_COOLDOWN_MS = 15 * 60_000;
-const TRANSIENT_COOLDOWN_MS = 30_000;
+export const RATE_LIMIT_COOLDOWN_MS = 15 * 60_000;
+export const TRANSIENT_COOLDOWN_MS = 30_000;
 
 function benchProvider(name: ProviderName, err: unknown) {
   const message = String((err as Error)?.message ?? err);

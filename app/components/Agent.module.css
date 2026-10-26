@@ -2284,3 +2284,69 @@ button.step:hover {
 .agent.agent .lit:not(:has(.litOpen)) .litAsk {
   padding-inline-end: 0.75em;
 }
+
+/* Gold for the record: the checkable-claim colour inside this card, set apart
+   from the lime that means live. Measured ~10:1 on the graphite ground. */
+.record {
+  --mark: oklch(0.83 0.14 78);
+}
+
+.lit[data-more] {
+  border-style: dashed;
+}
+
+.litBadge {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.lit[data-group] svg {
+  transition: transform var(--t-fast) var(--ease-out);
+}
+
+.lit[data-group] [aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+/* Credentials: the badge itself, larger, and a brighter light, because these
+   are the two a reader can verify in one click on Credly. */
+.lit[data-cert] {
+  border-color: color-mix(in oklch, var(--mark) 70%, transparent);
+  box-shadow:
+    inset 0 1px 0 var(--mark),
+    0 0 18px -4px color-mix(in oklch, var(--mark) 80%, transparent);
+}
+
+.lit[data-cert] .litBadge {
+  width: 28px;
+  height: 28px;
+}
+
+.agent.agent .lit[data-cert] .litAsk {
+  min-height: 44px;
+}
+
+/* Terms in the brief: a quiet door each. Weight and a dotted rule, no colour,
+   so the sentence still reads as a sentence; the rule turns solid on hover. */
+.agent.agent .term {
+  display: inline;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  background: none;
+  border: none;
+  box-shadow: none;
+  text-shadow: none;
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in oklch, var(--ink) 45%, transparent);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.agent.agent .term:is(:hover, :focus-visible) {
+  text-decoration-style: solid;
+  text-decoration-color: var(--ink);
+}

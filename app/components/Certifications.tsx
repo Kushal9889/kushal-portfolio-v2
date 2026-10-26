@@ -30,7 +30,7 @@ export default function Certifications({
           const face = (
             <>
               <span className={styles.tag}>
-                {c.kind === "proctored-exam" ? "Proctored exam" : "Certification"}
+                {c.kind === "proctored-exam" ? `${c.issuer}-certified` : "Certification"}
               </span>
               <span className={styles.issuer}>
                 {c.issuer === "NVIDIA" && <NvidiaMark size={16} />}

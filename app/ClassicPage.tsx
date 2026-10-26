@@ -42,6 +42,7 @@ import Timeline, { startOf } from "./components/Timeline";
 import Compare from "./components/Compare";
 import CopyText from "./components/CopyText";
 import { VISITOR_JOURNEYS } from "@/lib/journeys";
+import FreeTierNote from "./components/FreeTierNote";
 
 /** The section headings verbatim, for the rail and the footer index alike. */
 const CHAPTERS = [
@@ -287,12 +288,16 @@ export default function Page() {
     // upstream work, the two pinned certifications and the first ranking.
     // Each one asks the agent about itself; its link opens the record.
     brief: profile.brief,
+    briefTerms: (profile.briefTerms ?? "").split(",").map((x) => x.trim()).filter(Boolean),
+    // Client names kept out of the passages shown under Sources and in cite previews.
+    redactNames: (profile.private ?? "").split(",").map((x) => x.trim()).filter(Boolean),
     highlights: (() => {
       const wall = section("Proof wall").badges;
       return [
         { kind: "Lead Backend", label: "Agentic SDLC harness", href: "", ask: "What is the agentic SDLC harness he built, and how is it shipped as a plugin?" },
+        { kind: "RA", label: "AI Engineer", href: "/kushal-gaddamwar-resume.pdf", ask: `What did he build as ${section("Boston University, Questrom Computational Lab").roleParts.title}?` },
         ...wall.filter((b) => b.group === "Shipped").map((b) => ({ kind: "Open source", label: b.label, href: b.href, ask: `Tell me about ${b.label}: ${b.name}.` })),
-        ...certs.filter((c) => c.pinned && c.url).map((c) => ({ kind: "Certified", label: `${c.issuer} ${c.short ?? c.name}`, href: c.url!, ask: `What does the ${c.name} certification cover, and how was it earned?` })),
+        ...certs.filter((c) => c.pinned && c.url).map((c) => ({ kind: `${c.issuer}-certified`, label: c.name, href: c.url!, image: c.image, cert: true, ask: `What does the ${c.name} certification cover, and how was it earned?` })),
         ...wall.filter((b) => b.group === "Ranked").slice(0, 1).map((b) => ({ kind: "Ranked", label: b.label, href: b.href, ask: `${b.name}: what does that rank mean?` })),
       ];
     })(),
@@ -371,6 +376,7 @@ export default function Page() {
         <Agent {...agentProps} loop={false} />
       </Hero>
       <SectionRail items={CHAPTERS} />
+      <FreeTierNote />
 
       <main id="main">
         <FilmLine which="hook" />

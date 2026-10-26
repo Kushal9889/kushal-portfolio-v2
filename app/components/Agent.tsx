@@ -9,6 +9,7 @@ import tested from "@/lib/agent/test-score.json";
 import { listen, speak, silence, speechSupported, synthesisSupported, warmNeural } from "@/lib/voice/speech";
 import { track, trackOnce } from "@/lib/analytics";
 import { mailtoLink } from "@/lib/reach";
+import { redact as scrubPii } from "@/lib/redact";
 import Glyph from "./stage/Glyph";
 import WorkLoop from "./WorkLoop";
 import Paced from "./Paced";
@@ -203,6 +204,8 @@ export default function Agent({
   openable,
   highlights = [],
   brief,
+  redactNames = [],
+  briefTerms = [],
   loop = true,
 }: {
   email: string;
@@ -211,9 +214,13 @@ export default function Agent({
   /** The tool registry, as things a reader can open without asking first. */
   openable: Openable[];
   /** Checkable record shown before the first question; each asks the agent about itself. */
-  highlights?: { kind: string; label: string; href: string; ask: string }[];
+  highlights?: { kind: string; label: string; href: string; ask: string; image?: string; cert?: boolean }[];
+  /** Names (clients) replaced in any passage text shown to a reader. */
+  redactNames?: string[];
   /** Two sentences that open the conversation: inline on the card, and the first thing in the full view's thread. */
   brief?: string;
+  /** Terms in the brief that ask the agent about themselves when pressed. */
+  briefTerms?: string[];
   /** Draws the racks behind the console while an answer is written. Off where the host draws its own. */
   loop?: boolean;
 }) {
@@ -226,6 +233,10 @@ export default function Agent({
   /** Wide enough to set Sources and Trace beside the answer, not behind tabs. */
   const [roomy, setRoomy] = useState(false);
   const [side, setSide] = useState<"sources" | "trace">("sources");
+  /** The open-source chips are one chip until a reader opens the set. */
+  const [ossOpen, setOssOpen] = useState(false);
+  /** Chip order, shuffled once per load after mount (server markup stays in source order). */
+  const [order, setOrder] = useState<string[] | null>(null);
   /** Which copy or share control just worked, for its confirmation state. */
   const [flash, setFlash] = useState<string | null>(null);
   const [openPolicy, setOpenPolicy] = useState(false);
@@ -333,6 +344,29 @@ export default function Agent({
       .catch(() => {});
     return () => c.abort();
   }, []);
+
+  /* Shuffle the record chips on every load so no item always leads, with two
+     rules: chips of one kind (two credentials, two roles) never sit side by
+     side, and the ranking stays last. Retries a bounded number of times and
+     keeps the last try if no arrangement fits. */
+  useEffect(() => {
+    const unit = (h: (typeof highlights)[number]) => (h.kind === "Open source" ? "oss" : h.label);
+    const group = (h: (typeof highlights)[number]) => (h.cert ? "cert" : h.kind === "Open source" ? "oss" : h.kind === "Ranked" ? "last" : "role");
+    const keys = [...new Set(highlights.map(unit))];
+    const groupOf = new Map(highlights.map((h) => [unit(h), group(h)]));
+    const tail = keys.filter((k) => groupOf.get(k) === "last");
+    let pick = keys.filter((k) => groupOf.get(k) !== "last");
+    for (let tries = 0; tries < 24; tries++) {
+      const a = [...pick];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      pick = a;
+      if (a.every((k, i) => i === 0 || groupOf.get(k) !== groupOf.get(a[i - 1]))) break;
+    }
+    setOrder([...pick, ...tail]);
+  }, [highlights]);
 
   // A tab picked in the click that opened the window moves to the side panel.
   useEffect(() => {
@@ -900,7 +934,10 @@ export default function Agent({
 
   /** The cited passages of an answer, one per number, in order of first use. */
   const citedOf = (r: Result) => [...new Map((r.citations ?? []).filter((c) => c.n).map((c) => [c.n!, c])).values()];
-  const textOf = (r: Result, n: number) => (r.citations ?? []).find((c) => c.n === n && c.text)?.text ?? "";
+  /** Passage text as a reader sees it: personal data and client names replaced, every time, before render. */
+  const scrub = (t: string) =>
+    redactNames.reduce((x, name) => x.split(new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`)).join("[client]"), scrubPii(t).text);
+  const textOf = (r: Result, n: number) => scrub((r.citations ?? []).find((c) => c.n === n && c.text)?.text ?? "");
 
   function withSources(turn: Turn) {
     const r = turn.result!;
@@ -1517,24 +1554,65 @@ export default function Agent({
                 in the full view always, above every exchange, as one continuous flow. */}
             {(!asked || win) && (brief || highlights.length > 0) && (
               <section className={styles.record} aria-label="In brief">
-                {brief && <p className={styles.brief}>{brief}</p>}
-                {highlights.length > 0 && (
-                  <ul className={styles.recordList}>
-                    {highlights.map((h) => (
-                      <li key={h.label} className={styles.lit}>
-                        <button type="button" className={styles.litAsk} onClick={() => submit(h.ask)}>
-                          <span className={styles.litKind}>{h.kind}</span>
-                          <b className={styles.litName}>{h.label}</b>
-                        </button>
-                        {h.href && (
-                          <a className={styles.litOpen} href={h.href} target="_blank" rel="noreferrer" aria-label={`Open ${h.label}`} onClick={() => track("contact", `record-${h.label}`)}>
-                            <Glyph name="ArrowUpRight:regular" size={14} />
-                          </a>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+                {brief && (
+                  <p className={styles.brief}>
+                    {(() => {
+                      // Longest term first, so "Claude Certified Developer" wins over "Claude Code"'s prefix.
+                      const terms = [...briefTerms].sort((a, b) => b.length - a.length);
+                      if (!terms.length) return brief;
+                      const re = new RegExp(`(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "g");
+                      return brief.split(re).map((part, i) =>
+                        terms.includes(part) ? (
+                          <button key={i} type="button" className={styles.term} onClick={() => submit(`What is ${part} in his work, and what did he do with it?`)}>
+                            {part}
+                          </button>
+                        ) : (
+                          part
+                        ),
+                      );
+                    })()}
+                  </p>
                 )}
+                {highlights.length > 0 && (() => {
+                  // Open source is one chip, "Open source 4+" (projects, and more
+                  // contributions than that), until a reader opens the set.
+                  const oss = highlights.filter((h) => h.kind === "Open source");
+                  const projects = new Set(oss.map((h) => h.label.split(" #")[0])).size;
+                  const chip = (h: (typeof highlights)[number]) => (
+                    <li key={h.label} className={styles.lit} data-cert={h.cert || undefined}>
+                      <button type="button" className={styles.litAsk} onClick={() => submit(h.ask)}>
+                        {h.image && <img className={styles.litBadge} src={h.image} alt="" width={22} height={22} loading="lazy" />}
+                        <span className={styles.litKind}>{h.kind}</span>
+                        <b className={styles.litName}>{h.label}</b>
+                      </button>
+                      {h.href && (
+                        <a className={styles.litOpen} href={h.href} target="_blank" rel="noreferrer" aria-label={`Open ${h.label}`} onClick={() => track("contact", `record-${h.label}`)}>
+                          <Glyph name="ArrowUpRight:regular" size={14} />
+                        </a>
+                      )}
+                    </li>
+                  );
+                  return (
+                    <ul className={styles.recordList}>
+                      {(order ?? [...new Set(highlights.map((h) => (h.kind === "Open source" ? "oss" : h.label)))]).map((key) => {
+                        const h = key === "oss" ? oss[0] : highlights.find((x) => x.label === key);
+                        if (!h) return null;
+                        if (h.kind !== "Open source") return chip(h);
+                        return (
+                          <Fragment key="oss">
+                            <li className={styles.lit} data-group>
+                              <button type="button" className={styles.litAsk} aria-expanded={ossOpen} onClick={() => setOssOpen((o) => !o)}>
+                                <span className={styles.litKind}>Upstream</span>
+                                <b className={styles.litName}>Open source {projects}+</b>
+                              </button>
+                            </li>
+                            {ossOpen && oss.map(chip)}
+                          </Fragment>
+                        );
+                      })}
+                    </ul>
+                  );
+                })()}
               </section>
             )}
             {!split && hasDetail && tab === "sources" && last ? (

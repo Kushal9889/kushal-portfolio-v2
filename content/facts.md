@@ -1,7 +1,7 @@
 ---
 name: Kushal Gaddamwar
 role: AI Engineer
-current: Lead Backend Engineer at Boston University's Questrom Computational Lab, and Graduate Teaching Assistant for MET CS 664
+current: Lead Backend Engineer (RA) at Boston University's Questrom Computational Lab, and Graduate Teaching Assistant for MET CS 664
 tagline: I engineer the systems around LLMs. Not the prompts inside them.
 location: Boston, MA
 email: kushal7887pd@gmail.com
@@ -13,7 +13,9 @@ site: https://kushal-portfolio-223.netlify.app
 available: January 2027, earlier for the right team
 focus: Agentic orchestration · RAG retrieval · Evals and observability · Production deploys
 proof: He found a silent error-swallowing bug in LangChain's Python SDK. A maintainer merged the fix in 57 hours.
-brief: Lead Backend Engineer at Boston University's Questrom Computational Lab, where he built the agentic SDLC harness that holds Claude Code agents to the same gates as human engineers, shipped as a plugin. A LangChain maintainer merged the fix for the deepagents bug he reported in 57 hours, and NVIDIA and Anthropic certify him in agentic AI.
+private: Sikich, EST
+briefTerms: agentic SDLC harness, Claude Code, Linear MCP, CodeRabbit review, LangChain, deepagents, Certified Professional in Agentic AI, Claude Certified Developer, NVIDIA, Anthropic
+brief: AI Engineer, now Lead Backend Engineer (RA) at Boston University's Questrom Computational Lab, where he built the agentic SDLC harness that holds Claude Code agents to the same gates as human engineers, shipped as a plugin with Linear MCP and CodeRabbit review. A LangChain maintainer merged the fix for the deepagents bug he reported in 57 hours, NVIDIA certifies him as a Certified Professional in Agentic AI, and Anthropic as a Claude Certified Developer.
 lastVerified: 2026-10-02
 ---
 
@@ -71,7 +73,7 @@ Data science and statistical modeling.
 @kind role
 @source resume
 
-Role: Lead Backend Engineer. August 2026 to present. Boston, MA.
+Role: Lead Backend Engineer (RA). August 2026 to present. Boston, MA.
 
 @metric Lead | the whole backend for the EST field-service platform | resume
 @metric Recurring visits | scheduled across sites and clients; a missed job becomes a dispatch alert | resume
@@ -100,7 +102,7 @@ Stack: Claude Code, Model Context Protocol, Django REST Framework, PostgreSQL, D
 @kind role
 @source resume
 
-Role: AI Engineer, Graduate Researcher. May 2026 to August 2026. Boston, MA.
+Role: AI Engineer (RA). May 2026 to August 2026. Boston, MA.
 
 @metric 14 | tools on one LangGraph agent | resume
 @metric BM25 + vector | hybrid retrieval, Cohere reranked | resume
@@ -294,7 +296,7 @@ Claude Certified Developer - Foundations, Anthropic, earned 2026. Verifiable on 
 https://www.credly.com/badges/54ca4478-339e-496c-a4c4-2ae6c4c339ca/public_url
 
 NVIDIA-Certified Professional: Agentic AI, known as NCP-AAI, earned 2026. This is the one that
-matters: a proctored professional exam from the vendor whose inference stack the field runs on,
+matters: a professional exam from the vendor whose inference stack the field runs on,
 covering agent design, orchestration, and deployment. Verifiable on Credly.
 https://www.credly.com/badges/c8f105aa-1815-40cc-85a1-e5a2ef20c920/public_url
 

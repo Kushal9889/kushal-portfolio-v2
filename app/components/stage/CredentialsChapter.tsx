@@ -28,7 +28,7 @@ export type Plate = {
 
 type Filter = "all" | Plate["kind"];
 
-const SEAL: Record<Plate["kind"], string> = { exam: "proctored exam", program: "program", course: "course" };
+const SEAL: Record<Plate["kind"], string> = { exam: "certified", program: "program", course: "course" };
 const FILTERS: { key: Filter; label: string }[] = [
   { key: "all", label: "All" },
   { key: "exam", label: "Exam" },
