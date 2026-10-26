@@ -666,6 +666,15 @@
 .tally span { font-size: var(--step--2); line-height: 1.25; color: var(--ink-soft); }
 .tally button:hover, .tally button:focus-visible { background: var(--paper-high); }
 .nowrap { white-space: nowrap; }
+
+/* Phone: who, role, the action and the proof fit the first screen; the routes
+   and the tally follow (N1). On a wide screen they already do. */
+@media (max-width: 767px) {
+  .identity > .actions { order: 1; }
+  .identity > .proof { order: 2; }
+  .identity > .journeys { order: 3; }
+  .identity > .tally { order: 4; }
+}
 @media (max-width: 30rem) {
   .tally { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tally button:nth-child(3) { border-inline-start: 0; }

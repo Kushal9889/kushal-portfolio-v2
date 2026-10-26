@@ -151,7 +151,7 @@ def main():
             if not phone:
                 # Inline: one named way into the full view on top, and the cut answer says so under the text, never on it.
                 row["inline"] = page.evaluate("""() => { const a = document.querySelector('#agent');
-                  const w = a.querySelector('button[data-inline][aria-label="Open in a window"]'); const v = a.querySelector('#agent-panel');
+                  const w = a.querySelector('button[data-inline][aria-label="Full view"]'); const v = a.querySelector('#agent-panel');
                   const s = a.querySelector('[class*="moreStrip"]'); const vb = v.getBoundingClientRect();
                   return { winText: (w?.textContent || '').trim(), strip: !!s, stripBelow: s ? s.getBoundingClientRect().top >= vb.bottom - 1 : null,
                     floating: !!a.querySelector('[class*="moreCue"]') }; }""")
@@ -210,7 +210,7 @@ def main():
                 turns = page.evaluate(PROBE)["turns"]
                 y0 = page.evaluate("scrollY")
                 # A plain mouse press: Playwright's click() first nudges the page to bring the button into view, which moved y by 8 px.
-                wb = page.locator('#agent button[data-inline][aria-label="Open in a window"]').bounding_box()
+                wb = page.locator('#agent button[data-inline][aria-label="Full view"]').bounding_box()
                 page.mouse.click(wb["x"] + wb["width"] / 2, wb["y"] + wb["height"] / 2); page.wait_for_timeout(500)
                 row["window"] = page.evaluate(WINDOW)
                 page.screenshot(path=str(OUT / f"{name}-6-window.png"))

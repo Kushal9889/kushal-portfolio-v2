@@ -70,3 +70,47 @@ F3 F5-F8 F11 F12 F16-F44 N1-N30 N33 N34, each a small edit; listed per batch wit
 | N33 | DONE | read-80% fires scroll_deep (was never fired); funnel now land, interact (ui), ask, read 80%, contact |
 | F28 | REJECTED for now | "RECORDED · 2 S AGO" lives in app/components/film/*, the other session's film files |
 | F19 | VERIFIED | recruiter journey already opens experience + résumé path; no change |
+
+## Batches D-F result (gates: build ok, screen PASS, a11y PASS, unit 166/0, survivors 13/13, hardcoded colours 4 -> 0, audit 91 -> 94/107)
+| id | state | before -> after |
+|---|---|---|
+| F29 | DONE | phone typing: chip + dock stayed on screen -> both step aside; asserted in ui-agent-screen.py |
+| F30 | DONE | chip row scrolled with no cue -> "N records · swipe" label (edge fade refused by audit 2.5) |
+| F31 | DOCUMENTED | Referrer route is phone-only by design (data-only="phone"); desktop has the Introduce panel in contact |
+| F32 | DONE | full-view arrow sat on chip rows -> own gutter, full view only |
+| F33 | DONE | 3-4 glance hints -> 2 + "N more" |
+| F37 | DONE | scripts/ui-a11y.py: 70 tabs, Esc closes full view, contrast, title-only names |
+| F38 | DONE | Email hint 3.0:1 (old lime-sheen rule painted link blue) -> #0071e3, passes 4.5:1 |
+| F39 | PARTIAL | lime sheen + loop removed (-22 lines); 0 provably dead declarations among repeated selectors, so no blind -40% |
+| F40 | DONE | 17 dead classes deleted (Agent, Artifacts, Compare, Measured, page.module.css); CSS still 57.5 KB gzip vs 20 KB budget |
+| F41 | DONE | docs/adr-011..014; audit 9.7, 13.1, 13.4 now pass |
+| F42 | DONE | 4 mask #000 -> var(--mask-solid) |
+| F43 | REJECTED | backdrop-filter: none is what stops the film-live 12px blur on the console |
+| F44 | DONE | island oklch literals -> --island-* tokens |
+| F20 | DONE | ADR-014 voice: hero first person, agent third, status no person |
+| N1 | DONE | 390: proof + Email below fold -> both in first screen (order on phone) |
+| N2 | DONE | opener labels were accent on static text -> ink; accent left on Email and the 57 link |
+| N4/N6 | VERIFIED | first-screen claims are links or ask-the-agent taps; 57 links the merged PR |
+| N7 | NOT DONE | 38 interactive items at 1440: brief terms + record chips are Q2, other session |
+| N9 | DONE | job coverage was shown twice -> once (match_job) |
+| N10 | MEASURED | first visible change 107-108 ms after Ask |
+| N11 | VERIFIED | island phases come from stream events (route, sources, token, done) |
+| N12 | PASS | LCP 392 ms / 2.3 s, CLS 0.072 / 0 |
+| N13 | PASS | Email, Résumé, Ask 44 px+ in phone bottom zone |
+| N14 | DONE | Back left the site with full view open -> closes the full view |
+| N15 | DONE | 2 cert logos named only by hover title -> aria-label |
+| N16 | DONE | refusal said "Done in 20 ms" -> "Answered, off topic"; fallback note 17 -> 10 words; offline 13 -> 7 words |
+| N17 | PASS | offline mid-run: Retry recovers, no reload |
+| N18 | DONE | "Open in a window" -> "Full view" everywhere (label in name) |
+| N19 | DONE | "Copy" -> "Copy answer", "Share" -> "Copy link" |
+| N20 | PASS | no filler in visible copy |
+| N21-N24 | NOT DONE | 10 font sizes, off-8pt em gaps: type scale is the Apple restyle / DESIGN.md, other session |
+| N25 | VERIFIED | paced streaming is the one motion on the answer; respects reduced motion |
+| N26 | NOT DONE | contact section layout is Q home restyle |
+| N27 | DONE | 2 next questions -> 1, ranked by sources |
+| N28 | DONE | "Questions aren't saved. Your thread stays in this tab; a hashed address counts today's limit." |
+| N29 | DONE | looping CTA sheen removed; pulse only while running |
+| N30 | DONE | "Also running" -> "The agent on this page"; "What else checks out" -> "Certificates you can check" |
+| N31 | DONE | /og?q= renders (image/png); /ask title + og:title carry the question |
+| F28 | NOT DONE | film/* is the other session's |
+| F2 | PENDING KUSHAL | run `npm run prewarm` once with keys |

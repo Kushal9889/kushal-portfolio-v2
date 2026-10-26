@@ -507,7 +507,7 @@ export default function Page() {
 
         <FilmTransit id="T3" />
 
-        <Section id="running" beat="research" title="Also running" claim={sentenceWith(section("This site").body, "The agent on this page answers")} data-register="instrument">
+        <Section id="running" beat="research" title="The agent on this page" claim={sentenceWith(section("This site").body, "The agent on this page answers")} data-register="instrument">
           <AskSeeds items={[{ question: "What happens when every model provider fails?" }]} />
         </Section>
 
@@ -596,7 +596,7 @@ export default function Page() {
           claim={sentenceWith(section("Who he is").body, "certifies him")}
           beat="measured"
          
-          title="What else checks out"
+          title="Certificates you can check"
           data-tone="sunk"
           data-layout="rule"
           data-register="instrument"

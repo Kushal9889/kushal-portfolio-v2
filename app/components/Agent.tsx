@@ -773,7 +773,7 @@ export default function Agent({
     const fail = () => {
       if (!answer) answer = `Connection dropped. He is reachable at ${email}.`;
       restoreQuestion(question);
-      setInputError("The answer could not finish. Your question is ready to edit or retry.");
+      setInputError("Connection dropped. Retry, or edit your question.");
       settle({ failed: true });
       finish();
     };
@@ -835,7 +835,8 @@ export default function Agent({
         memory = { scope: data.scope, questions: data.questions ?? [] };
         settle();
       } else if (data.type === "offers") {
-        offers = data.offers ?? [];
+        // One next step per answer, the one its sources ranked first (N27).
+        offers = (data.offers ?? []).slice(0, 1);
         // Remembered so a bare "yes" in the input resolves to the same thing
         // the chip below the answer would have opened.
         pendingOpen.current = offers.find((o: Offer) => o.kind === "open") ?? null;
@@ -1018,6 +1019,20 @@ export default function Agent({
     return on;
   }
 
+  /* The browser's back button closes the full view instead of leaving the page (N14):
+     opening pushes one history entry, closing any other way pops it again. */
+  useEffect(() => {
+    if (!win) {
+      if ((history.state as { agentFull?: boolean } | null)?.agentFull) history.back();
+      return;
+    }
+    if (!(history.state as { agentFull?: boolean } | null)?.agentFull) history.pushState({ ...(history.state ?? {}), agentFull: true }, "");
+    const onPop = () => setWindow(false);
+    addEventListener("popstate", onPop);
+    return () => removeEventListener("popstate", onPop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [win]);
+
   /* Any control on the card (Sources, Trace, a cite, Copy, Share, an opener, a
      follow-up) opens the window first, then does its job there. The composer,
      the window button and the scroll cue act in place. */
@@ -1141,7 +1156,9 @@ export default function Agent({
                   ? "Connection dropped"
                   : latest?.local
                     ? "Instant · from this tab"
-                    : phase === "degraded"
+                    : latest?.route === "deflect"
+                      ? "Answered, off topic"
+                      : phase === "degraded"
                         ? "Answered, no model"
                         : latest?.warm
                           ? `Cached run · ${ms(latest.total)}${latest.ranAt ? ` · ${ago(latest.ranAt)}` : ""}`
@@ -1492,7 +1509,7 @@ export default function Agent({
         <div className={styles.actions} role="group" aria-label="Answer actions">
           <button className={styles.ghost} data-ok={flash === k("answer") || undefined} onClick={() => copy(k("answer"), `${turn.question}\n\n${r.answer}`, "copy-answer")}>
             <Glyph name={flash === k("answer") ? "CheckCircle:regular" : "Copy:regular"} size={18} />
-            {flash === k("answer") ? "Copied" : "Copy"}
+            {flash === k("answer") ? "Copied" : "Copy answer"}
           </button>
           <button className={styles.ghost} data-ok={flash === k("sources") || undefined} onClick={() => copy(k("sources"), withSources(turn), "copy-sources")}>
             <Glyph name={flash === k("sources") ? "CheckCircle:regular" : "ListChecks:regular"} size={18} />
@@ -1500,7 +1517,7 @@ export default function Agent({
           </button>
           <button className={styles.ghost} data-ok={flash === k("link") || undefined} onClick={() => copy(k("link"), shareUrl(turn), "share")}>
             <Glyph name={flash === k("link") ? "CheckCircle:regular" : "LinkSimple:regular"} size={18} />
-            {flash === k("link") ? "Link copied" : "Share"}
+            {flash === k("link") ? "Link copied" : "Copy link"}
           </button>
           <button className={styles.ghost} onClick={() => editLast(turn)}>
             <Glyph name="PencilSimple:regular" size={18} />
@@ -1591,10 +1608,10 @@ export default function Agent({
               <div className={styles.note} data-tone="warn">
                 <span>
                   {r.failed
-                    ? "The connection dropped before the answer finished."
+                    ? "Connection dropped mid-answer. Retry when you are back online."
                     : r.degraded
-                      ? `The models are resting${benched.length ? ` (${benched.join(", ")})` : ""}, so this is the passage his record ranks first, word for word.`
-                      : "Nothing was written before the stop."}
+                      ? `Models resting${benched.length ? ` (${benched.join(", ")})` : ""}. This is his record's top passage. Retry soon.`
+                      : "Stopped before any words. Retry to ask again."}
                 </span>
                 <button type="button" className={styles.retry} onClick={() => submit(turn.question, { replace: true, fresh: true })}>Retry</button>
               </div>
@@ -1825,8 +1842,8 @@ export default function Agent({
             data-inline
             className={`${styles.iconBtn} ${styles.winBtn}`}
             data-wide={compact || undefined}
-            aria-label={win ? "Close the window" : "Open in a window"}
-            title={win ? "Close (Esc)" : "Open in a window"}
+            aria-label={win ? "Close full view" : "Full view"}
+            title={win ? "Close (Esc)" : "Full view"}
             onClick={() => {
               track("ui", win ? "fullview-close" : "fullview-open");
               setWindow(!win);
@@ -2048,11 +2065,11 @@ export default function Agent({
             <div className={styles.glanceActions} role="group" aria-label="Answer actions">
               <button className={styles.ghost} data-ok={flash === `answer:${turns.length - 1}` || undefined} onClick={() => copy(`answer:${turns.length - 1}`, `${last.question}\n\n${r.answer}`, "copy-answer")}>
                 <Glyph name={flash === `answer:${turns.length - 1}` ? "CheckCircle:regular" : "Copy:regular"} size={18} />
-                {flash === `answer:${turns.length - 1}` ? "Copied" : "Copy"}
+                {flash === `answer:${turns.length - 1}` ? "Copied" : "Copy answer"}
               </button>
               <button className={styles.ghost} data-ok={flash === `link:${turns.length - 1}` || undefined} onClick={() => copy(`link:${turns.length - 1}`, shareUrl(last), "share")}>
                 <Glyph name={flash === `link:${turns.length - 1}` ? "CheckCircle:regular" : "LinkSimple:regular"} size={18} />
-                {flash === `link:${turns.length - 1}` ? "Link copied" : "Share"}
+                {flash === `link:${turns.length - 1}` ? "Link copied" : "Copy link"}
               </button>
               {r.sources.length > 0 && (
                 <button className={styles.ghost} onClick={() => open("sources")}>
@@ -2225,6 +2242,10 @@ export default function Agent({
           <kbd>Enter</kbd> send · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line · <kbd>/</kbd> focus · <kbd>Esc</kbd> {win && !pending ? "close" : "stop"}
         </p>
         )}
+        {/* What is kept, matched to the code (N28): track/route.ts logs a length, not
+            the question; the thread lives in this tab's sessionStorage; budget.ts
+            counts a SHA-256 of the address for one day. */}
+        <p className={styles.kept}>Questions aren&apos;t saved. Your thread stays in this tab; a hashed address counts today&apos;s limit.</p>
       </div>
 
       {/* Phone: Trace opens as a bottom sheet over the answer, its own surface. */}

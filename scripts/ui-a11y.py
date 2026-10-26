@@ -56,7 +56,7 @@ def main():
                     stops.add(page.evaluate("(() => { const a = document.activeElement; return a ? a.tagName + (a.id || '') + (a.getAttribute('aria-label') || a.textContent || '').trim().slice(0, 24) : '' })()"))
                 if len(stops) < 20:
                     fails.append(f"{name}: focus trapped, {len(stops)} distinct stops in 70 tabs")
-                btn = page.locator('#agent button[data-inline][aria-label="Open in a window"]')
+                btn = page.locator('#agent button[data-inline][aria-label="Full view"]')
                 if btn.count():
                     btn.first.click()
                     page.wait_for_timeout(400)

@@ -1113,6 +1113,12 @@
   border-top: var(--border-hair) solid var(--rule);
 }
 
+.kept {
+  margin: 0;
+  font-size: var(--step--2);
+  color: var(--ink-soft);
+}
+
 .hint {
   margin: 0;
   font-family: var(--mono);
@@ -1411,7 +1417,7 @@
   font-family: var(--mono);
   font-size: var(--step--2);
   letter-spacing: 0.06em;
-  color: var(--signal);
+  color: var(--ink-soft); /* static label: the accent is for what can be pressed (N2, audit 12.8) */
 }
 
 .openerQ {
