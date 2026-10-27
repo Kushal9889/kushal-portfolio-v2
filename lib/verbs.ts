@@ -48,8 +48,9 @@ export function reducedMotion() {
   if (typeof window === "undefined") return true;
   const own = document.documentElement.dataset.motionPref;
   if (own === "reduced") return true;
-  if (own === "allowed") return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Full motion unless the reader chose otherwise in the dock; the OS setting
+  // alone does not turn it off (FilmBoot.tsx defaults the choice to "allowed").
+  return false;
 }
 
 export const VERB_EVENT = "stage:verb";

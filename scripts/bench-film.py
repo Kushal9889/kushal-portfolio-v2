@@ -40,7 +40,10 @@ ALPHA = 0.05
 
 
 def run(cmd):
-    return subprocess.run(cmd, cwd=V2, capture_output=True, text=True)
+    result = subprocess.run(cmd, cwd=V2, capture_output=True, text=True, timeout=600)
+    if result.returncode:
+        raise RuntimeError(f"Gate failed ({result.returncode}): {cmd}\n{result.stdout}\n{result.stderr}")
+    return result
 
 
 def summary(xs):
@@ -53,9 +56,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--repeats", type=int, default=5)
     a = ap.parse_args()
+    if a.repeats < 2:
+        ap.error("--repeats must be at least 2")
     load = os.getloadavg()[0]
     samples = {s: {m: [] for m in BUDGET} for s in SCENARIOS}
     for i in range(a.repeats):
+        if os.path.exists(LAG_JSON):
+            os.unlink(LAG_JSON)
         r = run([sys.executable, "scripts/film-lag.py", "--only", ",".join(SCENARIOS)])
         rep = json.load(open(LAG_JSON))
         for s in SCENARIOS:

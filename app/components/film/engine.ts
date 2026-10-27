@@ -21,6 +21,9 @@ function measure(): Span[] {
 }
 
 /** A text box taller than this is split into its children's boxes. */
+// Frames and flow maps can come from a separate static origin (scripts/stage-media.mjs)
+// so a full-quality scroll does not spend the app host's bandwidth. Empty: same origin.
+const MEDIA = process.env.NEXT_PUBLIC_FILM_ORIGIN ?? "";
 const SCRIM_SPLIT = 360;
 
 /** Viewport box of the visible text inside an element, or null when it shows none. */
@@ -224,23 +227,12 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers, onSlow?: () =>
   const tier = phone ? "p" : "d";
   const tierFps = phone ? 12 : 24;
   const liveClips = new Map<string, Live>();
-  // 4K first (d4/) where the canvas is wider than a 1080p frame, so the extra
-  // detail can reach the screen; a clip the reader has reached that shows no
-  // picture for 400 ms drops the rest of the film to 1080p for good.
+  // 4K (d4/) wherever the canvas is wider than a 1080p frame, so the extra
+  // detail reaches the screen. It is never traded down for speed: a clip still
+  // filling in shows its nearest decoded 4K frame.
   // The drawing buffer is the viewport at min(dpr, 2); a 16:9 frame covers it.
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  let hi = !phone && Math.max(window.innerWidth, (window.innerHeight * 16) / 9) * dpr > 1920;
-  const downgrade = () => {
-    if (!hi) return;
-    hi = false;
-    for (const l of liveClips.values()) {
-      if (l.tier !== "d4" || l === shown) continue;
-      const was = l.started;
-      release(l);
-      l.tier = tier;
-      if (was) load(l);
-    }
-  };
+  const hi = !phone && Math.max(window.innerWidth, (window.innerHeight * 16) / 9) * dpr > 1920;
   const slot = (): Slot => {
     const tex = new THREE.Texture();
     // Raw bytes, decoded in post.ts like the video was; bitmaps arrive flipped.
@@ -396,7 +388,7 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers, onSlow?: () =>
       const g = c.gen;
       const i = c.order[c.next++];
       inflight++;
-      fetchFrame(`/film/frames/${c.tier}/${c.base}/${String(i + 1).padStart(4, "0")}.webp`)
+      fetchFrame(`${MEDIA}/film/frames/${c.tier}/${c.base}/${String(i + 1).padStart(4, "0")}.webp`)
         .then((b) => {
           meter(b.size);
           if (c.gen === g) c.blobs[i] = b;
@@ -423,7 +415,7 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers, onSlow?: () =>
   const noFlow = debug && query.get("flow") === "0";
   const loadFlow = (l: Live) => {
     const g = l.gen;
-    fetch(`/film/flow/${phone ? "p" : "d"}/${l.base}.png`)
+    fetch(`${MEDIA}/film/flow/${phone ? "p" : "d"}/${l.base}.png`)
       .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
       .then((b) => createImageBitmap(b, { imageOrientation: "flipY", premultiplyAlpha: "none", colorSpaceConversion: "none" }))
       .then((bmp) => {
@@ -601,7 +593,6 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers, onSlow?: () =>
     const ok = l.ready && !l.pending;
     if (ok) l.waitSince = 0;
     else if (!l.waitSince) l.waitSince = performance.now();
-    else if (l.tier === "d4" && performance.now() - l.waitSince > 400) downgrade();
     return ok ? l : null;
   };
   const drawClip = (beat: string, progress: number, dt: number) => {

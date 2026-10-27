@@ -1,6 +1,5 @@
 // The classic document's full system. The root layout ships only the shared
 // base, so this page brings the rest with it.
-import { CASE_QUESTIONS } from "@/lib/agent/evals";
 import "./globals.css";
 import "./scenes.css";
 import Hero from "./components/Hero";
@@ -25,6 +24,7 @@ import WorkStack from "./components/WorkStack";
 import BrandMark from "./components/BrandMark";
 import SectionRail from "./components/SectionRail";
 import EvalMatrix from "./components/EvalMatrix";
+import { CASE_QUESTIONS } from "@/lib/agent/evals";
 import Panel from "./components/Panel";
 import Artifacts2 from "./components/Artifacts";
 import evals from "@/content/evals.json";
