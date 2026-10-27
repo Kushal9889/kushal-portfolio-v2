@@ -16,6 +16,7 @@ import {
   PARTIAL_NOTE,
   AGGREGATE_NOTE,
   answerLength,
+  answerFormat,
 } from "./policy";
 
 /**
@@ -183,7 +184,7 @@ const answer = timed("answer", async (state) => {
 
   try {
     const { text, usage, provider } = await invokeWithFailover([
-      { role: "system", content: systemPrompt(context, answerLength(state.question)) },
+      { role: "system", content: systemPrompt(context, answerLength(state.question), answerFormat(state.question)) },
       { role: "user", content: state.asked || state.question },
     ], undefined, answerLength(state.question).tokens);
     // Stripped here rather than inside the provider adapter: the adapter's job

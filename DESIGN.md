@@ -7,8 +7,7 @@ warm greys), section 0 wins. Keep it when editing: other sessions read this file
 
 ## 0. The Apple system (read first)
 
-**Colour.** One accent, Apple blue. Nothing else is saturated except the three
-system status colours, and those only where they mean their status.
+**Colour (2026-10-27, Kushal: no blue anywhere).** Monochrome. The accent is the ink: marks, focus and underlined links in the claim white on dark (near-black on light); filled controls are ink with paper text. Nothing else is saturated except the three system status colours, and those only where they mean their status.
 
 | Token | Dark | Light | Role |
 |---|---|---|---|
@@ -18,8 +17,8 @@ system status colours, and those only where they mean their status.
 | `--ink` | `#f5f5f7` | `#1d1d1f` | Text |
 | `--ink-soft` / `--ink-faint` | `#d2d2d7` / `#a1a1a6` | Apple light values | Secondary and tertiary text |
 | `--rule` | `#424245` | Apple light value | Hairlines |
-| `--signal` | `#2997ff` | Apple light blue | Marks, strokes, focus, links on dark |
-| `--fill` / `--fill-hover` | `#0071e3` / `#0077ed` | same | Filled buttons; `--on-fill` is white (4.5:1) |
+| `--signal` | `#f5f5f7` | `#1d1d1f` | Marks, strokes, focus, links (underlined) |
+| `--fill` / `--fill-hover` | `#f5f5f7` / `#ffffff` | `#1d1d1f` / `#000000` | Filled buttons; `--on-fill` is black on dark (19:1), white on light |
 | `--live` / `--warn` / `--fail` | `#30d158` / `#ff9f0a` / `#ff453a` | system light values | Status only (ADR-003) |
 | `--scrim` / `--scrim-deep` | black at 55% / 86% | same | Behind a sheet or the full view |
 

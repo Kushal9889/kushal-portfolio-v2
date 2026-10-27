@@ -101,7 +101,7 @@
   justify-content: space-between;
   width: 100%;
   padding: var(--s-4) var(--s-5);
-  /* Apple's filled button: #0071e3 with white text (4.5:1), not the link blue. */
+  /* The filled button: the ink with paper text, the one filled control. */
   background: var(--fill, var(--signal));
   color: var(--on-fill, var(--on-signal));
   border-radius: var(--r-md);
@@ -494,46 +494,8 @@
  * Motion thesis: the focal moment is a request being
  * served; feedback is the graph lighting node by node; continuity is the
  * lock-in when a node finishes. Budget: transform and opacity on a 1px line
- * and an 11px ring, no blur, no glow, nothing running at rest. Framing ticks
- * and the beam come from telemetry instruments. */
-.tick {
-  position: absolute;
-  z-index: 1;
-  width: 9px;
-  height: 9px;
-  border: 0 solid var(--signal);
-  opacity: 0.75;
-  pointer-events: none;
-}
-
-.tick[data-c="tl"] {
-  inset-block-start: 7px;
-  inset-inline-start: 7px;
-  border-block-start-width: var(--border-hair);
-  border-inline-start-width: var(--border-hair);
-}
-
-.tick[data-c="tr"] {
-  inset-block-start: 7px;
-  inset-inline-end: 7px;
-  border-block-start-width: var(--border-hair);
-  border-inline-end-width: var(--border-hair);
-}
-
-.tick[data-c="bl"] {
-  inset-block-end: 7px;
-  inset-inline-start: 7px;
-  border-block-end-width: var(--border-hair);
-  border-inline-start-width: var(--border-hair);
-}
-
-.tick[data-c="br"] {
-  inset-block-end: 7px;
-  inset-inline-end: 7px;
-  border-block-end-width: var(--border-hair);
-  border-inline-end-width: var(--border-hair);
-}
-
+ * and an 11px ring, no blur, no glow, nothing running at rest. The beam
+ * comes from telemetry instruments. */
 /* The beam: one 1px line crossing the top edge. It runs for as long as a
    request is in flight (the page's own on load, or the visitor's question) and
    once when a request lands. At rest it is gone. */
@@ -741,3 +703,15 @@
 .hero .body > .console :global(#agent:not(:popover-open)) {
   background: transparent;
 }
+
+/* Reading content sizes the hero; a viewport cap hid credentials and starters. */
+@media (min-width: 62rem) {
+  .hero { max-height: none; }
+  .hero .body { grid-template-rows: auto; }
+  .hero .body > .console { contain: none; height: auto; max-height: none; }
+  .hero .body > .identity { align-content: start; min-height: auto; }
+  .hero .console .agentSlot { overflow: visible; }
+}
+
+.ctaText { min-width: 0; white-space: normal; }
+.ctaHint { overflow-wrap: anywhere; }

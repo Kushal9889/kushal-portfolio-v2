@@ -182,7 +182,8 @@ def run(pw, w, motion, path="/", probe=True):
     # resource; its own status line says what happened. Everything else counts.
     page.on("requestfailed", lambda r: (r.url.startswith(ORIGIN) or "ERR_ABORTED" not in (r.failure or ""))
             and failed.append(f"failed {r.url.replace(ORIGIN, '')} {r.failure}"))
-    page.goto(ORIGIN + path, wait_until="networkidle")
+    # Film requests continue after load, so network idle is not a page-readiness signal.
+    page.goto(ORIGIN + path, wait_until="load")
     page.wait_for_timeout(2000)
     out = {"errors": errors, "failed": failed}
     if probe:

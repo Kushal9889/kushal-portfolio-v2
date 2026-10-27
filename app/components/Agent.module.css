@@ -338,21 +338,21 @@
 
 /* ---------- Proof rail ---------- */
 
+/* How an answer was made: read as text in the ink, one register with the inline
+   proof row. Status colours stay on the failed and partial borders only. */
 .proofList {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 0 var(--s-4);
   margin: 0;
   padding: 0;
   list-style: none;
-  font-family: var(--mono);
-  font-size: var(--step--2);
-  line-height: 1;
+  font-size: var(--step--1);
+  line-height: 1.2;
 }
 
-.step,
-.step[data-state="done"] > span:first-child {
-  color: var(--live);
+.step {
+  color: var(--ink-soft);
 }
 
 .step[data-state="failed"] {
@@ -1552,48 +1552,13 @@
 
 /* ---------- History, proof, actions, sources ---------- */
 
-.history {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.pastTurn > summary {
-  display: block;
-  min-height: var(--tap);
-  padding: 0.7em 1em;
-  font-size: var(--step--1);
-  color: var(--ink-soft);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  list-style: none;
-  border: var(--border-hair) solid var(--rule);
-  background: color-mix(in oklch, var(--ink) 4%, transparent);
-  cursor: pointer;
-}
-
-.pastTurn > summary::-webkit-details-marker {
-  display: none;
-}
-
-.pastTurn[open] > summary {
-  color: var(--ink);
-  white-space: normal;
-}
-
-.pastTurn > .answer {
-  padding: var(--s-3) var(--s-4);
-  border: var(--border-hair) solid var(--rule);
-  border-top: none;
-  font-size: var(--step-0);
-}
-
 button.step {
   font: inherit;
-  font-family: var(--mono);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0;
+  background: none;
   min-height: 32px;
   border: none;
   cursor: pointer;
@@ -1715,25 +1680,8 @@ button.step:hover {
 }
 
 @media (max-width: 767px) {
-  /* The page is the only scroller: a screen-high card with its own scroller
-     swallowed every swipe that started on it, so the page moved only from the
-     gutters beside it. The card grows with the answer and the composer rides
-     the bottom edge, above the 4rem reach bar. */
-  .agent:not([data-window]) .view {
-    overflow: visible;
-    overscroll-behavior: auto;
-  }
-  .agent[data-asked] .dock {
-    position: sticky;
-    bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
-    z-index: 2;
-    background: var(--paper);
-  }
   .hint {
     display: none;
-  }
-  .tab {
-    min-height: var(--tap);
   }
   .island {
     min-height: var(--tap);
@@ -1985,56 +1933,9 @@ button.step:hover {
   border-radius: var(--r-md);
 }
 
-/* Under the cut text, in flow: it continues, what it read, where to read it. */
-.moreStrip {
-  flex: none;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35em 0.75em;
-  width: 100%;
-  min-height: var(--tap);
-  margin-block-start: var(--s-2);
-  padding: var(--s-2) var(--s-3);
-  font: inherit;
-  font-size: var(--step--1);
-  text-align: start;
-  color: var(--ink-soft);
-  background: color-mix(in oklch, var(--ink) 4%, transparent);
-  border: var(--border-hair) solid var(--rule);
-  border-radius: var(--r-md);
-  cursor: pointer;
-}
-
-.moreStrip:hover {
-  color: var(--ink);
-  border-color: color-mix(in oklch, var(--signal) 55%, transparent);
-}
-
-.moreText {
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.moreReads {
-  flex: 1 1 12rem;
-  min-width: 0;
-  overflow: hidden;
-  font-family: var(--mono);
-  font-size: var(--step--2);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.moreGo {
-  margin-inline-start: auto;
-  font-weight: 600;
-  color: var(--ink);
-}
-
 /* Inline, only the latest exchange shows; earlier turns and the view tabs live
    in the full view, and the hint line below names them. */
-.agent[data-compact] :is(.history, .tabs) {
+.agent[data-compact] .tabs {
   display: none;
 }
 
@@ -2049,12 +1950,6 @@ button.step:hover {
   gap: var(--s-2);
   padding-block: var(--s-3) var(--s-2);
   border-top: var(--border-hair) solid var(--rule);
-}
-
-.glanceActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-1) var(--s-2);
 }
 
 /* The rest, named once and quietly: mono, faint, a dotted rule under each word
@@ -2109,19 +2004,6 @@ button.step:hover {
   color: var(--ink-soft);
 }
 
-.upLine {
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
-  margin: 0;
-  font-family: var(--mono);
-  font-size: var(--step--2);
-  color: var(--ink-faint);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* One bar row inline: the island gives up width (its text truncates) before
    the window button wraps onto a line of its own. */
 .agent[data-compact] .topBar {
@@ -2149,39 +2031,7 @@ button.step:hover {
   text-shadow: none;
 }
 
-/* The answer toolbar: borderless symbols with their word, monochrome, one
-   hover fill. Four items; anything else is in the hint line. */
-.agent.agent .glanceActions .ghost {
-  min-height: var(--tap);
-  padding: 0 0.7em;
-  background-color: transparent;
-  border: none;
-  box-shadow: none;
-}
-
-.agent.agent .glanceActions .ghost:hover {
-  background-color: color-mix(in oklch, var(--ink) 8%, transparent);
-}
-
 @media (max-width: 767px) {
-  /* Phone: four equal cells, symbol over a short word, the way an iOS toolbar
-     labels its items. */
-  .glanceActions {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0;
-  }
-
-  .agent.agent .glanceActions .ghost {
-    flex-direction: column;
-    justify-content: center;
-    gap: 2px;
-    min-height: 52px;
-    padding: 4px 2px;
-    font-size: var(--step--2);
-    white-space: nowrap;
-  }
-
   .glanceHints button {
     min-height: var(--tap);
   }
@@ -2384,49 +2234,44 @@ button.step:hover {
   .agent.agent .term {
     padding: 0.75em 0.1em;
     margin: -0.75em -0.1em;
+    /* The lit line sits under the word, not at the foot of the padding, which
+       lands on the next line and read as a strike-through (2026-10-27 shot). */
+    background-origin: content-box;
   }
 }
 
 .agent.agent .term:is(:hover, :focus-visible) {
   text-decoration-style: solid;
-  text-decoration-color: var(--glint);
-  background-color: color-mix(in oklch, var(--glint) 22%, transparent);
-  box-shadow: 0 0 0 2px color-mix(in oklch, var(--glint) 22%, transparent), 0 0 14px color-mix(in oklch, var(--glint) 40%, transparent);
+  text-decoration-color: var(--ink);
+  background-color: color-mix(in oklch, var(--ink) 12%, transparent);
 }
 
-/* The glint: one light walks the terms in reading order, 0.9 s apart, so a
-   first-time reader sees every term is a door. It runs only while the card
-   waits untouched; a pointer or focus on the card, a question, or the full
-   view stops it. */
-.agent.agent {
-  --glint: var(--proof-mark, var(--signal));
-}
-
+/* The lit term: one at a time, picked at random by Agent.tsx (1.6 s apart on
+   the card, 4 s in the full-screen view), and only its underline moves: a 2px
+   line in the ink grows left to right under the word, then gives way to the
+   next. It says every term is a door without lighting the whole word. Off
+   under reduced motion (no term is lit). */
 .agent.agent .term {
   border-radius: 4px;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
-  transition: background-color 160ms var(--ease-out, ease-out), box-shadow 160ms var(--ease-out, ease-out), text-decoration-color 160ms var(--ease-out, ease-out);
+  background-image: linear-gradient(var(--ink), var(--ink));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 2px;
+  transition:
+    background-size 700ms var(--ease-out, ease-out),
+    background-color 160ms var(--ease-out, ease-out),
+    text-decoration-color 300ms var(--ease-out, ease-out);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .agent.agent[data-state="idle"]:not([data-window], :hover, :focus-within) .term {
-    animation: glint calc(var(--n, 9) * 0.9s) var(--ease-out, ease-out) calc(var(--k, 0) * 0.9s + 1.2s) infinite both;
-  }
+.agent.agent .term[data-lit] {
+  background-size: 100% 2px;
+  text-decoration-color: transparent;
 }
 
-@keyframes glint {
-  0%,
-  16% {
-    background-color: transparent;
-    box-shadow: 0 0 0 2px transparent, 0 0 14px transparent;
-    text-decoration-color: color-mix(in oklch, var(--ink) 45%, transparent);
-  }
-  5% {
-    background-color: color-mix(in oklch, var(--glint) 22%, transparent);
-    box-shadow: 0 0 0 2px color-mix(in oklch, var(--glint) 22%, transparent), 0 0 14px color-mix(in oklch, var(--glint) 40%, transparent);
-    text-decoration-color: var(--glint);
-  }
+.agent.agent[data-window] .term {
+  transition-duration: 1800ms, 160ms, 900ms;
 }
 
 /* Tools the model may call: name, what it does, a sentence that triggers it. */
@@ -2470,3 +2315,484 @@ button.step:hover {
     min-height: 72px;
   }
 }
+
+/* ==========================================================================
+ * The full-screen chat (2026-10-27)
+ * Replies run here at every size, and any control on the inline card opens it.
+ * Phone: the whole visible screen (sized to the visual viewport, so the
+ * composer rides above the keyboard), safe areas, drag the bar down to close.
+ * Medium: three tabs. Wide: a centred reading column, Sources and Trace beside it.
+ * ========================================================================== */
+
+.agent:popover-open {
+  inset: 0;
+  width: min(calc(100vw - 48px), 88rem);
+  min-width: 0;
+  height: min(calc(100svh - 48px), 64rem);
+}
+
+/* One reading column, never a stretched line; the panel takes the rest. */
+.agent[data-window] .content {
+  width: 100%;
+  max-width: 46rem;
+  margin-inline: auto;
+}
+
+.agent[data-split] .stage {
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 28rem);
+}
+
+/* Turns are messages, not cards: the reader's question is a bubble on the
+   right, the answer is text, a hairline sits between exchanges. */
+.sheet {
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+
+.question {
+  justify-self: end;
+  max-width: min(85%, 36rem);
+  padding: 0.55em 0.95em;
+  color: var(--ink);
+  background: var(--paper-high);
+  border-radius: 18px 18px 6px 18px;
+}
+
+.agent[data-split] .thread > li[data-on] {
+  border-inline-start-color: var(--ink-faint);
+}
+
+/* Tabs: a segmented control, pill track, the selected segment raised. */
+.tabs {
+  gap: 2px;
+  padding: 3px;
+  background: color-mix(in oklch, var(--ink) 8%, transparent);
+  border: 0;
+  border-radius: var(--r-pill);
+}
+
+.agent.agent .tab {
+  min-height: 32px;
+  color: var(--ink-soft);
+  background: transparent;
+  border-radius: var(--r-pill);
+}
+
+.agent.agent .tab[aria-selected="true"] {
+  color: var(--ink);
+  background: var(--paper-high);
+}
+
+.agent.agent .winBtn[data-wide] {
+  flex: none;
+  white-space: nowrap;
+  border-color: var(--rule);
+}
+
+/* In the full-screen view the starter questions stay under the brief: what can
+   be asked, one tap to test the agent, whatever the chat has reached. */
+.agent[data-window] .openers {
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+/* A source marker is a small numbered pill; its hit area is 24px (WCAG 2.5.8). */
+.agent.agent .cite button {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  min-height: 20px;
+  height: 20px;
+  margin-inline-start: 3px;
+  padding: 0 5px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink-soft);
+  background: color-mix(in oklch, var(--ink) 10%, transparent);
+  border: 0;
+  border-radius: var(--r-pill);
+  vertical-align: 0.1em;
+  cursor: pointer;
+}
+
+.agent.agent .cite button::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+}
+
+.agent.agent .cite button:is(:hover, :focus-visible) {
+  color: var(--paper);
+  background: var(--ink);
+}
+
+.peek {
+  border-color: var(--rule);
+  border-radius: var(--r-md);
+}
+
+/* Sources say which turn they belong to, and the passage a marker opened is lit. */
+.panelFor {
+  margin: 0;
+  font-size: var(--step--1);
+  color: var(--ink-faint);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cites li {
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-md);
+  transition: background-color 240ms var(--ease-out);
+}
+
+.cites li[data-hit] {
+  background: color-mix(in oklch, var(--ink) 9%, transparent);
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+
+.glanceHints button[data-lead] {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+@media (max-width: 767px) {
+  .agent:popover-open {
+    inset: var(--vvt, 0px) 0 auto;
+    width: 100%;
+    max-width: none;
+    height: var(--vvh, 100dvh);
+    max-height: none;
+    margin: 0;
+    padding: calc(env(safe-area-inset-top) + var(--s-2)) var(--s-4) 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* Two rows of chrome, not three: title and close on one, the island under. */
+  .agent[data-window] .winTitle {
+    flex: 1 1 auto;
+  }
+  .agent[data-window] .winBtn {
+    order: 1;
+  }
+  .agent[data-window] .island {
+    order: 2;
+    flex: 1 1 100%;
+  }
+
+  /* The bar is the drag handle; the browser must not scroll or zoom from it. */
+  .agent[data-window] .topBar {
+    position: relative;
+    padding-block-start: var(--s-4);
+    touch-action: none;
+  }
+
+  .agent[data-window] .dock {
+    padding-block-end: max(var(--s-3), env(safe-area-inset-bottom));
+  }
+
+  .sheetHead {
+    touch-action: none;
+  }
+
+  .sheetDialog {
+    border-radius: var(--r-panel) var(--r-panel) 0 0;
+  }
+
+  /* Inline, after a question, the answer is a glance cut under a fade. */
+  .agent[data-compact][data-asked] .view {
+    max-height: min(22rem, 52svh);
+  }
+}
+
+@media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
+  /* It rises from the bottom edge, where the drag sends it back. */
+  @starting-style {
+    .agent:popover-open {
+      opacity: 0;
+      transform: translateY(32px);
+    }
+  }
+}
+
+/* An earlier turn keeps two quiet actions: no plate, no border, full tap height. */
+.agent.agent .actions[data-quiet] .ghost {
+  flex: none;
+  min-height: var(--tap);
+  padding: 0 0.6em;
+  color: var(--ink-soft);
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+
+.agent.agent .actions[data-quiet] .ghost:hover {
+  color: var(--ink);
+  background: color-mix(in oklch, var(--ink) 8%, transparent);
+}
+
+/* Feedback on the press, not on the release (apple-fluid-design 1): every
+   control on the card gives a little under the finger. Inline text terms keep
+   their line still. */
+@media (prefers-reduced-motion: no-preference) {
+  .agent.agent :is(button, a):not(.term):active {
+    transform: scale(0.97);
+    transition: transform 100ms var(--ease-out, ease-out);
+  }
+}
+
+/* Rows of 44px targets keep an 8px gap between them (ui-ux-pro-max: touch spacing). */
+.glanceHints {
+  row-gap: var(--s-2);
+}
+
+/* Phone: the starters are one grouped list, rows split by hairlines, each row
+   a 48px target (HIG lists-and-tables › Style; ui-ux-pro-max Touch Target Size),
+   so the brief, the starters and the composer fit one screen. */
+@media (max-width: 767px) {
+  .agent .openers,
+  .agent[data-window] .openers {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    background: var(--paper-raised);
+    border: var(--border-hair) solid var(--rule);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+  }
+
+  .openers li + li {
+    border-block-start: var(--border-hair) solid var(--rule);
+  }
+
+  /* One text run per row, the visitor as its lead-in: "Recruiter. Which roles...". */
+  .agent .opener {
+    display: block;
+    position: relative;
+    min-height: 48px;
+    padding: var(--s-1) calc(var(--s-3) + 24px) var(--s-1) var(--s-3);
+    background: none;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .agent .openerFor {
+    font-size: var(--step--1);
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .agent .openerFor::after {
+    content: ". ";
+  }
+
+  .agent .openerQ {
+    font-weight: 400;
+    color: var(--ink-soft);
+  }
+
+  /* A pressed or focused row lights inside the group, not past its clipped edge
+     (HIG lists-and-tables: feedback when people select a list item). */
+  .agent .opener:active {
+    scale: 1;
+    background: color-mix(in oklch, var(--ink) 9%, transparent);
+  }
+
+  .agent .opener:focus-visible {
+    outline-offset: -3px;
+  }
+
+  .agent .opener svg {
+    position: absolute;
+    inset-inline-end: var(--s-3);
+    inset-block-start: 50%;
+    translate: 0 -50%;
+  }
+
+  .passageMeta a {
+    min-height: 44px;
+  }
+}
+
+/* A cited passage's dates, and the way to its place on the page. */
+.passageMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-1) var(--s-3);
+  margin: var(--s-1) 0 0;
+  font-size: var(--step--2);
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.passageMeta a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Tokens arriving while the answer streams: quiet, tabular, beside the cursor. */
+.liveCount {
+  display: block;
+  margin-block-start: var(--s-1);
+  font-size: var(--step--2);
+  color: var(--ink-faint);
+}
+
+/* CSS chooses one proof slot before hydration, preserving reading and focus order. */
+.phoneRecords {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .agent:not([data-window]) .primaryRecords {
+    display: none;
+  }
+
+  .agent:not([data-window]) .phoneRecords {
+    display: flex;
+  }
+
+  .agent:not([data-window]) .record {
+    padding-block: 0;
+  }
+
+  .agent:not([data-window]) .brief {
+    margin-block-end: 0;
+    line-height: 1.5;
+  }
+
+  .agent:not([data-window]) .view {
+    padding-block: var(--s-2);
+  }
+
+  .agent:not([data-window]) .content {
+    gap: var(--s-3);
+  }
+
+  /* Inline text otherwise inherits the taller 17px parent line box. */
+  .agent:not([data-window]) .opener {
+    font-size: var(--step--1);
+    line-height: 1.4;
+  }
+
+  .agent:not([data-window]) .dock {
+    padding-block-start: var(--s-2);
+  }
+}
+
+/* The workspace has one reading path; the inspector holds its evidence. */
+.agent.agent[data-window],
+.agent.agent[data-window] * {
+  text-shadow: none;
+  -webkit-text-stroke: 0;
+}
+
+.workspaceHeading { flex: 1 1 12rem; min-width: 0; }
+.workspaceHeading .winTitle { font-size: var(--step-0); line-height: 1.3; letter-spacing: -0.02em; }
+.workspaceHeading p { margin: 4px 0 0; font-size: var(--step--1); color: var(--ink-soft); }
+.agent[data-window] .island { flex: 0 1 auto; max-width: 28rem; background: none; border: 0; padding: 0; }
+.agent[data-window] .islandText { font-size: var(--step--1); }
+.agent.agent .islandBand { color: var(--ink-soft); border-color: var(--rule); background: none; box-shadow: none; }
+.agent.agent .islandBand::after { content: none; }
+.closeLabel { font-size: var(--step--1); white-space: nowrap; }
+.agent[data-window] .winBtn { gap: var(--s-2); width: auto; padding-inline: var(--s-2); }
+.topicNav, .conversationNav { display: flex; align-items: center; gap: var(--s-2); min-width: 0; }
+.topicNav { overflow-x: auto; padding-block: var(--s-1); scrollbar-width: thin; border-bottom: var(--border-hair) solid var(--rule); }
+.topicNav button { flex: none; white-space: nowrap; }
+.conversationNav { padding-block: var(--s-2); }
+.conversationNav label { font-size: var(--step--1); color: var(--ink-soft); }
+.conversationNav select { flex: 1 1 12rem; min-width: 0; max-width: 30rem; min-height: 44px; padding: var(--s-2); color: var(--ink); background: var(--paper-high); border: var(--border-hair) solid var(--rule); border-radius: var(--r-md); font: inherit; font-size: var(--step--1); text-overflow: ellipsis; }
+.conversationNav button { white-space: nowrap; }
+.agent[data-window] .stage { min-height: 0; }
+.agent[data-split] .stage { grid-template-columns: minmax(0, 1fr) minmax(20rem, 25rem); gap: var(--s-5); }
+.agent[data-window] .view { mask-image: none; scrollbar-gutter: stable; }
+.agent[data-window] .thread > li { border-inline-start: 0; padding-inline-start: 0; }
+.agent[data-window] .question { scroll-margin-block: var(--s-4); }
+.agent[data-window] .answer { font-size: var(--step-0); line-height: 1.6; overflow-wrap: anywhere; }
+.agent[data-window] .inspector { scrollbar-gutter: stable; scrollbar-color: var(--rule) transparent; }
+.agent[data-window] .textBtn, .sourceFooter .ghost, .sheetSwitch button { min-height: 44px; }
+.agent[data-window] .textBtn { display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2); padding: var(--s-2); }
+.evidenceHead h3, .traceOverview h3 { margin: 0; font-size: var(--step-0); line-height: 1.35; letter-spacing: -0.02em; }
+.evidenceHead p { margin: var(--s-2) 0 0; font-size: var(--step--1); color: var(--ink-soft); }
+.questionContext, .additionalSources { min-width: 0; color: var(--ink-soft); font-size: var(--step--1); }
+.questionContext summary, .additionalSources summary, .advancedTrace > summary { min-height: 44px; display: list-item; align-content: center; cursor: pointer; color: var(--ink); font-weight: 500; }
+.questionContext p { margin-block: var(--s-2); line-height: 1.5; overflow-wrap: anywhere; }
+.sourceJump { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+.sourceJump button { min-width: 44px; border: var(--border-hair) solid var(--rule); border-radius: var(--r-md); }
+.citedPanel .cites { list-style: none; padding: 0; margin: 0; }
+.citedPanel .cites > li { padding: var(--s-4) 0; border-block-start: var(--border-hair) solid var(--rule); border-radius: 0; scroll-margin-block: 72px; }
+.citedPanel .cites > li + li { margin-block-start: 0; }
+.citedPanel .cites > li[data-hit] { padding-inline: var(--s-3); border-radius: var(--r-md); }
+.passageHead { display: flex; align-items: start; gap: var(--s-2); }
+.passageHead h4 { margin: 0; font-size: var(--step--1); line-height: 1.5; overflow-wrap: anywhere; }
+.sourceNumber { display: inline-grid; place-items: center; flex: none; min-width: 28px; min-height: 28px; font-family: var(--mono); font-size: var(--step--2); border: var(--border-hair) solid var(--rule); border-radius: var(--r-md); }
+.citedPanel .cites .sourceUsage { margin-block: var(--s-2); color: var(--ink-faint); font-size: var(--step--2); }
+.passageText { margin: var(--s-3) 0; padding: 0; border: 0; color: var(--ink); font-size: var(--step--1); line-height: 1.65; overflow-wrap: anywhere; }
+.sourceFooter { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); padding-block-start: var(--s-3); border-block-start: var(--border-hair) solid var(--rule); }
+.evidenceEmpty { padding-block: var(--s-4); border-block: var(--border-hair) solid var(--rule); }
+.evidenceEmpty h4 { margin: 0 0 var(--s-2); }
+.evidenceEmpty p { margin: 0; line-height: 1.6; color: var(--ink-soft); }
+.agent[data-window] .board { grid-template-columns: minmax(0, 1fr); gap: var(--s-5); }
+.agent[data-window] .board .card { grid-column: 1; padding: 0 0 var(--s-4); background: none; border: 0; border-bottom: var(--border-hair) solid var(--rule); border-radius: 0; box-shadow: none; animation: none; }
+.agent[data-window] .board .card::before { content: none; }
+.agent[data-window] .board .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.agent[data-window] .board .stats[data-cols="1"] { grid-template-columns: minmax(0, 1fr); }
+.agent[data-window] .board .stats dd, .agent[data-window] .board .stepNote { overflow-wrap: anywhere; }
+.traceOverview { display: grid; gap: var(--s-2); }
+.runOrigin { margin: 0; padding: var(--s-3); color: var(--ink-soft); background: var(--paper-high); border-radius: var(--r-md); font-size: var(--step--1); line-height: 1.5; }
+.advancedTrace { min-width: 0; }
+.advancedBody { display: grid; gap: var(--s-5); padding-block-start: var(--s-4); }
+.composerHeading { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-2); font-size: var(--step--1); color: var(--ink-soft); }
+.composerHeading label { flex: 1; color: var(--ink); font-weight: 500; }
+.sheetSwitch { display: flex; gap: var(--s-2); padding-block: var(--s-2) var(--s-4); }
+.sheetSwitch button { flex: 1; border: var(--border-hair) solid var(--rule); border-radius: var(--r-md); }
+.agent.agent .sheetSwitch button[aria-selected="true"] { color: var(--ink); background: var(--paper-high); border-color: var(--ink); }
+.agent[data-window] select:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.agent[data-window] ::selection { color: var(--paper); background: var(--ink); }
+.agent[data-window] textarea { caret-color: var(--ink); }
+
+@media (max-width: 767px) {
+  .agent[data-window] .workspaceHeading { flex: 1 1 10rem; }
+  .workspaceHeading p { display: none; }
+  .agent[data-window] .topBar { row-gap: var(--s-2); }
+  .agent[data-window] .island { flex-basis: 100%; }
+  .closeLabel { display: none; }
+  .conversationNav { flex-wrap: wrap; gap: var(--s-1) var(--s-2); }
+  .conversationNav label { flex-basis: 100%; }
+  .conversationNav select { flex-basis: 45%; width: 45%; }
+  .conversationNav button { font-size: var(--step--2); }
+  .sourceFooter { position: static; }
+  .sheetDialog { max-height: min(90dvh, var(--vvh, 90dvh)); }
+  .sheetBody { max-height: min(90dvh, var(--vvh, 90dvh)); }
+  .agent[data-window] .dock { gap: var(--s-1); }
+}
+
+.copyError { flex-basis: 100%; margin: 0; color: var(--ink-soft); font-size: var(--step--1); line-height: 1.5; }
+
+@media (max-width: 767px) {
+  .conversationNav { flex-wrap: nowrap; }
+  .conversationNav label, .navLabel { display: none; }
+  .conversationNav select { flex: 1 1 0; width: 0; max-width: none; }
+  .conversationNav button { flex: none; min-width: 44px; }
+}
+
+.agent[data-compact]:not([data-asked]) .view { overflow: visible; }
+.agent[data-compact][data-asked] .view { max-height: min(22rem, 52svh); }
+
+.sheetSwitch { position: sticky; top: calc(44px + var(--s-4) + var(--s-3)); z-index: 1; background: var(--paper); }
+
+/* The inspector owns policy scrolling as well as the surrounding trace. */
+.agent[data-window] .policy { max-height: none; overflow: visible; }

@@ -17,8 +17,8 @@
   --ink-soft: oklch(0.862 0.004 250);
   --ink-faint: oklch(0.775 0.006 250);
   --rule: oklch(0.335 0.006 258);
-  --signal: oklch(0.72 0.18 258);
-  --on-signal: oklch(0.16 0.02 258);
+  --signal: oklch(0.968 0.002 250);
+  --on-signal: oklch(0.16 0 0);
 
   background-color: var(--paper);
   color: var(--ink);
