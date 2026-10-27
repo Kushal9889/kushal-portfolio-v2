@@ -19,13 +19,13 @@
   --ink-on-void-soft: oklch(0.7105 0.0072 286.22);
   --ink-on-sheet: oklch(0.2316 0.0038 286.1);
   --ink-on-sheet-soft: oklch(0.5399 0.0077 286.14);
-  /* The one accent: Apple blue for marks and strokes; fills take the deeper
-     Apple fill blue so white text on them clears 4.5:1. */
-  --voltage: oklch(0.669 0.1808 251.84);
-  --voltage-rgb: 41 151 255;
+  /* The one accent is the ink (no blue, 2026-10-27): marks and strokes in
+     the claim white, fills white with black text. */
+  --voltage: oklch(0.9707 0.0027 286.35);
+  --voltage-rgb: 245 245 247;
   --ink-rgb: 245 245 247;
-  --fill: oklch(0.5629 0.1933 256.16);
-  --fill-hover: oklch(0.5831 0.1989 255.97);
+  --fill: oklch(0.9707 0.0027 286.35);
+  --fill-hover: oklch(1 0 0);
   --hair: oklch(0.9707 0.0027 286.35 / 0.14);
   --hair-strong: oklch(0.9707 0.0027 286.35 / 0.26);
   --ease-glass: cubic-bezier(0.32, 0.72, 0, 1);
@@ -40,8 +40,8 @@
   --ink-faint: oklch(0.6217 0.0074 286.18);
   --rule: oklch(0.3802 0.005 286.16);
   --signal: var(--voltage);
-  --signal-deep: oklch(0.5629 0.1933 256.16);
-  --on-signal: oklch(1 0 0);
+  --signal-deep: oklch(0.87 0.004 286);
+  --on-signal: oklch(0 0 0);
 
   /* Every generic family name the reused components ask for resolves to the
      spine here. The chapter voices (macro, plate, readout, paper, code) are
@@ -74,8 +74,8 @@
   --ink-faint: oklch(0.6217 0.0074 286.18);
   --rule: oklch(0.3802 0.005 286.16);
   --signal: var(--voltage);
-  --signal-deep: oklch(0.5629 0.1933 256.16);
-  --on-signal: oklch(1 0 0);
+  --signal-deep: oklch(0.87 0.004 286);
+  --on-signal: oklch(0 0 0);
   color-scheme: dark;
 }
 

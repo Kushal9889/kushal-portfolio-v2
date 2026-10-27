@@ -240,11 +240,6 @@ export default function Hero({
             brief opens it and the input under it runs the agent. The console
             ground says the whole block is live. */}
         <div className={styles.console} data-surface="console">
-          {/* Framing ticks: the console is an instrument, and an instrument has corners. */}
-          <i className={styles.tick} data-c="tl" aria-hidden="true" />
-          <i className={styles.tick} data-c="tr" aria-hidden="true" />
-          <i className={styles.tick} data-c="bl" aria-hidden="true" />
-          <i className={styles.tick} data-c="br" aria-hidden="true" />
           <div className={styles.agentSlot}>{children}</div>
         </div>
 

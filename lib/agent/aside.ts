@@ -3,7 +3,7 @@
  *
  * Facts and tone are separate calls on purpose. The answer runs at temperature
  * 0 against the corpus; this call never sees the corpus, only the finished
- * answer, and runs warm (ASIDE_TEMPERATURE, default 0.7), so turning the
+ * answer, and runs warm (ASIDE_TEMPERATURE, default 0.6), so turning the
  * temperature up changes the wit and cannot change a fact. A code guard then
  * rejects any aside carrying a digit or a capitalised name the answer does not
  * already contain: a line that fails is dropped, never repaired. Optional by
@@ -12,6 +12,7 @@
 const PROMPT = `Write one short aside (max 20 words) with dry, confident humour about the work in the answer below, the kind a hiring engineer would smile at.
 Rules: no new facts, no numbers, no names that are not in the answer, no sarcasm about anyone, no emoji. Return only the line.`;
 
+export const DEFAULT_ASIDE_TEMPERATURE = 0.6;
 export const ASIDE_VERSION = "a2";
 
 export function guardAside(line: string, answer: string): string | null {
@@ -33,7 +34,7 @@ export async function aside(answer: string, msLeft: number): Promise<string | nu
       signal: AbortSignal.timeout(Math.min(1500, msLeft - 200)),
       body: JSON.stringify({
         model: process.env.ASIDE_MODEL ?? "openai/gpt-oss-20b",
-        temperature: Number(process.env.ASIDE_TEMPERATURE ?? 0.7),
+        temperature: Number(process.env.ASIDE_TEMPERATURE ?? DEFAULT_ASIDE_TEMPERATURE),
         max_tokens: 200,
         reasoning_effort: "low",
         messages: [{ role: "system", content: PROMPT }, { role: "user", content: answer }],

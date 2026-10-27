@@ -1015,3 +1015,6 @@ html[data-film="live"] .wordmark {
   font-size: var(--step-1);
   line-height: 1.35;
 }
+
+/* Large glyphs extend beyond a tight line box and must clear the following claim. */
+.head:has(+ .claim) .title { line-height: 1.1; }

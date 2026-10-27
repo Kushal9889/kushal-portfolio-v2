@@ -9,6 +9,7 @@ import Prose from "./components/Prose";
 import Certifications from "./components/Certifications";
 import DiffReveal from "./components/DiffReveal";
 import Agent from "./components/Agent";
+import AgentCompanion from "./components/AgentCompanion";
 import Palette from "./components/Palette";
 import Metrics from "./components/Metrics";
 import Artifacts from "./components/Artifacts";
@@ -17,6 +18,7 @@ import Reach, { EmailLink } from "./components/Reach";
 import ReachDock, { MotionSwitch, SearchKey } from "./components/ReachDock";
 import SectionLink from "./components/SectionLink";
 import PageMotion from "./components/PageMotion";
+import Kit from "./kit/Kit";
 import SceneFx from "./components/SceneFx";
 import AskSeeds from "./components/AskSeeds";
 import ModelChoice from "./components/ModelChoice";
@@ -28,7 +30,7 @@ import EvalMatrix from "./components/EvalMatrix";
 import Panel from "./components/Panel";
 import Artifacts2 from "./components/Artifacts";
 import evals from "@/content/evals.json";
-import { loadContent, section, loadCertifications, type Section } from "@/lib/content";
+import { loadContent, section, sectionHomes, loadCertifications, type Section } from "@/lib/content";
 import { TARGETS, toolSchemas } from "@/lib/agent/tools";
 import { index as corpusIndex } from "@/lib/agent/corpus-index";
 import { PIPELINE } from "@/lib/agent/events";
@@ -303,6 +305,16 @@ export default function Page() {
     // upstream work, the two pinned certifications and the first ranking.
     // Each one asks the agent about itself; its link opens the record.
     brief: profile.brief,
+    // Each cited passage links to the section that renders it, with its dates.
+    homes: Object.fromEntries(
+      Object.entries(sectionHomes()).map(([title, h]) => {
+        // The page section a link lands in, by the name the section rail shows. Roles live in Work.
+        const id = h.href?.startsWith("#role-") ? "work" : h.href?.slice(1);
+        const place = CHAPTERS.find((c) => c.id === id)?.label;
+        return [title, place ? { ...h, place } : h];
+      }),
+    ),
+    checked: profile.lastVerified,
     briefTerms: (profile.briefTerms ?? "").split(",").map((x) => x.trim()).filter(Boolean),
     // Client names kept out of the passages shown under Sources and in cite previews.
     redactNames: (profile.private ?? "").split(",").map((x) => x.trim()).filter(Boolean),
@@ -376,7 +388,18 @@ export default function Page() {
         linkedin={profile.linkedin}
         resumeHref="/kushal-gaddamwar-resume.pdf"
       />
+      <AgentCompanion stops={[
+        { id: "top", label: "Meet Kushal", invitation: "Skip the résumé monologue. Ask the work.", question: "Which roles fit his experience, and what work supports that fit?" },
+        { id: "opensource", label: "Open source", invitation: "The interesting part is usually the bug. Want the story?", question: os.asks[0]?.question ?? "What did he contribute to open source?" },
+        { id: "work", label: "Experience", invitation: "Ownership matters. Let’s get specific.", question: backend.asks[0]?.question ?? "What did he own and ship in his current role?" },
+        { id: "running", label: "The agent", invitation: "You can interview the interface, too.", question: "How does retrieval work here, and what tradeoffs did he make?" },
+        { id: "research", label: "Research", invitation: "A result is a starting point. Ask what it means.", question: pub.asks[0]?.question ?? "What research has he published?" },
+        { id: "proof", label: "Credentials", invitation: "Curiosity is good. Checking the record is better.", question: "What certifications has he earned, and what do they cover?" },
+        { id: "approach", label: "Engineering", invitation: "The decisions behind the code are fair game.", question: "How does he approach engineering tradeoffs?" },
+        { id: "contact", label: "Get in touch", invitation: "Have a role in mind? Start with the fit.", question: "What kind of AI engineering role is he looking for?" },
+      ]} />
       <PageMotion />
+      <Kit />
       <SceneFx />
       <FilmMount />
       <FilmChip />

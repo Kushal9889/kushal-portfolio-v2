@@ -132,16 +132,15 @@
    * with an accent and a page with a palette. Red is released to --fail, where
    * it is unambiguous, and nothing else on the page is chromatic except two
    * strictly semantic states. */
-  /* Apple blue. #2997ff is the link and focus colour on dark; #0071e3 is the
-     filled button, with white text, and #0077ed its hover. --signal stays the
-     colour of anything to press or check; --fill is what a filled control is
-     painted with. */
-  --signal: #2997ff;
-  --signal-deep: #0077ed;
-  --on-signal: #ffffff;
-  --fill: #0071e3;
-  --fill-hover: #0077ed;
-  --on-fill: #ffffff;
+  /* Monochrome (Kushal, 2026-10-27: no blue anywhere). The accent is the ink:
+     marks, focus and links in the claim white, filled controls white with black
+     text (19:1). Green, orange and red stay for live, warn and fail only. */
+  --signal: #f5f5f7;
+  --signal-deep: #d2d2d7;
+  --on-signal: #000000;
+  --fill: #f5f5f7;
+  --fill-hover: #ffffff;
+  --on-fill: #000000;
   --signal-wash: color-mix(in oklch, var(--signal) 14%, var(--paper));
 
   /* Checkable claim. Deep enough to sit in running prose without shouting,
@@ -517,7 +516,7 @@
   color-scheme: light;
 
   /* Apple's light pages: #f5f5f7 ground, white tiles, #1d1d1f text, #6e6e73
-     secondary, #d2d2d7 separators, #0066cc links, #0071e3 filled buttons. */
+     secondary, #d2d2d7 separators; links and filled buttons in the ink. */
   --paper: #f5f5f7;
   --paper-sunk: #e8e8ed;
   --paper-raised: #ffffff;
@@ -528,11 +527,11 @@
   --rule: #d2d2d7;
   --edge: oklch(1 0 0 / 0.72);
 
-  --signal: #0066cc;
-  --signal-deep: #0071e3;
+  --signal: #1d1d1f;
+  --signal-deep: #424245;
   --on-signal: #ffffff;
-  --fill: #0071e3;
-  --fill-hover: #0077ed;
+  --fill: #1d1d1f;
+  --fill-hover: #000000;
   --on-fill: #ffffff;
   --signal-wash: color-mix(in oklch, var(--signal) 10%, var(--paper));
   --mark: var(--signal);
@@ -1747,7 +1746,7 @@ html {
   /* Restated rather than mixed. The light values are tuned against a light
      ground; the same chroma at these lightnesses reads muddy on charcoal, and
      color-mix against a dark paper produces a different result than intended. */
-  --signal: #2997ff;
+  --signal: #f5f5f7;
   --signal-wash: color-mix(in oklch, var(--signal) 16%, var(--paper));
   --mark: var(--signal);
   --mark-wash: color-mix(in oklch, var(--mark) 16%, var(--paper));
@@ -1917,7 +1916,7 @@ main > section[data-register="chapter"][data-lead="artifact"] > .wrap h2 {
     --paper: white;
     --ink: black;
     --rule: oklch(0.885 0.002 250);
-    --signal: oklch(0.480 0.120 205);
+    --signal: black;
     /* Pinned like the accent above it. Only --signal was, so a page printed
        from the dark theme carried a lifted --mark onto white paper along with
        every semantic colour that had no print value at all. */

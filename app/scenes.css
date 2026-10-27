@@ -24,7 +24,7 @@ html:root {
   --step-4: clamp(2.6rem, 1.5rem + 3.3vw, 4.6rem);
   --step-5: clamp(3.6rem, 1.4rem + 8.2vw, 10.5rem);
   --step-2: clamp(1.9rem, 1.4rem + 1.9vw, 2.9rem);
-  --link: #2997ff;
+  --link: #f5f5f7;
   --cream: #f5f5f7;
 }
 
@@ -142,17 +142,17 @@ body > header,
 body > header [data-surface],
 main > section,
 main > section [data-surface] {
-  /* Apple dark: black ground, #1d1d1f tiles, hairlines at 14% white, one blue. */
+  /* Black ground, graphite tiles, hairlines at 14% white, the ink as accent. */
   --scene-ground: #000000;
   --scene-panel: #1d1d1f;
   --scene-rule: color-mix(in oklch, var(--ink) 14%, transparent);
   --ink: #f5f5f7;
   --ink-soft: #d2d2d7;
   --ink-faint: #a1a1a6;
-  --signal: #2997ff;
-  --signal-deep: #0077ed;
-  --on-signal: #ffffff;
-  --link: #2997ff;
+  --signal: #f5f5f7;
+  --signal-deep: #d2d2d7;
+  --on-signal: #000000;
+  --link: #f5f5f7;
   --fail: #ff453a;
   --figure: var(--ink);
   --paper: var(--scene-ground);
@@ -182,10 +182,10 @@ main > section [data-surface] {
   --ink: #1d1d1f;
   --ink-soft: #424245;
   --ink-faint: #6e6e73;
-  --signal: #0066cc;
-  --signal-deep: #0071e3;
+  --signal: #1d1d1f;
+  --signal-deep: #424245;
   --on-signal: #ffffff;
-  --link: #0066cc;
+  --link: #1d1d1f;
   --cream: #1d1d1f;
   --graphite: #ffffff;
   --paper: #f5f5f7;
@@ -196,7 +196,7 @@ main > section [data-surface] {
 
 :root[data-theme="light"] :is(#top, #opensource, #work, #running, #research, #proof, #approach, #measured, #education, #contact),
 :root[data-theme="light"] #proof [data-issuer] {
-  --tone: #0066cc;
+  --tone: #1d1d1f;
 }
 
 /* Brand tints are pale for the dark ground; on paper they take the tone. */
@@ -207,20 +207,20 @@ main > section [data-surface] {
 }
 
 :root[data-theme="light"] body > header [data-surface="console"] {
-  --signal: #0066cc;
-  --signal-deep: #0071e3;
+  --signal: #1d1d1f;
+  --signal-deep: #424245;
   --on-signal: #ffffff;
   --live: #248a3d;
   --scene-rule: color-mix(in oklch, var(--ink) 14%, transparent);
 }
 
-/* The agent console: Apple blue to ask, system green for live, system red for a failure. */
+/* The agent console: the ink to ask, system green for live, system red for a failure. */
 body > header [data-surface="console"] {
   --live: #30d158;
   --fail: #ff453a;
-  --signal: #2997ff;
-  --signal-deep: #0077ed;
-  --on-signal: #ffffff;
+  --signal: #f5f5f7;
+  --signal-deep: #d2d2d7;
+  --on-signal: #000000;
   --scene-rule: color-mix(in oklch, var(--ink) 14%, transparent);
 }
 
@@ -578,12 +578,8 @@ main > section#contact a[href^="mailto"] {
  * reduced. The sweep beam on [data-sweep] sections already reads --signal. */
 body > header,
 main > section:not(#approach) {
-  --scene-light: radial-gradient(
-    ellipse 46% 38% at 50% 50%,
-    color-mix(in oklch, var(--signal) 17%, transparent) 0%,
-    color-mix(in oklch, var(--signal) 6%, transparent) 45%,
-    transparent 72%
-  );
+  /* No key light: a glow behind a scene is a banned tell (DESIGN.md). */
+  --scene-light: linear-gradient(transparent, transparent);
 }
 
 body > header::after,
@@ -739,7 +735,7 @@ body > header [class*="proofFigure"] {
  * no headpiece band over the titles, one glass hover for every action. */
 :root {
   --cream: oklch(0.955 0.03 86);
-  /* Apple blue, not the old lime: one accent (elite pass, no AI-slop colours). */
+  /* The ink, not lime or blue: one accent, no AI-tell colours. */
   --proof-mark: var(--signal);
 }
 
@@ -761,17 +757,14 @@ main > section#contact h2 {
   line-height: 0.88;
 }
 
-/* The primary action: Apple's filled blue with a lit top edge. The lime sheen
-   and link-blue fill it used to wear measured 3.0:1 under the hint (F38). */
+/* The primary action: the one filled control, flat, no glow. */
 body > header a[class*="cta"] {
   font-size: var(--step-0);
   font-weight: 650;
   padding-block: 1.05em;
   background: var(--fill, var(--signal));
-  box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.6),
-    0 0 0 1px color-mix(in oklch, var(--signal-deep) 55%, transparent),
-    0 10px 20px -12px color-mix(in oklch, var(--signal) 22%, transparent);
+  color: var(--on-fill, var(--on-signal));
+  box-shadow: none;
   transition: translate 220ms var(--ease-out, ease-out), box-shadow 220ms var(--ease-out, ease-out);
 }
 
@@ -782,10 +775,7 @@ body > header a[class*="cta"]::after {
 body > header a[class*="cta"]:hover,
 body > header a[class*="cta"]:focus-visible {
   background: var(--fill-hover, var(--signal-deep));
-  box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.6),
-    0 0 0 1px var(--signal-deep),
-    0 12px 25px -10px color-mix(in oklch, var(--signal-deep) 30%, transparent);
+  box-shadow: none;
 }
 
 /* Every other action: a graphite plate that catches a sheen. No lift: a control
@@ -929,7 +919,7 @@ main > section#work [data-kind="rack"] {
    orange and red stay semantic (live, warn, fail), never a section's tone. */
 main > section:is(#opensource, #running, #research, #approach, #measured, #education, #contact),
 main > section#proof [data-issuer] {
-  --tone: #2997ff;
+  --tone: #f5f5f7;
   --gold: var(--tone);
 }
 
@@ -952,8 +942,8 @@ main > section#opensource [data-surface] {
 
 main > section:is(#opensource, #running, #research) [data-surface] {
   --signal: var(--tone);
-  --signal-deep: #0077ed;
-  --on-signal: #ffffff;
+  --signal-deep: #d2d2d7;
+  --on-signal: #000000;
 }
 
 /* Cards are Apple tiles: #1d1d1f, 18px corners, no frame and no corner marks. */
@@ -990,7 +980,8 @@ main > section#opensource [class*="DiffReveal-module"][class*="repo"] {
   color: var(--ink);
   -webkit-text-fill-color: var(--ink);
   text-decoration: underline;
-  text-decoration-color: var(--brand-azure);
+  /* The ink, not a brand blue: Azure's colour belongs to Azure's mark only. */
+  text-decoration-color: color-mix(in oklch, var(--ink) 45%, transparent);
   text-decoration-thickness: 0.14em;
   text-underline-offset: 0.22em;
   transition: text-decoration-color var(--t-fast) var(--ease-out);

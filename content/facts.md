@@ -14,7 +14,7 @@ available: January 2027, earlier for the right team
 focus: Agentic orchestration · RAG retrieval · Evals and observability · Production deploys
 proof: He found a silent error-swallowing bug in LangChain's Python SDK. A maintainer merged the fix in 57 hours.
 private: Sikich, EST
-briefTerms: agentic SDLC harness, Claude Code, Linear MCP, CodeRabbit review, LangChain, deepagents, Certified Professional in Agentic AI, Claude Certified Developer, NVIDIA, Anthropic
+briefTerms: AI Engineer, Lead Backend Engineer, Boston University, agentic SDLC harness, Claude Code, Linear MCP, CodeRabbit review, LangChain, deepagents, Certified Professional in Agentic AI, Claude Certified Developer, NVIDIA, Anthropic
 brief: AI Engineer, now Lead Backend Engineer (RA) at Boston University's Questrom Computational Lab, where he built the agentic SDLC harness that holds Claude Code agents to the same gates as human engineers, shipped as a plugin with Linear MCP and CodeRabbit review. A LangChain maintainer merged the fix for the deepagents bug he reported in 57 hours, NVIDIA certifies him as a Certified Professional in Agentic AI, and Anthropic as a Claude Certified Developer.
 lastVerified: 2026-10-02
 ---

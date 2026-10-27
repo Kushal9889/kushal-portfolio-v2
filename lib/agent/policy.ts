@@ -21,7 +21,7 @@ const covers = [...new Set(COVERS)].join(", ") || "work history, skills and educ
 // he was an intern) is corrected and then answered, not met with "not in his
 // profile"; the not-done rule is narrowed to never/does-not, since "used, not
 // proficient" was answered "has not done Kubernetes" (test #32, 2026-10-25).
-export const PROMPT_VERSION = "v3.5";
+export const PROMPT_VERSION = "v3.6";
 
 /**
  * Routing categories. Classification is a keyword pass rather than an LLM call:
@@ -232,7 +232,38 @@ export function answerLength(question: string): Length {
   return LENGTHS.medium;
 }
 
-export function systemPrompt(context: string, length: Length = LENGTHS.medium): string {
+/**
+ * Which layout an answer takes, chosen per question before any call, like its
+ * length: from the question's own wording, no model call, so the same question
+ * always gets the same shape and the trace can name it.
+ *
+ *   direct   a short yes/no or who/when/where/which: one or two sentences
+ *   points   what was built, shipped or owned, or a pasted job description: a lead, then one fact per line
+ *   steps    how something works or ran: a lead, then numbered steps
+ *   compare  a choice, a difference or a trade-off: a lead, then one line per option
+ *   prose    everything else: short paragraphs
+ */
+export type Format = { name: "direct" | "points" | "steps" | "compare" | "prose"; rule: string };
+export const FORMATS = {
+  direct: { name: "direct", rule: "One or two sentences. No list." },
+  points: { name: "points", rule: 'Open with one sentence that answers. Then put each further fact on its own line starting with "- ", one fact per line, each ending with a full stop.' },
+  steps: { name: "steps", rule: 'Open with one sentence that answers. Then give the steps in order, each on its own line starting with "1. ", "2. " and so on, one step per line, each ending with a full stop.' },
+  compare: { name: "compare", rule: 'Open with one sentence that states the choice and its reason. Then one line per option, starting with "- ", the option\'s name and a colon, each ending with a full stop.' },
+  prose: { name: "prose", rule: "Short paragraphs of plain sentences. No list." },
+} as const satisfies Record<string, Format>;
+
+export function answerFormat(question: string): Format {
+  const q = question.trim().toLowerCase();
+  const n = q.split(/\s+/).length;
+  if (n > 60) return FORMATS.points;
+  if (/\b(vs\.?|versus|compared?|comparison|difference|trade-?offs?|instead of|rather than)\b/.test(q)) return FORMATS.compare;
+  if (/\b(how (does|do|did|is|was|were|are)|walk me through|steps?|process|pipeline|workflow)\b/.test(q)) return FORMATS.steps;
+  if (n <= 8 && /^(is|does|did|has|have|can|was|were|are|who|when|where|which)\b/.test(q)) return FORMATS.direct;
+  if (/\b(ship(ped)?|buil[dt]|own(ed)?|projects?|skills?|achievements?|worked on|contribut(ed|ions?)|certifi(ed|cations?)|stack|tools?)\b/.test(q)) return FORMATS.points;
+  return FORMATS.prose;
+}
+
+export function systemPrompt(context: string, length: Length = LENGTHS.medium, format: Format = FORMATS.prose): string {
   const first = profile.name.split(" ")[0];
   return `You are ${profile.name}'s portfolio assistant. You answer recruiters and engineers, in third person, about ${P.poss} work.
 
@@ -262,7 +293,8 @@ Open with the answer itself, in the first sentence, stated with the confidence t
 Then give the specifics the corpus records about it: the figures, counts, identifiers, dates and named technologies. Those are the substance of the answer, not decoration on it. Use every one that bears on the question and none that does not.
 Length follows the evidence, never the phrasing of the question. Three measured facts make three sentences. One makes one. A short question about a large piece of work still gets the large answer.
 Use only the section that answers the question. A figure from a different section is the answer to a different question, and reaching for it is how an answer stops being about what was asked.
-This answer is ${length.name}: about ${length.words} words is the ceiling, whatever the shape. If the evidence exceeds it, give the strongest part and stop; a reader who wants the rest will ask.
+This answer is ${length.name}: about ${length.words} words is the ceiling, whatever the shape.
+Layout (${format.name}): ${format.rule} Plain text: no headings, no bold, no tables. If the evidence exceeds it, give the strongest part and stop; a reader who wants the rest will ask.
 Stop when the evidence is spent. No preamble, no summary, no closing offer of further help, and never a bare URL.
 A limit is the one fixed shape: No, then what was not done, then the nearest thing that was.
 </answer_shape>`;

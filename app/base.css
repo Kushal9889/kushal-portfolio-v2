@@ -125,9 +125,9 @@
    * with an accent and a page with a palette. Red is released to --fail, where
    * it is unambiguous, and nothing else on the page is chromatic except two
    * strictly semantic states. */
-  --signal: oklch(0.700 0.135 258);
-  --signal-deep: oklch(0.780 0.115 258);
-  --on-signal: oklch(0.150 0.020 258);
+  --signal: oklch(0.968 0.002 250);
+  --signal-deep: oklch(0.862 0.004 250);
+  --on-signal: oklch(0.150 0 0);
   --signal-wash: color-mix(in oklch, var(--signal) 10%, var(--paper));
 
   /* Checkable claim. Deep enough to sit in running prose without shouting,
@@ -814,7 +814,7 @@ html {
   /* Restated rather than mixed. The light values are tuned against a light
      ground; the same chroma at these lightnesses reads muddy on charcoal, and
      color-mix against a dark paper produces a different result than intended. */
-  --signal: oklch(0.72 0.18 258);
+  --signal: oklch(0.968 0.002 250);
   --signal-wash: color-mix(in oklch, var(--signal) 16%, var(--paper));
   --mark: var(--signal);
   --mark-wash: color-mix(in oklch, var(--mark) 16%, var(--paper));

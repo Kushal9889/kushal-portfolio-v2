@@ -252,7 +252,9 @@ function structuredData() {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
+    // Theme and FilmBoot intentionally set root attributes before hydration.
     <html
+      suppressHydrationWarning
       lang="en"
       className={[display, mono, spine, signature, plate, paper, ibm].map((f) => f.variable).join(" ")}
     >
