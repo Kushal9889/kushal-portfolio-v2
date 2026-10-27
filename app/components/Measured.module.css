@@ -96,10 +96,6 @@
   color: var(--ink-soft);
 }
 
-.group > .label {
-  overflow-wrap: anywhere;
-}
-
 .groupValue {
   font-weight: 600;
   font-variant-numeric: tabular-nums lining-nums;
@@ -110,11 +106,6 @@
   max-width: 46em;
 }
 
-.case {
-  font-size: var(--step--1);
-  color: var(--ink-soft);
-}
-
 /* What the case asserts, in words. Mono made 26 short sentences read as
    output rather than as the description of a test. */
 
@@ -123,15 +114,6 @@
   padding: var(--s-4) var(--s-4);
   background: var(--paper-sunk);
   border-radius: var(--r-lg);
-}
-
-.limitHead {
-  margin: 0 0 var(--s-2);
-  font-size: var(--step--1);
-  font-weight: 400;
-  letter-spacing: 0.04em;
-  text-transform: lowercase;
-  color: var(--ink-soft);
 }
 
 .limitList {

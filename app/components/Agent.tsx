@@ -1823,25 +1823,24 @@ export default function Agent({
                 in the full view always, above every exchange, as one continuous flow. */}
             {(!asked || win) && (brief || highlights.length > 0) && (
               <section className={styles.record} aria-label="In brief">
-                {brief && (
-                  <p className={styles.brief}>
-                    {(() => {
-                      // Longest term first, so "Claude Certified Developer" wins over "Claude Code"'s prefix.
-                      const terms = [...briefTerms].sort((a, b) => b.length - a.length);
-                      if (!terms.length) return brief;
-                      const re = new RegExp(`(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "g");
-                      return brief.split(re).map((part, i) =>
-                        terms.includes(part) ? (
-                          <button key={i} type="button" className={styles.term} aria-label={`Ask the agent about ${part}`} onClick={() => submit(`What is ${part} in his work, and what did he do with it?`)}>
-                            {part}
-                          </button>
-                        ) : (
-                          part
-                        ),
-                      );
-                    })()}
-                  </p>
-                )}
+                {brief && (() => {
+                    // Longest term first, so "Claude Certified Developer" wins over "Claude Code"'s prefix.
+                    const terms = [...briefTerms].sort((a, b) => b.length - a.length);
+                    if (!terms.length) return <p className={styles.brief}>{brief}</p>;
+                    const re = new RegExp(`(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "g");
+                    let k = 0;
+                    // --k orders the glint that walks the terms; --n sets one lap's length.
+                    const parts = brief.split(re).map((part, i) =>
+                      terms.includes(part) ? (
+                        <button key={i} type="button" className={styles.term} style={{ "--k": k++ } as React.CSSProperties} aria-label={`Ask the agent about ${part}`} onClick={() => submit(`What is ${part} in his work, and what did he do with it?`)}>
+                          {part}
+                        </button>
+                      ) : (
+                        part
+                      ),
+                    );
+                    return <p className={styles.brief} style={{ "--n": k } as React.CSSProperties}>{parts}</p>;
+                  })()}
                 {highlights.length > 0 && (() => {
                   // Open source is one chip, "Open source 4+" (projects, and more
                   // contributions than that), until a reader opens the set.

@@ -3,13 +3,6 @@
   --value: 4.5rem;
 }
 
-.title {
-  margin-block-end: var(--s-3);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: var(--step--2);
-  color: var(--ink-faint);
-}
-
 .rows {
   list-style: none;
   display: grid;
@@ -103,13 +96,6 @@
 
 .axis span:last-child {
   translate: -100% 0;
-}
-
-.note {
-  margin: var(--s-2) 0 0;
-  font-size: var(--step--2);
-  color: var(--ink-faint);
-  max-width: 40ch;
 }
 
 .srOnly {

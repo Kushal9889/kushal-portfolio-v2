@@ -391,7 +391,7 @@ export default function Page() {
         name={profile.name}
         tagline={profile.tagline}
         location={profile.location}
-        current={`${backend.roleParts.title}, ${backend.title.replace(/, backend$/, "")}.${start ? ` Full-time from ${start.label}.` : ""}`}
+        current={`${backend.roleParts.title}, ${backend.title.replace(/, backend$/, "")}.${start ? ` Full-time from ${start.label}.` : ""}${profile.sponsorship ? ` ${profile.sponsorship}.` : ""}`}
         evidence={evidence}
         email={profile.email}
         site={profile.site.replace("https://", "")}
@@ -507,7 +507,7 @@ export default function Page() {
 
         <FilmTransit id="T3" />
 
-        <Section id="running" beat="research" title="Also running" claim={sentenceWith(section("This site").body, "The agent on this page answers")} data-register="instrument">
+        <Section id="running" beat="research" title="The agent on this page" claim={sentenceWith(section("This site").body, "The agent on this page answers")} data-register="instrument">
           <AskSeeds items={[{ question: "What happens when every model provider fails?" }]} />
         </Section>
 
@@ -596,7 +596,7 @@ export default function Page() {
           claim={sentenceWith(section("Who he is").body, "certifies him")}
           beat="measured"
          
-          title="What else checks out"
+          title="Certificates you can check"
           data-tone="sunk"
           data-layout="rule"
           data-register="instrument"
@@ -731,7 +731,15 @@ export default function Page() {
         >
           {/* The record first, then the close: when he can start and the one
               action, so the page ends on what the reader came to do. */}
-          <ProofWall certs={certs} badges={section("Proof wall").badges} />
+          {/* The end keeps one proof and one action (N26); every other record,
+              each still with its link, waits behind one fold. */}
+          <p className={styles.endProof}>
+            {evidence.sentence} <a href={evidence.href} target="_blank" rel="noreferrer">See the merged fix</a>
+          </p>
+          <details className="more">
+            <summary>Every record behind this page</summary>
+            <ProofWall certs={certs} badges={section("Proof wall").badges} />
+          </details>
           <Reach
             email={profile.email}
             phone={profile.phone}

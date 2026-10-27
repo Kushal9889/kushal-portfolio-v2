@@ -846,14 +846,17 @@ blockquote.body {
   height: 5px;
   border-radius: 50%;
   background: var(--ink-soft);
+}
+
+.typing[data-state="running"] i {
   animation: typing 900ms ease-in-out infinite;
 }
 
-.typing i:nth-child(2) {
+.typing[data-state="running"] i:nth-child(2) {
   animation-delay: 150ms;
 }
 
-.typing i:nth-child(3) {
+.typing[data-state="running"] i:nth-child(3) {
   animation-delay: 300ms;
 }
 

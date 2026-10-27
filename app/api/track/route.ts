@@ -7,6 +7,7 @@ const ALLOWED = new Set([
   "agent_asked",
   "voice_used",
   "agent_feedback",
+  "ui",
   "contact",
 ]);
 
@@ -17,7 +18,19 @@ const ALLOWED = new Set([
  * is "does this page convert", which needs counts over days, not rows. No IP, no
  * user agent, no identifier is recorded, so there is nothing here to leak and
  * nothing to put in a privacy policy.
+ *
+ * That only holds if visitor text never reaches the log. A question is free text
+ * (a name, an email, a job description), so `agent_asked` keeps its length and
+ * nothing else, and any other detail must be a short machine token such as
+ * `dock-resume` or `down:wrong` or it is dropped.
  */
+const TOKEN = /^[a-z0-9:_|.=-]{1,120}$/i;
+
+function scrub(event: string, detail: unknown): string {
+  if (typeof detail !== "string") return "";
+  if (event === "agent_asked") return /^len=\d+$/.test(detail) ? detail : `len=${detail.length}`;
+  return TOKEN.test(detail) ? detail : "";
+}
 /**
  * The furthest step a session reached, as one countable line.
  *
@@ -33,6 +46,7 @@ const STAGE: Record<string, number> = {
   agent_asked: 4,
   voice_used: 4,
   agent_feedback: 4,
+  ui: 3,
   contact: 5,
 };
 
@@ -40,7 +54,7 @@ export async function POST(req: Request) {
   try {
     const { event, detail } = await req.json();
     if (typeof event === "string" && ALLOWED.has(event)) {
-      const clean = typeof detail === "string" ? detail.slice(0, 120) : "";
+      const clean = scrub(event, detail);
       console.log(
         `funnel stage=${STAGE[event] ?? 0} ${event}${clean ? ` ${JSON.stringify(clean)}` : ""}`,
       );

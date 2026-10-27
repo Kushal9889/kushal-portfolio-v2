@@ -2389,7 +2389,44 @@ button.step:hover {
 
 .agent.agent .term:is(:hover, :focus-visible) {
   text-decoration-style: solid;
-  text-decoration-color: var(--ink);
+  text-decoration-color: var(--glint);
+  background-color: color-mix(in oklch, var(--glint) 22%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--glint) 22%, transparent), 0 0 14px color-mix(in oklch, var(--glint) 40%, transparent);
+}
+
+/* The glint: one light walks the terms in reading order, 0.9 s apart, so a
+   first-time reader sees every term is a door. It runs only while the card
+   waits untouched; a pointer or focus on the card, a question, or the full
+   view stops it. */
+.agent.agent {
+  --glint: var(--proof-mark, var(--signal));
+}
+
+.agent.agent .term {
+  border-radius: 4px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background-color 160ms var(--ease-out, ease-out), box-shadow 160ms var(--ease-out, ease-out), text-decoration-color 160ms var(--ease-out, ease-out);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .agent.agent[data-state="idle"]:not([data-window], :hover, :focus-within) .term {
+    animation: glint calc(var(--n, 9) * 0.9s) var(--ease-out, ease-out) calc(var(--k, 0) * 0.9s + 1.2s) infinite both;
+  }
+}
+
+@keyframes glint {
+  0%,
+  16% {
+    background-color: transparent;
+    box-shadow: 0 0 0 2px transparent, 0 0 14px transparent;
+    text-decoration-color: color-mix(in oklch, var(--ink) 45%, transparent);
+  }
+  5% {
+    background-color: color-mix(in oklch, var(--glint) 22%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--glint) 22%, transparent), 0 0 14px color-mix(in oklch, var(--glint) 40%, transparent);
+    text-decoration-color: var(--glint);
+  }
 }
 
 /* Tools the model may call: name, what it does, a sentence that triggers it. */

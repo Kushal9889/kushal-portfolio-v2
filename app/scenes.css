@@ -578,9 +578,12 @@ main > section#contact a[href^="mailto"] {
  * reduced. The sweep beam on [data-sweep] sections already reads --signal. */
 body > header,
 main > section:not(#approach) {
-  /* Off since the Apple pass: a blue glow behind every scene is a template
-     tell. The layer stays so a scene can bring its own light back. */
-  --scene-light: none;
+  --scene-light: radial-gradient(
+    ellipse 46% 38% at 50% 50%,
+    color-mix(in oklch, var(--signal) 17%, transparent) 0%,
+    color-mix(in oklch, var(--signal) 6%, transparent) 45%,
+    transparent 72%
+  );
 }
 
 body > header::after,
@@ -731,13 +734,13 @@ body > header [class*="proofFigure"] {
   color: var(--signal-deep);
 }
 
-/* ---- Recruiter pass (2026-10-18), Apple pass (2026-10-26) ------------------
- * One near-white for type on every dark scene and Apple blue for the proof
- * mark (the cream and the lime read as template colours), no headpiece band
- * over the titles, one hover for every action. */
+/* ---- Recruiter pass (2026-10-18) -------------------------------------------
+ * One cream for type on every dark scene, one lime mark for proof sentences,
+ * no headpiece band over the titles, one glass hover for every action. */
 :root {
-  --cream: #f5f5f7;
-  --proof-mark: #2997ff;
+  --cream: oklch(0.955 0.03 86);
+  /* Apple blue, not the old lime: one accent (elite pass, no AI-slop colours). */
+  --proof-mark: var(--signal);
 }
 
 body > header,
@@ -758,14 +761,18 @@ main > section#contact h2 {
   line-height: 0.88;
 }
 
-/* The primary action: Apple's flat blue fill. No lit edge, glow or sheen. */
+/* The primary action: Apple's filled blue with a lit top edge. The lime sheen
+   and link-blue fill it used to wear measured 3.0:1 under the hint (F38). */
 body > header a[class*="cta"] {
-  font-size: 1.125rem;
+  font-size: var(--step-0);
   font-weight: 650;
   padding-block: 1.05em;
   background: var(--fill, var(--signal));
-  box-shadow: none;
-  transition: background-color 220ms var(--ease-out, ease-out);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.6),
+    0 0 0 1px color-mix(in oklch, var(--signal-deep) 55%, transparent),
+    0 10px 20px -12px color-mix(in oklch, var(--signal) 22%, transparent);
+  transition: translate 220ms var(--ease-out, ease-out), box-shadow 220ms var(--ease-out, ease-out);
 }
 
 body > header a[class*="cta"]::after {
@@ -774,8 +781,11 @@ body > header a[class*="cta"]::after {
 
 body > header a[class*="cta"]:hover,
 body > header a[class*="cta"]:focus-visible {
-  background: var(--fill-hover, var(--signal));
-  box-shadow: none;
+  background: var(--fill-hover, var(--signal-deep));
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.6),
+    0 0 0 1px var(--signal-deep),
+    0 12px 25px -10px color-mix(in oklch, var(--signal-deep) 30%, transparent);
 }
 
 /* Every other action: a graphite plate that catches a sheen. No lift: a control
@@ -795,17 +805,6 @@ body > header [data-surface="console"] button:not([type="submit"]):is(:hover, :f
 main > section#proof a[href*="credly"]:is(:hover, :focus-visible) {
   background-position: -60% 0, 0 0;
   border-color: var(--ink);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  body > header a[class*="cta"] {
-    animation: cta-sheen 5.5s var(--ease-out, ease-out) 2s infinite;
-  }
-}
-
-@keyframes cta-sheen {
-  0%, 70% { background-position: 160% 0, 0 0; }
-  100% { background-position: -60% 0, 0 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -849,11 +848,11 @@ main > section#measured dl > :first-child > dt [class*="value"] {
   -webkit-text-fill-color: var(--signal);
 }
 
-/* Hero borders: hairlines at rest, the blue focus ring when a control has focus. */
+/* Hero borders: hairlines at rest, the Apple focus blue when a control has focus. */
 body > header [data-surface="console"] :is(input, textarea):focus-visible,
 body > header a:focus-visible,
 body > header button:focus-visible {
-  outline: 2px solid var(--proof-mark);
+  outline: 2px solid var(--signal);
   outline-offset: 2px;
 }
 

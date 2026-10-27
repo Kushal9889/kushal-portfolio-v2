@@ -169,7 +169,7 @@
   right: 0;
   bottom: -3px;
   height: 1px;
-  background: var(--live);
+  background: var(--ink-soft);
   transform: scaleX(var(--sweep));
   transform-origin: 0 50%;
 }

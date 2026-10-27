@@ -137,7 +137,7 @@ export default function BuiltChapter({ site }: Props) {
 
 function StatusWord({ status }: { status: Status }) {
   return (
-    <span className={styles.word} data-status={status}>
+    <span className={styles.word} data-state={status}>
       <i aria-hidden="true" />
       {status}
     </span>
