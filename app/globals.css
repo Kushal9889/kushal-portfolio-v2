@@ -312,12 +312,14 @@
    * is still five numbers picked by feel. The rule is size, and it has one
    * exception:
    *
-   *   --r-sm     2px   marks and chips: things smaller than a line of text
-   *   --r-md     4px   controls: anything the reader presses or types into
-   *   --r-lg     8px   inner surfaces nested inside a panel
-   *   --r-panel 12px   enclosures: a panel, a console, a housing
-   *   --r-pill  999px  round by nature, never by size. Dots and switches only,
-   *                    which is why it is exempt from the ladder above.
+   *   --r-sm      8px   marks, chips and small controls
+   *   --r-md     12px   controls the reader presses or types into
+   *   --r-lg     14px   surfaces nested inside a card
+   *   --r-panel  18px   enclosures: a panel, a console, a housing. Symmetric:
+   *                     the 18/24 bevel pair was removed (ui-kit plan E10)
+   *   --r-pill  980px   round by nature, never by size: pills and switches,
+   *                     which is why it is exempt from the ladder
+   *   50%               discs (logo marks), the only other round thing
    *
    * A container is never smaller than what it holds, so a radius never steps up
    * as it nests. That is the whole rule, and `scripts/audit.ts` check 3.9 holds
@@ -329,14 +331,7 @@
    * inside a 12px box at 8px of padding is the commonest reason a rounded
    * interface looks very slightly wrong without anyone being able to say why.
    * Give the enclosure `--r-out` and `--pad` and its child takes --r-inner. */
-  /* Square. Measured before this: 2px on 46 elements, 12px on 5, 8px on one.
-     A five-step radius scale existed in the stylesheet and the page rendered
-     as very slightly rounded everywhere, which is the corner you pick when you
-     have not decided. The page is an instrument; instruments have edges. The
-     only round things are the ones that are round by nature. */
-  /* Apple's continuous corners, by size: 8 for marks and chips, 12 for
-     controls, 14 for surfaces inside a card, 18 for the card itself. Buttons
-     Apple makes pills, which --r-pill covers. */
+  /* Apple's continuous corners, by size. */
   --r-sm: 8px;
   --r-md: 12px;
   --r-lg: 14px;
@@ -601,46 +596,9 @@
  * and a frame that contains, and the page had only the first. Depth still comes
  * from the caught edge rather than a shadow: a cast shadow under a 1px frame is
  * the ghost card, and this page has no light source to justify one. */
-/*
- * The cut corner, where the engine can cut one.
- *
- * `clip-path` was the obvious way to do this and it is the wrong one: it masks
- * the painted output, so the 2px frame and the offset plate get sliced off along
- * the diagonal and the corner reads as damaged rather than as machined.
- * `corner-shape` changes the box geometry instead, so the border, the outline
- * and the shadow all follow the cut.
- *
- * Chromium only as of 2026, with nothing announced from Firefox or WebKit, so it
- * sits behind @supports and the radius is declared inside the guard rather than
- * outside it. An engine without the property must not be handed a 24px
- * border-radius as a consolation prize: the square corner is this page's
- * signature, and the fallback here is the design rather than a degraded copy of
- * it.
- *
- * Two corners, not four, and they are the two the registration marks do not
- * occupy. The marks sit on the top-left and bottom-right diagonal; the cuts take
- * the other one. Cutting all four would put a bevel through both marks and leave
- * them overhanging the corner they are supposed to register.
- */
-@supports (corner-top-right-shape: bevel) {
-  /*
-   * The selector is doubled to raise specificity, and that is not decoration.
-   *
-   * `Panel.module.css` sets `border-radius: var(--r-panel)` on `.panel`, which
-   * is the same specificity as a single attribute selector, so which one wins
-   * comes down to stylesheet order -- and Next.js gives no guarantee about the
-   * order of a CSS Module against a global sheet. Measured: the module won, the
-   * radius resolved to 0, and the corners stayed square while
-   * `corner-top-right-shape` reported `bevel`, because a bevel is sized by the
-   * radius and a radius of zero cuts nothing.
-   */
-  [data-tier="housing"][data-tier] {
-    border-top-right-radius: var(--s-5);
-    border-bottom-left-radius: var(--s-5);
-    corner-top-right-shape: bevel;
-    corner-bottom-left-shape: bevel;
-  }
-}
+/* No cut corners and no registration marks: both were trim on a frame that
+ * already reads as an enclosure, and the bevel made one corner pair 24px against
+ * 18px everywhere else (ui-kit plan E10, E15). */
 
 /*
  * The pointer, reported on the surface it is over.
@@ -702,65 +660,6 @@
 
 
 /*
- * Registration marks.
- *
- * A printed specification sheet carries them, which is what this page is, so
- * they are drawn from the subject rather than applied as trim. They mark the
- * corners of an enclosure and they say nothing they have not measured: no
- * serial, no revision number, no coordinates. Two corners on the diagonal,
- * because four reads as a border and two reads as a drawing.
- *
- * Inset by a hair so they sit inside the frame rather than on it, and drawn
- * with borders rather than a background so there is no image to load and
- * nothing to interpolate.
- */
-[data-tier="housing"]::before,
-[data-tier="housing"]::after {
-  content: "";
-  position: absolute;
-  /* 9px at hairline weight was a mark you had to go looking for, which is the
-     same as no mark. At 22px in the emphasis weight it registers the corner
-     from reading distance, which is the only distance a corner mark is for. */
-  width: 22px;
-  height: 22px;
-  pointer-events: none;
-  border-color: color-mix(in oklch, var(--ink) 55%, transparent);
-  border-style: solid;
-}
-
-[data-tier="housing"]::before {
-  inset-block-start: var(--s-2);
-  inset-inline-start: var(--s-2);
-  border-width: var(--border-emphasis) 0 0 var(--border-emphasis);
-}
-
-[data-tier="housing"]::after {
-  inset-block-end: var(--s-2);
-  inset-inline-end: var(--s-2);
-  border-width: 0 var(--border-emphasis) var(--border-emphasis) 0;
-}
-
-/*
- * Not every enclosure is a machine.
- *
- * A registration mark says "this face was aligned against something". That is
- * true of an instrument and it is not true of a list of links or a set of
- * printed readings, which are contained rather than calibrated. Marking all
- * three identically is how a system with one idea ends up looking like a system
- * with none, and it is also what would turn twenty new enclosures into twenty
- * copies of the same box.
- */
-/* Scoped to the housing on purpose. `data-kind` was already in use on this page
-   for the work cards, so an unqualified attribute selector here would reach
-   across two unrelated vocabularies that happen to share an attribute name. */
-[data-tier="housing"][data-kind="record"]::before,
-[data-tier="housing"][data-kind="record"]::after,
-[data-tier="housing"][data-kind="readout"]::before,
-[data-tier="housing"][data-kind="readout"]::after {
-  content: none;
-}
-
-/*
  * Edges that draw themselves.
  *
  * `pathLength="1"` on the element normalises the geometry, so one dash of
@@ -776,54 +675,6 @@
  */
 [data-draw] {
   stroke-dasharray: 1;
-}
-
-/*
- * The instrument powering on.
- *
- * One rule about what this is allowed to touch, and it decides the whole shape
- * of it: no content. Not the headline, not a paragraph, not a figure. An opacity
- * animation on a fast-painting element can take that element out of the running
- * for Largest Contentful Paint entirely, which means a boot sequence that fades
- * the hero in does not merely delay the metric, it can make the browser measure
- * something slower instead. The h1 is already excluded from every script on this
- * page for that reason and this holds the same line.
- *
- * So only the chrome arrives: the corner marks that register each enclosure.
- * They are drawn furniture, they carry no text, and nothing about the page's
- * meaning waits on them. The reader gets the words at first paint and the
- * instrument assembles around them.
- *
- * CSS rather than script, so it cannot be delayed by a bundle and cannot fail
- * to run. Once, no loop, and the whole sequence is inside 700ms.
- */
-@media (prefers-reduced-motion: no-preference) {
-  [data-tier="housing"]::before,
-  [data-tier="housing"]::after {
-    animation: mark-register var(--t-slow) var(--ease-out) both;
-  }
-
-  [data-tier="housing"]::before {
-    transform-origin: top left;
-  }
-
-  [data-tier="housing"]::after {
-    transform-origin: bottom right;
-    /* The second corner lands after the first. A registration mark is struck one
-       corner at a time, and two arriving together reads as a box appearing. */
-    animation-delay: 120ms;
-  }
-}
-
-@keyframes mark-register {
-  from {
-    scale: 0.2;
-    opacity: 0;
-  }
-  to {
-    scale: 1;
-    opacity: 1;
-  }
 }
 
 /*
@@ -2763,11 +2614,6 @@ html[data-film="live"] main [data-tier="housing"] {
   border: var(--border-hair) solid var(--rule);
 }
 
-html[data-film="live"] main [data-tier="housing"]::before,
-html[data-film="live"] main [data-tier="housing"]::after {
-  display: none;
-}
-
 /* The metric compartments: dividers drawn as hairlines on the cells instead
    of a solid ground showing through gaps. */
 html[data-film="live"] main [data-surface="console"] dl {
@@ -3050,3 +2896,19 @@ summary { min-block-size: 44px; }
     display: none !important;
   }
 }
+
+/* Pointer light lives inside the two existing CTA borders; it takes no space. */
+[data-cta-light] {
+  position: absolute; inset: 0; padding: 1px; border-radius: inherit;
+  pointer-events: none; z-index: 1; opacity: 0;
+  background: radial-gradient(140px circle at var(--light-x, 50%) var(--light-y, 50%), var(--ink), transparent 75%);
+  -webkit-mask: linear-gradient(var(--mask-solid) 0 0) content-box, linear-gradient(var(--mask-solid) 0 0);
+  mask: linear-gradient(var(--mask-solid) 0 0) content-box, linear-gradient(var(--mask-solid) 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  transition: opacity 160ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  :is(#agent, #contact a[href^="mailto:"]):hover > [data-cta-light] { opacity: .65; }
+}
+:is(#agent, #contact a[href^="mailto:"]):focus-within > [data-cta-light] { opacity: .65; }
+@media (prefers-reduced-motion: reduce) { [data-cta-light] { transition: none; } }

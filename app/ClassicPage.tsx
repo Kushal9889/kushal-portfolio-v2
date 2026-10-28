@@ -10,6 +10,7 @@ import Certifications from "./components/Certifications";
 import DiffReveal from "./components/DiffReveal";
 import Agent from "./components/Agent";
 import AgentCompanion from "./components/AgentCompanion";
+import { publicRecordText } from "@/lib/public-record";
 import Palette from "./components/Palette";
 import Metrics from "./components/Metrics";
 import Artifacts from "./components/Artifacts";
@@ -49,6 +50,7 @@ import Compare from "./components/Compare";
 import CopyText from "./components/CopyText";
 import { VISITOR_JOURNEYS } from "@/lib/journeys";
 import FreeTierNote from "./components/FreeTierNote";
+import { typeset } from "@/lib/typeset";
 
 /** The section headings verbatim, for the rail and the footer index alike. */
 const CHAPTERS = [
@@ -198,7 +200,7 @@ function RoleContent({
       ))}
     </ul>
   );
-  const rest = more.length > 0 ? <Prose body={more.join("\n\n")} className={styles.roleBody} claimHref={s.claim} /> : null;
+  const rest = more.length > 0 ? <Prose body={more.join("\n\n")} className={styles.roleBody} claimHref={s.claim} topic={`the ${s.roleParts.title} role`} /> : null;
   const folded = compact ? <>{leadProse}{stack}{rest}</> : <>{stack}{rest}</>;
 
   return (
@@ -265,7 +267,7 @@ export default function Page() {
   const merged = os.artifacts.find((a) => a.state === "merged");
   const evidence = {
     figure: hours?.value.replace(/\s*hours?$/i, "") ?? "57",
-    sentence: profile.proof,
+    sentence: typeset(profile.proof),
     href: merged?.url ?? profile.github,
     label: merged?.label ?? "",
   };
@@ -290,7 +292,9 @@ export default function Page() {
     tested,
     passages: (corpusIndex as { passages: unknown[] }).passages.length,
   };
+  const privateNames = (profile.private ?? "").split(",").map(name => name.trim()).filter(Boolean);
   const agentProps = {
+    sourceRecord: Object.fromEntries(loadContent().sections.map(source => [source.title, publicRecordText(source.body, privateNames)])),
     tools,
     email: profile.email,
     linkedin: profile.linkedin,
@@ -506,7 +510,7 @@ export default function Page() {
               <li key={id}>
                 <a href={`#${id}`}>
                   <b>{r.roleParts.title}</b>
-                  <span>{r.title.replace(/, backend$/, "")} \u00b7 {r.roleParts.dates}</span>
+                  <span>{`${r.title.replace(/, backend$/, "")} \u00b7 ${r.roleParts.dates}`}</span>
                 </a>
               </li>
             ))}
@@ -812,9 +816,6 @@ export default function Page() {
         <p className={styles.wordmark} aria-hidden="true" data-film-scrim>
           {profile.name}
         </p>
-        <div className="wrap" data-film-scrim>
-          <p className="label">Last verified {profile.lastVerified}</p>
-        </div>
       </footer>
     </>
   );

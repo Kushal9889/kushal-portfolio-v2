@@ -1,0 +1,10 @@
+.arrow { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 20px; height: 28px; margin-inline-start: auto; color: currentColor; pointer-events: none; opacity: 1; transform: none; }
+.arrow[data-size='large'] { width: 28px; height: 32px; }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  :global(html:not([data-motion-pref='reduced'])) .arrow { opacity: 0; transform: translateX(-8px); transition: transform 220ms var(--ease-out), opacity 160ms var(--ease-out); }
+  :global(html:not([data-motion-pref='reduced'])) :global(a:hover) .arrow { opacity: 1; transform: translateX(0); }
+  :global(a:focus-visible) .arrow { opacity: 1; transform: none; transition: none; }
+  .arrow[data-engine='gsap'] { transition: none !important; }
+}
+@media (prefers-reduced-motion: reduce), (hover: none) { .arrow { opacity: 1 !important; transform: none !important; transition: none !important; } }
+:global(html[data-motion-pref='reduced']) .arrow { opacity: 1 !important; transform: none !important; transition: none !important; }

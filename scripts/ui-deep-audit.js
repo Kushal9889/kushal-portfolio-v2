@@ -58,7 +58,8 @@ async function deepAudit({ openDisclosures = true } = {}) {
   const all = leafText.map((el) => el.textContent.trim());
   const unitSpace = { spaced: [], tight: [] };
   for (const t of all) {
-    for (const m of t.matchAll(/\b\d+(?:\.\d+)?( ?)(s|ms|%|x|KB|MB|GB)\b/g)) (m[1] ? unitSpace.spaced : unitSpace.tight).push(m[0]);
+    // % and × stay tight by convention (Chicago, Apple style); only units of measure take the space.
+    for (const m of t.matchAll(/\b\d+(?:\.\d+)?( ?)(s|ms|KB|MB|GB)\b/g)) (m[1] ? unitSpace.spaced : unitSpace.tight).push(m[0]);
   }
   if (unitSpace.spaced.length && unitSpace.tight.length)
     add("number.unit-spacing-mixed", null, `spaced ${[...new Set(unitSpace.spaced)].slice(0, 6)} | tight ${[...new Set(unitSpace.tight)].slice(0, 6)}`);

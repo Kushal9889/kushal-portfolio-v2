@@ -715,3 +715,9 @@
 
 .ctaText { min-width: 0; white-space: normal; }
 .ctaHint { overflow-wrap: anywhere; }
+
+.cta[data-email-draft] { position: relative; isolation: isolate; overflow: hidden; }
+.cta[data-email-draft] > :not([data-venom-surface]) { position: relative; z-index: 1; }
+
+/* This is help text, not an identifier; system type keeps it on one phone line. */
+.ctaHint { font-family: var(--font-sans), system-ui, sans-serif; font-size: 12px; letter-spacing: 0; }

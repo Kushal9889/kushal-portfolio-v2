@@ -245,7 +245,7 @@ def run(b, name, vw, vh, phone, fails):
     page.on("console", lambda msg: console_errors.append(msg.text) if msg.type == "error" else None)
     page.on("pageerror", lambda err: console_errors.append(str(err)))
     page.on("response", lambda response: network_errors.append({"status": response.status, "url": response.url}) if response.status >= 400 else None)
-    page.goto(f"{ORIGIN}/", wait_until="load")
+    page.goto(f"{ORIGIN}/", wait_until="domcontentloaded")
     page.wait_for_selector('#agent section[aria-label="In brief"]', timeout=30000)
     page.wait_for_timeout(1500)
     page.locator("#agent").scroll_into_view_if_needed()

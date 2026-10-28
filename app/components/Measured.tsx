@@ -1,6 +1,7 @@
 import evals from "@/content/evals.json";
 import styles from "./Measured.module.css";
 import Compare from "./Compare";
+import { longDate } from "@/lib/typeset";
 
 /**
  * The evaluation suite, reporting its own last run.
@@ -98,6 +99,13 @@ export default function Measured({ children }: { children?: React.ReactNode }) {
       {/* The breakdown and the two latencies side by side: the cases on the
           left, how long a visitor waits on the right. Median and tail on one
           zero-based scale, so the gap between them is the length a reader sees. */}
+      {/* Second-level folds (ui-kit plan E18): one 1,500-word drawer read as a
+          wall; three named ones let a reader open only the part they came for. */}
+      <details className="more">
+        <summary>
+          <span className="more-open">Cases by group, and how long an answer takes</span>
+          <span className="more-close">Show less</span>
+        </summary>
       <div className={styles.pair}>
       {groups.length > 0 && (
         <ul className={styles.groups}>
@@ -121,7 +129,7 @@ export default function Measured({ children }: { children?: React.ReactNode }) {
       )}
       {evals.p50 > 0 && evals.p95 > 0 && (
         <Compare
-          title={`Answer latency, ${evals.measured} run`}
+          title={`Answer latency, ${longDate(evals.measured)} run`}
           min={0}
           max={Math.ceil(evals.p95 / 2000) * 2}
           ticks={Array.from({ length: Math.ceil(evals.p95 / 2000) + 1 }, (_, i) => i * 2)}
@@ -133,12 +141,18 @@ export default function Measured({ children }: { children?: React.ReactNode }) {
         />
       )}
       </div>
+      </details>
 
       {/* Every assertion lives in the eval matrix below, case by case (D52). */}
 
       {/* The limits of the thing above, stated by the thing above.
           A suite that only publishes its score is advertising; one that
           publishes what it cannot see is evidence. */}
+      <details className="more">
+        <summary>
+          <span className="more-open">What the {evals.cases} cases cannot catch</span>
+          <span className="more-close">Show less</span>
+        </summary>
         <ul className={styles.limitList}>
           <li>
             Assertions are substring and route checks. Nothing here grades whether an answer reads
@@ -156,7 +170,7 @@ export default function Measured({ children }: { children?: React.ReactNode }) {
           {retrievals > 0 && (
             <li>
               Both retrievers ran on {bothRetrievers} of {retrievals} retrievals. A short-circuit
-              used to skip the embedding call when one keyword hit led the rest by 2.2x; measured
+              used to skip the embedding call when one keyword hit led the rest by 2.2×; measured
               across the suite it never fired on the rare-term queries it was written for, and fired
               only on the weakest-scoring ones, where it answered a question about his work with a
               paragraph about this website. It was removed rather than retuned.
@@ -165,10 +179,11 @@ export default function Measured({ children }: { children?: React.ReactNode }) {
         </ul>
 
       <p className={styles.foot}>
-        Measured <time dateTime={evals.measured}>{evals.measured}</time> by{" "}
+        Measured <time dateTime={evals.measured}>{longDate(evals.measured)}</time> by{" "}
         <code>npm run test:evals</code>, which writes the file this section reads. Nothing here is
         entered by hand, so the figures cannot drift from the run that produced them.
       </p>
+      </details>
       {children}
       </details>
     </div>

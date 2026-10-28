@@ -6,6 +6,8 @@ import { VISITOR_JOURNEYS } from "@/lib/journeys";
 import { useReferralTag } from "./Reach";
 import { mailtoLink } from "@/lib/reach";
 import styles from "./Hero.module.css";
+import EmailArrow from "./EmailArrow";
+import VenomSurface from "./VenomSurface";
 import { track } from "@/lib/analytics";
 
 type Props = {
@@ -165,6 +167,43 @@ export default function Hero({
           </p>
         )}
 
+        {/* One filled action and one plain one. The draft is already written,
+            so pressing it costs the reader a send, not a message. */}
+        <div className={styles.actions}>
+          <a className={styles.cta} data-email-draft href={mailtoLink(email, site, "general", tag, who)} onClick={() => track("contact", "hero-email")} data-pull>
+            <VenomSurface />
+            <span className={styles.ctaText}>
+              Email him
+              <span className={styles.ctaHint}>draft written</span>
+            </span>
+            <EmailArrow />
+          </a>
+          <a className={styles.secondary} href={resumeHref} target="_blank" rel="noreferrer" onClick={() => track("contact", "hero-resume")}>
+            <span className={styles.ctaText}>
+              Résumé
+              <span className={styles.ctaHint}>PDF · 1 page</span>
+            </span>
+          </a>
+        </div>
+
+        {/* The one claim an outsider acted on, beside the action it argues for. */}
+        <p className={`${styles.proof} rise`} style={{ "--rise-n": 2 } as React.CSSProperties}>
+          {(() => {
+            const at = evidence.sentence.lastIndexOf(evidence.figure);
+            if (at === -1) return evidence.sentence;
+            const end = at + evidence.figure.length;
+            return (
+              <>
+                {evidence.sentence.slice(0, at)}
+                <a href={evidence.href} aria-label={evidence.label || "the merged fix"} data-pull>
+                  <b className={`${styles.proofFigure} tabular`}>{evidence.figure}</b>
+                </a>
+                {evidence.sentence.slice(end)}
+              </>
+            );
+          })()}
+        </p>
+
         {/* Each route names who it is for and what it leads to, so a reader
             picks by recognising themselves rather than by guessing a section. */}
         <nav className={styles.journeys} aria-label="Find what you need">
@@ -197,40 +236,6 @@ export default function Hero({
           </div>
         )}
 
-        {/* One filled action and one plain one. The draft is already written,
-            so pressing it costs the reader a send, not a message. */}
-        <div className={styles.actions}>
-          <a className={styles.cta} href={mailtoLink(email, site, "general", tag, who)} onClick={() => track("contact", "hero-email")} data-pull>
-            <span className={styles.ctaText}>
-              Email him
-              <span className={styles.ctaHint}>draft written · compose_intro</span>
-            </span>
-          </a>
-          <a className={styles.secondary} href={resumeHref} target="_blank" rel="noreferrer" onClick={() => track("contact", "hero-resume")}>
-            <span className={styles.ctaText}>
-              Résumé
-              <span className={styles.ctaHint}>PDF · 1 page</span>
-            </span>
-          </a>
-        </div>
-
-        {/* The one claim an outsider acted on, beside the action it argues for. */}
-        <p className={`${styles.proof} rise`} style={{ "--rise-n": 2 } as React.CSSProperties}>
-          {(() => {
-            const at = evidence.sentence.lastIndexOf(evidence.figure);
-            if (at === -1) return evidence.sentence;
-            const end = at + evidence.figure.length;
-            return (
-              <>
-                {evidence.sentence.slice(0, at)}
-                <a href={evidence.href} aria-label={evidence.label || "the merged fix"} data-pull>
-                  <b className={`${styles.proofFigure} tabular`}>{evidence.figure}</b>
-                </a>
-                {evidence.sentence.slice(end)}
-              </>
-            );
-          })()}
-        </p>
           </div>
 
         {/* One instrument, not two.

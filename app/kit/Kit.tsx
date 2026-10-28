@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { animate } from "motion";
+import { animate } from "motion/mini";
 import { spring, reducedMotion } from "./springs";
 
 /**
@@ -41,27 +41,43 @@ export default function Kit() {
       return el && !el.closest(AGENT) ? el : null;
     };
     const lift = (el: HTMLElement, up: boolean) => {
-      animate(el, { y: up ? -2 : 0 }, spring.touch);
+      animate(el, { translate: up ? "0 -2px" : "0 0" }, spring.touch);
       const arrow = el.querySelector<HTMLElement>(ARROW);
-      if (arrow) animate(arrow, { x: up ? 3 : 0 }, spring.touch);
+      if (arrow) animate(arrow, { translate: up ? "3px 0" : "0 0" }, spring.touch);
     };
     on("pointerover", (e) => {
       if (e.pointerType !== "mouse") return;
       const el = card(e.target);
       if (el && !el.contains(e.relatedTarget as Node)) lift(el, true);
     });
+    // Hysteresis (fluid §10): a lifted card has moved 2px off the pointer, so a
+    // pointer resting on its edge would fall out, drop it, fall back in and
+    // flicker. Leaving counts only once the pointer clears the card by a margin.
+    const SLOP = 6;
+    const outside = (el: HTMLElement, x: number, y: number) => {
+      const r = el.getBoundingClientRect();
+      return x < r.left - SLOP || x > r.right + SLOP || y < r.top - SLOP || y > r.bottom + SLOP;
+    };
     on("pointerout", (e) => {
       if (e.pointerType !== "mouse") return;
       const el = card(e.target);
-      if (el && !el.contains(e.relatedTarget as Node)) lift(el, false);
+      if (!el || el.contains(e.relatedTarget as Node)) return;
+      if (outside(el, e.clientX, e.clientY)) return lift(el, false);
+      const watch = (m: PointerEvent) => {
+        if (el.matches(":hover")) return document.removeEventListener("pointermove", watch);
+        if (!outside(el, m.clientX, m.clientY)) return;
+        document.removeEventListener("pointermove", watch);
+        lift(el, false);
+      };
+      document.addEventListener("pointermove", watch, { signal: ac.signal });
     });
     const release = (e: PointerEvent) => {
       const el = card(e.target);
-      if (el) animate(el, { scale: 1 }, spring.touch);
+      if (el) animate(el, { scale: "1" }, spring.touch);
     };
     on("pointerdown", (e) => {
       const el = card(e.target);
-      if (el) animate(el, { scale: 0.985 }, spring.touch);
+      if (el) animate(el, { scale: "0.985" }, spring.touch);
     });
     on("pointerup", release);
     on("pointercancel", release);

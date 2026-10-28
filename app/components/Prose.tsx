@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment } from "react";
+import { typeset } from "@/lib/typeset";
 
 /**
  * Inline emphasis for the corpus.
@@ -73,11 +74,11 @@ function render(text: string, keyPrefix: string, claimHref?: string) {
       return claimHref ? (
         <strong key={key}>
           <a href={claimHref} target="_blank" rel="noreferrer">
-            {bold[1]}
+            {typeset(bold[1])}
           </a>
         </strong>
       ) : (
-        <strong key={key}>{bold[1]}</strong>
+        <strong key={key}>{typeset(bold[1])}</strong>
       );
     }
 
@@ -99,7 +100,7 @@ function render(text: string, keyPrefix: string, claimHref?: string) {
         </a>
       );
 
-    return <Fragment key={key}>{part}</Fragment>;
+    return <Fragment key={key}>{typeset(part)}</Fragment>;
   });
 }
 
@@ -117,8 +118,10 @@ function render(text: string, keyPrefix: string, claimHref?: string) {
 function Foldable({ children, label, topic }: { children: React.ReactNode; label: string; topic?: string }) {
   return (
     <details className="more">
-      <summary aria-label={topic ? `${label} about ${topic}` : undefined}>
-        <span className="more-open">{label}</span>
+      {/* The subject is on screen, not only in the accessible name (WCAG 2.5.3):
+          a page of bare "Read more"s reads the same everywhere. */}
+      <summary>
+        <span className="more-open">{topic ? `${label} about ${topic}` : label}</span>
         <span className="more-close">Show less</span>
       </summary>
       {children}
@@ -145,7 +148,7 @@ export default function Prose({
   claimHref?: string;
   /** Paragraphs left open on a phone, where the seam moves up. Desktop keeps OPEN. */
   phoneOpen?: number;
-  /** Names the folded text for assistive tech, so several folds do not all read "Read more". */
+  /** Names the folded text on screen, so several folds do not all read "Read more". */
   topic?: string;
 }) {
   const paras = body.split(/\n{2,}/);

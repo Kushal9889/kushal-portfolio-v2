@@ -1141,8 +1141,12 @@
   background: var(--live);
 }
 
-.island:is([data-phase="degraded"], [data-phase="stopped"]) :global(.live-dot) {
+.island:is([data-phase="degraded"], [data-phase="stopped"], [data-phase="withheld"]) :global(.live-dot) {
   background: var(--warn);
+}
+
+.island[data-phase="response"] :global(.live-dot) {
+  background: var(--ink-soft);
 }
 
 .island[data-phase="failed"] :global(.live-dot) {
@@ -2796,3 +2800,30 @@ button.step:hover {
 
 /* The inspector owns policy scrolling as well as the surrounding trace. */
 .agent[data-window] .policy { max-height: none; overflow: visible; }
+
+/* Topic choices and conversation controls share the quiet native toolbar. */
+.agent[data-window] .topicNav { gap: 4px; padding-block: 6px; }
+.agent[data-window] .topicNav .textBtn,
+.agent[data-window] .conversationNav .textBtn {
+  text-decoration: none; font-size: 14px; line-height: 1.35; font-weight: 500;
+  border-radius: var(--r-md); border: 0; background: transparent;
+  transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out);
+}
+.agent[data-window] .topicNav .textBtn { padding-inline: 12px; }
+.agent[data-window] .conversationNav select { padding-inline: 12px; border-color: var(--rule); }
+.agent[data-window] .conversationNav .textBtn:focus-visible,
+.agent[data-window] .topicNav .textBtn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .agent[data-window] .topicNav .textBtn:hover,
+  .agent[data-window] .conversationNav .textBtn:hover { background: var(--paper-high); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .agent[data-window] .topicNav .textBtn,
+  .agent[data-window] .conversationNav .textBtn { transition: none; }
+}
+
+.answerNotice { padding: 16px; border: 1px solid var(--rule); border-radius: var(--r-md); background: var(--paper-sunk); line-height: 1.6; }
+.answerNotice > p { margin-block: 8px; color: var(--ink-soft); font-size: 14px; }
+.answerNotice details { font-size: 13px; color: var(--ink-soft); }
+.agent.agent .term[data-featured] { text-decoration-color: var(--ink-soft); text-decoration-thickness: 1px; text-underline-offset: .2em; }
+.agent.agent .term[data-lit] { text-decoration-color: var(--ink); text-decoration-thickness: 2px; }

@@ -33,6 +33,7 @@ import {
   TARGETS,
 } from "../lib/agent/tools";
 import { loadContent, section, loadCertifications, progress } from "../lib/content";
+import { typeset, longDate } from "../lib/typeset";
 import { interpolatedGradients } from "../scripts/gradients";
 
 /**
@@ -258,9 +259,10 @@ describe("reach", () => {
       { name: profile.name, current: profile.current, proof: profile.proof, site: profile.site },
       { passed: 16, cases: 16, p50: 977, measured: "2026-10-10", runs: 3 },
     );
-    assert.ok(blurb.includes(profile.proof), "the strongest claim has to travel with it");
+    assert.ok(blurb.includes(typeset(profile.proof)), "the strongest claim has to travel with it");
     assert.ok(blurb.includes("?mode=condensed"));
-    assert.ok(blurb.includes("Recorded 2026-10-10"));
+    assert.ok(blurb.includes("Recorded October 10, 2026"));
+    assert.ok(blurb.includes("977 ms median answer"));
     assert.ok(blurb.includes("passed all 3 runs"));
     assert.ok(blurb.split("\n").length === 4, "four lines or it does not get pasted");
     const certified = forwardBlurb(
@@ -1262,4 +1264,15 @@ test("history: at most two earlier turns, only the ones the question leans on", 
   assert.deepEqual(relatedHistory("Where did he study computer science?", [imgTurn, certTurn]), []);
   // Never more than two, whatever the tab sends.
   assert.ok(relatedHistory("Tell me more", [imgTurn, certTurn, imgTurn]).length <= 2);
+});
+
+describe("typeset", () => {
+  test("curls apostrophes and paired quotes, leaves the rest", () => {
+    assert.equal(typeset(`LangChain's SDK, users' notes, "work authorization"`), "LangChain’s SDK, users’ notes, “work authorization”");
+    assert.equal(typeset("5' 10\" tall"), "5' 10\" tall");
+  });
+  test("one long date style, ISO passed through when it is not a date", () => {
+    assert.equal(longDate("2026-10-10"), "October 10, 2026");
+    assert.equal(longDate("soon"), "soon");
+  });
 });

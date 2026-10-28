@@ -334,7 +334,7 @@ June 2024. India.
 
 @metric 91.4% | combined transformer and GNN accuracy | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
 @metric 88.2% | transformer alone | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
-@metric 13.5s | detect and fix, against 25.4s for static analysis | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
+@metric 13.5 s | detect and fix, against 25.4 s for static analysis | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
 
 @artifact IEEE ICAICCIT 2024, first author | published | Deep Learning for Contextual Bug Detection and Automated Fixes | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
 @artifact IGI Global 2024, co-author | published | Cyber-Physical Systems: Security and Optimization Strategies | https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities

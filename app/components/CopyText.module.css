@@ -51,3 +51,7 @@
     transition: opacity 160ms var(--ease-out);
   }
 }
+
+.fallback { display: grid; gap: 8px; margin-top: 12px; max-width: 32rem; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+.fallback input { width: 100%; min-width: 0; min-height: 44px; padding: 8px 12px; border: 1px solid var(--rule); border-radius: var(--r-md); color: var(--ink); background: var(--paper-high); font: inherit; font-size: 16px; }
+.fallback input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }

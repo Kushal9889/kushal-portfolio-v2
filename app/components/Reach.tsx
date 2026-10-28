@@ -5,6 +5,7 @@ import { mailtoLink, mailDraft, linkedinNote, forwardBlurb, referralTag, type Re
 import { track } from "@/lib/analytics";
 import { GitHubMark, LinkedInMark, MailMark } from "./Mark";
 import styles from "./Reach.module.css";
+import EmailArrow from "./EmailArrow";
 
 /** The `?r=` tag of the link that brought the reader here, read after mount so
  *  the server render and the first client render agree. */
@@ -27,6 +28,7 @@ export function EmailLink({
   return (
     <a {...rest} href={mailtoLink(email, site, context, tag, who)} onClick={() => track("contact", `email-${context}`)}>
       {children}
+      <EmailArrow />
     </a>
   );
 }
@@ -93,7 +95,9 @@ export default function Reach({
     const open = () => {
       if (location.hash !== "#contact-forward" || !more.current) return;
       more.current.open = true;
-      document.getElementById("contact-forward")?.scrollIntoView({ block: "start" });
+      const target = document.getElementById("contact-forward");
+      target?.scrollIntoView({ block: "start" });
+      target?.focus({ preventScroll: true });
     };
     open();
     addEventListener("hashchange", open);
@@ -220,6 +224,7 @@ export default function Reach({
               <strong>Email him</strong>
               <span className={styles.sub}>the draft is already written</span>
             </span>
+            <EmailArrow large />
           </a>
         </li>
         <li>

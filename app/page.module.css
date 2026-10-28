@@ -493,7 +493,6 @@
   color: var(--ink);
   -webkit-text-fill-color: var(--ink);
   -webkit-text-stroke: 0;
-  text-shadow: 0 2px 28px color-mix(in oklch, var(--paper) 85%, transparent);
   user-select: none;
 }
 

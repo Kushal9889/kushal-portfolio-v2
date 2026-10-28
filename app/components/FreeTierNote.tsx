@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Glyph from "./stage/Glyph";
 import { TELEMETRY_EVENT, type TelemetryPing } from "@/lib/agent/events";
 import styles from "./FreeTierNote.module.css";
+import { longDate } from "@/lib/typeset";
 
 type Health = {
   providers: { name: string; coolingOffFor: number }[];
@@ -172,14 +173,14 @@ export default function FreeTierNote() {
           <dt><Glyph name="ShieldCheck:regular" size={16} /> Degrade</dt>
           <dd>
             If a provider is out, the answer says which ones were resting.
-            {m?.outage && ` With every model switched off, the record alone still answered ${m.outage.pass} of ${m.outage.cases} held-out questions (${m.outage.at}).`}
+            {m?.outage && ` With every model switched off, the record alone still answered ${m.outage.pass} of ${m.outage.cases} held-out questions (${longDate(m.outage.at)}).`}
           </dd>
         </div>
       </dl>
 
       {m && (
         <>
-          <h3 className={styles.sub}>Measured, last gate run {m.endToEnd.at}</h3>
+          <h3 className={styles.sub}>Measured, last gate run {longDate(m.endToEnd.at)}</h3>
           <dl className={styles.facts}>
             <div><dt>Held-out questions</dt><dd className="tabular">{m.endToEnd.pass}/{m.endToEnd.cases} pass</dd></div>
             <div><dt>Answer time</dt><dd className="tabular">p50 {secs(m.endToEnd.p50ms)} · p95 {secs(m.endToEnd.p95ms)}</dd></div>

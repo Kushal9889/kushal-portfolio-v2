@@ -63,7 +63,7 @@ export default function Vitals() {
           </div>
         ))}
       </dl>
-      <p className={styles.note}>Core Web Vitals from your browser, graded against web.dev&apos;s thresholds. Nothing is sent anywhere.</p>
+      <p className={styles.note}>Core Web Vitals from your browser, graded against web.dev’s thresholds. Nothing is sent anywhere.</p>
     </Panel>
   );
 }

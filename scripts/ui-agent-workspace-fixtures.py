@@ -34,8 +34,8 @@ def check_panels(page, label):
     page.evaluate("document.documentElement.dataset.theme='dark'")
 
 
-def saved(answer="A fixture statement.", **extra):
-    return {"question": "A synthetic UI question", "result": {
+def saved(answer="A fixture statement.", question="A synthetic UI question", **extra):
+    return {"question": question, "result": {
         "answer": answer, "sources": [], "route": "answer", "total": 4,
         "timings": {}, "steps": [{"name": "retrieve", "state": "done", "ms": 1, "detail": "Synthetic fixture"}],
         **extra,
@@ -50,21 +50,36 @@ def open_seed(browser, seed, width=1024, blocked=False):
         page.add_init_script("Object.defineProperty(window,'sessionStorage',{get(){throw new Error('fixture storage refusal')}})")
     else:
         page.add_init_script("sessionStorage.setItem('agent:thread:v1', " + json.dumps(json.dumps(seed)) + ")")
-    page.goto(ui.ORIGIN + "/", wait_until="load")
+    page.goto(ui.ORIGIN + "/", wait_until="domcontentloaded")
     page.locator('#agent [aria-label="Open full screen"]').click()
     return ctx, page
 
 
 with sync_playwright() as p:
     browser = ui.launch(p)
+    # Reuse offline citations generated from the current canonical corpus; never invent a supported source body.
+    cache_ctx = browser.new_context()
+    ui.install_offline(cache_ctx)
+    cache_ctx.close()
+    question, canonical = next((q, entry) for q, entry in ui._offline_examples.items()
+                               if entry.get("route") == "answer" and len(entry.get("citations", [])) >= 2
+                               and entry.get("grounding") and entry["citations"][0].get("text"))
     title = "Long source title " * 20
     passage = "Reach fixture@example.com. <img src=x onerror=window.injected=true> A synthetic passage."
-    fixture = saved(answer="A fixture statement. A second fixture statement.", sources=[title], policy="Synthetic policy text. " * 150, citations=[{"sentence": sentence, "source": title, "n": 1, "text": passage} for sentence in ("A fixture statement.", "A second fixture statement.")])
+    fixture = saved(answer=canonical["answer"], question=question, route=canonical["route"],
+        sources=canonical["sources"], grounding=canonical["grounding"], citations=canonical["citations"],
+        policy="Synthetic policy text. " * 150)
     ctx, page = open_seed(browser, [fixture])
+    badge = page.locator('#agent [class*="litBadge"]:visible').first.element_handle()
+    check('failed_badge_hides_without_losing_credential', badge.evaluate("""e => {
+        const button = e.parentElement, label = button.innerText, link = button.parentElement.querySelector('a'), href = link?.getAttribute('href');
+        e.dispatchEvent(new Event('error'));
+        return getComputedStyle(e).display === 'none' && button.checkVisibility() && button.innerText === label && link?.getAttribute('href') === href;
+    }"""))
     page.locator('#agent-tab-sources').click()
     check_panels(page, 'sources')
     quoted = page.locator('#agent blockquote')
-    check("synthetic_email_redacted", "fixture@example.com" not in quoted.text_content())
+    check("canonical_passages_visible", quoted.count() > 0)
     check("passage_markup_is_text", page.locator('#agent blockquote img').count() == 0)
     check("long_source_does_not_overflow", page.locator('#agent').evaluate("e=>e.scrollWidth<=e.clientWidth+1"))
     page.locator('#agent-tab-trace').click()
@@ -118,11 +133,12 @@ with sync_playwright() as p:
     check("resized_composer_visible", page.locator('#agent form').evaluate('e=>e.getBoundingClientRect().bottom<=innerHeight'))
     ctx.close()
 
-    ctx, page = open_seed(browser, [saved()], width=390)
+    ctx, page = open_seed(browser, [saved(trace={"rows": [], "denseUsed": False})], width=390)
     page.locator('#agent [aria-label="How this answer was produced"] button').first.click()
     page.locator('#agent-sheet-tab-sources').click()
     check("missing_evidence_is_explicit", 'No matched passage' in page.locator('#agent-sheet-panel').inner_text())
     page.locator('#agent-sheet-tab-trace').click()
+    check("missing_passage_count_is_not_inferred", "Not recorded" in page.locator('#agent-sheet-panel').inner_text())
     check("phone_tabs_have_one_stop", page.locator('#agent [role=tab][tabindex="0"]').count() == 1)
     check_panels(page, 'phone_trace')
     page.keyboard.press('Escape')
@@ -131,7 +147,29 @@ with sync_playwright() as p:
     check('phone_keyboard_resize_emulation', page.locator('#agent form').evaluate('e=>e.getBoundingClientRect().bottom<=innerHeight'))
     ctx.close()
 
-    ctx, page = open_seed(browser, [saved(degraded=True)])
+    # Adversarial long title, email, and markup deliberately lack canonical source identity.
+    bad_answer = "A fixture statement. A second fixture statement."
+    adversarial = saved(answer=bad_answer, route="answer", sources=[title],
+        grounding={"claims": 0, "found": 0, "g": 1, "unsupported": []},
+        citations=[{"sentence": sentence, "source": title, "n": 1, "text": passage}
+                   for sentence in ("A fixture statement.", "A second fixture statement.")])
+    ctx, page = open_seed(browser, [adversarial])
+    article = page.locator('#agent article')
+    check("unverified_answer_hidden", bad_answer not in article.inner_text())
+    check("unverified_answer_has_no_markers", article.locator('sup button').count() == 0)
+    check("unverified_answer_export_disabled", page.get_by_role('button', name='Copy', exact=True).is_disabled())
+    page.locator('#agent-tab-sources').click()
+    check("forged_passage_not_rendered", page.locator('#agent blockquote').count() == 0 and passage not in page.locator('#agent').inner_text())
+    check("untrusted_email_not_rendered", "fixture@example.com" not in page.locator('#agent').inner_text())
+    check("untrusted_markup_not_executed", page.evaluate("!window.injected && document.querySelectorAll('#agent blockquote img').length === 0"))
+    page.locator('#agent-tab-answer').click()
+    check("unverified_sources_export_disabled", page.get_by_role('button', name='With sources', exact=True).is_disabled())
+    check("long_untrusted_title_does_not_overflow", page.locator('#agent').evaluate("e=>e.scrollWidth<=e.clientWidth+1"))
+    ctx.close()
+
+    retrieved_quote = canonical["citations"][0].get("text", "")
+    retrieved_source = canonical["citations"][0].get("source")
+    ctx, page = open_seed(browser, [saved(answer=retrieved_quote, degraded=True, sources=[retrieved_source])])
     check("fallback_explained", page.locator('#agent [data-tone=warn]').count() > 0)
     check("fallback_retry_operable", page.get_by_role('button', name='Retry', exact=True).is_enabled())
     ctx.close()
@@ -149,7 +187,7 @@ with sync_playwright() as p:
     check('build_origin_explicit', page.locator('#agent [data-origin]').get_attribute('data-origin') == 'build')
     ctx.close()
 
-    actions = [saved(action={'ok':True,'kind':'draft','subject':subject,'body':subject+' body','mailto':'mailto:fixture@example.invalid?subject='+subject}) for subject in ('First','Second')]
+    actions = [saved(route='act', action={'ok':True,'kind':'draft','subject':subject,'body':subject+' body','mailto':'mailto:fixture@example.invalid?subject='+subject}) for subject in ('First','Second')]
     ctx, page = open_seed(browser, actions)
     articles = page.locator('#agent ol[aria-label="Conversation"] article')
     check('tool_outcomes_pair_with_turns', 'First body' in articles.nth(0).inner_text() and 'Second body' in articles.nth(1).inner_text())

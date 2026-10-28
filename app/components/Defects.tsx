@@ -1,5 +1,6 @@
 import { section } from "@/lib/content";
 import styles from "./Defects.module.css";
+import { typeset } from "@/lib/typeset";
 
 /**
  * Failures this page shipped, each paired with the thing that now catches it.
@@ -55,9 +56,9 @@ export default function Defects() {
         <dl className={styles.list}>
           {rows.map((d) => (
             <div key={d.symptom} className={styles.row} data-guard={guardKind(d.guard)}>
-              <dt className={styles.symptom}>{d.symptom}</dt>
+              <dt className={styles.symptom}>{typeset(d.symptom)}</dt>
               <dd className={styles.guard} data-guard={guardKind(d.guard)}>
-                {d.guard}
+                {typeset(d.guard)}
               </dd>
             </div>
           ))}

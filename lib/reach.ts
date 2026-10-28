@@ -1,3 +1,5 @@
+import { typeset, longDate } from "./typeset";
+
 /**
  * Builds a prefilled `mailto:` draft, the same text as plain text for clients
  * that ignore `mailto:`, and the note the LinkedIn flow copies.
@@ -197,12 +199,12 @@ export function forwardBlurb(
   evals: { passed: number; cases: number; p50: number; measured: string; runs: number },
 ) {
   return [
-    `${profile.name} - ${profile.current}.`,
+    `${profile.name}, ${profile.current}.`,
     // Certifications ride on the proof line, so the blurb stays four lines.
     profile.certified?.length ? `${profile.proof} Certified: ${profile.certified.join("; ")}.` : profile.proof,
     // `passed` counts cases green on every run, not assertions: calling them
     // assertions overstated what the suite checks by a whole unit.
-    `His site runs an agent over his resume. Recorded ${evals.measured}: ${evals.passed} of ${evals.cases} cases passed all ${evals.runs} runs, ${evals.p50}ms median answer.`,
+    `His site runs an agent over his resume. Recorded ${longDate(evals.measured)}: ${evals.passed} of ${evals.cases} cases passed all ${evals.runs} runs, ${evals.p50 < 1000 ? `${evals.p50} ms` : `${(evals.p50 / 1000).toFixed(1)} s`} median answer.`,
     `${profile.site}?mode=condensed`,
-  ].join("\n");
+  ].map(typeset).join("\n");
 }

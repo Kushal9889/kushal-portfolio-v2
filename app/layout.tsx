@@ -120,10 +120,7 @@ const { profile } = loadContent();
 export const metadata: Metadata = {
   metadataBase: new URL(profile.site),
   title: `${profile.name}, ${profile.role}`,
-  // The description is the line a search result quotes and an assistant
-  // paraphrases. The tagline alone carried neither the role nor the institution,
-  // which are the two strings someone who half-remembers him will type.
-  description: `${profile.tagline} ${profile.role} at Boston University. ${profile.proof}`,
+  description: `${profile.tagline} ${profile.current}. ${profile.proof}`,
   authors: [{ name: profile.name, url: profile.site }],
   openGraph: {
     type: "profile",

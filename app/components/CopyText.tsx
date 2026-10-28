@@ -1,43 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { track } from "@/lib/analytics";
 import styles from "./CopyText.module.css";
 
-/**
- * One value a reader would otherwise select by hand, copied in one press.
- *
- * The label says what will be copied, and changes to say it was: completion
- * feedback in the control itself, where the eye already is, rather than a toast
- * somewhere else. A refused clipboard leaves the label alone; the value is
- * still on the page beside it.
- */
+/** Clipboard refusal keeps the exact value available for manual copying. */
 export default function CopyText({ text, label, what }: { text: string; label: string; what: string }) {
-  const [copied, setCopied] = useState(false);
-
-  return (
-    <button
-      type="button"
-      className={styles.copy}
-      data-copied={copied || undefined}
-      onClick={() =>
-        navigator.clipboard?.writeText(text).then(
-          () => {
-            setCopied(true);
-            track("contact", `copy-${what}`);
-            setTimeout(() => setCopied(false), 2000);
-          },
-          () => {},
-        )
-      }
-    >
-      {/* The live region stays mounted so the change is announced; the keyed
-          word inside it remounts so the new word fades in. */}
-      <span aria-live="polite">
-        <span key={copied ? "done" : "idle"} className={styles.say}>
-          {copied ? "Copied" : label}
-        </span>
-      </span>
+  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  async function copy() {
+    if (timer.current) clearTimeout(timer.current);
+    try {
+      if (!navigator.clipboard) throw new Error('Clipboard unavailable');
+      await navigator.clipboard.writeText(text);
+      setState('copied');
+      track('contact', `copy-${what}`);
+      timer.current = setTimeout(() => setState('idle'), 2000);
+    } catch {
+      setState('failed');
+    }
+  }
+  return <>
+    <button type="button" className={styles.copy} data-copied={state === 'copied' || undefined} onClick={copy}>
+      <span aria-live="polite"><span key={state} className={styles.say}>{state === 'copied' ? 'Copied' : label}</span></span>
     </button>
-  );
+    {state === 'failed' && <label className={styles.fallback}>
+      <span role="status">Copy unavailable. Select this value and copy it manually.</span>
+      <input readOnly aria-label={`Manual copy: ${label}`} value={text} onFocus={e => e.currentTarget.select()} />
+    </label>}
+  </>;
 }
