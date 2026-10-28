@@ -1484,6 +1484,22 @@ export default function Agent({
     );
   };
 
+  /** Only stream-reported steps are running; absent steps remain waiting. */
+  const steps = (
+    <ol className={styles.pipeline} aria-label="Steps">
+      {PIPELINE.map(([name, label]) => {
+        const st = run.steps.find((x) => x.name === name);
+        return (
+          <li key={name} data-state={st?.state ?? "waiting"}>
+            <span className={styles.pipeMark} aria-hidden="true" />
+            <span>{label}</span>
+            <span className="tabular">{st ? ms(st.ms) : ""}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+
   /** Everything the run did, as instrument cards. Inline on desktop, a bottom sheet on a phone. */
   const board = (r: Result) => {
     const t = r.trace;
