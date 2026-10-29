@@ -38,14 +38,8 @@ jobs:
       # in the corpus, and the published eval date has not gone stale.
       - run: npm run verify:facts
 
-      # The index is a build artifact. Regenerating it here proves it can be
-      # rebuilt from the corpus alone, and without a key it falls back to
-      # keyword-only rather than failing.
-      - run: npm run build:index
-        env:
-          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
-
-      - run: npm run build
+      # Verify the committed artifacts used by production; authoring rebuilds mutate them.
+      - run: npx next build
 
       # Unit and integration run without a provider key: the suites are written
       # so the model-dependent cases skip rather than fail.
