@@ -119,7 +119,8 @@ export function chipOf(p: Provenance, now = Date.now()): { marker: "filled" | "h
       const s = Math.max(0, Math.round((now - p.ranAt) / 1000));
       return {
         marker: "hollow",
-        text: `RECORDED · ${s < 60 ? `${s} S` : `${Math.floor(s / 60)} MIN`} AGO`,
+        // Names what was recorded: the page's sample question, not the visitor's (F28).
+        text: `SAMPLE QUESTION · ${s < 60 ? `${s} S` : `${Math.floor(s / 60)} MIN`} AGO`,
         spoken: "The orange light is a recorded sample question. Ask your own and it becomes yours.",
       };
     }

@@ -1,5 +1,7 @@
 "use client";
 
+import EmailArrow from "./EmailArrow";
+
 import { useEffect, useState } from "react";
 import { mailtoLink, type ReachContext } from "@/lib/reach";
 import { track } from "@/lib/analytics";
@@ -106,6 +108,7 @@ export default function ReachDock({
           <span className={styles.hint} aria-hidden="true">
             draft written
           </span>
+          <EmailArrow />
         </a>
 
         <a className={styles.side} href="#ask" data-only-desk>Ask</a>
@@ -186,7 +189,7 @@ export function MotionSwitch({ className = styles.side }: { className?: string }
         location.reload();
       }}
     >
-      {moving === false ? "Motion off" : "Motion on"}
+      Motion
     </button>
   );
 }

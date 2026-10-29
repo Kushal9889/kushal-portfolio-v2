@@ -15,15 +15,15 @@ import styles from "./ContactFinale.module.css";
 
 /** Share of the hold spent gathering the field, when there is a field to gather. */
 const GATHER = 0.52;
-/** Share of the hold the orange takes to cover the screen from the gathered point. */
+/** Share of the hold the blue takes to cover the screen from the gathered point. */
 const FLOOD = 0.2;
 
 /**
  * The last chapter. Everything the page showed was drawn from one corpus; here
- * the field gathers into a single point, that point floods the screen orange,
+ * the field gathers into a single point, that point floods the screen blue,
  * and what is left is the way to write to him.
  *
- * Without the motion bundle it is simply the orange chapter, complete.
+ * Without the motion bundle it is simply the blue chapter, complete.
  */
 export default function ContactFinale({
   register,
@@ -103,7 +103,7 @@ export default function ContactFinale({
       const gatherEnd = c ? GATHER : 0.04;
       if (c && live) c.setCollapse(CORE, Math.min(Math.max(p / gatherEnd, 0), 1));
 
-      // The orange grows out of the one action this chapter leads to, not out
+      // The blue grows out of the one action this chapter leads to, not out
       // of the middle of the screen: the origin is the centre of "Email him",
       // measured once per refresh.
       const at = origin ?? (c && live ? c.project(CORE) : { x: window.innerWidth / 2, y: window.innerHeight / 2 });

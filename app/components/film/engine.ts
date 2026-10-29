@@ -21,6 +21,7 @@ function measure(): Span[] {
 }
 
 /** A text box taller than this is split into its children's boxes. */
+const MEDIA = (process.env.NEXT_PUBLIC_FILM_ORIGIN ?? "").replace(/\/$/, "");
 const SCRIM_SPLIT = 360;
 
 /** Viewport box of the visible text inside an element, or null when it shows none. */
@@ -396,7 +397,7 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers, onSlow?: () =>
       const g = c.gen;
       const i = c.order[c.next++];
       inflight++;
-      fetchFrame(`/film/frames/${c.tier}/${c.base}/${String(i + 1).padStart(4, "0")}.webp`)
+      fetchFrame(`${MEDIA}/film/frames/${c.tier}/${c.base}/${String(i + 1).padStart(4, "0")}.webp`)
         .then((b) => {
           meter(b.size);
           if (c.gen === g) c.blobs[i] = b;
@@ -423,7 +424,7 @@ export function start(host: HTMLElement, ScrollTrigger: Triggers, onSlow?: () =>
   const noFlow = debug && query.get("flow") === "0";
   const loadFlow = (l: Live) => {
     const g = l.gen;
-    fetch(`/film/flow/${phone ? "p" : "d"}/${l.base}.png`)
+    fetch(`${MEDIA}/film/flow/${phone ? "p" : "d"}/${l.base}.png`)
       .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
       .then((b) => createImageBitmap(b, { imageOrientation: "flipY", premultiplyAlpha: "none", colorSpaceConversion: "none" }))
       .then((bmp) => {

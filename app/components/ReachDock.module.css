@@ -66,7 +66,6 @@
 .hint {
   font-size: var(--step--2);
   letter-spacing: var(--track-caps);
-  text-transform: uppercase;
   color: var(--ink-faint);
 }
 
@@ -162,4 +161,9 @@ button.side[aria-pressed="true"] {
   .inner:has(button:not([aria-keyshortcuts]):not([aria-pressed])) [data-only-desk] {
     display: none;
   }
+}
+
+/* Phone, typing: the dock slides away while a field has focus, so it never stacks on the composer (F29). */
+@media (max-width: 767px) {
+  :global(body:has(textarea:focus, input:focus)) .dock { transform: translateY(100%); }
 }

@@ -110,15 +110,6 @@
   margin-bottom: var(--s-7);
 }
 
-.subhead {
-  font-size: var(--step-0);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  margin-bottom: var(--s-3);
-}
-
 .roleContent {
   padding-block: 0;
 }
@@ -131,7 +122,6 @@
   font-size: var(--step--2);
   font-weight: 500;
   letter-spacing: 0.1em;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -177,15 +167,6 @@
 
 
 
-.split {
-  display: grid;
-  gap: var(--s-7);
-  margin-top: var(--s-7);
-  padding-top: var(--s-7);
-  border-top: var(--border-hair) solid var(--rule);
-}
-
-
 .footer {
   padding-block: var(--s-7);
   color: var(--ink-soft);
@@ -195,23 +176,12 @@
    which took the whole colophon -- its lead, its claims and eight paragraphs
    averaging 56 words -- out of the reading face and set it as data. Mono is
    for code, identifiers and figures; this is none of the three. */
-.footerNote {
-  font-size: var(--step--1);
-  max-width: var(--measure);
-  margin-bottom: var(--s-5);
-}
 
 /* Emphasis inside a footnote is weight and colour, not size. `inherit` reads
    as the guaranteed-invalid value here, which sends var() to its fallback and
    changes nothing; the block's own step is the value. */
-.footerNote {
-  --lead-step: var(--step--1);
-}
 
 @media (min-width: 62rem) {
-  .split {
-    grid-template-columns: 1fr 1fr;
-  }
 
   /*
    * The page turns sideways.
@@ -439,13 +409,6 @@
  * chapters were at 96, so the section the page is actually asking for was the
  * smallest of the three. */
 
-.section[data-weight="closing"] .links {
-  /* Steps up on a wide screen, holds at body size on a phone: the email address
-     is a single unbreakable token and at step-2 it is wider than 375px. */
-  font-size: clamp(var(--step-0), 0.7rem + 1.6vw, var(--step-2));
-  gap: var(--s-5) var(--s-6);
-}
-
 /* The open-source section leads with the artifact rather than prose, so its
    heading sits tighter to the diff below it. */
 .section[data-lead="artifact"] .title {
@@ -475,10 +438,6 @@
 /* The section index, now a permalink. It has to stay quiet: a reader is not
    looking for it, and the one who wants to cite a section will find it under
    the pointer. */
-.index:hover,
-.index:focus-visible {
-  color: var(--ink);
-}
 
 /* Pre-2025 roles. Context rather than evidence, so they occupy less of the
    reader's attention without losing anything a screener searches for. The
@@ -515,24 +474,6 @@
    cells reads as one object with four parts, which is what this is. Drawn by
    the grid gap rather than by borders, so no cell has to know whether it is
    first or last. */
-.focus {
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: var(--border-hair);
-  margin: 0 0 var(--s-6);
-  padding: 0;
-  background: var(--rule);
-  border-block: var(--border-hair) solid var(--rule);
-}
-
-.focus li {
-  background: var(--paper);
-  padding: var(--s-3) var(--s-4) var(--s-3) 0;
-  font-size: var(--step--1);
-  color: var(--ink-soft);
-}
-
 
 /*
  * The closing wordmark: the name, solid, in the claim white. The outline it replaced was a 2px
@@ -548,12 +489,10 @@
   font-weight: 800;
   line-height: 0.9;
   letter-spacing: -0.05em;
-  text-transform: uppercase;
   text-wrap: nowrap;
   color: var(--ink);
   -webkit-text-fill-color: var(--ink);
   -webkit-text-stroke: 0;
-  text-shadow: 0 2px 28px color-mix(in oklch, var(--paper) 85%, transparent);
   user-select: none;
 }
 
@@ -568,13 +507,6 @@ html[data-film="live"] .wordmark {
 }
 
 /* One line in place of the session card: the published latency from the eval run. */
-.latency {
-  margin: 0;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: var(--step--2);
-  letter-spacing: var(--track-caps);
-  color: var(--ink-faint);
-}
 
 /* Work racks sit on the film in the lane layout, so their fill lets it through
    instead of a near-black slab. Below the lane breakpoint the section is solid
@@ -679,15 +611,6 @@ html[data-film="live"] .wordmark {
   .rolePair {
     gap: var(--s-2);
   }
-}
-
-.panelStack {
-  display: grid;
-  gap: var(--s-4);
-}
-
-.panelStack > * {
-  margin-top: 0;
 }
 
 /* ---- Role racks: frame, tone, colour (2026-10-01) ------------------------
@@ -863,7 +786,6 @@ html[data-film="live"] .wordmark {
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--step--2);
   letter-spacing: var(--track-caps);
-  text-transform: uppercase;
   color: var(--tone, var(--ink));
 }
 
@@ -1084,3 +1006,14 @@ html[data-film="live"] .wordmark {
     display: none;
   }
 }
+
+/* The closing proof: one sentence an outsider acted on, with its link. */
+.endProof {
+  max-width: 40ch;
+  margin: 0 0 var(--s-4);
+  font-size: var(--step-1);
+  line-height: 1.35;
+}
+
+/* Large glyphs extend beyond a tight line box and must clear the following claim. */
+.head:has(+ .claim) .title { line-height: 1.1; }

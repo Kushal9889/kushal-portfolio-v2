@@ -6,36 +6,42 @@
  * for the WebGL renderer, which cannot read an oklch() string.
  */
 [data-stage] {
-  --void: oklch(0.16 0.002 90);
+  /* Apple pass (2026-10-26): Apple dark greys and Apple blue in place of the
+     warm greys and International Orange, written in OKLCH: black ground,
+     Apple tile grey, Apple near-white, Apple blue and its deeper fill. */
+  --void: oklch(0 0 0);
   /* LangChain's dark green, lifted in lightness so it reads on the void ground;
      its hue and chroma are the brand's. */
   --langchain: oklch(0.62 0.055 173);
-  --void-raised: oklch(0.205 0.002 90);
-  --sheet: oklch(0.975 0.004 90);
-  --ink-on-void: oklch(0.96 0.003 90);
-  --ink-on-void-soft: oklch(0.76 0.003 90);
-  --ink-on-sheet: oklch(0.18 0.003 90);
-  --ink-on-sheet-soft: oklch(0.42 0.003 90);
-  /* International Orange, #ff4f00, written in OKLCH like every other token. */
-  --voltage: oklch(0.6697 0.2218 37.48);
-  --voltage-rgb: 255 79 0;
-  --ink-rgb: 244 243 238;
-  --hair: oklch(0.96 0.003 90 / 0.14);
-  --hair-strong: oklch(0.96 0.003 90 / 0.26);
+  --void-raised: oklch(0.2316 0.0038 286.1);
+  --sheet: oklch(0.9707 0.0027 286.35);
+  --ink-on-void: oklch(0.9707 0.0027 286.35);
+  --ink-on-void-soft: oklch(0.7105 0.0072 286.22);
+  --ink-on-sheet: oklch(0.2316 0.0038 286.1);
+  --ink-on-sheet-soft: oklch(0.5399 0.0077 286.14);
+  /* The one accent is the ink (no blue, 2026-10-27): marks and strokes in
+     the claim white, fills white with black text. */
+  --voltage: oklch(0.9707 0.0027 286.35);
+  --voltage-rgb: 245 245 247;
+  --ink-rgb: 245 245 247;
+  --fill: oklch(0.9707 0.0027 286.35);
+  --fill-hover: oklch(1 0 0);
+  --hair: oklch(0.9707 0.0027 286.35 / 0.14);
+  --hair-strong: oklch(0.9707 0.0027 286.35 / 0.26);
   --ease-glass: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-arrive: cubic-bezier(0.16, 1, 0.3, 1);
 
   --paper: var(--void);
-  --paper-sunk: oklch(0.13 0.002 90);
+  --paper-sunk: oklch(0 0 0);
   --paper-raised: var(--void-raised);
-  --paper-high: oklch(0.25 0.002 90);
+  --paper-high: oklch(0.2939 0.0036 286.18);
   --ink: var(--ink-on-void);
   --ink-soft: var(--ink-on-void-soft);
-  --ink-faint: oklch(0.64 0.003 90);
-  --rule: oklch(0.32 0.002 90);
+  --ink-faint: oklch(0.6217 0.0074 286.18);
+  --rule: oklch(0.3802 0.005 286.16);
   --signal: var(--voltage);
-  --signal-deep: oklch(0.7022 0.1967 41.52);
-  --on-signal: oklch(0.14 0.002 90);
+  --signal-deep: oklch(0.87 0.004 286);
+  --on-signal: oklch(0 0 0);
 
   /* Every generic family name the reused components ask for resolves to the
      spine here. The chapter voices (macro, plate, readout, paper, code) are
@@ -60,16 +66,16 @@
 /* The agent renders on a console surface; inside the stage it takes the stage palette. */
 [data-stage] [data-surface="console"] {
   --paper: var(--void-raised);
-  --paper-sunk: oklch(0.17 0.002 90);
-  --paper-raised: oklch(0.24 0.002 90);
-  --paper-high: oklch(0.28 0.002 90);
+  --paper-sunk: oklch(0.1781 0.002 286.19);
+  --paper-raised: oklch(0.2939 0.0036 286.18);
+  --paper-high: oklch(0.3802 0.005 286.16);
   --ink: var(--ink-on-void);
   --ink-soft: var(--ink-on-void-soft);
-  --ink-faint: oklch(0.64 0.003 90);
-  --rule: oklch(0.34 0.002 90);
+  --ink-faint: oklch(0.6217 0.0074 286.18);
+  --rule: oklch(0.3802 0.005 286.16);
   --signal: var(--voltage);
-  --signal-deep: oklch(0.7022 0.1967 41.52);
-  --on-signal: oklch(0.14 0.002 90);
+  --signal-deep: oklch(0.87 0.004 286);
+  --on-signal: oklch(0 0 0);
   color-scheme: dark;
 }
 
@@ -84,18 +90,18 @@
 [data-stage] [data-surface="sheet"] {
   --ink: var(--ink-on-sheet);
   --ink-soft: var(--ink-on-sheet-soft);
-  --hair: oklch(0.18 0.003 90 / 0.14);
-  --hair-strong: oklch(0.18 0.003 90 / 0.26);
+  --hair: oklch(0.2316 0.0038 286.1 / 0.14);
+  --hair-strong: oklch(0.2316 0.0038 286.1 / 0.26);
   color: var(--ink);
   background: var(--sheet);
   color-scheme: light;
 }
 
 [data-stage] [data-ground="voltage"] {
-  --ink: oklch(0.14 0.002 90);
-  --ink-soft: oklch(0.14 0.002 90 / 0.72);
+  --ink: oklch(1 0 0);
+  --ink-soft: oklch(1 0 0 / 0.78);
   color: var(--ink);
-  background: var(--voltage);
+  background: var(--fill);
 }
 
 /* The legacy page reserves a gutter under the document for its mobile dock.
@@ -108,8 +114,8 @@ html:has([data-stage]) body {
 /* The parts of the page no component draws: selection, caret, scrollbar and the
    overscroll behind the document all take the stage palette. */
 html:has([data-stage]) {
-  background: oklch(0.16 0.002 90);
-  scrollbar-color: oklch(0.42 0.003 90) oklch(0.16 0.002 90);
+  background: oklch(0 0 0);
+  scrollbar-color: oklch(0.3802 0.005 286.16) oklch(0 0 0);
 }
 
 [data-stage] {
@@ -117,8 +123,8 @@ html:has([data-stage]) {
 }
 
 [data-stage] ::selection {
-  background: var(--voltage);
-  color: oklch(0.14 0.002 90);
+  background: var(--fill);
+  color: oklch(1 0 0);
 }
 
 /* ---- Type system (plan 3.2, D.3) ------------------------------------------ */
@@ -132,7 +138,7 @@ html:has([data-stage]) {
   --font-macro: var(--font-plate), var(--font-spine), sans-serif;
   --font-readout: var(--font-plate), var(--font-spine), sans-serif;
   --font-code: var(--font-mono), ui-monospace, monospace;
-  --surface-1: oklch(0.185 0.002 90);
+  --surface-1: oklch(0.1781 0.002 286.19);
   --surface-2: var(--void-raised);
   --surface-3: var(--paper-high);
 }
@@ -289,13 +295,13 @@ html:has([data-stage]) {
   min-height: 52px;
   padding: 0 24px;
   border: 0;
-  background: var(--signal);
+  background: var(--fill, var(--signal));
   color: var(--on-signal);
   font-size: 1rem;
 }
 
 [data-stage] [data-garment="solid"]:hover {
-  background: color-mix(in oklch, var(--signal) 92%, var(--ink));
+  background: var(--fill-hover, var(--signal));
 }
 
 /* Ghost: the fill enters from the side the pointer came in (`data-from`, set by the stage). */

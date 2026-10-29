@@ -123,7 +123,7 @@
 
   .link[aria-current="true"] .tick {
     transform: none;
-    background: var(--signal);
+    background: var(--fill, var(--signal));
   }
 }
 

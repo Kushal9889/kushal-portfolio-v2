@@ -1,3 +1,5 @@
+import { typeset, longDate } from "./typeset";
+
 /**
  * Builds a prefilled `mailto:` draft, the same text as plain text for clients
  * that ignore `mailto:`, and the note the LinkedIn flow copies.
@@ -129,6 +131,19 @@ export function mailtoLink(email: string, site: string, context: ReachContext = 
 }
 
 /**
+ * A draft about one answer: the question goes in the subject, so the reply
+ * starts from what the reader just read rather than from a blank page.
+ */
+export function mailtoAbout(email: string, site: string, question: string, tag: string | null = null, who?: string) {
+  const q = question.length > 80 ? `${question.slice(0, 77).trimEnd()}...` : question;
+  const params = new URLSearchParams({
+    subject: tag ? `About "${q}" (via ${tag})` : `About "${q}"`,
+    body: `Hi${who ? ` ${who.split(",")[0].split(" ")[0]}` : ""},\n\nI asked the agent on ${site}: "${question}"\n\nI would like to talk about it.\n\n`,
+  });
+  return `mailto:${email}?${params.toString().replace(/\+/g, "%20")}`;
+}
+
+/**
  * The same draft as plain text.
  *
  * A `mailto:` press on a machine with no mail client registered raises no event,
@@ -184,12 +199,12 @@ export function forwardBlurb(
   evals: { passed: number; cases: number; p50: number; measured: string; runs: number },
 ) {
   return [
-    `${profile.name} - ${profile.current}.`,
+    `${profile.name}, ${profile.current}.`,
     // Certifications ride on the proof line, so the blurb stays four lines.
     profile.certified?.length ? `${profile.proof} Certified: ${profile.certified.join("; ")}.` : profile.proof,
     // `passed` counts cases green on every run, not assertions: calling them
     // assertions overstated what the suite checks by a whole unit.
-    `His site runs an agent over his resume. Recorded ${evals.measured}: ${evals.passed} of ${evals.cases} cases passed all ${evals.runs} runs, ${evals.p50}ms median answer.`,
+    `His site runs an agent over his resume. Recorded ${longDate(evals.measured)}: ${evals.passed} of ${evals.cases} cases passed all ${evals.runs} runs, ${evals.p50 < 1000 ? `${evals.p50} ms` : `${(evals.p50 / 1000).toFixed(1)} s`} median answer.`,
     `${profile.site}?mode=condensed`,
-  ].join("\n");
+  ].map(typeset).join("\n");
 }

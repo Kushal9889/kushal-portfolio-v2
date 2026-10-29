@@ -24,3 +24,13 @@ test("keys and SSN-shaped values are caught", () => {
 test("a card's placeholder keeps the space after it", () => {
   assert.equal(redact("card 4111 1111 1111 1111 and more").text, "card [CARD_1] and more");
 });
+
+import { publicRecordText } from "../lib/public-record";
+test("public record serialization removes private names and PII consistently", () => {
+  const raw = "Client Example uses email fixture@example.com. Client Example is private.";
+  const publicText = publicRecordText(raw, ["Client Example"]);
+  assert.ok(!publicText.includes("Client Example"));
+  assert.ok(!publicText.includes("fixture@example.com"));
+  assert.ok(publicText.includes("[client]"));
+  assert.equal(publicRecordText("Public work.", []), "Public work.");
+});

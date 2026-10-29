@@ -1,5 +1,5 @@
-/* A small card that slides in at the lower right, above the dock. Graphite like
-   the agent console, a gold top light like the record chips, square corners. */
+/* A small card at the top right on a wide screen, a raised tile like the
+   agent console; on a phone it sits in the page under the card. */
 .note {
   position: fixed;
   z-index: 60;
@@ -15,10 +15,11 @@
   gap: var(--s-2);
   padding: var(--s-4);
   color: var(--ink);
-  background: oklch(0.205 0.012 258);
-  border: var(--border-hair) solid oklch(0.955 0.03 86 / 0.24);
+  background: var(--paper-raised);
+  border: var(--border-hair) solid color-mix(in oklch, var(--ink) 14%, transparent);
+  border-radius: var(--r-panel);
   box-shadow:
-    inset 0 1px 0 oklch(0.83 0.14 78 / 0.4),
+    inset 0 1px 0 oklch(1 0 0 / 0.06),
     0 2px 6px oklch(0 0 0 / 0.3),
     0 24px 60px oklch(0 0 0 / 0.5);
 }
@@ -116,8 +117,7 @@
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 0.7rem;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: oklch(0.83 0.14 78);
+  color: var(--ink-faint);
 }
 
 .title {
@@ -145,7 +145,7 @@
 /* The board: one row per provider, as /api/health reports it right now. */
 .board {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 4px;
   margin: var(--s-1) 0;
   padding: 0;
@@ -232,8 +232,9 @@
   display: flex;
   align-items: center;
   color: var(--ink);
-  background: oklch(0.205 0.012 258);
-  border: var(--border-hair) solid oklch(0.83 0.14 78 / 0.6);
+  background: var(--paper-raised);
+  border: var(--border-hair) solid color-mix(in oklch, var(--ink) 14%, transparent);
+  border-radius: var(--r-pill);
   box-shadow: 0 8px 24px oklch(0 0 0 / 0.45);
 }
 
@@ -256,20 +257,25 @@
   margin: 0;
 }
 
+/* Phone: in the page, under the agent card it explains, not floating. A fixed
+   chip on a 390px screen always sits on something: the tally, an answer, the
+   ask box once the keyboard is up. */
 @media (max-width: 767px) {
   .dotBar {
-    inset-inline-end: var(--s-3);
-    inset-block-start: auto;
-    inset-block-end: calc(4rem + var(--s-3) + env(safe-area-inset-bottom, 0px));
+    position: static;
+    width: max-content;
+    margin: var(--s-3) var(--s-3) 0 auto;
+    box-shadow: none;
   }
 
   .note {
-    inset-inline: var(--s-3);
-    inset-block-start: auto;
+    position: static;
     width: auto;
-    inset-block-end: calc(4rem + var(--s-3) + env(safe-area-inset-bottom, 0px));
-    max-height: calc(100dvh - 8rem);
-    overflow: auto;
+    max-height: none;
+    margin: var(--s-3) var(--s-3) 0;
+    overflow: visible;
+    box-shadow: none;
+    animation: none;
   }
 }
 
@@ -311,7 +317,6 @@
   font-size: 0.68rem;
   font-weight: 400;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: oklch(1 0 0 / 0.6);
 }
 
@@ -333,3 +338,6 @@
   margin: 0;
   text-align: end;
 }
+
+.model { grid-column: 2; overflow-wrap: anywhere; font: inherit; color: var(--ink-soft); }
+.board li[data-state="unknown"] .pip { background: var(--ink-faint); }

@@ -1,5 +1,6 @@
 import { streamWithFailover, listPrice, failoverState, chooseTool, BUDGET_MS } from "./model";
-import { aside, ASIDE_VERSION } from "./aside";
+import { HISTORY_TURNS, HISTORY_ANSWER_CHARS } from "./limits";
+import { aside, ASIDE_VERSION, DEFAULT_ASIDE_TEMPERATURE } from "./aside";
 import {
   toolSchemas,
   openEvidence,
@@ -21,6 +22,7 @@ import {
   NOT_IN_PROFILE,
   PROMPT_VERSION,
   answerLength,
+  answerFormat,
   isJobDescription,
   PARTIAL_NOTE,
   AGGREGATE_NOTE,
@@ -82,6 +84,12 @@ export type StreamEvent =
    * sentence a reader gets -- the failure is an answer, never a broken control.
    */
   | { type: "action"; result: ToolResult }
+  /**
+   * The earlier exchanges this answer was given (relatedHistory), by question.
+   * `scope` is "tab" today: the server keeps no session. A memory that outlives
+   * the tab would arrive here with its own scope.
+   */
+  | { type: "memory"; scope: "tab"; questions: string[] }
   | {
       type: "done";
       total: number;
@@ -152,8 +160,6 @@ type Warm = Record<
  */
 export type Exchange = { question: string; answer: string };
 
-const HISTORY_TURNS = 2;
-const HISTORY_ANSWER_CHARS = 400;
 
 /**
  * Only the earlier turns this question leans on, at most two.
@@ -209,6 +215,7 @@ export async function* runStream(
   // Everything the tab sent, for the per-session eval cap; the prompt gets only what relates.
   const sent = history;
   history = relatedHistory(question, history);
+  if (history.length) yield { type: "memory", scope: "tab", questions: history.map((h) => h.question) };
 
   // Openers were answered at build time. Serving them from the bundle costs a
   // map lookup instead of an embedding call plus a model round trip, which is
@@ -358,6 +365,7 @@ export async function* runStream(
   const retrieveStart = Date.now();
   const { intent, query, asked, floor } = retrievalQuery(question, history);
   const length = answerLength(question);
+  const format = answerFormat(question);
   const ceiling = Math.round(length.words * 1.2);
   const { chunks, trace, best } = await retrieve(query, { floor, deadline, question });
   const leftAfterRetrieve = deadline - Date.now();
@@ -424,7 +432,7 @@ export async function* runStream(
 
     for await (const token of streamWithFailover(
       [
-        { role: "system", content: systemPrompt(context, length) },
+        { role: "system", content: systemPrompt(context, length, format) },
         ...historyMessages(history),
         // `asked` rather than `question`: an identity question is addressed to
         // the assistant, and a model that reads "yourself" answers as him
@@ -482,13 +490,13 @@ export async function* runStream(
     yield { type: "offers", offers: offersFor(chunks) };
     if (isJobDescription(question)) yield { type: "coverage", rows: coverage(question) };
     const g = ground(cleaned, context, question);
-    yield { type: "step", name: "generate", state: "done", ms: Date.now() - retrieveStart, detail: `${(served as { provider?: string } | null)?.provider ?? "?"} · prompt ${PROMPT_VERSION} · ${length.name} answer` };
+    yield { type: "step", name: "generate", state: "done", ms: Date.now() - retrieveStart, detail: `${(served as { provider?: string } | null)?.provider ?? "?"} · prompt ${PROMPT_VERSION} · ${length.name} ${format.name} answer` };
     yield { type: "step", name: "ground", state: g.g === 1 ? "done" : "failed", ms: 0, detail: `G ${g.g} over ${g.claims} claims${g.unsupported.length ? ` · unsupported ${g.unsupported.join(", ")}` : ""}` };
     // Only answered questions reach here: refusals and deflections returned above.
     const asideStart = Date.now();
     const line = await aside(cleaned, deadline - Date.now());
     if (line) yield { type: "aside", text: line, version: ASIDE_VERSION };
-    yield { type: "step", name: "aside", state: line ? "done" : "skipped", ms: Date.now() - asideStart, detail: line ? `guard passed · temp ${process.env.ASIDE_TEMPERATURE ?? 0.7}` : "no key, no time, or guard rejected" };
+    yield { type: "step", name: "aside", state: line ? "done" : "skipped", ms: Date.now() - asideStart, detail: line ? `guard passed · temp ${process.env.ASIDE_TEMPERATURE ?? DEFAULT_ASIDE_TEMPERATURE}` : "no key, no time, or guard rejected" };
 
     const settled = served as { provider: string; model: string } | null;
     yield {

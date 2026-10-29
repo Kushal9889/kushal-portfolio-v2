@@ -201,7 +201,7 @@ export default function Stage({
     };
     const observers = [watch("0px 0px -92% 0px", setUnderBar), watch("-50% 0px -49% 0px", setActive)];
 
-    // The finale starts as glass over the field and turns orange partway through its hold.
+    // The finale starts as glass over the field and turns blue partway through its hold.
     const grounds = new MutationObserver(read);
     nodes.forEach((n) => grounds.observe(n, { attributes: true, attributeFilter: ["data-ground"] }));
     return () => {

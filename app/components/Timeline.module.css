@@ -47,7 +47,6 @@
 .when {
   font-family: var(--font-mono), ui-monospace, monospace;
   letter-spacing: var(--track-caps);
-  text-transform: uppercase;
 }
 
 /* A hairline baseline, not a filled track: the bar is the reading, the line is

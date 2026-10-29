@@ -10,7 +10,6 @@
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 12px;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink-faint);
 }
 
@@ -46,8 +45,8 @@
 .output mark {
   padding: 0 3px;
   color: var(--ink);
-  background: color-mix(in oklab, var(--live) 28%, transparent);
-  border-bottom: 1px solid var(--live);
+  background: color-mix(in oklab, var(--ink) 16%, transparent);
+  border-bottom: 1px solid var(--ink-soft);
 }
 
 .counts {

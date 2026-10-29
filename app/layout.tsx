@@ -120,10 +120,7 @@ const { profile } = loadContent();
 export const metadata: Metadata = {
   metadataBase: new URL(profile.site),
   title: `${profile.name}, ${profile.role}`,
-  // The description is the line a search result quotes and an assistant
-  // paraphrases. The tagline alone carried neither the role nor the institution,
-  // which are the two strings someone who half-remembers him will type.
-  description: `${profile.tagline} ${profile.role} at Boston University. ${profile.proof}`,
+  description: `${profile.tagline} ${profile.current}. ${profile.proof}`,
   authors: [{ name: profile.name, url: profile.site }],
   openGraph: {
     type: "profile",
@@ -252,11 +249,14 @@ function structuredData() {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
+    // Theme and FilmBoot intentionally set root attributes before hydration.
     <html
+      suppressHydrationWarning
       lang="en"
       className={[display, mono, spine, signature, plate, paper, ibm].map((f) => f.variable).join(" ")}
     >
       <head>
+        {process.env.NEXT_PUBLIC_FILM_ORIGIN && <link rel="preconnect" href={process.env.NEXT_PUBLIC_FILM_ORIGIN} crossOrigin="anonymous" />}
         {/* The condensed view was a keystroke nobody finds. As a URL it is a
             second, shorter read of the same page that can be sent in a reply,
             and applying it here rather than in an effect means the full page

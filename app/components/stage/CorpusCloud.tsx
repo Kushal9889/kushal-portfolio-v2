@@ -69,7 +69,7 @@ export default function CorpusCloud({
       },
       {
         ink: readRGB(canvas, "--ink-rgb", [0.96, 0.95, 0.93]),
-        voltage: readRGB(canvas, "--voltage-rgb", [1, 0.31, 0]),
+        voltage: readRGB(canvas, "--voltage-rgb", [0.16, 0.59, 1]),
       },
       // A reproducible capture measures the page, not the machine it ran on, so
       // the frame-time guard stays out of it.

@@ -9,6 +9,8 @@ import Prose from "./components/Prose";
 import Certifications from "./components/Certifications";
 import DiffReveal from "./components/DiffReveal";
 import Agent from "./components/Agent";
+import AgentCompanion from "./components/AgentCompanion";
+import { publicRecordText } from "@/lib/public-record";
 import Palette from "./components/Palette";
 import Metrics from "./components/Metrics";
 import Artifacts from "./components/Artifacts";
@@ -17,6 +19,7 @@ import Reach, { EmailLink } from "./components/Reach";
 import ReachDock, { MotionSwitch, SearchKey } from "./components/ReachDock";
 import SectionLink from "./components/SectionLink";
 import PageMotion from "./components/PageMotion";
+import Kit from "./kit/Kit";
 import SceneFx from "./components/SceneFx";
 import AskSeeds from "./components/AskSeeds";
 import ModelChoice from "./components/ModelChoice";
@@ -28,10 +31,11 @@ import EvalMatrix from "./components/EvalMatrix";
 import Panel from "./components/Panel";
 import Artifacts2 from "./components/Artifacts";
 import evals from "@/content/evals.json";
-import { loadContent, section, loadCertifications, type Section } from "@/lib/content";
+import { loadContent, section, sectionHomes, loadCertifications, type Section } from "@/lib/content";
 import { TARGETS, toolSchemas } from "@/lib/agent/tools";
 import { index as corpusIndex } from "@/lib/agent/corpus-index";
 import { PIPELINE } from "@/lib/agent/events";
+import { profileChips, remainder } from "@/lib/agent/chips";
 import tested from "@/lib/agent/test-score.json";
 import styles from "./page.module.css";
 import FilmLine from "./components/film/FilmLine";
@@ -46,6 +50,7 @@ import Compare from "./components/Compare";
 import CopyText from "./components/CopyText";
 import { VISITOR_JOURNEYS } from "@/lib/journeys";
 import FreeTierNote from "./components/FreeTierNote";
+import { typeset } from "@/lib/typeset";
 
 /** The section headings verbatim, for the rail and the footer index alike. */
 const CHAPTERS = [
@@ -195,7 +200,7 @@ function RoleContent({
       ))}
     </ul>
   );
-  const rest = more.length > 0 ? <Prose body={more.join("\n\n")} className={styles.roleBody} claimHref={s.claim} /> : null;
+  const rest = more.length > 0 ? <Prose body={more.join("\n\n")} className={styles.roleBody} claimHref={s.claim} topic={`the ${s.roleParts.title} role`} /> : null;
   const folded = compact ? <>{leadProse}{stack}{rest}</> : <>{stack}{rest}</>;
 
   return (
@@ -262,7 +267,7 @@ export default function Page() {
   const merged = os.artifacts.find((a) => a.state === "merged");
   const evidence = {
     figure: hours?.value.replace(/\s*hours?$/i, "") ?? "57",
-    sentence: profile.proof,
+    sentence: typeset(profile.proof),
     href: merged?.url ?? profile.github,
     label: merged?.label ?? "",
   };
@@ -287,7 +292,9 @@ export default function Page() {
     tested,
     passages: (corpusIndex as { passages: unknown[] }).passages.length,
   };
+  const privateNames = (profile.private ?? "").split(",").map(name => name.trim()).filter(Boolean);
   const agentProps = {
+    sourceRecord: Object.fromEntries(loadContent().sections.map(source => [source.title, publicRecordText(source.body, privateNames)])),
     tools,
     email: profile.email,
     linkedin: profile.linkedin,
@@ -302,18 +309,39 @@ export default function Page() {
     // upstream work, the two pinned certifications and the first ranking.
     // Each one asks the agent about itself; its link opens the record.
     brief: profile.brief,
+    // Each cited passage links to the section that renders it, with its dates.
+    homes: Object.fromEntries(
+      Object.entries(sectionHomes()).map(([title, h]) => {
+        // The page section a link lands in, by the name the section rail shows. Roles live in Work.
+        const id = h.href?.startsWith("#role-") ? "work" : h.href?.slice(1);
+        const place = CHAPTERS.find((c) => c.id === id)?.label;
+        return [title, place ? { ...h, place } : h];
+      }),
+    ),
+    checked: profile.lastVerified,
     briefTerms: (profile.briefTerms ?? "").split(",").map((x) => x.trim()).filter(Boolean),
     // Client names kept out of the passages shown under Sources and in cite previews.
     redactNames: (profile.private ?? "").split(",").map((x) => x.trim()).filter(Boolean),
     highlights: (() => {
       const wall = section("Proof wall").badges;
-      return [
-        { kind: "Lead Backend", label: "Agentic SDLC harness", href: "", ask: "What is the agentic SDLC harness he built, and how is it shipped as a plugin?" },
-        { kind: "RA", label: "AI Engineer", href: "/kushal-gaddamwar-resume.pdf", ask: `What did he build as ${section("Boston University, Questrom Computational Lab").roleParts.title}?` },
-        ...wall.filter((b) => b.group === "Shipped").map((b) => ({ kind: "Open source", label: b.label, href: b.href, ask: `Tell me about ${b.label}: ${b.name}.` })),
-        ...certs.filter((c) => c.pinned && c.url).map((c) => ({ kind: `${c.issuer}-certified`, label: c.name, href: c.url!, image: c.image, cert: true, ask: `What does the ${c.name} certification cover, and how was it earned?` })),
-        ...wall.filter((b) => b.group === "Ranked").slice(0, 1).map((b) => ({ kind: "Ranked", label: b.label, href: b.href, ask: `${b.name}: what does that rank mean?` })),
-      ];
+      const titles = loadContent().sections.map((x) => x.title);
+      // A badge's home is the section named for its project, else the wall itself.
+      const homeOf = (label: string) => {
+        const project = label.split(" #")[0].toLowerCase();
+        const named = titles.filter((t) => t.toLowerCase().includes(project));
+        return named.length ? named : ["Proof wall"];
+      };
+      // Source order is the order before any answer: a role, a credential, then upstream work.
+      return profileChips(
+        [
+          { kind: "Lead Backend", label: "Agentic SDLC harness", href: "", ask: "What is the agentic SDLC harness he built, and how is it shipped as a plugin?", group: "role" as const, homes: ["Boston University, Questrom Computational Lab, backend"] },
+          { kind: "RA", label: "AI Engineer", href: "/kushal-gaddamwar-resume.pdf", ask: `What did he build as ${section("Boston University, Questrom Computational Lab").roleParts.title}?`, group: "role" as const, homes: ["Boston University, Questrom Computational Lab"] },
+          ...certs.filter((c) => c.pinned && c.url).map((c) => ({ kind: c.issuer, label: remainder(c.issuer, c.name), href: c.url!, image: c.image, cert: true, ask: `What does the ${c.name} certification cover, and how was it earned?`, group: "cert" as const, homes: ["Certifications"] })),
+          ...wall.filter((b) => b.group === "Shipped").map((b) => ({ kind: "Open source", label: b.label, href: b.href, ask: `Tell me about ${b.label}: ${b.name}.`, group: "oss" as const, homes: homeOf(b.label) })),
+          ...wall.filter((b) => b.group === "Ranked").slice(0, 1).map((b) => ({ kind: "Ranked", label: b.label, href: b.href, ask: `${b.name}: what does that rank mean?`, group: "last" as const, homes: ["Proof wall", "Achievements"] })),
+        ],
+        corpusIndex,
+      );
     })(),
   };
 
@@ -364,7 +392,18 @@ export default function Page() {
         linkedin={profile.linkedin}
         resumeHref="/kushal-gaddamwar-resume.pdf"
       />
+      <AgentCompanion stops={[
+        { id: "top", label: "Meet Kushal", invitation: "Skip the résumé monologue. Ask the work.", question: "Which roles fit his experience, and what work supports that fit?" },
+        { id: "opensource", label: "Open source", invitation: "The interesting part is usually the bug. Want the story?", question: os.asks[0]?.question ?? "What did he contribute to open source?" },
+        { id: "work", label: "Experience", invitation: "Ownership matters. Let’s get specific.", question: backend.asks[0]?.question ?? "What did he own and ship in his current role?" },
+        { id: "running", label: "The agent", invitation: "You can interview the interface, too.", question: "How does retrieval work here, and what tradeoffs did he make?" },
+        { id: "research", label: "Research", invitation: "A result is a starting point. Ask what it means.", question: pub.asks[0]?.question ?? "What research has he published?" },
+        { id: "proof", label: "Credentials", invitation: "Curiosity is good. Checking the record is better.", question: "What certifications has he earned, and what do they cover?" },
+        { id: "approach", label: "Engineering", invitation: "The decisions behind the code are fair game.", question: "How does he approach engineering tradeoffs?" },
+        { id: "contact", label: "Get in touch", invitation: "Have a role in mind? Start with the fit.", question: "What kind of AI engineering role is he looking for?" },
+      ]} />
       <PageMotion />
+      <Kit />
       <SceneFx />
       <FilmMount />
       <FilmChip />
@@ -379,7 +418,7 @@ export default function Page() {
         name={profile.name}
         tagline={profile.tagline}
         location={profile.location}
-        current={`${backend.roleParts.title}, ${backend.title.replace(/, backend$/, "")}.${start ? ` Full-time from ${start.label}.` : ""}`}
+        current={`${backend.roleParts.title}, ${backend.title.replace(/, backend$/, "")}.${start ? ` Full-time from ${start.label}.` : ""}${profile.sponsorship ? ` ${profile.sponsorship}.` : ""}`}
         evidence={evidence}
         email={profile.email}
         site={profile.site.replace("https://", "")}
@@ -471,7 +510,7 @@ export default function Page() {
               <li key={id}>
                 <a href={`#${id}`}>
                   <b>{r.roleParts.title}</b>
-                  <span>{r.title.replace(/, backend$/, "")} \u00b7 {r.roleParts.dates}</span>
+                  <span>{`${r.title.replace(/, backend$/, "")} \u00b7 ${r.roleParts.dates}`}</span>
                 </a>
               </li>
             ))}
@@ -495,7 +534,7 @@ export default function Page() {
 
         <FilmTransit id="T3" />
 
-        <Section id="running" beat="research" title="Also running" claim={sentenceWith(section("This site").body, "The agent on this page answers")} data-register="instrument">
+        <Section id="running" beat="research" title="The agent on this page" claim={sentenceWith(section("This site").body, "The agent on this page answers")} data-register="instrument">
           <AskSeeds items={[{ question: "What happens when every model provider fails?" }]} />
         </Section>
 
@@ -584,7 +623,7 @@ export default function Page() {
           claim={sentenceWith(section("Who he is").body, "certifies him")}
           beat="measured"
          
-          title="What else checks out"
+          title="Certificates you can check"
           data-tone="sunk"
           data-layout="rule"
           data-register="instrument"
@@ -719,7 +758,15 @@ export default function Page() {
         >
           {/* The record first, then the close: when he can start and the one
               action, so the page ends on what the reader came to do. */}
-          <ProofWall certs={certs} badges={section("Proof wall").badges} />
+          {/* The end keeps one proof and one action (N26); every other record,
+              each still with its link, waits behind one fold. */}
+          <p className={styles.endProof}>
+            {evidence.sentence} <a href={evidence.href} target="_blank" rel="noreferrer">See the merged fix</a>
+          </p>
+          <details className="more">
+            <summary>Every record behind this page</summary>
+            <ProofWall certs={certs} badges={section("Proof wall").badges} />
+          </details>
           <Reach
             email={profile.email}
             phone={profile.phone}
@@ -769,9 +816,6 @@ export default function Page() {
         <p className={styles.wordmark} aria-hidden="true" data-film-scrim>
           {profile.name}
         </p>
-        <div className="wrap" data-film-scrim>
-          <p className="label">Last verified {profile.lastVerified}</p>
-        </div>
       </footer>
     </>
   );

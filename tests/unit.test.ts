@@ -33,6 +33,7 @@ import {
   TARGETS,
 } from "../lib/agent/tools";
 import { loadContent, section, loadCertifications, progress } from "../lib/content";
+import { typeset, longDate } from "../lib/typeset";
 import { interpolatedGradients } from "../scripts/gradients";
 
 /**
@@ -258,9 +259,10 @@ describe("reach", () => {
       { name: profile.name, current: profile.current, proof: profile.proof, site: profile.site },
       { passed: 16, cases: 16, p50: 977, measured: "2026-10-10", runs: 3 },
     );
-    assert.ok(blurb.includes(profile.proof), "the strongest claim has to travel with it");
+    assert.ok(blurb.includes(typeset(profile.proof)), "the strongest claim has to travel with it");
     assert.ok(blurb.includes("?mode=condensed"));
-    assert.ok(blurb.includes("Recorded 2026-10-10"));
+    assert.ok(blurb.includes("Recorded October 10, 2026"));
+    assert.ok(blurb.includes("977 ms median answer"));
     assert.ok(blurb.includes("passed all 3 runs"));
     assert.ok(blurb.split("\n").length === 4, "four lines or it does not get pasted");
     const certified = forwardBlurb(
@@ -1262,4 +1264,38 @@ test("history: at most two earlier turns, only the ones the question leans on", 
   assert.deepEqual(relatedHistory("Where did he study computer science?", [imgTurn, certTurn]), []);
   // Never more than two, whatever the tab sends.
   assert.ok(relatedHistory("Tell me more", [imgTurn, certTurn, imgTurn]).length <= 2);
+});
+
+describe("typeset", () => {
+  test("curls apostrophes and paired quotes, leaves the rest", () => {
+    assert.equal(typeset(`LangChain's SDK, users' notes, "work authorization"`), "LangChain’s SDK, users’ notes, “work authorization”");
+    assert.equal(typeset("5' 10\" tall"), "5' 10\" tall");
+  });
+  test("one long date style, ISO passed through when it is not a date", () => {
+    assert.equal(longDate("2026-10-10"), "October 10, 2026");
+    assert.equal(longDate("soon"), "soon");
+  });
+});
+
+
+test("health exposes configured model names without credentials or readiness promises", async () => {
+  const names = ["GROQ_API_KEY", "GEMINI_API_KEY", "OPENROUTER_API_KEY", "NVIDIA_API_KEY", "AZURE_OPENAI_API_KEY", "OPENAI_API_KEY", "GEMINI_MODEL"];
+  const before = new Map(names.map((name) => [name, process.env[name]]));
+  try {
+    for (const name of names) delete process.env[name];
+    process.env.GEMINI_API_KEY = "health-test-secret-never-expose";
+    process.env.GEMINI_MODEL = "test-model-for-health";
+    const { GET } = await import("../app/api/health/route");
+    const response = GET();
+    const data = await response.json();
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.deepEqual(data.providers, [{ name: "gemini", model: "test-model-for-health", coolingOffFor: 0 }]);
+    assert.ok(Number.isFinite(Date.parse(data.checkedAt)));
+    assert.match(data.availabilityScope, /not a provider probe/);
+    assert.ok(!JSON.stringify(data).includes("health-test-secret-never-expose"));
+  } finally {
+    for (const [name, value] of before) {
+      if (value === undefined) delete process.env[name]; else process.env[name] = value;
+    }
+  }
 });

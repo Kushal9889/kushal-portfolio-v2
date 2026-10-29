@@ -38,7 +38,6 @@
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: var(--step--2);
   letter-spacing: var(--track-wide);
-  text-transform: uppercase;
   color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
 }
@@ -187,11 +186,10 @@
  * is a computed state, and it is the one thing a stack of near-identical units
  * cannot say on its own. */
 .panel[data-kind="rack"][data-current] {
-  box-shadow:
-    inset 3px 0 0 var(--signal),
-    var(--bezel),
-    0 1px 2px oklch(0.07 0.01 258 / 0.5),
-    0 14px 34px oklch(0.07 0.01 258 / 0.34);
+  /* A surface step, not a side stripe: the unit comes forward a tone rather
+     than growing a coloured tab (ui-kit plan E14). */
+  background-color: var(--paper-high);
+  box-shadow: var(--bezel);
 }
 
 @media (max-width: 767px) {

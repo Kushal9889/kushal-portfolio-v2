@@ -1,7 +1,7 @@
 {
-  "passed": 95,
+  "passed": 89,
   "total": 107,
-  "blocking": 1,
-  "commit": "c7c7bcd",
-  "ranOn": "2026-10-23"
+  "blocking": 4,
+  "commit": "6de3f34",
+  "ranOn": "2026-10-28"
 }

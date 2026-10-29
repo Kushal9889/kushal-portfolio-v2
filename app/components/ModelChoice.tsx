@@ -1,6 +1,7 @@
 import models from "@/content/models.json";
 import Panel from "./Panel";
 import styles from "./ModelChoice.module.css";
+import { longDate } from "@/lib/typeset";
 
 /**
  * Which model answers, and why that was not a guess.
@@ -103,7 +104,7 @@ export default function ModelChoice() {
         {chosen && (
           <>
             {" "}
-            Measured {models.measured}. Re-run with <code>npm run bench:models</code>.
+            Measured {longDate(models.measured)}. Re-run with <code>npm run bench:models</code>.
           </>
         )}
       </p>

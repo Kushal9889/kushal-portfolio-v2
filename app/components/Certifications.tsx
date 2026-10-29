@@ -2,6 +2,7 @@ import { type Certification } from "@/lib/content";
 import { NvidiaMark } from "./Mark";
 import CertViewer from "./CertViewer";
 import styles from "./Certifications.module.css";
+import { typeset } from "@/lib/typeset";
 
 /**
  * Credentials are not equal, so they are not rendered equally.
@@ -40,7 +41,7 @@ export default function Certifications({
                 <span className="label">· {c.year}</span>
               </span>
               <span className={styles.featuredName}>{c.name}</span>
-              {c.why && <span className={styles.why}>{c.why}</span>}
+              {c.why && <span className={styles.why}>{typeset(c.why)}</span>}
               {c.image && (
                 <span className={styles.frame}>
                   {/* eslint-disable-next-line @next/next/no-img-element -- a small static badge */}
@@ -59,7 +60,7 @@ export default function Certifications({
                 face
               )}
               <a className={styles.verify} href={c.url ?? "#"} target="_blank" rel="noreferrer" aria-label={`Verify ${c.issuer} credential on Credly: ${c.name}`}>
-                [ Verify {c.issuer} <span className={styles.arrow} aria-hidden="true">↗</span> ]
+                Verify on Credly<span className={styles.arrow} aria-hidden="true">↗</span>
               </a>
             </div>
           );
@@ -73,7 +74,7 @@ export default function Certifications({
         {issuers(rest).map((g) => (
           <li key={g.issuer} className={styles.logo}>
             {g.links.length === 1 ? (
-              <a className={styles.logoHead} href={g.links[0].url} target="_blank" rel="noreferrer" title={g.links[0].name}>
+              <a className={styles.logoHead} href={g.links[0].url} target="_blank" rel="noreferrer" title={g.links[0].name} aria-label={g.links[0].name}>
                 <LogoHead g={g} />
               </a>
             ) : (

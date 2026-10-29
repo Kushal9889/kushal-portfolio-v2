@@ -2,11 +2,12 @@
 
 import { useEffect, useRef } from "react";
 import { SENT_EVENT, TELEMETRY_EVENT, ASK_EVENT, type SentDetail, type TelemetryPing } from "./Agent";
-import { SEED_EVENT, type SeedDetail } from "@/lib/agent/events";
 import { VISITOR_JOURNEYS } from "@/lib/journeys";
 import { useReferralTag } from "./Reach";
 import { mailtoLink } from "@/lib/reach";
 import styles from "./Hero.module.css";
+import EmailArrow from "./EmailArrow";
+import VenomSurface from "./VenomSurface";
 import { track } from "@/lib/analytics";
 
 type Props = {
@@ -33,17 +34,22 @@ type Props = {
 };
 
 /**
- * The hero runs one real query against the agent on mount and hands the answer
- * to the agent card, which shows it as its featured first turn.
+ * The hero reads the page's recorded load-time run on mount and hands its
+ * numbers to the film. The agent card opens on the brief, not on that answer.
  *
  * It is deliberately silent and requires no interaction: the first thing a
  * visitor sees has to work with the sound off, on a phone, before any permission
  * prompt. Voice is offered further down for anyone who wants it.
  *
- * If the agent is unreachable the card opens on its suggested questions.
  * Nothing here ever displays a placeholder value, because a fabricated latency
  * is the easiest claim on a page like this to disprove.
  */
+/** "2026-10-26" as "Oct 26": the tally's date reads as a date, not a code. */
+function shortDate(iso: string) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
+
 export default function Hero({
   name,
   tagline,
@@ -60,8 +66,6 @@ export default function Hero({
 }: Props) {
   const tag = useReferralTag();
   const started = useRef(false);
-  /** The load-time answer goes to the agent as its first turn (SEED_EVENT); this only knows it finished. */
-  const seed = (detail: SeedDetail) => window.dispatchEvent(new CustomEvent<SeedDetail>(SEED_EVENT, { detail }));
 
   useEffect(() => {
     if (started.current) return;
@@ -75,10 +79,7 @@ export default function Hero({
           new CustomEvent<SentDetail>(SENT_EVENT, { detail: { question: null, t0: performance.now(), recorded: true } }),
         );
         const res = await fetch("/api/agent/demo", { signal: controller.signal });
-        if (!res.ok) {
-          seed(null);
-          return;
-        }
+        if (!res.ok) return;
         const demo: {
           question: string;
           answer: string;
@@ -88,18 +89,11 @@ export default function Hero({
           usage: { in: number; out: number } | null;
           provider: string | null;
           ranAt?: number;
+          degraded?: true;
         } = await res.json();
+        // No model answered, so there is no run to report: show no numbers.
+        if (demo.degraded) return;
         const measured = demo.timings;
-        // A recorded model answer can carry markdown bold; the card prints text,
-        // so the markers would show as raw asterisks.
-        seed({
-          question: demo.question,
-          answer: demo.answer.replace(/\*\*/g, ""),
-          sources: demo.sources,
-          total: demo.total,
-          provider: demo.provider,
-          timings: measured,
-        });
         // A recorded run, not the visitor's: the film labels it with its age.
         window.dispatchEvent(
           new CustomEvent<TelemetryPing>(TELEMETRY_EVENT, {
@@ -118,15 +112,9 @@ export default function Hero({
             },
           }),
         );
-      } catch (err) {
-        // Offline, blocked, or the route is not deployed. The structure above
-        // still tells the story; it just does so without numbers. Stated rather
-        // than left hanging: the caption used to sit on "ask anything below" for
-        // ever, which reads as a page still loading rather than one whose demo
-        // endpoint is down.
-        if ((err as Error)?.name !== "AbortError") {
-          seed(null);
-        }
+      } catch {
+        // Offline, blocked, or the route is not deployed. The film shows no
+        // numbers rather than a made-up one.
       }
     })();
 
@@ -179,46 +167,22 @@ export default function Hero({
           </p>
         )}
 
-        {/* Each route names who it is for and what it leads to, so a reader
-            picks by recognising themselves rather than by guessing a section. */}
-        <nav className={styles.journeys} aria-label="Find what you need">
-          {VISITOR_JOURNEYS.map((journey) => (
-            <a key={journey.label} href={journey.href} data-only={"phone" in journey ? "phone" : undefined}>
-              <b>{journey.label}</b>
-              <span>{journey.promise}</span>
-            </a>
-          ))}
-        </nav>
-
-        {/* The agent below, counted. Four numbers from four parts of the system,
-            each one a question the agent answers about itself. */}
-        {counts && (
-          <div className={styles.tally} role="group" aria-label="The agent, counted">
-            {[
-              { n: `${counts.tools}`, what: "tools it can call", ask: "Which tools can the agent call, and when does it use each one?" },
-              { n: `${counts.steps}`, what: "traced steps per answer", ask: "What happens in each traced step of a run, from routing to the grounding check?" },
-              { n: `${counts.tested.pass}/${counts.tested.cases}`, what: `held-out evals, ${counts.tested.at}`, ask: "How is the agent tested, and what does the held-out split check?" },
-              { n: `${counts.passages}`, what: "passages it searches", ask: "What is in the record the agent searches, and how is it split into passages?" },
-            ].map((c) => (
-              <button key={c.what} type="button" onClick={() => window.dispatchEvent(new CustomEvent<string>(ASK_EVENT, { detail: c.ask }))}>
-                <b className="tabular">{c.n}</b>
-                <span>{c.what}</span>
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* One filled action and one plain one. The draft is already written,
             so pressing it costs the reader a send, not a message. */}
         <div className={styles.actions}>
-          <a className={styles.cta} href={mailtoLink(email, site, "general", tag, who)} onClick={() => track("contact", "hero-email")} data-pull>
+          <a className={styles.cta} data-email-draft href={mailtoLink(email, site, "general", tag, who)} onClick={() => track("contact", "hero-email")} data-pull>
+            <VenomSurface />
             <span className={styles.ctaText}>
               Email him
-              <span className={styles.ctaHint}>draft written · compose_intro</span>
+              <span className={styles.ctaHint}>draft written</span>
             </span>
+            <EmailArrow />
           </a>
           <a className={styles.secondary} href={resumeHref} target="_blank" rel="noreferrer" onClick={() => track("contact", "hero-resume")}>
-            Résumé
+            <span className={styles.ctaText}>
+              Résumé
+              <span className={styles.ctaHint}>PDF · 1 page</span>
+            </span>
           </a>
         </div>
 
@@ -239,22 +203,48 @@ export default function Hero({
             );
           })()}
         </p>
+
+        {/* Each route names who it is for and what it leads to, so a reader
+            picks by recognising themselves rather than by guessing a section. */}
+        <nav className={styles.journeys} aria-label="Find what you need">
+          {VISITOR_JOURNEYS.map((journey) => (
+            <a key={journey.label} href={journey.href} data-only={"phone" in journey ? "phone" : undefined} onClick={() => track("ui", `journey-${journey.label.toLowerCase().replace(/[^a-z]+/g, "-")}`)}>
+              <b>{journey.label}</b>
+              <span>{journey.promise}</span>
+            </a>
+          ))}
+        </nav>
+
+        {/* The agent below, counted. Four numbers from four parts of the system,
+            each one a question the agent answers about itself. */}
+        {counts && (
+          <div className={styles.tally} role="group" aria-label="The agent, counted">
+            {[
+              { n: `${counts.tools}`, what: "tools it can call", ask: "Which tools can the agent call, and when does it use each one?" },
+              { n: `${counts.steps}`, what: "traced steps per answer", ask: "What happens in each traced step of a run, from routing to the grounding check?" },
+              { n: `${counts.tested.pass}/${counts.tested.cases}`, what: "tests it never saw", when: shortDate(counts.tested.at), ask: "How is the agent tested, and what does the held-out split check?" },
+              { n: `${counts.passages}`, what: "passages it searches", ask: "What is in the record the agent searches, and how is it split into passages?" },
+            ].map((c) => (
+              <button key={c.what} type="button" aria-label={`${c.n} ${c.what}. Ask: ${c.ask}`} onClick={() => {
+                track("ui", `tally-${c.what.split(" ")[0].toLowerCase().replace(/[^a-z]+/g, "")}`);
+                window.dispatchEvent(new CustomEvent<string>(ASK_EVENT, { detail: c.ask }));
+              }}>
+                <b className="tabular">{c.n}</b>
+                <span>{c.what}{"when" in c && c.when ? <span className={styles.nowrap}>, {c.when}</span> : null}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
           </div>
 
         {/* One instrument, not two.
             The graph and the agent were separated by the availability line and
             two buttons, so the thing that had just run and the box that runs it
-            again read as unrelated furniture. They are the same object: this
-            panel shows the request the page made on load, and the input under
-            it makes another. The console ground says the whole block is live. */}
+            again read as unrelated furniture. They are the same object: the
+            brief opens it and the input under it runs the agent. The console
+            ground says the whole block is live. */}
         <div className={styles.console} data-surface="console">
-          {/* Framing ticks: the console is an instrument, and an instrument has corners. */}
-          <i className={styles.tick} data-c="tl" aria-hidden="true" />
-          <i className={styles.tick} data-c="tr" aria-hidden="true" />
-          <i className={styles.tick} data-c="bl" aria-hidden="true" />
-          <i className={styles.tick} data-c="br" aria-hidden="true" />
-          {/* What the load-time request said now opens the agent below as its
-              featured first turn: one answer surface, one scroller. */}
           <div className={styles.agentSlot}>{children}</div>
         </div>
 

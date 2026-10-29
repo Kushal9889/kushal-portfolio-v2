@@ -193,7 +193,10 @@ export default function BugChapter({
       if (!el) return;
       if (typing) {
         seq.fromTo(typing, { opacity: 0 }, { opacity: 1, duration: 0.01 }, at - 0.03);
+        // The dots loop only while the indicator reports someone typing (audit 13.4).
+        seq.set(typing, { attr: { "data-state": "running" } }, at - 0.03);
         seq.to(typing, { opacity: 0, duration: 0.01 }, at);
+        seq.set(typing, { attr: { "data-state": "idle" } }, at);
       }
       seq.fromTo(el, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.03, ease: "power2.out" }, at);
       follow(el, at);

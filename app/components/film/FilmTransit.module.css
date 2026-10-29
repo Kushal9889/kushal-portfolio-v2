@@ -84,7 +84,6 @@
   font-size: 12px;
   line-height: 16px;
   letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
@@ -142,6 +141,61 @@
   color: var(--ink-soft);
 }
 
+/* The line as a drawing: grey shapes, one blue part, a few words. */
+.sketch {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-block-start: 12px;
+  overflow: visible;
+}
+
+.sketch rect {
+  fill: color-mix(in srgb, var(--ink) 10%, transparent);
+  stroke: color-mix(in srgb, var(--ink) 34%, transparent);
+  stroke-width: 1;
+}
+
+.sketch rect[data-on] {
+  fill: color-mix(in srgb, var(--signal) 32%, transparent);
+  stroke: var(--signal);
+}
+
+.sketch rect[data-dashed] {
+  fill: none;
+  stroke-dasharray: 3 3;
+}
+
+.sketch [data-line] {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 45%, transparent);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sketch [data-line][data-on] {
+  stroke: var(--signal);
+}
+
+.sketch path[data-dashed] {
+  stroke-dasharray: 4 4;
+}
+
+.sketch circle[data-on] {
+  fill: var(--signal);
+}
+
+.sketch text {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  fill: var(--ink-faint);
+}
+
+.sketch text[data-on] {
+  fill: var(--signal);
+}
+
 /* T3's acts share one cell; the one the camera is in shows. Swap 140 ms out,
    240 ms in (plan 14.4). */
 .act {
@@ -180,13 +234,20 @@
 
 .values > div {
   display: grid;
-  grid-template-columns: 16ch 1fr;
+  grid-template-columns: 19ch 1fr;
   gap: 12px;
 }
 
-.values dt {
+/* The page's stat-tile rule (scenes.css: main dl > div:first-child > dt) sets
+   a lead figure at display size; in this card the first label is a label, so
+   it would run over its own value ("Fibre" over "About 3 mm"). */
+.values dt,
+.values > div:first-child > dt {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 400;
+  line-height: inherit;
   letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--ink-faint);
 }
 
@@ -202,7 +263,6 @@
 
 .tag {
   letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: var(--ink-faint);
 }
 

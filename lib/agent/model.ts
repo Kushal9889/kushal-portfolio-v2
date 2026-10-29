@@ -1,4 +1,5 @@
 import { AzureChatOpenAI, ChatOpenAI } from "@langchain/openai";
+import { MEDIUM_ANSWER_TOKENS } from "./limits";
 import { cached } from "./eval-cache";
 import { trace } from "@opentelemetry/api";
 
@@ -299,7 +300,7 @@ function build(name: ProviderName, streaming: boolean, maxTokens?: number) {
      * rather than showing one.
      */
     // Per question when the caller chose a length (policy.ts answerLength); 260 is medium.
-    maxTokens: maxTokens ?? Number(process.env.AGENT_MAX_OUTPUT_TOKENS ?? 260),
+    maxTokens: maxTokens ?? Number(process.env.AGENT_MAX_OUTPUT_TOKENS ?? MEDIUM_ANSWER_TOKENS),
     // One retry only. A visitor is waiting, and a provider that failed twice is
     // better swapped than waited on.
     maxRetries: 1,

@@ -383,3 +383,37 @@ export function corpusHash(): string {
     .update(JSON.stringify(loadContent().sections.map((s) => [s.title, s.body])))
     .digest("hex");
 }
+
+/**
+ * Where each section renders on the home page, by stable section id. Page ids
+ * are a public API (shared links end in them), so this lists only ids
+ * ClassicPage.tsx renders; a section the page does not show (BU Life AI,
+ * Skills, Work authorisation) has no entry and gets no link.
+ * tests/thread.test.ts checks every id against ClassicPage.tsx.
+ */
+export const PAGE_HOME: Record<string, string> = {
+  "who-he-is": "approach",
+  "what-he-is-good-at": "approach",
+  "what-he-does-not-do": "approach",
+  "boston-university-questrom-computational-lab-backend": "role-2",
+  "boston-university-questrom-computational-lab": "role-1",
+  "img-systems": "role-3",
+  growaza: "role-4",
+  "open-source-langchain-deepagents": "opensource",
+  certifications: "proof",
+  publications: "research",
+  education: "education",
+  achievements: "education",
+  "proof-wall": "contact",
+  availability: "contact",
+  "this-site": "running",
+};
+
+/** Per section title: its place on the page and the role's dates, for the agent's Sources. */
+export function sectionHomes(): Record<string, { href?: string; dates?: string }> {
+  return Object.fromEntries(
+    loadContent()
+      .sections.map((s) => [s.title, { ...(PAGE_HOME[s.id] ? { href: `#${PAGE_HOME[s.id]}` } : {}), ...(s.roleParts.dates ? { dates: s.roleParts.dates } : {}) }] as const)
+      .filter(([, h]) => h.href || h.dates),
+  );
+}

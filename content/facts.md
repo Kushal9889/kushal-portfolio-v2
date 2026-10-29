@@ -14,7 +14,7 @@ available: January 2027, earlier for the right team
 focus: Agentic orchestration · RAG retrieval · Evals and observability · Production deploys
 proof: He found a silent error-swallowing bug in LangChain's Python SDK. A maintainer merged the fix in 57 hours.
 private: Sikich, EST
-briefTerms: agentic SDLC harness, Claude Code, Linear MCP, CodeRabbit review, LangChain, deepagents, Certified Professional in Agentic AI, Claude Certified Developer, NVIDIA, Anthropic
+briefTerms: AI Engineer, Lead Backend Engineer, Boston University, agentic SDLC harness, Claude Code, Linear MCP, CodeRabbit review, LangChain, deepagents, Certified Professional in Agentic AI, Claude Certified Developer, NVIDIA, Anthropic
 brief: AI Engineer, now Lead Backend Engineer (RA) at Boston University's Questrom Computational Lab, where he built the agentic SDLC harness that holds Claude Code agents to the same gates as human engineers, shipped as a plugin with Linear MCP and CodeRabbit review. A LangChain maintainer merged the fix for the deepagents bug he reported in 57 hours, NVIDIA certifies him as a Certified Professional in Agentic AI, and Anthropic as a Claude Certified Developer.
 lastVerified: 2026-10-02
 ---
@@ -334,7 +334,7 @@ June 2024. India.
 
 @metric 91.4% | combined transformer and GNN accuracy | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
 @metric 88.2% | transformer alone | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
-@metric 13.5s | detect and fix, against 25.4s for static analysis | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
+@metric 13.5 s | detect and fix, against 25.4 s for static analysis | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
 
 @artifact IEEE ICAICCIT 2024, first author | published | Deep Learning for Contextual Bug Detection and Automated Fixes | https://doi.org/10.1109/ICAICCIT64383.2024.10912101
 @artifact IGI Global 2024, co-author | published | Cyber-Physical Systems: Security and Optimization Strategies | https://github.com/Kushal9889/Cyber-Physical-Systems-and-the-Future-of-Urban-Living-Decision-Making-Challenges-and-Opportunities

@@ -17,8 +17,8 @@
   --ink-soft: oklch(0.862 0.004 250);
   --ink-faint: oklch(0.775 0.006 250);
   --rule: oklch(0.335 0.006 258);
-  --signal: oklch(0.72 0.18 258);
-  --on-signal: oklch(0.16 0.02 258);
+  --signal: oklch(0.968 0.002 250);
+  --on-signal: oklch(0.16 0 0);
 
   background-color: var(--paper);
   color: var(--ink);
@@ -51,7 +51,6 @@
   font-weight: 700;
   line-height: 0.92;
   letter-spacing: -0.04em;
-  text-transform: uppercase;
   margin: 0 0 var(--s-5);
   text-shadow: 0.045em 0.045em 0 var(--signal);
 }
@@ -69,7 +68,7 @@
 .cta {
   display: inline-block;
   padding: var(--s-4) var(--s-6);
-  background: var(--signal);
+  background: var(--fill, var(--signal));
   color: var(--on-signal);
   font-weight: 600;
   text-decoration: none;
@@ -109,7 +108,7 @@
 }
 
 .list a:hover {
-  background: var(--signal);
+  background: var(--fill, var(--signal));
   color: var(--on-signal);
 }
 

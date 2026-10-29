@@ -101,7 +101,7 @@
 
 .option[aria-selected="true"] {
   border-left-color: var(--voltage);
-  background: oklch(0.96 0.003 90 / 0.06);
+  background: oklch(0.96 0.003 286 / 0.06);
 }
 
 .label {

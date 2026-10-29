@@ -173,6 +173,13 @@ def run(pw, w, motion, path="/", probe=True):
     br = pw.chromium.launch(channel="chrome")
     ctx = br.new_context(viewport={"width": w, "height": 900 if w > 700 else 844}, device_scale_factor=1,
                          has_touch=w < 700, is_mobile=w < 700, reduced_motion=motion)
+    if ORIGIN == "http://localhost:3007":
+        # Local UI scans replay saved examples; they never reach agent providers.
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("agent_screen", os.path.join(V2, "scripts/ui-agent-screen.py"))
+        ui = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ui)
+        ui.install_offline(ctx)
     page = ctx.new_page()
     errors, failed = [], []
     page.on("console", lambda m: m.type == "error" and errors.append(m.text[:160]))
@@ -182,7 +189,8 @@ def run(pw, w, motion, path="/", probe=True):
     # resource; its own status line says what happened. Everything else counts.
     page.on("requestfailed", lambda r: (r.url.startswith(ORIGIN) or "ERR_ABORTED" not in (r.failure or ""))
             and failed.append(f"failed {r.url.replace(ORIGIN, '')} {r.failure}"))
-    page.goto(ORIGIN + path, wait_until="networkidle")
+    # Film requests continue after load, so network idle is not a page-readiness signal.
+    page.goto(ORIGIN + path, wait_until="load")
     page.wait_for_timeout(2000)
     out = {"errors": errors, "failed": failed}
     if probe:

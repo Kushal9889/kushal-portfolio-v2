@@ -6,6 +6,7 @@ import evals from "@/content/evals.json";
 import Panel from "./Panel";
 import styles from "./EvalMatrix.module.css";
 import { reducedMotion } from "@/lib/verbs";
+import { longDate } from "@/lib/typeset";
 
 /**
  * The eval suite, as sixteen objects rather than one score.
@@ -109,7 +110,7 @@ export default function EvalMatrix({ questions }: { questions: string[] }) {
       label="eval suite"
       surface="console"
       state={partial ? "degraded" : "done"}
-      status={`${evals.passed}/${evals.cases} · ${evals.measured}`}
+      status={`${evals.passed}/${evals.cases} · ${longDate(evals.measured)}`}
     >
       {/* What the aggregate was hiding.
        *
@@ -117,7 +118,7 @@ export default function EvalMatrix({ questions }: { questions: string[] }) {
        * model summarising is not, which is the single most useful thing this
        * suite has to say and the one thing a ratio cannot. */}
       <p className={styles.headline}>
-        {cases.length} current cases shown, {runs} recorded runs each. Aggregate results above are from the full suite measured {evals.measured}.
+        {cases.length} current cases shown, {runs} recorded runs each. Aggregate results above are from the full suite measured {longDate(evals.measured)}.
         Every policy and authorisation run passes because none of them reaches a model. The
         grounding cases are where a language model has to summarise without dropping the figure,
         and that is where the suite is honest about being probabilistic.

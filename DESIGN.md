@@ -1,4 +1,74 @@
-# Design System: Kushal Gaddamwar, portfolio v2 ("Context Window")
+# Design System: Kushal Gaddamwar, portfolio v2 ("Context Window", Apple pass)
+
+**Current system: Apple (2026-10-26).** Both `/` (`/classic`, `app/ClassicPage.tsx`)
+and `/stage` follow the Apple product-page rules in section 0. Where a later
+section still describes the September build (orange accent, square corners,
+warm greys), section 0 wins. Keep it when editing: other sessions read this file.
+
+## 0. The Apple system (read first)
+
+**Colour (2026-10-27, Kushal: no blue anywhere).** Monochrome. The accent is the ink: marks, focus and underlined links in the claim white on dark (near-black on light); filled controls are ink with paper text. Nothing else is saturated except the three system status colours, and those only where they mean their status.
+
+| Token | Dark | Light | Role |
+|---|---|---|---|
+| `--paper` | `#000000` | `#f5f5f7` | Ground |
+| `--paper-raised` | `#1d1d1f` | `#ffffff` | Tiles, cards, the agent console, the full view |
+| `--paper-high` | `#2c2c2e` | `#ffffff` | A tile on a tile |
+| `--ink` | `#f5f5f7` | `#1d1d1f` | Text |
+| `--ink-soft` / `--ink-faint` | `#d2d2d7` / `#a1a1a6` | Apple light values | Secondary and tertiary text |
+| `--rule` | `#424245` | Apple light value | Hairlines |
+| `--signal` | `#f5f5f7` | `#1d1d1f` | Marks, strokes, focus, links (underlined) |
+| `--fill` / `--fill-hover` | `#f5f5f7` / `#ffffff` | `#1d1d1f` / `#000000` | Filled buttons; `--on-fill` is black on dark (19:1), white on light |
+| `--live` / `--warn` / `--fail` | `#30d158` / `#ff9f0a` / `#ff453a` | system light values | Status only (ADR-003) |
+| `--scrim` / `--scrim-deep` | black at 55% / 86% | same | Behind a sheet or the full view |
+
+Values live in `app/globals.css` (`:root`) for `/classic` and in `app/stage.css`
+(`[data-stage]`, written in OKLCH: blue `oklch(0.669 0.1808 251.84)`, fill
+`oklch(0.5629 0.1933 256.16)`) for `/stage`. Components never carry a colour
+literal (`npm run lint:tokens`, which also reads comments: describe a colour in
+words, never by its hex).
+
+**Type.** `--font-apple` and `--font-apple-display`: the system stack, so Apple
+devices render SF Pro. Sentence case only, no `text-transform: uppercase`
+anywhere. Mono is for code, identifiers and machine lines, not for labels.
+
+**Shape.** Radii 8 (`--r-sm`), 12 (`--r-md`), 14 (`--r-lg`), 18 (`--r-panel`),
+pill 980 (`--r-pill`). Chips and the island are pills; starter cards and tiles
+use 14; the full view and large panels use 18. No corner brackets, no
+viewfinder marks, no dot grids.
+
+**Surfaces.** Flat tiles on black. No glow, no lit top edge, no sheen, no
+gradient fill on a control. Elevation is one surface step; the only shadow is
+the full view's soft drop onto the scrim.
+
+**Components.**
+- Primary action: `--fill` with white text, flat, `--fill-hover` on hover.
+- Record chips under the brief: pills on `--paper-raised`, blue only on hover.
+  Kind is the issuer or role, name is the rest (`remainder()` in
+  `lib/agent/chips.ts`, so "NVIDIA" + "Professional: Agentic AI"). Order is
+  picked by the answer in view (`rankChips`), never shuffled.
+- Answers: only the first figure gets the blue underline wash; at most five
+  points show, the rest behind "Show N more".
+- Film cards: line, one small drawing (`FilmSketch.tsx`, grey shapes, one blue
+  part), then rows tagged Measured (vitals), This site (code or corpus) or
+  Typical (a cited standard size). Cards are hidden under 768px.
+- Free-tier note: a card at top right on wide screens; on a phone it sits in
+  the page flow under the agent, never fixed over content.
+
+**Banned colours (AI tells).** Neon lime, gold or cream accents, purple or
+indigo gradients, cyan glows, warm cream with oxblood, a blue radial glow behind
+a scene (`--scene-light` is `none`). Frosted glass needs `backdrop-filter`,
+which audit 2.6 bans; do not add it without changing the audit with Kushal.
+
+**Class names** must not contain: frame, cta, source, status, stack, label,
+link, item, value, code, stop, send, primary, detail, wrap, seed, cell, count.
+
+---
+
+The sections below are the September 2026 record of `/stage`. Read every
+"International Orange" or "orange" as Apple blue (`--voltage` now holds it),
+"square corners, no radius" as the radii above, and warm greys as the Apple
+greys.
 
 This file describes the stage home page as it shipped in September 2026. Every
 value below is read from `app/stage.css` and the stylesheets in
@@ -321,9 +391,9 @@ exactly 390.
 ## 7. Anti-Patterns (Banned)
 
 - No eyebrows, section numbers or uppercase label strips. The agent drawer's small capitals are reset to sentence case inside the stage.
-- No second accent. Vendor marks take the ink on the orange ground.
-- No shadows for elevation. Hairlines and one surface step only.
-- No corner radius on components. The flood disc is a ground, not a component.
+- No second accent. Vendor marks take the ink on the blue ground.
+- No shadows for elevation. Hairlines and one surface step only (the full view is the one exception, section 0).
+- No corner radius beyond the Apple radii in section 0. The flood disc is a ground, not a component.
 - No em dashes or en dashes in visible text. None of the banned vocabulary.
 - No comparison bars on filled tracks. Bars start at a true zero, with the value beside them.
 - No split headers with a sentence floating in the far corner.
