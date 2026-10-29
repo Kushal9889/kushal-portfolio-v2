@@ -1276,3 +1276,26 @@ describe("typeset", () => {
     assert.equal(longDate("soon"), "soon");
   });
 });
+
+
+test("health exposes configured model names without credentials or readiness promises", async () => {
+  const names = ["GROQ_API_KEY", "GEMINI_API_KEY", "OPENROUTER_API_KEY", "NVIDIA_API_KEY", "AZURE_OPENAI_API_KEY", "OPENAI_API_KEY", "GEMINI_MODEL"];
+  const before = new Map(names.map((name) => [name, process.env[name]]));
+  try {
+    for (const name of names) delete process.env[name];
+    process.env.GEMINI_API_KEY = "health-test-secret-never-expose";
+    process.env.GEMINI_MODEL = "test-model-for-health";
+    const { GET } = await import("../app/api/health/route");
+    const response = GET();
+    const data = await response.json();
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.deepEqual(data.providers, [{ name: "gemini", model: "test-model-for-health", coolingOffFor: 0 }]);
+    assert.ok(Number.isFinite(Date.parse(data.checkedAt)));
+    assert.match(data.availabilityScope, /not a provider probe/);
+    assert.ok(!JSON.stringify(data).includes("health-test-secret-never-expose"));
+  } finally {
+    for (const [name, value] of before) {
+      if (value === undefined) delete process.env[name]; else process.env[name] = value;
+    }
+  }
+});

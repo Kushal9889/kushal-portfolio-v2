@@ -1,4 +1,4 @@
-import { failoverState, RATE_LIMIT_COOLDOWN_MS, TRANSIENT_COOLDOWN_MS, ANSWER_TIMEOUT_MS, EMBED_TIMEOUT_MS } from "@/lib/agent/model";
+import { modelOf, failoverState, RATE_LIMIT_COOLDOWN_MS, TRANSIENT_COOLDOWN_MS, ANSWER_TIMEOUT_MS, EMBED_TIMEOUT_MS } from "@/lib/agent/model";
 import { STORE_CAP_MS } from "@/lib/agent/retrieve";
 import { LOAD_CACHE_MS } from "@/lib/journeys";
 import vitals from "@/lib/agent/vitals.json";
@@ -16,10 +16,12 @@ export const dynamic = "force-dynamic";
  */
 export function GET() {
   const idx = index as { passages: unknown[]; vectors: unknown[] | null };
-  const providers = failoverState();
+  const providers = failoverState().map((provider) => ({ ...provider, model: modelOf(provider.name) }));
   const body = {
     ok: providers.length > 0 || idx.passages.length > 0,
     providers,
+    checkedAt: new Date().toISOString(),
+    availabilityScope: "This server instance; configuration and cooldown, not a provider probe",
     passages: idx.passages.length,
     dense: !!idx.vectors,
     calibrated: !!calibration,
