@@ -1,4 +1,4 @@
-// Stages the film's frames and flow maps as a static site for a separate media
+// Stages the film's frames, flow maps and agent videos as a static site for a separate media
 // origin (Cloudflare Workers static assets: unmetered on the free plan, 20,000
 // files and 25 MiB per file). Bytes are copied as they are; nothing is
 // re-encoded. Deploy steps: release/adr-media-origin.md.
@@ -14,7 +14,7 @@ if (errors.length) {
   process.exit(1);
 }
 rmSync(out, { recursive: true, force: true });
-for (const d of ["film/frames", "film/flow"]) {
+for (const d of ["film/frames", "film/flow", "film/agent"]) {
   mkdirSync(join(out, d), { recursive: true });
   cpSync(join("public", d), join(out, d), { recursive: true });
 }

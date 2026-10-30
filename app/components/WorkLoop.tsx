@@ -17,7 +17,16 @@ export default function WorkLoop({ on, className }: { on: boolean; className?: s
     if (!v || reducedMotion()) return;
     const sync = () => {
       if (on && visible.current) {
-        if (!v.src) v.src = window.innerWidth < 768 ? "/film/agent/loop-p.mp4" : "/film/agent/loop.mp4";
+        if (!v.src) {
+          const file = window.innerWidth < 768 ? "/film/agent/loop-p.mp4" : "/film/agent/loop.mp4";
+          // The media origin first, the app host if that origin ever fails.
+          v.onerror = () => {
+            v.onerror = null;
+            v.src = file;
+            if (on && visible.current) void v.play().catch(() => {});
+          };
+          v.src = `${(process.env.NEXT_PUBLIC_FILM_ORIGIN ?? "").replace(/\/$/, "")}${file}`;
+        }
         void v.play().catch(() => {});
       } else v.pause();
     };
