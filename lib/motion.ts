@@ -74,13 +74,17 @@ async function load() {
   // arrive, so the measurements are simply deferred: `data-streaming` is set by
   // the agent while a request is in flight and cleared when it settles, and the
   // one refresh that matters runs on that clearing edge.
-  let queued = 0;
+  //
+  // Trailing by 200 ms, not one frame: a disclosure opening resizes the body on
+  // every frame, and one refresh per frame cost 181-294 layouts per open at
+  // 1440x900 2x. Waiting for it to settle measured 56-84.
+  let queued: ReturnType<typeof setTimeout> | undefined;
   const remeasure = () => {
-    cancelAnimationFrame(queued);
-    queued = requestAnimationFrame(() => {
+    clearTimeout(queued);
+    queued = setTimeout(() => {
       if (document.documentElement.dataset.streaming === "yes") return;
       scroll.ScrollTrigger.refresh();
-    });
+    }, 200);
   };
   new ResizeObserver(remeasure).observe(document.body);
 
