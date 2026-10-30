@@ -2827,3 +2827,32 @@ button.step:hover {
 .answerNotice details { font-size: 13px; color: var(--ink-soft); }
 .agent.agent .term[data-featured] { text-decoration-color: var(--ink-soft); text-decoration-thickness: 1px; text-underline-offset: .2em; }
 .agent.agent .term[data-lit] { text-decoration-color: var(--ink); text-decoration-thickness: 2px; }
+
+/* Icon controls: one round shape at every size, feedback on the press. */
+.agent.agent .iconBtn:not([data-wide]):not([data-on]) {
+  border-radius: 50%;
+  color: var(--ink);
+  background: color-mix(in oklch, var(--ink) 9%, transparent);
+  transition: background-color var(--t-fast) var(--ease-out), scale 100ms var(--ease-out);
+}
+
+.agent.agent .iconBtn:not([data-wide]):not([data-on]):hover {
+  background: color-mix(in oklch, var(--ink) 16%, transparent);
+}
+
+.agent.agent .iconBtn:active {
+  scale: 0.94;
+}
+
+.agent.agent .selectAsk,
+.agent.agent .selectAsk:hover {
+  color: var(--paper);
+  background: var(--ink);
+}
+
+/* The question grows with its text instead of clipping a second line. */
+.agent.agent .input {
+  field-sizing: content;
+  max-block-size: 7lh;
+  overflow-y: auto;
+}

@@ -256,6 +256,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={[display, mono, spine, signature, plate, paper, ibm].map((f) => f.variable).join(" ")}
     >
       <head>
+        {/* The film's frames come from this origin when set; the handshake starts before the engine asks. */}
         {process.env.NEXT_PUBLIC_FILM_ORIGIN && <link rel="preconnect" href={process.env.NEXT_PUBLIC_FILM_ORIGIN} crossOrigin="anonymous" />}
         {/* The condensed view was a keystroke nobody finds. As a URL it is a
             second, shorter read of the same page that can be sent in a reply,

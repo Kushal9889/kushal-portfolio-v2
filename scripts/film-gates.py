@@ -49,7 +49,7 @@ def plan(profile):
         jobs += [(f"contrast open {w} {k + 1}/2", py("film-contrast.py", "--width", w, "--open", "--only", *h), None) for w in (390, 1440) for k, h in enumerate(halves)]
         jobs += [("layout", py("film-layout.py"), None), ("types", ["npx", "tsc", "--noEmit"], None),
                  ("still contrast", py("film-still-contrast.py"), None),
-                 ("unit", ["npm", "run", "-s", "test:unit"], None), ("check", ["sh", "-c", 'n=$(npm run -s check 2>&1 | grep -c FAIL); echo "$n FAIL lines, baseline 13"; [ "$n" -le 13 ]'], None)]
+                 ("unit", ["npm", "run", "-s", "test:unit"], None), ("check", ["npm", "run", "check"], None)]
     jobs += [(f"black {w}", py("film-black.py", "--width", w), None) for w in ([390, 920, 1440] if profile == "std" else widths)]
     if profile == "full":
         jobs += [("degrade", py("film-degrade.py"), None), ("birth", py("film-birth.py"), None)]

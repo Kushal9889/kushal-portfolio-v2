@@ -1045,7 +1045,7 @@ main > section#proof [data-issuer] [class*="verify"] {
 }
 
 main > section#proof [data-issuer] [class*="frame"] {
-  background: var(--paper-high);
+  background: var(--cert-paper);
 }
 
 /* The bug's code panel carries the same three corner marks as the cards. */
@@ -1372,7 +1372,6 @@ main > section#measured > .wrap > p {
   text-shadow: none;
 }
 
-main > section:is(#approach, #measured) > .wrap > details > summary,
 main > section#contact > .wrap [class*="Reach-module"][class*="wrap"] > :is(button, p):not(:empty) {
   width: fit-content;
   padding: var(--s-1) var(--s-3);
@@ -1446,10 +1445,6 @@ html .progress {
 }
 
 /* The issuer remains on its mark and verification link; both mounts share a quiet frame. */
-main > section#proof [data-issuer] [class*="frame"] {
-  border-color: var(--rule);
-  box-shadow: inset 1px 0 0 color-mix(in oklch, var(--ink) 14%, transparent);
-}
 main > section#proof [data-issuer] [class*="frame"]::after { display: none; }
 main > section#proof [data-issuer] a[href*="credly"] { white-space: normal; }
 

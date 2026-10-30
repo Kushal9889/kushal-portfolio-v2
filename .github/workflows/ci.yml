@@ -4,55 +4,107 @@ on:
   push:
     branches: [main]
   pull_request:
-  # External URLs rot without anyone touching this repo, and an eval result is
-  # only true of the build that produced it. Both decay on a clock rather than
-  # on a commit, so both get checked on one.
   schedule:
     - cron: "0 9 * * 1"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
-          # verify:facts compares lastVerified against the newest commit that
-          # touched content/, which a shallow clone cannot see.
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - run: npm ci
-
-      # Types first: everything below assumes the code compiles.
-      - run: npm run typecheck
-
-      # No colour outside the token file. Once components carry their own hex
-      # values the palette stops being a system.
-      - run: npm run lint:tokens
-
-      # Every rendered claim resolves to a line in the corpus, the em-dash rate
-      # stays on the human side of the line, every resume keyword still appears
-      # in the corpus, and the published eval date has not gone stale.
+      - run: pip install -r release/requirements.txt
+      - run: npm run test:gates
+      - run: npm run test:release-smoke
       - run: npm run verify:facts
+      # Test the committed corpus and media, exactly as Netlify builds them.
+      - run: npm run build:release
+      - run: npm run check
+      - run: npm test
+      - run: node_modules/.bin/tsx --test --test-timeout=120000 tests/system.test.ts
+      - run: git diff --exit-code -- content lib/agent public ':!content/audit.json'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification-reports
+          path: docs/
+          if-no-files-found: ignore
 
-      # Verify the committed artifacts used by production; authoring rebuilds mutate them.
-      - run: npx next build
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm audit --omit=dev --audit-level=high
 
-      # Unit and integration run without a provider key: the suites are written
-      # so the model-dependent cases skip rather than fail.
-      - run: npm run test
-
-      - run: npm run audit
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: pip install -r release/requirements.txt
+      - run: python -m playwright install --with-deps chrome
+      - run: npm run build:release
+      - name: Browser journeys on the production build
+        shell: bash
+        run: |
+          mkdir -p docs
+          npm run start -- --port 3217 > docs/browser-server.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true' EXIT
+          for attempt in {1..60}; do
+            if curl --fail --silent http://localhost:3217/api/health > /dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://localhost:3217/api/health > docs/health.json
+          node scripts/release-smoke.mjs http://localhost:3217
+          FILM_ORIGIN=http://localhost:3217 python3 scripts/ui-journeys.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-evidence
+          path: |
+            .claude/ux-evidence/
+            docs/
 
   evals:
     runs-on: ubuntu-latest
-    # Only where the answers could actually have changed. The suite calls a
-    # real provider, so running it on every push would spend a free-tier daily
-    # quota on commits that cannot affect the result.
+    timeout-minutes: 15
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    env:
+      NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -60,19 +112,19 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build:index
-        env:
-          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
-      # Fails when a case regresses. The policy cases are the ones that matter:
-      # a routing change that lets a compensation question reach the model is a
-      # failure the page cannot detect any other way.
-      - run: npm run test:evals
-        env:
-          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      - name: Require live provider evidence
+        run: test -n "$NVIDIA_API_KEY$OPENROUTER_API_KEY"
+      - run: npm run test:agent
+      - run: npm run test:agent:faults
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agent-evidence
+          path: docs/agent-bench/
 
   links:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -80,9 +132,4 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # Separate job: a credential host being briefly unreachable should not
-      # block a deploy, but it should be visible. This also compares each
-      # GitHub artifact's claimed state against the API, so the corpus cannot
-      # go on describing a merged fix that was later reverted.
       - run: npm run verify:links
-        continue-on-error: true

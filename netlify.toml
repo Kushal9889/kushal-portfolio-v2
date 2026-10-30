@@ -3,8 +3,8 @@
 [build]
   # The search index and graph are built locally and committed; rebuilding
   # here re-embedded the corpus with whatever key the build had and replaced
-  # the index the evals were measured on. Next only.
-  command = "npx next build"
+  # the index the evals were measured on. Release build only.
+  command = "node scripts/verify-media.mjs --prune public && npm run verify:facts && npm run build:release && npm run check && npm run test:unit"
   publish = ".next"
 
 [[plugins]]
@@ -12,3 +12,14 @@
 
 [build.environment]
   NODE_VERSION = "22"
+
+# Previews are review artifacts; production retains all blocking checks above.
+[context.deploy-preview]
+  command = "node scripts/verify-media.mjs --prune public && npm run verify:facts && npm run build:release && npm run test:unit"
+
+# Film frames are not content-hashed, so not immutable: one day fresh, a week
+# stale-while-revalidate. Without this every frame revalidates on each visit.
+[[headers]]
+  for = "/film/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"

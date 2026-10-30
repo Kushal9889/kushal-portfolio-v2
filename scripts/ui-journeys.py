@@ -147,7 +147,7 @@ def test_journey(browser, label, dest, width, motion, out):
             phases.append('act')
             state['error']=True
             ask_field=page.locator('#ask');ask_field.fill('Keep this question after an error.');ask_field.press('Enter')
-            expect(page.locator('#ask-feedback')).to_contain_text('could not finish')
+            expect(page.locator('#agent')).to_contain_text('Answer interrupted')
             expect(ask_field).to_have_value('Keep this question after an error.')
             state['error']=False
             ask_field.fill('Use my edited question on retry.')

@@ -1299,3 +1299,43 @@ test("health exposes configured model names without credentials or readiness pro
     }
   }
 });
+
+test("a credential counts only when its page names the holder and the credential", async () => {
+  const { credentialConfirmed } = await import("../lib/credentials");
+  const name = "NVIDIA-Certified Professional: Agentic AI";
+  assert.equal(credentialConfirmed("Kushal earned Agentic AI", name, "Kushal"), true);
+  assert.equal(credentialConfirmed("Agentic AI", name, "Kushal"), false);
+  assert.equal(credentialConfirmed("Kushal earned nothing here", name, "Kushal"), false);
+});
+
+test("a question about which roles fit reaches the availability section", async () => {
+  const { kindsFor } = await import("../lib/agent/query");
+  assert.ok(kindsFor("Which roles fit his experience, and what work supports that fit?").includes("availability"));
+  assert.ok(!kindsFor("How does retrieval rank passages?").includes("availability"));
+});
+
+test("a provider that closes without text fails over instead of answering blank", async () => {
+  const { streamWithFailover } = await import("../lib/agent/model");
+  const saved = { ...process.env };
+  const realFetch = globalThis.fetch;
+  for (const k of ["NVIDIA_API_KEY", "OPENROUTER_API_KEY", "OPENAI_API_KEY", "AZURE_OPENAI_API_KEY", "LLM_PROVIDER"]) delete process.env[k];
+  process.env.GROQ_API_KEY = "test";
+  process.env.GEMINI_API_KEY = "test";
+  let calls = 0;
+  const frame = (content: string) => `data: ${JSON.stringify({ id: "x", object: "chat.completion.chunk", choices: [{ index: 0, delta: { content } }] })}\n\n`;
+  globalThis.fetch = (async () => {
+    const body = calls++ === 0 ? frame("") : frame("answer");
+    return new Response(`${body}data: [DONE]\n\n`, { headers: { "content-type": "text/event-stream" } });
+  }) as typeof fetch;
+  try {
+    const served: string[] = [];
+    let text = "";
+    for await (const t of streamWithFailover([{ role: "user", content: "q" }], undefined, (p) => served.push(p))) text += t;
+    assert.equal(text, "answer");
+    assert.equal(calls, 2);
+    assert.equal(served.length, 2);
+  } finally {
+    globalThis.fetch = realFetch;
+    process.env = saved;
+  }
+});

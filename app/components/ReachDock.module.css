@@ -167,3 +167,16 @@ button.side[aria-pressed="true"] {
 @media (max-width: 767px) {
   :global(body:has(textarea:focus, input:focus)) .dock { transform: translateY(100%); }
 }
+
+/* One line at every width: the qualifiers leave before anything wraps. */
+.primary,
+.side {
+  white-space: nowrap;
+}
+
+@media (max-width: 56rem) {
+  .about,
+  .hint {
+    display: none;
+  }
+}

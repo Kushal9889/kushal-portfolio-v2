@@ -1,6 +1,8 @@
 import { type Certification } from "@/lib/content";
 import { NvidiaMark } from "./Mark";
 import CertViewer from "./CertViewer";
+import CredentialStatus from "./CredentialStatus";
+import Glyph from "./stage/Glyph";
 import styles from "./Certifications.module.css";
 import { typeset } from "@/lib/typeset";
 
@@ -30,9 +32,6 @@ export default function Certifications({
         {pinned.map((c) => {
           const face = (
             <>
-              <span className={styles.tag}>
-                {c.kind === "proctored-exam" ? `${c.issuer}-certified` : "Certification"}
-              </span>
               <span className={styles.issuer}>
                 {c.issuer === "NVIDIA" && <NvidiaMark size={16} />}
                 {/* eslint-disable-next-line @next/next/no-img-element -- a 16px static mark */}
@@ -59,9 +58,12 @@ export default function Certifications({
               ) : (
                 face
               )}
-              <a className={styles.verify} href={c.url ?? "#"} target="_blank" rel="noreferrer" aria-label={`Verify ${c.issuer} credential on Credly: ${c.name}`}>
-                Verify on Credly<span className={styles.arrow} aria-hidden="true">↗</span>
-              </a>
+              <div className={styles.foot}>
+                <CredentialStatus id={c.id} />
+                <a className={styles.verify} href={c.url ?? "#"} target="_blank" rel="noreferrer" aria-label={`Verify ${c.issuer} credential on Credly: ${c.name}`}>
+                  Verify<span className={styles.arrow}><Glyph name="ArrowUpRight:regular" size={14} /></span>
+                </a>
+              </div>
             </div>
           );
         })}

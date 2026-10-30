@@ -491,9 +491,13 @@ export async function* streamWithFailover(
       // when it was selected, so a provider that fails on connect is never
       // credited with an answer it did not give.
       onProvider?.(name, name === "nvidia" ? (process.env.NVIDIA_MODEL ?? PROVIDERS[name].model) : PROVIDERS[name].model);
+      let wrote = false;
       for await (const chunk of stream) {
         const text = typeof chunk.content === "string" ? chunk.content : "";
-        if (text) yield text;
+        if (text) {
+          wrote = true;
+          yield text;
+        }
 
         // Usage arrives on the final chunk rather than alongside the tokens, so
         // it is reported through a callback instead of the generator: a consumer
@@ -501,6 +505,9 @@ export async function* streamWithFailover(
         const u = chunk.usage_metadata;
         if (u) onUsage?.({ in: u.input_tokens ?? 0, out: u.output_tokens ?? 0 });
       }
+      // A reasoning model can spend its whole output cap before writing a word,
+      // which closes cleanly with no text. That is a failed answer, not a blank one.
+      if (!wrote) throw new Error("empty stream");
       return;
     } catch (err) {
       lastError = err;

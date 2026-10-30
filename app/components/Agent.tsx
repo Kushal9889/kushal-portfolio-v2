@@ -279,6 +279,7 @@ export default function Agent({
   /** In the window, the turn whose Sources and Trace the side panel shows; null follows the latest. */
   const [focusTurn, setFocusTurn] = useState<number | null>(null);
   const inspectionPinned = useRef(false);
+  const retryTimer = useRef<number | null>(null);
   /** The brief term whose underline is lit, one at a time in random order. */
   const [lit, setLit] = useState<number | null>(null);
   const [featuredTerms, setFeaturedTerms] = useState<number[]>([]);
@@ -777,7 +778,7 @@ export default function Agent({
    * `replace` swaps the last turn (edit, regenerate); `fresh` skips this tab's
    * remembered answers.
    */
-  function submit(question: string, opts: { replace?: boolean; fresh?: boolean } = {}): boolean {
+  function submit(question: string, opts: { replace?: boolean; fresh?: boolean; retried?: boolean } = {}): boolean {
     if (pending || stream.current) {
       setInputError("An answer is running. Stop it before asking another question.");
       return false;
@@ -876,6 +877,7 @@ export default function Agent({
     stream.current = source;
 
     let answer = "";
+    let heard = false;
     let route = "answer";
     let sources: string[] = [];
     let trace: RetrievalTrace | null = null;
@@ -923,15 +925,26 @@ export default function Agent({
     };
 
     const fail = () => {
+      // Nothing arrived, so no model ran and a retry costs nothing: a dropped
+      // connection or a cold start gets one quiet second attempt.
+      if (!heard && !opts.retried && navigator.onLine) {
+        source.close();
+        stream.current = null;
+        retryTimer.current = window.setTimeout(() => {
+          retryTimer.current = null;
+          submit(question, { ...opts, retried: true });
+        }, 600);
+        return;
+      }
       if (!answer) answer = `Connection dropped. He is reachable at ${email}.`;
       restoreQuestion(question);
-      setInputError("The answer could not finish. Your question is ready to edit or retry.");
       reportCompanion("failed");
       settle({ failed: true });
       finish();
     };
 
     source.onmessage = (event) => {
+      heard = true;
       // A malformed frame ends the run like a dropped connection, never a crash.
       let data;
       try {
@@ -1059,8 +1072,11 @@ export default function Agent({
 
   /** One control ends everything in flight: generation, playback, and the mic. */
   function stop() {
-    if (stream.current) reportCompanion("stopped");
-    if (stream.current) {
+    const retrying = retryTimer.current !== null;
+    if (retryTimer.current !== null) window.clearTimeout(retryTimer.current);
+    retryTimer.current = null;
+    if (stream.current || retrying) reportCompanion("stopped");
+    if (stream.current || retrying) {
       restoreQuestion(activeQuestion.current);
       setInputError("Stopped. Your question is ready to edit or retry.");
     }
@@ -1454,6 +1470,13 @@ export default function Agent({
     const presentation = presentationOf(r, streaming);
     const hasSources = Array.isArray(r.sources) && r.sources.some((s) => typeof s === "string" && s.trim());
     const hasTrace = !!r.trace || (r.steps?.length ?? 0) > 0;
+    if (r.failed && !streaming) return (
+      <div className={styles.answerNotice} ref={current ? answerRef : undefined} tabIndex={current ? -1 : undefined} data-evidence-state={presentation.state} role="status">
+        <strong>Answer interrupted</strong>
+        <p>The connection closed before the answer finished. Your question is still in the box.</p>
+        {current && <button type="button" className={styles.retry} onClick={() => submit(turn.question, { replace: true, fresh: true })}>Retry</button>}
+      </div>
+    );
     if (!presentation.allowAnswer) return (
       <div className={styles.answerNotice} ref={current ? answerRef : undefined} tabIndex={current ? -1 : undefined} data-evidence-state={presentation.state} role="status">
         <strong>{streaming ? "Checking the answer against its sources…" : r.failed ? "Answer interrupted" : "Answer withheld"}</strong>
@@ -1830,6 +1853,8 @@ export default function Agent({
     // Edit and Regenerate replace the last turn, so only the last turn offers them;
     // an earlier turn keeps the actions that act on itself.
     const isLast = i === turns.length - 1;
+    // A failed run has nothing to copy, share or rate; its one action is Retry.
+    if (r.failed) return null;
     if (!isLast)
       return (
         <div className={styles.actions} data-quiet role="group" aria-label="Answer actions">
@@ -1931,12 +1956,10 @@ export default function Agent({
           <>
             {!live && r && !r.answer.trim() ? <p className={styles.dim}>Stopped before any answer was written.</p> : body(turn, i, isLast)}
 
-            {r && !live && isLast && (r.failed || r.degraded || !r.answer.trim()) && (
+            {r && !live && isLast && !r.failed && (r.degraded || !r.answer.trim()) && (
               <div className={styles.note} data-tone="warn">
                 <span>
-                  {r.failed
-                    ? "The response ended before the answer finished."
-                    : r.degraded
+                  {r.degraded
                       ? presentationOf(r).state === "retrieved"
                         ? `The models are resting${benched.length ? ` (${benched.join(", ")})` : ""}, so this is the passage his record ranks first, word for word.`
                         : "No verified passage could be shown for this response."

@@ -2,7 +2,8 @@
    into it on close (Motion FLIP in CertViewer.tsx, no overshoot). */
 .open {
   all: unset;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: inherit;
   cursor: zoom-in;
   color: inherit;

@@ -706,6 +706,7 @@ async function retrieveRun(
     // that refused 15 of 32 answerable questions; any keyword match answers as
     // partial instead (degrade, never break).
     band = calibration && cosTop >= 0 ? (gate(null, cosTop, lexTop) === "unknown" ? "unknown" : "partial") : lexical.size > 0 ? "partial" : "unknown";
+    if (!dense.size) shortlist = shortlist.filter((r) => r.lexicalScore >= LEXICAL_FLOOR * lexTop);
   }
 
   /*

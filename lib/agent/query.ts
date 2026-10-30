@@ -171,11 +171,14 @@ const OVERVIEW =
  * kind is unambiguous in any corpus written to the template.
  */
 const KIND_INTENTS: [string, RegExp][] = [
+  // Which roles fit him is answered by what he is targeting; a reranker alone
+  // can keep only the profile section and answer from its limits paragraph.
+  ["availability", /\b(which|what) (roles?|jobs?|positions?)\b|\broles? (fit|suit)/i],
   ["availability", /\b(when can \w+ (start|join|begin)|start date|notice period|availab(le|ility)|open to (work|roles|offers|relocat\w*)|relocat\w*|looking for (a |an )?(role|job|position)|kind of (role|job|position))\b/i],
   ["education", /\b(degree|universit(y|ies)|college|school|stud(y|ied|ying)|gpa|graduat\w*|major|master'?s|bachelor'?s|phd|coursework)\b/i],
   ["credential", /\b(certif\w*|licen[cs]\w*|accredit\w*)\b/i],
   ["publication", /\b(publication|published|papers?|journal|conference|research)\b/i],
-  ["award", /\b(awards?|achievements?|prizes?|honou?rs?|ranks?|won|win)\b/i],
+  ["award", /\b(awards?|achievements?|prizes?|honou?rs?|won|win)\b/i],
   // About the person's toolkit, not about tools a system has ("how many tools does the agent expose").
   ["skills", /\b((programming|spoken|coding) languages|what (languages|tools|technologies|frameworks) (do|does|did|has|have|can)|(his|her|their) (tools|stack|toolkit|languages)|tech stack|skills?|skill ?set|proficien\w*)\b/i],
 ];
