@@ -134,7 +134,7 @@ const domains: Domain[] = [
         need: "merge duration stated one way only",
         pass: /57 hours/.test(facts) && !/three days|3 days/i.test(facts),
       },
-      { id: "1.7", need: "JEE stated as top 0.9 percent", pass: /0\.9 percent/.test(facts) && !/0\.08/.test(facts) },
+      { id: "1.7", need: "JEE stated as top 1 percent", pass: /top 1 percent/.test(facts) && !/0\.08/.test(facts) },
       { id: "1.8", need: "NVIDIA credential linked", pass: /credly\.com\/badges/.test(certs) },
       { id: "1.9", need: "IBM program lists 10 components", pass: countOf(certs, /"name":/g) >= 13 },
       { id: "1.10", need: "BU Life AI repo linked", pass: /Kushal9889\/BU-Life-AI/.test(facts) },
@@ -419,7 +419,9 @@ const domains: Domain[] = [
         need: "baked openers are newer than the code that writes them",
         pass: (() => {
           if (!has("lib/agent/prewarm.json")) return false;
-          const baked = statSync(join(root, "lib/agent/prewarm.json")).mtimeMs;
+          // Commit time, not mtime: a fresh checkout stamps every file in checkout order.
+          const committed = (f: string) => Number(execFileSync("git", ["log", "-1", "--format=%ct", "--", f], { encoding: "utf8" }).trim()) || 0;
+          const baked = committed("lib/agent/prewarm.json");
           // Same four files as `SOURCES` in scripts/prewarm.ts. Two lists that can
 // drift are a check that stops meaning what it says: the corpus index
 // belongs here because a changed corpus changes the baked answers.
@@ -429,7 +431,7 @@ const domains: Domain[] = [
             "lib/agent/retrieve.ts",
             "lib/agent/index.json",
           ].every(
-            (f) => !has(f) || statSync(join(root, f)).mtimeMs <= baked,
+            (f) => !has(f) || committed(f) <= baked,
           );
         })(),
         note: "run `npm run prewarm`",
@@ -488,7 +490,7 @@ const domains: Domain[] = [
         })(),
         note: "confidence intervals on correctness and on p95",
       },
-      { id: "9.7", need: "decisions recorded as ADRs", pass: readdirSync(join(root, "docs")).filter((f) => f.startsWith("adr-")).length >= 2 },
+      { id: "9.7", need: "decisions recorded as ADRs", pass: readdirSync(join(root, "release")).filter((f) => f.startsWith("adr-")).length >= 2 },
     ],
   },
   {
@@ -498,7 +500,7 @@ const domains: Domain[] = [
       { id: "10.1", need: "visible focus rings", pass: /focus-visible/.test(builtCss) },
       { id: "10.2", need: "no outline suppression without replacement", pass: !/outline:\s*none/.test(builtCss) || /focus-visible/.test(builtCss) },
       { id: "10.3", need: "live region for streamed answers", pass: /aria-live/.test(read("app/components/Agent.tsx")) },
-      { id: "10.4", need: "decorative graph hidden from AT", pass: /aria-hidden/.test(read("app/components/Hero.tsx")) },
+      { id: "10.4", need: "decorative hero drawing hidden from AT", pass: !/<(svg|canvas)/.test(read("app/components/Hero.tsx")) || /aria-hidden/.test(read("app/components/Hero.tsx")) },
       { id: "10.5", need: "inputs labelled", pass: /aria-label/.test(read("app/components/Agent.tsx")) },
       { id: "10.6", need: "skip link to main", pass: /#main/.test(allSource) },
     ],

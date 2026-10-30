@@ -164,6 +164,8 @@ const LIMITATION = new RegExp(
 const OVERVIEW =
   /\b(why (should|would|do) (we|i|you|anyone|a company|someone) (hire|pick|choose|consider)|what makes \w+ (different|stand out|unique|special|a good)|stand(s)? out|(strongest|best|most impressive|biggest|proudest) (project|work|skill|strength|achievement|result|thing)|(what|where) (is|are) \w+ (best|strongest|good) at|(his|her|their|key|main|biggest) strengths?|summar(y|ise|ize)|overview|(sell|pitch) (me|us)|elevator pitch|in (one|two|three) (line|sentence)s?)\b/i;
 
+const ROLE_FIT = /\b(which|what) (roles?|jobs?|positions?)\b|\broles? (fit|suit)/i;
+
 /**
  * Question shapes every profile answers, keyed by the template's `@kind`
  * (docs/facts-format.md). A short question like "when can they start" shares no
@@ -171,9 +173,11 @@ const OVERVIEW =
  * kind is unambiguous in any corpus written to the template.
  */
 const KIND_INTENTS: [string, RegExp][] = [
-  // Which roles fit him is answered by what he is targeting; a reranker alone
-  // can keep only the profile section and answer from its limits paragraph.
-  ["availability", /\b(which|what) (roles?|jobs?|positions?)\b|\broles? (fit|suit)/i],
+  // Which roles fit him takes what he is targeting and the work behind it. With
+  // the targets alone a model has no evidence to cite and invents some (measured:
+  // an internship at a lab he never worked at).
+  ["availability", ROLE_FIT],
+  ["role", ROLE_FIT],
   ["availability", /\b(when can \w+ (start|join|begin)|start date|notice period|availab(le|ility)|open to (work|roles|offers|relocat\w*)|relocat\w*|looking for (a |an )?(role|job|position)|kind of (role|job|position))\b/i],
   ["education", /\b(degree|universit(y|ies)|college|school|stud(y|ied|ying)|gpa|graduat\w*|major|master'?s|bachelor'?s|phd|coursework)\b/i],
   ["credential", /\b(certif\w*|licen[cs]\w*|accredit\w*)\b/i],

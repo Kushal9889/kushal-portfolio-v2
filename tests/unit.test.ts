@@ -1311,6 +1311,7 @@ test("a credential counts only when its page names the holder and the credential
 test("a question about which roles fit reaches the availability section", async () => {
   const { kindsFor } = await import("../lib/agent/query");
   assert.ok(kindsFor("Which roles fit his experience, and what work supports that fit?").includes("availability"));
+  assert.ok(kindsFor("Which roles fit his experience?").includes("role"), "targets alone leave no work to cite");
   assert.ok(!kindsFor("How does retrieval rank passages?").includes("availability"));
 });
 
