@@ -25,11 +25,9 @@ maintainer wrote and merged the fix 57 hours later and credited the reproduction
 - Issue: [langchain-ai/deepagents#4846](https://github.com/langchain-ai/deepagents/issues/4846)
 - Merged fix: [langchain-ai/deepagents#4925](https://github.com/langchain-ai/deepagents/pull/4925)
 
-**The retrieval figure, which plots the run that just happened.** BM25 rank,
-dense rank, and the reciprocal rank fusion of the two, per corpus chunk, redrawn
-from whatever you ask the agent. It publishes its own Kruskal stress, because
-the 3D projection I tried first held only 47.4% of the variance across three
-axes and I cut it rather than ship a picture that discards half the structure.
+**The retrieval table, which shows the run that just happened.** BM25 rank,
+dense rank, and the reciprocal rank fusion of the two, per passage, redrawn from
+whatever you ask the agent on `/stage`.
 
 ## What the gates enforce
 
@@ -96,9 +94,11 @@ route ────────────────────────�
 latency a visitor waits on.
 
 **retrieve** fuses BM25 with cosine over vectors baked into the bundle at build
-time, merged by reciprocal rank fusion. The corpus is 16 chunks, so a vector
-database would be pure network tax. When one rare term already picks out a chunk
-decisively, the embedding call is skipped entirely.
+time, merged by reciprocal rank fusion. The corpus is a few dozen passages, so
+the bundled vectors answer without a database; Neon serves the dense half only
+when configured and inside its time cap. Every question is embedded: a keyword
+shortcut was measured and removed because it fired only on the weakest query in
+the eval set.
 
 **answer** streams tokens over Server-Sent Events. No checkpointer: LangGraph
 writes one after every node by default, which is 20–50ms per write for

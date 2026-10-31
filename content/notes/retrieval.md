@@ -10,13 +10,15 @@ unbounded and corpus-dependent, cosine similarity is bounded to a narrow band
 near the top, and any fixed weighting between them is a constant that has to be
 retuned every time the corpus changes. Ranks are comparable by construction.
 
-**The embedding call is skipped when the keyword hit is decisive.** If the top
-BM25 score is more than 2.2 times the runner-up, the dense half never runs. A
-query like "Growaza" or "NCP-AAI" lands one chunk far clear of everything else,
-and no embedding is going to reorder that. The embedding call is one network
-round trip and the single largest cost in retrieval, so this is the difference
-between an answer that starts immediately and one that waits on an API. The
-threshold was tuned by hand against the eval set, not chosen for looking round.
+**Every question is embedded, because the shortcut that skipped it failed when
+measured.** The page used to skip the embedding call when the top BM25 score was
+2.2 times the runner-up, reasoning that a rare term like "Growaza" or "NCP-AAI"
+lands one chunk far clear of the rest. Across the eval set neither of those
+queries passed the test. The one query that did was the weakest in the set,
+because a lone match beats zero times anything. A lone weak match is the absence
+of competition, and that is exactly when the dense half is most needed, so the
+shortcut was removed. If the embedding call fails or runs out of time, the
+keyword half still answers.
 
 **Reciprocal rank fusion produces exact ties, and the tiebreak matters.** RRF is
 symmetric: a chunk ranked first by keyword and second by embedding scores
@@ -38,10 +40,3 @@ of that wrapper is a BM25 term. Those words are common across the whole corpus,
 so they dilute the phrase that carries the meaning: a question about the dense
 retriever came back grounded in the achievements section. When a question wraps
 a quoted span of real length, the span is the query and the wrapper is grammar.
-
-The projection drawn beside this is classical multidimensional scaling on the
-full cosine distance matrix, not UMAP or t-SNE. At eighteen chunks every pairwise
-distance is already known exactly, so there is nothing to estimate, and both
-neighbour-embedding methods are documented to render clusters that do not exist
-at that size. Whatever the projection cannot preserve is published as a Kruskal
-stress figure beside it rather than hidden.

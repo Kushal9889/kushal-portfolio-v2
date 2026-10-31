@@ -547,7 +547,7 @@ export default function HeroStage({
                   <table>
                     <caption>
                       Reciprocal rank fusion{trace.k ? `, k = ${trace.k}` : ""}, dense pass{" "}
-                      {trace.denseUsed ? "used" : "skipped because the lexical match was decisive"}
+                      {trace.denseUsed ? "used" : "skipped because no query embedding was available"}
                     </caption>
                     <thead>
                       <tr>
