@@ -1,0 +1,454 @@
+/*
+ * Stage tokens. Scoped to [data-stage] so the legacy page is untouched.
+ *
+ * The legacy names (--paper, --ink, --signal...) are restated here so reused
+ * components inherit the new palette without edits. The *-rgb triplets exist
+ * for the WebGL renderer, which cannot read an oklch() string.
+ */
+[data-stage] {
+  /* Apple pass (2026-10-26): Apple dark greys and Apple blue in place of the
+     warm greys and International Orange, written in OKLCH: black ground,
+     Apple tile grey, Apple near-white, Apple blue and its deeper fill. */
+  --void: oklch(0 0 0);
+  /* LangChain's dark green, lifted in lightness so it reads on the void ground;
+     its hue and chroma are the brand's. */
+  --langchain: oklch(0.62 0.055 173);
+  --void-raised: oklch(0.2316 0.0038 286.1);
+  --sheet: oklch(0.9707 0.0027 286.35);
+  --ink-on-void: oklch(0.9707 0.0027 286.35);
+  --ink-on-void-soft: oklch(0.7105 0.0072 286.22);
+  --ink-on-sheet: oklch(0.2316 0.0038 286.1);
+  --ink-on-sheet-soft: oklch(0.5399 0.0077 286.14);
+  /* The one accent is the ink (no blue, 2026-10-27): marks and strokes in
+     the claim white, fills white with black text. */
+  --voltage: oklch(0.9707 0.0027 286.35);
+  --voltage-rgb: 245 245 247;
+  --ink-rgb: 245 245 247;
+  --fill: oklch(0.9707 0.0027 286.35);
+  --fill-hover: oklch(1 0 0);
+  --hair: oklch(0.9707 0.0027 286.35 / 0.14);
+  --hair-strong: oklch(0.9707 0.0027 286.35 / 0.26);
+  --ease-glass: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-arrive: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --paper: var(--void);
+  --paper-sunk: oklch(0 0 0);
+  --paper-raised: var(--void-raised);
+  --paper-high: oklch(0.2939 0.0036 286.18);
+  --ink: var(--ink-on-void);
+  --ink-soft: var(--ink-on-void-soft);
+  --ink-faint: oklch(0.6217 0.0074 286.18);
+  --rule: oklch(0.3802 0.005 286.16);
+  --signal: var(--voltage);
+  --signal-deep: oklch(0.87 0.004 286);
+  --on-signal: oklch(0 0 0);
+
+  /* Every generic family name the reused components ask for resolves to the
+     spine here. The chapter voices (macro, plate, readout, paper, code) are
+     named explicitly by the chapter that owns them and nowhere else. */
+  --font-display: var(--font-spine), system-ui, sans-serif;
+  --font-sans: var(--font-spine), system-ui, sans-serif;
+  --font-serif: var(--font-spine), system-ui, sans-serif;
+
+  position: relative;
+  color: var(--ink);
+  background: var(--void);
+  font-family: var(--font-display);
+  /* Each face ships only the weights its chapter sets. A weight that is not
+     there must fall to the nearest real one, never be smeared into existence. */
+  font-synthesis: none;
+  /* Clipped here, at a root that never pins, rather than on a pinned chapter:
+     a pinned element that clips registers a full-screen layout shift each time
+     its pin engages. Clip also keeps overflow out of the scrollable height. */
+  overflow: clip;
+}
+
+/* The agent renders on a console surface; inside the stage it takes the stage palette. */
+[data-stage] [data-surface="console"] {
+  --paper: var(--void-raised);
+  --paper-sunk: oklch(0.1781 0.002 286.19);
+  --paper-raised: oklch(0.2939 0.0036 286.18);
+  --paper-high: oklch(0.3802 0.005 286.16);
+  --ink: var(--ink-on-void);
+  --ink-soft: var(--ink-on-void-soft);
+  --ink-faint: oklch(0.6217 0.0074 286.18);
+  --rule: oklch(0.3802 0.005 286.16);
+  --signal: var(--voltage);
+  --signal-deep: oklch(0.87 0.004 286);
+  --on-signal: oklch(0 0 0);
+  color-scheme: dark;
+}
+
+/*
+ * One ground, top to bottom. The page used to alternate full-width black and
+ * white chapters, so every chapter edge was a hard cut and the field vanished
+ * under the white ones. Now the field runs the whole length of the page, and
+ * the off-white is what it physically is in those chapters: a sheet of paper
+ * (the incident report, the published paper) lying on the ground, not the
+ * ground itself. Anything marked as a sheet takes the ink that reads on it.
+ */
+[data-stage] [data-surface="sheet"] {
+  --ink: var(--ink-on-sheet);
+  --ink-soft: var(--ink-on-sheet-soft);
+  --hair: oklch(0.2316 0.0038 286.1 / 0.14);
+  --hair-strong: oklch(0.2316 0.0038 286.1 / 0.26);
+  color: var(--ink);
+  background: var(--sheet);
+  color-scheme: light;
+}
+
+[data-stage] [data-ground="voltage"] {
+  --ink: oklch(1 0 0);
+  --ink-soft: oklch(1 0 0 / 0.78);
+  color: var(--ink);
+  background: var(--fill);
+}
+
+/* The legacy page reserves a gutter under the document for its mobile dock.
+   There is no dock here, so that reserve rendered as 64px of legacy ground
+   below the footer with the field showing through it. */
+html:has([data-stage]) body {
+  padding-block-end: 0;
+}
+
+/* The parts of the page no component draws: selection, caret, scrollbar and the
+   overscroll behind the document all take the stage palette. */
+html:has([data-stage]) {
+  background: oklch(0 0 0);
+  scrollbar-color: oklch(0.3802 0.005 286.16) oklch(0 0 0);
+}
+
+[data-stage] {
+  caret-color: var(--voltage);
+}
+
+[data-stage] ::selection {
+  background: var(--fill);
+  color: oklch(1 0 0);
+}
+
+/* ---- Type system (plan 3.2, D.3) ------------------------------------------ */
+
+/*
+ * Retired voices resolve to the two variable families, so every chapter that
+ * still names an old role lands on the new face rather than a fallback.
+ * Luminance ladder (F-057) under the plan's names, mapped to the code's (G.2 R2).
+ */
+[data-stage] {
+  --font-macro: var(--font-plate), var(--font-spine), sans-serif;
+  --font-readout: var(--font-plate), var(--font-spine), sans-serif;
+  --font-code: var(--font-mono), ui-monospace, monospace;
+  --surface-1: oklch(0.1781 0.002 286.19);
+  --surface-2: var(--void-raised);
+  --surface-3: var(--paper-high);
+}
+
+/*
+ * The D.3 axis catalogue. Only the two axes the files expose are driven; the
+ * signature slant is the Mona italic file. Chapters set a coordinate with
+ * `data-coord`, so the personality is a named choice from the catalogue.
+ */
+[data-stage] [data-coord] {
+  font-family: var(--font-plate), var(--font-spine), sans-serif;
+  font-style: normal;
+}
+[data-stage] [data-coord="signature"] {
+  font-family: var(--font-signature), var(--font-spine), sans-serif;
+  font-weight: 780;
+  font-stretch: 104%;
+  font-style: italic;
+}
+[data-stage] [data-coord="plate"] {
+  font-weight: 800;
+  font-stretch: 100%;
+}
+[data-stage] [data-coord="plate-narrow"] {
+  font-weight: 760;
+  font-stretch: 82%;
+}
+[data-stage] [data-coord="plate-wide"] {
+  font-weight: 700;
+  font-stretch: 118%;
+}
+[data-stage] [data-coord="nameplate"] {
+  font-weight: 680;
+  font-stretch: 96%;
+}
+[data-stage] [data-coord="nameplate-light"] {
+  font-family: var(--font-signature), var(--font-spine), sans-serif;
+  font-weight: 420;
+  font-stretch: 110%;
+}
+[data-stage] [data-coord="monument"] {
+  font-weight: 820;
+  font-stretch: 90%;
+}
+[data-stage] [data-coord="monument-wide"] {
+  font-weight: 700;
+  font-stretch: 120%;
+}
+
+/* Titles balance, leads wrap without orphans (F-055). */
+[data-stage] h1,
+[data-stage] h2,
+[data-stage] h3 {
+  text-wrap: balance;
+}
+
+[data-stage] p {
+  text-wrap: pretty;
+}
+
+/* Identifiers take the slashed zero (F-053); figures in the instrument face align (F-052). */
+[data-stage] code,
+[data-stage] kbd,
+[data-stage] samp,
+[data-stage] time,
+[data-stage] data {
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+/* Italic display words keep their descenders (F-054). */
+[data-stage] [data-coord="signature"] {
+  line-height: 1.1;
+}
+
+/* Browser surfaces (F-062): links, focus and scrollbars carry the palette. */
+[data-stage] a {
+  text-underline-offset: 0.18em;
+}
+
+[data-stage] :focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
+
+[data-stage] [data-ground="voltage"] :focus-visible {
+  outline-color: var(--ink);
+}
+
+[data-stage] ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+[data-stage] ::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border: 2px solid var(--void);
+}
+
+[data-stage] ::-webkit-scrollbar-track {
+  background: var(--void);
+}
+
+/*
+ * Touch targets (F-089): a small control keeps its drawn size and gains an
+ * invisible 44px hit area, so the mark stays small and the target does not.
+ */
+[data-stage] [data-hit] {
+  position: relative;
+}
+
+[data-stage] [data-hit]::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
+/* ---- Button garments (plan D.5) -------------------------------------------- */
+
+/*
+ * One height scale, one focus ring, one press, many garments. A control picks
+ * its garment with `data-garment`; the garment never changes what it does.
+ */
+[data-stage] [data-garment] {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border-radius: 2px;
+  font: 500 0.875rem/1 var(--font-spine), sans-serif;
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 150ms linear,
+    border-color 150ms linear,
+    transform 90ms linear;
+}
+
+[data-stage] [data-garment]:active {
+  transform: scale(0.97);
+}
+
+[data-stage] [data-garment]:disabled,
+[data-stage] [data-garment][aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+[data-stage] [data-garment="solid"] {
+  min-height: 52px;
+  padding: 0 24px;
+  border: 0;
+  background: var(--fill, var(--signal));
+  color: var(--on-signal);
+  font-size: 1rem;
+}
+
+[data-stage] [data-garment="solid"]:hover {
+  background: var(--fill-hover, var(--signal));
+}
+
+/* Ghost: the fill enters from the side the pointer came in (`data-from`, set by the stage). */
+[data-stage] [data-garment="ghost"] {
+  padding: 0 16px;
+  border: 1px solid color-mix(in oklch, var(--ink) 40%, transparent);
+  background: transparent;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+[data-stage] [data-garment="ghost"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--surface-3);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 200ms var(--ease-arrive);
+}
+
+[data-stage] [data-garment="ghost"][data-from="right"]::before {
+  transform-origin: 100% 50%;
+}
+
+[data-stage] [data-garment="ghost"]:hover::before {
+  transform: scaleX(1);
+}
+
+[data-stage] [data-garment="underline"] {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+[data-stage] [data-garment="underline"]:hover {
+  text-decoration-thickness: 2px;
+}
+
+[data-stage] [data-garment="underline"] svg {
+  transition: transform 150ms var(--ease-arrive);
+}
+
+[data-stage] [data-garment="underline"]:hover svg {
+  transform: translate(2px, -2px);
+}
+
+[data-stage] [data-garment="keycap"] {
+  padding: 0 12px;
+  border: 1px solid var(--hair-strong);
+  border-bottom-width: 2px;
+  background: transparent;
+  font: 400 0.8125rem/1 var(--font-mono), monospace;
+}
+
+[data-stage] [data-garment="keycap"]:hover {
+  border-bottom-width: 3px;
+}
+
+[data-stage] [data-garment="keycap"]:active,
+[data-stage] [data-garment="keycap"][aria-pressed="true"] {
+  transform: translateY(1px);
+  border-bottom-width: 1px;
+}
+
+[data-stage] [data-garment="stamp"] {
+  padding: 0 16px 0 40px;
+  border: 1px solid var(--ink);
+  background: transparent;
+}
+
+[data-stage] [data-garment="stamp"]::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--ink);
+  transform: translateY(-50%) rotate(45deg);
+  transition: background-color 150ms linear;
+}
+
+[data-stage] [data-garment="stamp"][data-pressed]::before,
+[data-stage] [data-garment="stamp"]:active::before {
+  background: var(--ink);
+}
+
+[data-stage] [data-garment="prompt"] {
+  padding: 0 14px;
+  border: 1px solid var(--hair-strong);
+  background: transparent;
+  font: 400 0.8125rem/1 var(--font-mono), monospace;
+}
+
+[data-stage] [data-garment="prompt"]::after {
+  content: "";
+  width: 7px;
+  height: 1em;
+  background: var(--ink);
+  opacity: 0;
+}
+
+[data-stage] [data-garment="prompt"]:hover::after {
+  animation: caret 1s steps(2, jump-none) infinite;
+}
+
+@keyframes caret {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+[data-stage] [data-garment="chip"] {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--hair-strong);
+  background: transparent;
+  font: 400 0.75rem/1 var(--font-mono), monospace;
+}
+
+[data-stage] [data-garment="paper-tab"] {
+  padding: 0 16px;
+  border: 1px solid var(--hair-strong);
+  background: transparent;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+
+[data-stage] [data-garment="paper-tab"]:hover {
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-stage] [data-garment] {
+    transition: none;
+  }
+
+  [data-stage] [data-garment="prompt"]:hover::after {
+    animation: none;
+    opacity: 1;
+  }
+}

@@ -1,9 +1,9 @@
 .seeds {
   list-style: none;
-  margin: 1.1rem 0 0;
+  margin: var(--s-4) 0 0;
   padding: 0;
   display: grid;
-  gap: 0.4rem;
+  gap: var(--s-2);
   justify-items: start;
 }
 
@@ -13,15 +13,27 @@
 .seed {
   display: flex;
   align-items: baseline;
-  gap: 0.6rem;
+  gap: var(--s-2);
   text-align: left;
   font-size: var(--step--1);
   color: var(--ink-soft);
   padding: 0.35em 0;
-  border-bottom: 1px solid transparent;
+  border-bottom: var(--border-hair) solid transparent;
   transition:
     color var(--t-fast) var(--ease-out),
     border-color var(--t-fast) var(--ease-out);
+}
+
+/* A suggestion is still a tap target: 44px tall on touch, the type unchanged. */
+@media (pointer: coarse) {
+  .seed {
+    min-height: 44px;
+    align-items: center;
+  }
+}
+
+.seed:active {
+  scale: 0.98;
 }
 
 .seed:hover {
@@ -31,8 +43,10 @@
 
 .mark {
   flex: none;
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
+  font-size: var(--step--2);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
 }
+
+.seed { min-block-size: 44px; }

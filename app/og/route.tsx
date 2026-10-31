@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { loadContent } from "@/lib/content";
+import { loadContent, section } from "@/lib/content";
 import evals from "@/content/evals.json";
 
 export const runtime = "nodejs";
@@ -40,6 +40,17 @@ export async function GET(request: Request) {
     "cache-control": "public, max-age=31536000, s-maxage=31536000, immutable",
   };
 
+  // The same title and start date the hero opens with, read from the corpus.
+  const lead = section("Boston University, Questrom Computational Lab, backend");
+  const role = `${lead.roleParts.title}, ${lead.title.replace(/, backend$/, "")}`;
+  const start = profile.available.split(",")[0];
+
+  // The page's dark scene, written out: Satori cannot read custom properties.
+  const ground = "#0b0c0f";
+  const ink = "#f2f3f5";
+  const cream = "#f6eedd";
+  const soft = "#b9b4ab";
+
   return new ImageResponse(
     (
       <div
@@ -49,51 +60,38 @@ export async function GET(request: Request) {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          background: "#f7f5ef",
-          color: "#2b2621",
+          background: ground,
+          color: ink,
           padding: "64px 76px",
-          fontFamily: "monospace",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 32 }}>
-          <span style={{ letterSpacing: 4 }}>{profile.name.toUpperCase()}</span>
-          <span style={{ color: "#7a7269" }}>{profile.location}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+          <span style={{ fontSize: 40, fontWeight: 600, letterSpacing: -1, color: cream }}>{profile.name}</span>
+          <span style={{ fontSize: 30, color: soft }}>{profile.location}</span>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
           {question ? (
             <>
-              <div style={{ fontSize: 34, color: "#7a7269" }}>Someone asked his site</div>
+              <div style={{ fontSize: 34, color: soft }}>Someone asked his site</div>
               <div style={{ fontSize: 56, lineHeight: 1.15, maxWidth: 1000 }}>
                 {question.endsWith("?") ? question : `${question}?`}
               </div>
             </>
           ) : (
-            <div style={{ fontSize: 62, lineHeight: 1.12, maxWidth: 980 }}>{profile.tagline}</div>
+            <div style={{ fontSize: 60, fontWeight: 700, lineHeight: 1.08, letterSpacing: -2, maxWidth: 1040 }}>{profile.tagline}</div>
           )}
-
-          {/* Separators are drawn rather than typed: Satori falls back to tofu
-              for glyphs its bundled font lacks, and an arrow is exactly the kind
-              of character that goes missing on a card seen only by strangers. */}
-          <div style={{ display: "flex", alignItems: "center", gap: 20, fontSize: 32 }}>
-            <span style={{ color: "#7a7269" }}>route</span>
-            <div style={{ width: 30, height: 3, background: "#c4441f" }} />
-            <span style={{ color: "#7a7269" }}>retrieve</span>
-            <div style={{ width: 30, height: 3, background: "#c4441f" }} />
-            <span style={{ color: "#7a7269" }}>answer</span>
-          </div>
+          <div style={{ fontSize: 30, lineHeight: 1.3, color: cream, maxWidth: 1040 }}>{role}</div>
+          {start && <div style={{ fontSize: 30, color: cream }}>{`Full-time from ${start}`}</div>}
         </div>
 
-        {/* Two items, not three. A thumbnail has room for one strong claim and
-            the address it lives at, and the third row was what pushed the type
-            down to a size that stopped reading. */}
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 32 }}>
-          <span style={{ maxWidth: 780 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 48, fontSize: 28, color: soft }}>
+          <span style={{ maxWidth: 760, lineHeight: 1.3 }}>
             {question
-              ? `${evals.passed}/${evals.cases} eval assertions pass, answered live`
+              ? `${evals.passed} of ${evals.cases} eval cases pass on every run, answered live`
               : profile.proof}
           </span>
-          <span style={{ color: "#7a7269" }}>{profile.site.replace("https://", "")}</span>
+          <span style={{ flexShrink: 0 }}>{profile.site.replace("https://", "")}</span>
         </div>
       </div>
     ),

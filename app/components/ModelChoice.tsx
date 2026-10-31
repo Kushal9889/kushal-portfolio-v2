@@ -1,6 +1,7 @@
 import models from "@/content/models.json";
 import Panel from "./Panel";
 import styles from "./ModelChoice.module.css";
+import { longDate } from "@/lib/typeset";
 
 /**
  * Which model answers, and why that was not a guess.
@@ -78,7 +79,7 @@ export default function ModelChoice() {
                 {/* A score without its uncertainty is the thing that makes
                     leaderboards misleading, so the range travels with it. */}
                 <span className={styles.range}>
-                  could be {Math.round(r.low * 100)}&ndash;{Math.round(r.high * 100)}%
+                  could be {Math.round(r.low * 100)}-{Math.round(r.high * 100)}%
                 </span>
               </span>
 
@@ -103,7 +104,7 @@ export default function ModelChoice() {
         {chosen && (
           <>
             {" "}
-            Measured {models.measured}. Re-run with <code>npm run bench:models</code>.
+            Measured {longDate(models.measured)}. Re-run with <code>npm run bench:models</code>.
           </>
         )}
       </p>

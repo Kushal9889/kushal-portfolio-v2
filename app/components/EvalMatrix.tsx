@@ -1,9 +1,12 @@
 "use client";
 
+
 import { useState } from "react";
 import evals from "@/content/evals.json";
 import Panel from "./Panel";
 import styles from "./EvalMatrix.module.css";
+import { reducedMotion } from "@/lib/verbs";
+import { longDate } from "@/lib/typeset";
 
 /**
  * The eval suite, as sixteen objects rather than one score.
@@ -67,12 +70,25 @@ type Case = {
  * layer answered on its own. That is the strongest thing the suite proves and
  * a pass/fail ratio cannot say it.
  */
+/**
+ * Questions typed wrong on purpose: the suite checks that retrieval survives a
+ * misspelt company or word (content/eval-cases.json). Shown as a typo on the page
+ * they read as carelessness, so the detail and the label say so.
+ */
+const MISSPELT: Record<string, string> = {
+  "Tell me about Growza": "Growaza",
+  "What did he do at IMG Sytems?": "IMG Systems",
+  "What certifcations does he have?": "certifications",
+};
+
 function reachedModel(c: Case) {
   return !/routes to (deflect|authorisation)/.test(c.asserts);
 }
 
-export default function EvalMatrix() {
-  const cases = (evals.cases_detail ?? []) as Case[];
+/** `questions`: the current case set, read on the server (lib/agent/evals.ts reads the corpus from disk). */
+export default function EvalMatrix({ questions }: { questions: string[] }) {
+  const current = new Set(questions);
+  const cases = (evals.cases_detail ?? []).filter((c) => current.has(c.name)) as Case[];
   const [open, setOpen] = useState<string | null>(null);
   if (cases.length === 0) return null;
 
@@ -92,9 +108,9 @@ export default function EvalMatrix() {
      * the fusion figure, which change on the page in front of you. */
     <Panel
       label="eval suite"
-      surface="paper"
+      surface="console"
       state={partial ? "degraded" : "done"}
-      status={`${evals.passed}/${evals.cases} · ${evals.measured}`}
+      status={`${evals.passed}/${evals.cases} · ${longDate(evals.measured)}`}
     >
       {/* What the aggregate was hiding.
        *
@@ -102,7 +118,7 @@ export default function EvalMatrix() {
        * model summarising is not, which is the single most useful thing this
        * suite has to say and the one thing a ratio cannot. */}
       <p className={styles.headline}>
-        <b>{totalPasses} of {totalRuns} runs pass</b>, {cases.length} cases {runs} times each.
+        {cases.length} current cases shown, {runs} recorded runs each. Aggregate results above are from the full suite measured {longDate(evals.measured)}.
         Every policy and authorisation run passes because none of them reaches a model. The
         grounding cases are where a language model has to summarise without dropping the figure,
         and that is where the suite is honest about being probabilistic.
@@ -133,10 +149,26 @@ export default function EvalMatrix() {
                       data-open={open === c.name || undefined}
                       style={{ "--i": i } as React.CSSProperties}
                       aria-expanded={open === c.name}
-                      aria-label={`${c.name}. Asserts ${c.asserts}. Passed ${Math.round(
+                      aria-label={`${c.name}.${MISSPELT[c.name] ? ` Misspelt on purpose for ${MISSPELT[c.name]}.` : ""} Asserts ${c.asserts}. Passed ${Math.round(
                         (c.passRate ?? (c.pass ? 1 : 0)) * runs,
                       )} of ${runs} runs.${reachedModel(c) ? "" : " No model was called."}`}
-                      onClick={() => setOpen(open === c.name ? null : c.name)}
+                      onClick={() => {
+                        const next = open === c.name ? null : c.name;
+                        /* The detail block is one region showing one case at a
+                           time, so swapping it is a state transition rather
+                           than a navigation, and the browser can cross-fade it
+                           itself. Same-document view transitions are Baseline;
+                           where they are not available the state still changes,
+                           just without the fade. */
+                        if (
+                          typeof document.startViewTransition === "function" &&
+                          !reducedMotion()
+                        ) {
+                          document.startViewTransition(() => setOpen(next));
+                        } else {
+                          setOpen(next);
+                        }
+                      }}
                     >
                       {/* Filled to the rate it actually passed at. A solid cell
                           is reliable, a part-filled one is flaky, and the eye
@@ -166,6 +198,9 @@ export default function EvalMatrix() {
         {open ? (
           <>
             <p className={styles.detailQ}>{open}</p>
+            {MISSPELT[open] && (
+              <p className={styles.detailA}>Misspelt on purpose: the answer must still find {MISSPELT[open]}.</p>
+            )}
             <p className={styles.detailA}>{cases.find((c) => c.name === open)?.asserts}</p>
             {(() => {
               const c = cases.find((x) => x.name === open);

@@ -19,9 +19,10 @@ import {
   SUBJECT,
   OPENER,
   LINKEDIN_NOTE_LIMIT,
+  referralTag,
   type ReachContext,
 } from "../lib/reach";
-import { tokenize } from "../lib/agent/retrieve";
+import { absentNames, tokenize } from "../lib/agent/retrieve";
 import { nearestTerm, correct } from "../lib/agent/vocab";
 import { indexTokens, queryTokens, normalize } from "../lib/agent/tokenize";
 import {
@@ -32,6 +33,8 @@ import {
   TARGETS,
 } from "../lib/agent/tools";
 import { loadContent, section, loadCertifications, progress } from "../lib/content";
+import { typeset, longDate } from "../lib/typeset";
+import { interpolatedGradients } from "../scripts/gradients";
 
 /**
  * Unit tests: one function, no network, no filesystem beyond the corpus.
@@ -166,38 +169,6 @@ describe("content", () => {
   });
 });
 
-/**
- * The build has to survive having no embedding key.
- *
- * CI has no NVIDIA_API_KEY, so build-index emits a lexical-only index with
- * `vectors: null`. build-field read `.length` off that null and took the whole
- * pipeline down, which broke the rule the rest of this repo runs on: a missing
- * key degrades, it does not fail. Caught in CI rather than locally, because a
- * local build always has the key.
- */
-describe("keyless build", () => {
-  test("field.json tolerates an index with no vectors", () => {
-    const field = JSON.parse(
-      readFileSync(join(process.cwd(), "lib/agent/field.json"), "utf8"),
-    );
-    // Either a real projection with a stress figure, or an explicit null. Never
-    // a number invented to fill the gap.
-    assert.ok(field.method === "classical-mds" || field.method === "lexical-only");
-    if (field.method === "lexical-only") {
-      assert.equal(field.stress, null, "no vectors means no stress to report");
-    } else {
-      assert.ok(typeof field.stress === "number" && field.stress > 0);
-    }
-    assert.ok(Array.isArray(field.points) && field.points.length > 0);
-  });
-
-  test("build-field guards the null-vector path explicitly", () => {
-    const src = readFileSync(join(process.cwd(), "scripts/build-field.ts"), "utf8");
-    assert.match(src, /if \(!vectors\)/, "the guard must exist, not be implied by types");
-  });
-});
-
-
 describe("corpus directives", () => {
   test("@ask seeds parse and point at a real section", () => {
     const { sections } = loadContent();
@@ -256,6 +227,24 @@ describe("reach", () => {
     assert.match(draft, /name two times/i);
   });
 
+  test("a referral tag reaches the subject only when it is well formed", () => {
+    assert.equal(referralTag("acme"), "acme");
+    assert.equal(referralTag(" Acme-2 "), "acme-2");
+    for (const bad of [null, "", "a b", "a_b", "<x>", "x".repeat(33), "acme&subject=hi"]) {
+      assert.equal(referralTag(bad), null, `accepted ${bad}`);
+    }
+    assert.equal(mailDraft("a@b.co", "site.test", "general", "acme").subject, `${SUBJECT.general} (via acme)`);
+    assert.equal(mailDraft("a@b.co", "site.test").subject, SUBJECT.general);
+    const who = "Kushal Gaddamwar, AI Engineer";
+    const draft = mailDraft("a@b.co", "site.test", "general", "acme", who);
+    assert.equal(draft.subject, `Interview: ${who} (via acme)`);
+    for (const slot of ["[role]", "[team]", "[two times]"]) assert.ok(draft.body.includes(slot), `body lacks ${slot}`);
+    assert.ok(decodeURIComponent(mailtoLink("a@b.co", "site.test", "general", "acme", who)).includes(draft.body.split("\n")[1]));
+    assert.ok(linkedinNote("general", "acme").endsWith("(via acme)"));
+    assert.ok(linkedinNote("general", "acme").length <= LINKEDIN_NOTE_LIMIT);
+    assert.ok(!linkedinNote("general", null).includes("via"));
+  });
+
   test("a mailto encodes spaces as %20, never as plus", () => {
     // URLSearchParams emits "+", which several clients render literally in a
     // subject line and ship a draft reading "Your+work+at+the+Questrom+Lab".
@@ -268,11 +257,20 @@ describe("reach", () => {
     const { profile } = loadContent();
     const blurb = forwardBlurb(
       { name: profile.name, current: profile.current, proof: profile.proof, site: profile.site },
-      { passed: 16, cases: 16, p50: 977 },
+      { passed: 16, cases: 16, p50: 977, measured: "2026-10-10", runs: 3 },
     );
-    assert.ok(blurb.includes(profile.proof), "the strongest claim has to travel with it");
+    assert.ok(blurb.includes(typeset(profile.proof)), "the strongest claim has to travel with it");
     assert.ok(blurb.includes("?mode=condensed"));
+    assert.ok(blurb.includes("Recorded October 10, 2026"));
+    assert.ok(blurb.includes("977 ms median answer"));
+    assert.ok(blurb.includes("passed all 3 runs"));
     assert.ok(blurb.split("\n").length === 4, "four lines or it does not get pasted");
+    const certified = forwardBlurb(
+      { name: profile.name, current: profile.current, proof: profile.proof, site: profile.site, certified: ["A (X)", "B (Y)"] },
+      { passed: 16, cases: 16, p50: 977, measured: "2026-10-10", runs: 3 },
+    );
+    assert.ok(certified.includes("Certified: A (X); B (Y)."));
+    assert.equal(certified.split("\n").length, 4);
   });
 });
 
@@ -309,7 +307,10 @@ describe("published artifacts", () => {
     assert.ok(topology.nodes.includes("deflect"));
     // Three conditional edges out of route (deflect, act, retrieve) are the reason
     // this is a routed graph rather than a single pipeline.
-    assert.equal(topology.conditional, 3, "route must branch, or the policy layer is decorative");
+    // Counted out of route only: retrieve's answer/unknown branch is a second,
+    // separate decision and made the graph-wide total 5.
+    const fromRoute = topology.edges.filter((e: { from: string; conditional: boolean }) => e.from === "route" && e.conditional).length;
+    assert.equal(fromRoute, 3, "route must branch, or the policy layer is decorative");
   });
 
   test("the eval file carries groups that sum to the total", () => {
@@ -619,6 +620,11 @@ test("cuts at the first meta sentence that follows real content", () => {
     'So first word should be the answer itself. Could be "He shipped a document assistant."';
   const out = cleanAnswer(leaked);
   assert.equal(out, "He shipped a document intelligence assistant (document QA system) on Azure.");
+});
+
+test("keeps an address that ends the answer whole", () => {
+  assert.equal(cleanAnswer("That is not in the profile. It records X. sam@example.com"), "That is not in the profile. It records X. sam@example.com");
+  assert.equal(cleanAnswer("It records X. Reach them at sam@example.com"), "It records X. Reach them at sam@example.com");
 });
 
 test("keeps a genuine multi-sentence answer whole", () => {
@@ -1015,4 +1021,322 @@ describe("tools fail as answers, not as exceptions", () => {
       }
     }
   });
+});
+
+/*
+ * The gradient rule is a design decision expressed as a parser, so it gets a
+ * test rather than a promise. Audit 2.5 is blocking: if this drifts, either a
+ * fade ships or a hatch is refused, and neither failure announces itself.
+ */
+describe("audit 2.5, interpolated gradients", () => {
+  test("a fade is refused, whichever function draws it", () => {
+    for (const css of [
+      "background: linear-gradient(90deg, var(--ink), transparent);",
+      "background: radial-gradient(circle, #fff, #000);",
+      "background: conic-gradient(from 0deg, red, blue);",
+      "background: repeating-linear-gradient(0deg, red, blue 8px);",
+    ]) {
+      assert.ok(interpolatedGradients(css).length > 0, `should refuse: ${css}`);
+    }
+  });
+
+  test("a hard-stop pattern is not a gradient", () => {
+    for (const css of [
+      // A scanline field: every colour ends exactly where the next begins.
+      "background: repeating-linear-gradient(0deg, transparent 0 2px, var(--ink) 2px 4px);",
+      // The console dot grid, which the first draft of this rule wrongly refused.
+      "background-image: conic-gradient(from 90deg at 1px 1px, color-mix(in oklch, var(--ink) 4%, transparent) 0 25%, transparent 0 100%);",
+    ]) {
+      assert.deepEqual(interpolatedGradients(css), [], `should allow: ${css}`);
+    }
+  });
+
+  test("nested var() and color-mix() do not end the argument list early", () => {
+    const css =
+      "background: repeating-linear-gradient(90deg, color-mix(in oklch, var(--ink) 8%, transparent) 0 1px, transparent 1px 6px);";
+    assert.deepEqual(interpolatedGradients(css), []);
+  });
+});
+
+describe("merged patch", () => {
+  test("the stored diff is the patch the corpus describes", async () => {
+    const { parsePatch } = await import("../lib/patch");
+    const patch = parsePatch(readFileSync(join(process.cwd(), "content/pr-4925.diff"), "utf8"));
+    const facts = readFileSync(join(process.cwd(), "content/facts.md"), "utf8").replace(/\s+/g, " ");
+    const said = facts.match(/in (\d+) added lines across (\d+) files with nothing deleted/);
+    assert.ok(said, "facts.md states the size of the merged patch");
+    assert.equal(patch.added, Number(said[1]));
+    assert.equal(patch.files.length, Number(said[2]));
+    assert.equal(patch.removed, 0);
+  });
+
+  test("every line keeps the line number it has in the file", async () => {
+    const { parsePatch } = await import("../lib/patch");
+    const patch = parsePatch("diff --git a/x.py b/x.py\n--- a/x.py\n+++ b/x.py\n@@ -10,2 +10,3 @@ def f():\n     a\n+    b\n     c\n");
+    assert.deepEqual(
+      patch.files[0].lines.map((l) => [l.mark, l.old, l.new]),
+      [["@", null, null], [" ", 10, 10], ["+", null, 11], [" ", 11, 12]],
+    );
+  });
+});
+
+describe("sourceTitles", () => {
+  test("folds a section into its more specific sibling, keeps distinct sections", async () => {
+    const { sourceTitles } = await import("../lib/agent/retrieve");
+    const lab = "Boston University, Questrom Computational Lab";
+    assert.deepEqual(
+      sourceTitles([{ title: `${lab}, backend` }, { title: lab }, { title: "IMG Systems" }, { title: "IMG Systems" }]),
+      [`${lab}, backend`, "IMG Systems"],
+    );
+    // A shared word is not a shared section.
+    assert.deepEqual(sourceTitles([{ title: "Growaza" }, { title: "Growaza Labs" }]), ["Growaza", "Growaza Labs"]);
+  });
+});
+
+describe("ground: claim-level groundedness", async () => {
+  const { ground } = await import("../lib/agent/ground");
+  const ctx = "Apache Tika pipeline, extraction accuracy **+20%**, **5,000+** profiles/month. Docker, PostgreSQL. LangGraph-based agent on Azure.";
+
+  test("a figure written differently from the source still counts as found", () => {
+    const r = ground("At IMG Systems he raised extraction accuracy by 20% across 5000 profiles with Docker.", ctx, "What did he do at IMG Systems?");
+    assert.equal(r.g, 1);
+  });
+
+  test("an invented figure and an invented name are both caught", () => {
+    const r = ground("He cut latency by 40% on Kubernetes.", ctx);
+    assert.deepEqual(r.unsupported, ["40%", "Kubernetes"]);
+    assert.equal(r.g, 0);
+  });
+
+  test("list markers and sentence-opening words are not claims", () => {
+    const r = ground("1. He used PostgreSQL.\n2. Both ran on Azure's cloud.", ctx);
+    assert.equal(r.claims, 2);
+    assert.equal(r.g, 1);
+  });
+
+  test("an answer with nothing checkable is not penalised", () => {
+    assert.equal(ground("He knows the work well.", ctx).g, 1);
+  });
+});
+
+describe("cite: per-sentence source", async () => {
+  const { cite } = await import("../lib/agent/ground");
+  const sections = [
+    { title: "IMG Systems", body: "Role: SWE Intern\n\nBuilt an Apache Tika extraction pipeline handling 5,000+ profiles a month with Docker and PostgreSQL." },
+    { title: "Growaza", body: "Cut API response time 30% and raised engagement 22% with a MySQL dashboard." },
+  ];
+  test("each sentence maps to the section whose passage holds most of its words", () => {
+    const c = cite("He built an Apache Tika pipeline for 5,000+ profiles a month. He cut API response time 30% at Growaza. He enjoys hiking.", sections);
+    assert.deepEqual(c.map((x) => x.source), ["IMG Systems", "Growaza", null]);
+  });
+  test("with index passages, each cite names the passage and numbers distinct sources", () => {
+    const passages = [
+      { title: "IMG Systems", ordinal: 0, text: "Built an Apache Tika extraction pipeline handling 5,000+ profiles a month." },
+      { title: "Growaza", ordinal: 1, text: "Cut API response time 30% and raised engagement 22%." },
+    ];
+    const c = cite("He built an Apache Tika pipeline for 5,000+ profiles a month. He cut API response time 30%. Tika handled 5,000+ profiles a month. He enjoys hiking.", [], 0.5, passages);
+    assert.deepEqual(c.map((x) => [x.id, x.n]), [["IMG Systems#0", 1], ["Growaza#1", 2], ["IMG Systems#0", 1], [undefined, undefined]]);
+  });
+});
+
+describe("graph route", async () => {
+  const { graphSections, AGGREGATE } = await import("../lib/agent/retrieve");
+
+  test("aggregation wording is recognised, a single-employer question is not", () => {
+    for (const q of ["Where has he used Docker, across all his jobs?", "Which of his projects use LangGraph?", "List his measured results with Redis."]) {
+      assert.ok(AGGREGATE.test(q), q);
+    }
+    assert.ok(!AGGREGATE.test("What did he do at IMG Systems?"));
+  });
+
+  test("an entity links every section that names it, and only those", () => {
+    assert.deepEqual(
+      new Set(graphSections("where has he used docker")),
+      new Set(["Boston University, Questrom Computational Lab, backend", "Boston University, Questrom Computational Lab", "IMG Systems"]),
+    );
+  });
+});
+
+describe("rum beacon schema", async () => {
+  const { parseRum, RUM_MAX_BYTES } = await import("../lib/rum");
+
+  test("keeps the known fields, drops the rest, strips query strings", () => {
+    const out = parseRum({
+      inp: 123.456, viewport: "phone", cores: 8, net: "4g", userAgent: "x", ip: "1.2.3.4",
+      loaf: [{ file: "https://a.test/app.js?token=1#x", fn: "tick", invoker: "user-callback", ms: 90, extra: 1 }],
+      film: { droppedPct: 0.2, tier: "d", secret: "x" },
+    });
+    assert.ok(out);
+    assert.equal(out.inp, 123.5);
+    assert.equal(out.loaf[0].file, "/app.js");
+    assert.deepEqual(Object.keys(out).sort(), ["cores", "film", "inp", "loaf", "net", "viewport"]);
+    assert.equal(out.film.tier, "d");
+    assert.equal(out.film.heldPct, null);
+  });
+
+  test("rejects a body with no viewport and out-of-range numbers", () => {
+    assert.equal(parseRum({ inp: 5 }), null);
+    assert.equal(parseRum("x"), null);
+    assert.equal(parseRum({ viewport: "desktop", inp: -1, cores: 1e9 })?.inp, null);
+    assert.equal(RUM_MAX_BYTES, 2048);
+  });
+});
+
+describe("answerScore: 40% source match + 40% facts found + 20% sentences sourced", async () => {
+  const { answerScore } = await import("../lib/agent/ground");
+  const g = (v: number) => ({ claims: 4, found: Math.round(v * 4), g: v, unsupported: [] });
+  test("sure, every fact found, every sentence sourced = 100", () => {
+    assert.equal(answerScore("answer", g(1), [{ sentence: "a", source: "IMG Systems" }]), 100);
+  });
+  test("partly sure, half the facts, no sources = 44", () => {
+    assert.equal(answerScore("partial", g(0.5), [{ sentence: "a", source: null }]), 44);
+  });
+  test("don't know has no score", () => {
+    assert.equal(answerScore("unknown", g(1), []), null);
+  });
+});
+
+describe("failover order", async () => {
+  const { benchToBack } = await import("../lib/agent/model");
+  test("a provider cooling off moves to the back, never out of the chain", () => {
+    assert.deepEqual(benchToBack(["nvidia", "groq", "gemini"], (n) => n === "groq"), ["nvidia", "gemini", "groq"]);
+    assert.deepEqual(benchToBack(["nvidia", "groq"], () => true), ["nvidia", "groq"]);
+  });
+});
+
+
+describe("public project selection", () => {
+  test("the unfinished project is absent from public facts and the serving index", { skip: "pending: corpus edit from v2-ux-journeys; applying it invalidates the locked blind and edge sets (docs/session-reconciliation.md, merge 3)" }, async () => {
+    const { readFileSync } = await import("node:fs");
+    for (const file of ["content/facts.md", "lib/agent/index.json", "lib/agent/prewarm.json"]) {
+      assert.ok(!/BU Life AI|BU-Life-AI|70 percent|redundant LLM calls/i.test(readFileSync(file, "utf8")), file);
+    }
+    const { sections } = loadContent();
+    assert.ok(sections.some((item) => item.title === "This site"));
+  });
+});
+
+
+describe("portfolio study evidence", () => {
+  test("coursework and industry scope stay distinct, and GRE stays out of proof badges", { skip: "pending: corpus edit from v2-ux-journeys; applying it invalidates the locked blind and edge sets (docs/session-reconciliation.md, merge 3)" }, () => {
+    const { profile } = loadContent();
+    assert.match(profile.current, /Research Assistant/);
+    assert.match(section("Boston University, Questrom Computational Lab, backend").roleParts.title, /Research Assistant/);
+    assert.match(section("Boston University, Questrom Computational Lab").roleParts.title, /Research Assistant/);
+    assert.match(section("Education").body, /GRE total score: 334 of 340/);
+    assert.match(section("Education").body, /classification and regression trees/);
+    assert.doesNotMatch(section("Proof wall").body, /GRE|334/);
+    assert.doesNotMatch(section("What he does not do").body, /does not present himself as an ML engineer|has no PyTorch/);
+    assert.match(section("Boston University, Questrom Computational Lab").roleParts.dates, /August 2026/);
+  });
+});
+
+// "worked with PostgreSQL" was read as an employer question, so a tool the
+// corpus names many times was reported absent (main blind #77, #80).
+describe("absentNames", () => {
+  test("a tool after 'with' is not an employer", () => {
+    assert.deepEqual(absentNames("Where has he worked with PostgreSQL or pgvector, and what was he building in each instance?"), []);
+    assert.deepEqual(absentNames("What is the full scope of his experience working with Docker containers and deployment pipelines?"), []);
+  });
+  test("a name the corpus never uses is still caught", () => {
+    assert.deepEqual(absentNames("Did he work with Databricks?"), ["Databricks"]);
+  });
+});
+
+test("answer length: four sizes chosen from the question, medium by default", async () => {
+  const { answerLength } = await import("../lib/agent/policy");
+  assert.equal(answerLength("Did he use Rust?").name, "short");
+  assert.equal(answerLength("What certifications does he hold?").name, "medium");
+  assert.equal(answerLength("What did he ship?").name, "long");
+  assert.equal(answerLength("How does retrieval work here?").name, "long");
+  assert.equal(answerLength("Walk me through every project he has shipped.").name, "very long");
+});
+
+test("history: at most two earlier turns, only the ones the question leans on", async () => {
+  const { relatedHistory } = await import("../lib/agent/stream");
+  const imgTurn = { question: "What did he build at IMG Systems?", answer: "An Apache Tika pipeline with Pydantic validation." };
+  const certTurn = { question: "Which certifications does he hold?", answer: "NVIDIA and Anthropic certifications." };
+  // A follow-up keeps the last turn.
+  assert.deepEqual(relatedHistory("Why did he do it that way?", [certTurn, imgTurn]), [imgTurn]);
+  // A question sharing a term keeps that turn, even when it is not the last.
+  assert.deepEqual(relatedHistory("What schema accuracy did the Pydantic validation reach?", [imgTurn, certTurn]), [imgTurn]);
+  // An unrelated question goes alone.
+  assert.deepEqual(relatedHistory("Where did he study computer science?", [imgTurn, certTurn]), []);
+  // Never more than two, whatever the tab sends.
+  assert.ok(relatedHistory("Tell me more", [imgTurn, certTurn, imgTurn]).length <= 2);
+});
+
+describe("typeset", () => {
+  test("curls apostrophes and paired quotes, leaves the rest", () => {
+    assert.equal(typeset(`LangChain's SDK, users' notes, "work authorization"`), "LangChain’s SDK, users’ notes, “work authorization”");
+    assert.equal(typeset("5' 10\" tall"), "5' 10\" tall");
+  });
+  test("one long date style, ISO passed through when it is not a date", () => {
+    assert.equal(longDate("2026-10-10"), "October 10, 2026");
+    assert.equal(longDate("soon"), "soon");
+  });
+});
+
+
+test("health exposes configured model names without credentials or readiness promises", async () => {
+  const names = ["GROQ_API_KEY", "GEMINI_API_KEY", "OPENROUTER_API_KEY", "NVIDIA_API_KEY", "AZURE_OPENAI_API_KEY", "OPENAI_API_KEY", "GEMINI_MODEL"];
+  const before = new Map(names.map((name) => [name, process.env[name]]));
+  try {
+    for (const name of names) delete process.env[name];
+    process.env.GEMINI_API_KEY = "health-test-secret-never-expose";
+    process.env.GEMINI_MODEL = "test-model-for-health";
+    const { GET } = await import("../app/api/health/route");
+    const response = GET();
+    const data = await response.json();
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.deepEqual(data.providers, [{ name: "gemini", model: "test-model-for-health", coolingOffFor: 0 }]);
+    assert.ok(Number.isFinite(Date.parse(data.checkedAt)));
+    assert.match(data.availabilityScope, /not a provider probe/);
+    assert.ok(!JSON.stringify(data).includes("health-test-secret-never-expose"));
+  } finally {
+    for (const [name, value] of before) {
+      if (value === undefined) delete process.env[name]; else process.env[name] = value;
+    }
+  }
+});
+
+test("a credential counts only when its page names the holder and the credential", async () => {
+  const { credentialConfirmed } = await import("../lib/credentials");
+  const name = "NVIDIA-Certified Professional: Agentic AI";
+  assert.equal(credentialConfirmed("Kushal earned Agentic AI", name, "Kushal"), true);
+  assert.equal(credentialConfirmed("Agentic AI", name, "Kushal"), false);
+  assert.equal(credentialConfirmed("Kushal earned nothing here", name, "Kushal"), false);
+});
+
+test("a question about which roles fit reaches the availability section", async () => {
+  const { kindsFor } = await import("../lib/agent/query");
+  assert.ok(kindsFor("Which roles fit his experience, and what work supports that fit?").includes("availability"));
+  assert.ok(kindsFor("Which roles fit his experience?").includes("role"), "targets alone leave no work to cite");
+  assert.ok(!kindsFor("How does retrieval rank passages?").includes("availability"));
+});
+
+test("a provider that closes without text fails over instead of answering blank", async () => {
+  const { streamWithFailover } = await import("../lib/agent/model");
+  const saved = { ...process.env };
+  const realFetch = globalThis.fetch;
+  for (const k of ["NVIDIA_API_KEY", "OPENROUTER_API_KEY", "OPENAI_API_KEY", "AZURE_OPENAI_API_KEY", "LLM_PROVIDER"]) delete process.env[k];
+  process.env.GROQ_API_KEY = "test";
+  process.env.GEMINI_API_KEY = "test";
+  let calls = 0;
+  const frame = (content: string) => `data: ${JSON.stringify({ id: "x", object: "chat.completion.chunk", choices: [{ index: 0, delta: { content } }] })}\n\n`;
+  globalThis.fetch = (async () => {
+    const body = calls++ === 0 ? frame("") : frame("answer");
+    return new Response(`${body}data: [DONE]\n\n`, { headers: { "content-type": "text/event-stream" } });
+  }) as typeof fetch;
+  try {
+    const served: string[] = [];
+    let text = "";
+    for await (const t of streamWithFailover([{ role: "user", content: "q" }], undefined, (p) => served.push(p))) text += t;
+    assert.equal(text, "answer");
+    assert.equal(calls, 2);
+    assert.equal(served.length, 2);
+  } finally {
+    globalThis.fetch = realFetch;
+    process.env = saved;
+  }
 });

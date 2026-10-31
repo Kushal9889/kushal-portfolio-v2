@@ -252,9 +252,9 @@ describe("no javascript", () => {
 
     // The strongest claim, the one that gates a reply, and the address.
     assert.match(html, /merged the fix in 57 hours/i);
-    // React puts a comment node between a literal and an interpolation, so the
-    // serialised markup reads "Available <!-- -->January 2027".
-    assert.match(html, /Available (<!--.*?-->)?January 2027/i);
+    // The fact this test is about is that the date a recruiter needs is in the
+    // server render and not fetched, wherever the page chooses to show it.
+    assert.match(html, /January 2027/);
     assert.match(html, /kushal7887pd@gmail\.com/);
   });
 
@@ -267,7 +267,12 @@ describe("no javascript", () => {
 
   test("the measured figures render server-side, from the eval file", async () => {
     const html = await (await fetch(BASE)).text();
-    assert.match(html, /assertions pass/);
+    // "runs pass", not "assertions pass". Measured counts runs and EvalMatrix
+    // counts cases, and the label was corrected to say which when the two were
+    // found reporting different denominators under the same word. The figures
+    // are read from content/evals.json at build time, so this asserts the shape
+    // the file produces rather than a phrase that has moved once already.
+    assert.match(html, /\d+\/\d+<\/span>.{0,80}runs pass/s);
     // The four groups, which is the split that makes 16/16 mean something.
     for (const group of ["grounding", "policy", "authorisation", "out-of-corpus"]) {
       assert.ok(html.includes(group), `eval group "${group}" is missing`);

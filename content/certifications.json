@@ -10,7 +10,24 @@
       "url": "https://www.credly.com/badges/c8f105aa-1815-40cc-85a1-e5a2ef20c920/public_url",
       "kind": "proctored-exam",
       "featured": true,
-      "why": "Proctored professional exam from the vendor whose inference stack the field runs on."
+      "why": "Professional exam from the vendor whose inference stack the field runs on.",
+      "image": "/certs/nvidia-ncp-aai.webp",
+      "plate": "#ffffff",
+      "pinned": true
+    },
+    {
+      "id": "anthropic-claude-certified-developer",
+      "name": "Claude Certified Developer – Foundations",
+      "short": "CCD-F",
+      "issuer": "Anthropic",
+      "year": 2026,
+      "url": "https://www.credly.com/badges/54ca4478-339e-496c-a4c4-2ae6c4c339ca/public_url",
+      "kind": "exam",
+      "featured": false,
+      "image": "/certs/claude-ccd-f.webp",
+      "plate": "#d97757",
+      "pinned": true,
+      "why": "Anthropic's own certification for building with Claude."
     },
     {
       "id": "aws-cloud-technical-essentials",

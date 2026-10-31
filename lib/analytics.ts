@@ -15,7 +15,19 @@ export type Event =
   | "agent_opened"
   | "agent_asked"
   | "voice_used"
+  | "agent_feedback"
+  | "ui"
   | "contact";
+
+/**
+ * A short, stable tag for a question, so votes on the same question group
+ * together without the question itself leaving the browser. FNV-1a, 32 bits.
+ */
+export function hashOf(text: string): string {
+  let h = 0x811c9dc5;
+  for (const ch of text.trim().toLowerCase()) h = Math.imul(h ^ ch.codePointAt(0)!, 0x01000193) >>> 0;
+  return h.toString(36);
+}
 
 export function track(event: Event, detail?: string) {
   if (typeof navigator === "undefined") return;

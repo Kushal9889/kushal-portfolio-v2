@@ -1,0 +1,57 @@
+.copy {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  border: var(--border-hair) solid var(--rule);
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--step--1);
+  cursor: pointer;
+}
+
+.copy:focus-visible {
+  outline: 2px solid var(--tone, var(--signal));
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .copy {
+    transition: border-color var(--t-fast) ease;
+  }
+  .copy:hover {
+    border-color: var(--tone, var(--ink));
+  }
+}
+
+.copy[data-copied] {
+  border-color: var(--tone, var(--ink));
+}
+
+/* The word arrives rather than swaps: a short fade out of a 2px blur, so
+   "Copied" reads as the same label changing, not a second one appearing. */
+.say {
+  display: inline-block;
+  transition:
+    opacity 160ms var(--ease-out),
+    filter 160ms var(--ease-out);
+}
+
+@starting-style {
+  .say {
+    opacity: 0;
+    filter: blur(2px);
+  }
+}
+
+/* Reduced motion keeps the fade, which carries the meaning, and drops the blur. */
+@media (prefers-reduced-motion: reduce) {
+  .say {
+    transition: opacity 160ms var(--ease-out);
+  }
+}
+
+.fallback { display: grid; gap: 8px; margin-top: 12px; max-width: 32rem; font-size: 14px; line-height: 1.5; color: var(--ink-soft); }
+.fallback input { width: 100%; min-width: 0; min-height: 44px; padding: 8px 12px; border: 1px solid var(--rule); border-radius: var(--r-md); color: var(--ink); background: var(--paper-high); font: inherit; font-size: 16px; }
+.fallback input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }

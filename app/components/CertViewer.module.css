@@ -1,0 +1,93 @@
+/* The viewer: the dialog grows out of the badge that was clicked and returns
+   into it on close (Motion FLIP in CertViewer.tsx, no overshoot). */
+.open {
+  all: unset;
+  display: flex;
+  flex-direction: column;
+  gap: inherit;
+  cursor: zoom-in;
+  color: inherit;
+  /* No transform transition: app/kit springs this card's transform, and a CSS
+     transition on the same property would smear every frame Motion writes. */
+  transition: border-color var(--t-fast) var(--ease-out);
+}
+
+.open:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 4px;
+}
+
+.dialog {
+  max-width: min(92vw, 42rem);
+  padding: var(--s-4);
+  border: var(--border-hair) solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  overflow: visible;
+}
+
+.dialog::backdrop {
+  background: color-mix(in oklch, var(--paper) 78%, transparent);
+}
+
+.plate {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--ink);
+}
+
+.close,
+.verify {
+  position: absolute;
+  bottom: calc(100% + var(--s-2));
+  min-height: 44px;
+  padding: 0 var(--s-4);
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font: 500 var(--step--1) var(--font-mono), monospace;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.close {
+  right: 0;
+}
+
+.verify {
+  left: 0;
+}
+
+.close:focus-visible,
+.verify:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
+
+/* The plate's travel is Motion's (CertViewer.tsx). CSS keeps only the veil,
+   which has no origin to come from. Reduced motion: the veil alone. */
+@media (prefers-reduced-motion: no-preference) {
+  .dialog[open] {
+    transform-origin: 0 0;
+  }
+
+  .dialog[open]::backdrop {
+    animation: veil-in 0.3s ease-out both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog[open] {
+    animation: veil-in 0.2s ease-out both;
+  }
+}
+
+@keyframes veil-in {
+  from {
+    opacity: 0;
+  }
+}

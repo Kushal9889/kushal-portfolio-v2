@@ -1,147 +1,100 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Telemetry from "./Telemetry";
-import { TELEMETRY_EVENT, type TelemetryPing } from "./Agent";
+import { useEffect, useRef } from "react";
+import { SENT_EVENT, TELEMETRY_EVENT, ASK_EVENT, type SentDetail, type TelemetryPing } from "./Agent";
+import { VISITOR_JOURNEYS } from "@/lib/journeys";
+import { useReferralTag } from "./Reach";
+import { mailtoLink } from "@/lib/reach";
 import styles from "./Hero.module.css";
-
-const NODES = ["route", "retrieve", "answer"] as const;
-type NodeName = (typeof NODES)[number];
-
-/** Timings arrive per node as the graph executes. Absent until measured. */
-type Trace = Partial<Record<NodeName, number>>;
+import EmailArrow from "./EmailArrow";
+import VenomSurface from "./VenomSurface";
+import { track } from "@/lib/analytics";
 
 type Props = {
   name: string;
   tagline: string;
   location: string;
-  /** Where he works right now. A recruiter scans for employer and title before
-   *  anything else, and the hero named neither. */
+  /** Title, employer and start date in one line: what a recruiter checks first. */
   current: string;
-  /** What he builds, in the words a 2026 role is written in. */
-  focus: string;
-  /** The least fakeable thing he owns, stated before the first scroll.
-   *
-   *  Split into a figure and a sentence rather than passed as one string. A
-   *  recruiter decides whether to keep reading in two to three seconds, against
-   *  the largest and highest-contrast object on the page, and this claim -- an
-   *  outside maintainer acting on his work -- was previously set at the same
-   *  size as the four gray lines around it. A number set as a number is a
-   *  difference in kind, not in degree, which is what the isolation effect
-   *  actually requires. */
-  evidence: { figure: string; unit: string; sentence: string; href: string; label: string };
-  /** When he can start, and where. The question that gates a reply. */
-  available: string;
-  credential: { label: string; url: string };
-  contactHref: string;
+  /** The least fakeable thing he owns, stated before the first scroll. The
+   *  figure is matched inside the sentence and links the merged pull request. */
+  evidence: { figure: string; sentence: string; href: string; label: string };
+  /** The written draft the primary action opens. */
+  email: string;
+  site: string;
+  /** Name and role for the draft's subject line. */
+  who: string;
+  /** The two pinned certifications, named on a phone where a referrer reads first. */
+  certified?: string[];
+  resumeHref: string;
+  /** The agent counted across four domains (tools, trace, evaluation, retrieval), each read from code. */
+  counts?: { tools: number; steps: number; tested: { pass: number; cases: number; at: string }; passages: number };
   /** The agent itself, rendered under the graph it just traced. */
   children?: React.ReactNode;
 };
 
 /**
- * The hero runs one real query against the agent on mount and renders the graph
- * traversing its nodes with the actual per-node timings.
+ * The hero reads the page's recorded load-time run on mount and hands its
+ * numbers to the film. The agent card opens on the brief, not on that answer.
  *
  * It is deliberately silent and requires no interaction: the first thing a
  * visitor sees has to work with the sound off, on a phone, before any permission
  * prompt. Voice is offered further down for anyone who wants it.
  *
- * If the agent is unreachable the graph still renders its structure and simply
- * shows no numbers. Nothing here ever displays a placeholder value, because a
- * fabricated latency is the easiest claim on a page like this to disprove.
+ * Nothing here ever displays a placeholder value, because a fabricated latency
+ * is the easiest claim on a page like this to disprove.
  */
+/** "2026-10-26" as "Oct 26": the tally's date reads as a date, not a code. */
+function shortDate(iso: string) {
+  const d = new Date(`${iso}T12:00:00Z`);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
+
 export default function Hero({
   name,
   tagline,
   location,
   current,
-  focus,
   evidence,
-  available,
-  credential,
-  contactHref,
+  email,
+  site,
+  who,
+  certified = [],
+  resumeHref,
+  counts,
   children,
 }: Props) {
-  const [trace, setTrace] = useState<Trace>({});
-  const [active, setActive] = useState<NodeName | null>(null);
-  const [done, setDone] = useState(false);
-  /** Set when the demo endpoint could not be reached, so the caption says so. */
-  const [unreachable, setUnreachable] = useState(false);
-  /**
-   * What the request on load actually returned.
-   *
-   * The hero printed three timings for a request whose answer it discarded, so
-   * the single most persuasive thing this page does -- answer a real question
-   * about him, correctly, in under two seconds -- was invisible to anyone who
-   * did not type something first. Most visitors do not type.
-   */
-  const [said, setSaid] = useState<{ question: string; answer: string; sources: string[] } | null>(
-    null,
-  );
+  const tag = useReferralTag();
   const started = useRef(false);
 
   useEffect(() => {
     if (started.current) return;
     started.current = true;
 
-    // Respect a visitor who has asked for less motion: still fetch, but skip the
-    // staged node highlight and settle straight to the final numbers.
-    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const controller = new AbortController();
 
     (async () => {
       try {
+        window.dispatchEvent(
+          new CustomEvent<SentDetail>(SENT_EVENT, { detail: { question: null, t0: performance.now(), recorded: true } }),
+        );
         const res = await fetch("/api/agent/demo", { signal: controller.signal });
-        if (!res.ok) {
-          setUnreachable(true);
-          return;
-        }
+        if (!res.ok) return;
         const demo: {
           question: string;
           answer: string;
           sources: string[];
-          timings: Trace;
+          timings: Record<string, number>;
           total: number;
           usage: { in: number; out: number } | null;
           provider: string | null;
+          ranAt?: number;
+          degraded?: true;
         } = await res.json();
+        // No model answered, so there is no run to report: show no numbers.
+        if (demo.degraded) return;
         const measured = demo.timings;
-        setSaid({ question: demo.question, answer: demo.answer, sources: demo.sources });
-
-        if (calm) {
-          setTrace(measured);
-          setDone(true);
-          window.dispatchEvent(
-            new CustomEvent<TelemetryPing>(TELEMETRY_EVENT, {
-              detail: {
-                ms: demo.total,
-                tokens: (demo.usage?.in ?? 0) + (demo.usage?.out ?? 0),
-                cost: 0,
-                provider: demo.provider,
-              },
-            }),
-          );
-          return;
-        }
-
-        // Paced to what was actually measured, not to a fixed beat. A flat
-        // 380ms per node put a floor of 1.14s under every reveal, so a fast
-        // answer was displayed as though it had been slow. Floored at 90ms so
-        // the sequence still reads as three discrete steps rather than a flash.
-        const total = NODES.reduce((sum, n) => sum + (measured[n] ?? 0), 0);
-        const step = Math.max(90, Math.min(380, total / NODES.length));
-
-        for (const node of NODES) {
-          if (measured[node] === undefined) continue;
-          setActive(node);
-          await new Promise((r) => setTimeout(r, step));
-          setTrace((prev) => ({ ...prev, [node]: measured[node] }));
-        }
-        setActive(null);
-        setDone(true);
-        // The request the page made on load is a real request and belongs on
-        // the strip. Without it a visitor who asks nothing sees an empty chart
-        // under a panel claiming to be live.
+        // A recorded run, not the visitor's: the film labels it with its age.
         window.dispatchEvent(
           new CustomEvent<TelemetryPing>(TELEMETRY_EVENT, {
             detail: {
@@ -149,35 +102,37 @@ export default function Hero({
               tokens: (demo.usage?.in ?? 0) + (demo.usage?.out ?? 0),
               cost: 0,
               provider: demo.provider,
+              tokensIn: demo.usage?.in,
+              tokensOut: demo.usage?.out,
+              timings: measured,
+              sources: demo.sources,
+              recorded: true,
+              ranAt: demo.ranAt,
+              answerChars: demo.answer.length,
             },
           }),
         );
-      } catch (err) {
-        // Offline, blocked, or the route is not deployed. The structure above
-        // still tells the story; it just does so without numbers. Stated rather
-        // than left hanging: the caption used to sit on "ask anything below" for
-        // ever, which reads as a page still loading rather than one whose demo
-        // endpoint is down.
-        if ((err as Error)?.name !== "AbortError") setUnreachable(true);
+      } catch {
+        // Offline, blocked, or the route is not deployed. The film shows no
+        // numbers rather than a made-up one.
       }
     })();
 
     return () => controller.abort();
   }, []);
 
-  const total = Object.values(trace).reduce((a, b) => a + b, 0);
-
   return (
-    <header className={styles.hero}>
+    <header className={styles.hero} id="top" tabIndex={-1}>
       <div className="wrap">
-        <div className={styles.top}>
-          <span className={styles.name}>{name}</span>
-          <span className="label">{location}</span>
+        <div className={styles.top} data-film-scrim>
+          {/* The name at the top left goes back to the top, as it does on most sites. */}
+          <a className={styles.name} href="#top">{name}</a>
+          <span className={styles.place}>{location}</span>
         </div>
 
         {/* Split on the sentence boundary: the claim leads, the qualifier
             recedes. Falls back to the whole string if the shape ever changes. */}
-        <h1 className={styles.line}>
+        <h1 className={styles.line} data-film-scrim>
           {(() => {
             const cut = tagline.indexOf(". ");
             if (cut === -1) return tagline;
@@ -199,139 +154,98 @@ export default function Hero({
          * top to bottom. Identity reads down the left, the instrument runs on
          * the right, and both finish inside the first screen. */}
         <div className={styles.body}>
-          <div className={styles.identity}>
+          <div className={styles.identity} data-film-scrim>
 
-        {/* What he builds, in the vocabulary the roles are written in.
-            The headline is the voice; this is the scan. Someone deciding in
-            twenty seconds is looking for these words before they read a
-            sentence, and search engines read them too. */}
+        {/* Title, employer and start date: the line a recruiter scans for
+            before anything else, set directly under the claim. */}
         <p className={`${styles.current} rise`} style={{ "--rise-n": 0 } as React.CSSProperties}>
           {current}
         </p>
-        <ul className={`${styles.focus} rise`} style={{ "--rise-n": 1 } as React.CSSProperties}>
-          {focus.split(/\s*[·]\s*/).filter(Boolean).map((f) => (
-            <li key={f}>{f}</li>
-          ))}
-        </ul>
+        {certified.length > 0 && (
+          <p className={styles.certified} data-only="phone">
+            {certified.join(" \u00b7 ")}
+          </p>
+        )}
 
-        {/* The one object on this page that looks like nothing else on it.
-            Everything else in the hero is a system describing itself; this is
-            the single line where an outside party did something in response to
-            his work, and it is the only claim here that no other candidate can
-            copy. It gets a figure, a border and more surrounding space than
-            anything else, because difference in kind is what a scanning eye
-            stops for. */}
-        <a
-          className={`${styles.evidence} rise`}
-          style={{ "--rise-n": 2 } as React.CSSProperties}
-          href={evidence.href}
-        >
-          <span className={styles.evidenceFigure}>
-            <span className={`${styles.evidenceNumber} tabular`}>{evidence.figure}</span>
-            <span className={styles.evidenceUnit}>{evidence.unit}</span>
-          </span>
-          <span className={styles.evidenceBody}>
-            <span className={styles.evidenceSentence}>{evidence.sentence}</span>
-            <span className={styles.evidenceLabel}>{evidence.label}</span>
-          </span>
-        </a>
-
-        {/* The two facts that decide whether a recruiter writes at all, kept
-            deliberately quiet. Moved above the graph block: on a 13-inch laptop
-            it sat below three cells and a caption, which put the one number
-            that gates a reply outside the first screen. */}
-        <p className={styles.available}>Available {available}</p>
-
-        {/* In the first screen now, not at 1660px.
-            The one action this page is asking for cannot live below two folds. */}
+        {/* One filled action and one plain one. The draft is already written,
+            so pressing it costs the reader a send, not a message. */}
         <div className={styles.actions}>
-          <a className={styles.cta} href={contactHref} data-pull>
-            Get in touch
+          <a className={styles.cta} data-email-draft href={mailtoLink(email, site, "general", tag, who)} onClick={() => track("contact", "hero-email")} data-pull>
+            <VenomSurface />
+            <span className={styles.ctaText}>
+              Email him
+              <span className={styles.ctaHint}>draft written</span>
+            </span>
+            <EmailArrow />
           </a>
-          <a className={styles.cred} href={credential.url} target="_blank" rel="noreferrer" data-pull>
-            {credential.label}
+          <a className={styles.secondary} href={resumeHref} target="_blank" rel="noreferrer" onClick={() => track("contact", "hero-resume")}>
+            <span className={styles.ctaText}>
+              Résumé
+              <span className={styles.ctaHint}>PDF · 1 page</span>
+            </span>
           </a>
         </div>
+
+        {/* The one claim an outsider acted on, beside the action it argues for. */}
+        <p className={`${styles.proof} rise`} style={{ "--rise-n": 2 } as React.CSSProperties}>
+          {(() => {
+            const at = evidence.sentence.lastIndexOf(evidence.figure);
+            if (at === -1) return evidence.sentence;
+            const end = at + evidence.figure.length;
+            return (
+              <>
+                {evidence.sentence.slice(0, at)}
+                <a href={evidence.href} aria-label={evidence.label || "the merged fix"} data-pull>
+                  <b className={`${styles.proofFigure} tabular`}>{evidence.figure}</b>
+                </a>
+                {evidence.sentence.slice(end)}
+              </>
+            );
+          })()}
+        </p>
+
+        {/* Each route names who it is for and what it leads to, so a reader
+            picks by recognising themselves rather than by guessing a section. */}
+        <nav className={styles.journeys} aria-label="Find what you need">
+          {VISITOR_JOURNEYS.map((journey) => (
+            <a key={journey.label} href={journey.href} data-only={"phone" in journey ? "phone" : undefined} onClick={() => track("ui", `journey-${journey.label.toLowerCase().replace(/[^a-z]+/g, "-")}`)}>
+              <b>{journey.label}</b>
+              <span>{journey.promise}</span>
+            </a>
+          ))}
+        </nav>
+
+        {/* The agent below, counted. Four numbers from four parts of the system,
+            each one a question the agent answers about itself. */}
+        {counts && (
+          <div className={styles.tally} role="group" aria-label="The agent, counted">
+            {[
+              { n: `${counts.tools}`, what: "tools it can call", ask: "Which tools can the agent call, and when does it use each one?" },
+              { n: `${counts.steps}`, what: "traced steps per answer", ask: "What happens in each traced step of a run, from routing to the grounding check?" },
+              { n: `${counts.tested.pass}/${counts.tested.cases}`, what: "tests it never saw", when: shortDate(counts.tested.at), ask: "How is the agent tested, and what does the held-out split check?" },
+              { n: `${counts.passages}`, what: "passages it searches", ask: "What is in the record the agent searches, and how is it split into passages?" },
+            ].map((c) => (
+              <button key={c.what} type="button" aria-label={`${c.n} ${c.what}. Ask: ${c.ask}`} onClick={() => {
+                track("ui", `tally-${c.what.split(" ")[0].toLowerCase().replace(/[^a-z]+/g, "")}`);
+                window.dispatchEvent(new CustomEvent<string>(ASK_EVENT, { detail: c.ask }));
+              }}>
+                <b className="tabular">{c.n}</b>
+                <span>{c.what}{"when" in c && c.when ? <span className={styles.nowrap}>, {c.when}</span> : null}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
           </div>
 
         {/* One instrument, not two.
             The graph and the agent were separated by the availability line and
             two buttons, so the thing that had just run and the box that runs it
-            again read as unrelated furniture. They are the same object: this
-            panel shows the request the page made on load, and the input under
-            it makes another. The console ground says the whole block is live. */}
+            again read as unrelated furniture. They are the same object: the
+            brief opens it and the input under it runs the agent. The console
+            ground says the whole block is live. */}
         <div className={styles.console} data-surface="console">
-          <div className={styles.consoleHead}>
-            <span className={styles.consoleLabel}>agent</span>
-            <span className={styles.consoleState} data-state={done ? "done" : unreachable ? "degraded" : "running"}>
-              <span className="live-dot" data-state={done || unreachable ? undefined : "running"} />
-              {done ? `${total}ms` : unreachable ? "unreachable" : "running"}
-            </span>
-          </div>
-
-          {/* The graph, drawn rather than written.
-              Each node is a cell with a rail running through it; the rail fills as
-              that node completes, so the row reads as a system executing instead of
-              a line of log output. Timings sit under the node they belong to. */}
-          <div className={styles.graph} aria-hidden="true">
-            {NODES.map((node, i) => {
-              const ms = trace[node];
-              const state = active === node ? "running" : ms !== undefined ? "done" : "idle";
-              return (
-                <div key={node} className={styles.cell} data-state={state}>
-                  <div className={styles.rail}>
-                    {i > 0 && <span className={styles.railLine} />}
-                    <span className={styles.dot} />
-                    {i < NODES.length - 1 && <span className={styles.railLine} />}
-                  </div>
-                  <span className={styles.label}>{node}</span>
-                  <span className={`${styles.ms} tabular`}>
-                    {ms !== undefined ? `${ms}ms` : state === "running" ? "\u00b7\u00b7\u00b7" : ""}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* What it said.
-           *
-           * A panel that reports three latencies for an answer it does not show
-           * is asking to be taken on trust, on a page whose entire argument is
-           * that nothing here needs to be. This is the actual reply to the
-           * actual question, with the sections it was grounded in, produced by
-           * the request whose timings are drawn directly above it. */}
-          <div className={styles.said} aria-live="polite">
-            {said ? (
-              <>
-                <p className={styles.saidQ}>{said.question}</p>
-                <p className={styles.saidA}>{said.answer}</p>
-                {said.sources.length > 0 && (
-                  <p className={styles.saidSrc}>
-                    <span className={styles.saidSrcLabel}>grounded in</span>
-                    {said.sources.map((src) => (
-                      <span key={src} className={styles.saidChip}>
-                        {src}
-                      </span>
-                    ))}
-                  </p>
-                )}
-              </>
-            ) : unreachable ? (
-              <p className={styles.saidA}>
-                No provider is reachable right now. The box below still answers from the
-                retrieved sections, unsummarised.
-              </p>
-            ) : (
-              <p className={styles.saidPending}>running the graph against his corpus</p>
-            )}
-          </div>
-
-
           <div className={styles.agentSlot}>{children}</div>
-
-          {/* What this page has done since you opened it. Every bar is one real
-              request, plotted against the median measured across the eval run. */}
-          <Telemetry />
         </div>
 
         </div>

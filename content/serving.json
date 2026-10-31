@@ -1,0 +1,34 @@
+{
+  "note": "Public specifications for the serving simulator (ServeSim). Every constant carries its source. The outputs are a roofline estimate (decode bounded by memory bandwidth), labelled as such on the page.",
+  "models": [
+    {
+      "id": "llama-3.1-8b",
+      "label": "Llama 3.1 8B",
+      "params": 8.03e9,
+      "layers": 32,
+      "kvHeads": 8,
+      "headDim": 128,
+      "source": "https://huggingface.co/meta-llama/Llama-3.1-8B"
+    },
+    {
+      "id": "llama-3.1-70b",
+      "label": "Llama 3.1 70B",
+      "params": 70.6e9,
+      "layers": 80,
+      "kvHeads": 8,
+      "headDim": 128,
+      "source": "https://huggingface.co/meta-llama/Llama-3.1-70B"
+    }
+  ],
+  "gpus": [
+    {
+      "id": "h100-sxm",
+      "label": "H100 SXM",
+      "memoryGB": 80,
+      "bandwidthTBs": 3.35,
+      "source": "https://www.nvidia.com/en-us/data-center/h100/"
+    }
+  ],
+  "blockTokens": 16,
+  "reserve": 0.1
+}

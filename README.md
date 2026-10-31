@@ -25,11 +25,9 @@ maintainer wrote and merged the fix 57 hours later and credited the reproduction
 - Issue: [langchain-ai/deepagents#4846](https://github.com/langchain-ai/deepagents/issues/4846)
 - Merged fix: [langchain-ai/deepagents#4925](https://github.com/langchain-ai/deepagents/pull/4925)
 
-**The retrieval figure, which plots the run that just happened.** BM25 rank,
-dense rank, and the reciprocal rank fusion of the two, per corpus chunk, redrawn
-from whatever you ask the agent. It publishes its own Kruskal stress, because
-the 3D projection I tried first held only 47.4% of the variance across three
-axes and I cut it rather than ship a picture that discards half the structure.
+**The retrieval table, which shows the run that just happened.** BM25 rank,
+dense rank, and the reciprocal rank fusion of the two, per passage, redrawn from
+whatever you ask the agent on `/stage`.
 
 ## What the gates enforce
 
@@ -96,9 +94,11 @@ route ────────────────────────�
 latency a visitor waits on.
 
 **retrieve** fuses BM25 with cosine over vectors baked into the bundle at build
-time, merged by reciprocal rank fusion. The corpus is 16 chunks, so a vector
-database would be pure network tax. When one rare term already picks out a chunk
-decisively, the embedding call is skipped entirely.
+time, merged by reciprocal rank fusion. The corpus is a few dozen passages, so
+the bundled vectors answer without a database; Neon serves the dense half only
+when configured and inside its time cap. Every question is embedded: a keyword
+shortcut was measured and removed because it fired only on the weakest query in
+the eval set.
 
 **answer** streams tokens over Server-Sent Events. No checkpointer: LangGraph
 writes one after every node by default, which is 20–50ms per write for
@@ -131,12 +131,18 @@ verification link, or the em-dash rate rises above 2 per 1,000 words.
 
 ## Deploy
 
-Push to GitHub, import the repo on Vercel, set `NVIDIA_API_KEY`. Nothing else.
+The deployment target is Netlify. Use the committed retrieval index and media:
+`npm ci`, then `npm run build:release`. The normal `build` command regenerates
+artifacts and is for authoring, not release promotion.
 
-CI runs typecheck, token lint, fact verification, index rebuild and a production
-build on every push. Link checking runs as a separate non-blocking job, because a
-credential host being briefly unreachable should be visible without blocking a
-deploy.
+Netlify runs fact verification, the production build, repository checks and unit
+tests. CI also checks HTTP behavior, browser journeys and production dependency
+advisories. Failed checks block readiness; skipped live-provider tests do not
+certify the agent. Configure the matching required checks in GitHub and verify
+Netlify publication controls before enabling automatic production publication.
+
+See [the release contract](release/production-readiness.md) for numeric targets,
+preview verification, pending integration work and the rollback procedure.
 
 ## Voice
 

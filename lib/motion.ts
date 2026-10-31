@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { reducedMotion } from "./verbs";
 
 /**
  * Motion loads after the page has painted, never before it.
@@ -22,14 +23,15 @@ import { useEffect, useRef } from "react";
  */
 
 async function load() {
-  const [core, scroll, split] = await Promise.all([
+  const [core, scroll, split, flip] = await Promise.all([
     import("gsap"),
     import("gsap/ScrollTrigger"),
     import("gsap/SplitText"),
+    import("gsap/Flip"),
   ]);
 
   const { gsap } = core;
-  gsap.registerPlugin(scroll.ScrollTrigger, split.SplitText);
+  gsap.registerPlugin(scroll.ScrollTrigger, split.SplitText, flip.Flip);
 
   // Every duration and curve in this file resolves to the same two values the
   // stylesheet uses, so a tween and a CSS transition on the same element cannot
@@ -62,12 +64,37 @@ async function load() {
   // disclosure opening, a font swapping in, an image settling. Debounced to the
   // next frame because a streaming answer resizes on nearly every token, and
   // refresh() is a full layout pass.
-  let queued = 0;
+  //
+  // Suspended while an answer is streaming. A refresh is a full layout pass
+  // over every trigger on the page, the observer fires on nearly every token,
+  // and the result was a frame-by-frame relayout for the whole length of an
+  // answer -- which is what made pressing a suggested question feel like the
+  // page had seized rather than started. Nothing below the agent can be read
+  // during those few seconds anyway, because the reader is watching the answer
+  // arrive, so the measurements are simply deferred: `data-streaming` is set by
+  // the agent while a request is in flight and cleared when it settles, and the
+  // one refresh that matters runs on that clearing edge.
+  //
+  // Trailing by 200 ms, not one frame: a disclosure opening resizes the body on
+  // every frame, and one refresh per frame cost 181-294 layouts per open at
+  // 1440x900 2x. Waiting for it to settle measured 56-84.
+  let queued: ReturnType<typeof setTimeout> | undefined;
   const remeasure = () => {
-    cancelAnimationFrame(queued);
-    queued = requestAnimationFrame(() => scroll.ScrollTrigger.refresh());
+    clearTimeout(queued);
+    queued = setTimeout(() => {
+      if (document.documentElement.dataset.streaming === "yes") return;
+      scroll.ScrollTrigger.refresh();
+    }, 200);
   };
   new ResizeObserver(remeasure).observe(document.body);
+
+  // The deferred re-measure, run once the answer has settled.
+  new MutationObserver(() => {
+    if (document.documentElement.dataset.streaming !== "yes") remeasure();
+  }).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-streaming"],
+  });
 
   // Lets the stylesheet stand down: the CSS scroll timelines are the floor for
   // visitors without this bundle, and running both would animate twice.
@@ -77,6 +104,7 @@ async function load() {
     gsap,
     ScrollTrigger: scroll.ScrollTrigger,
     SplitText: split.SplitText,
+    Flip: flip.Flip,
   };
 }
 
@@ -89,7 +117,6 @@ function motionKit() {
   return (pending ??= load());
 }
 
-const REDUCED = "(prefers-reduced-motion: reduce)";
 
 function idle(fn: () => void) {
   if (typeof window.requestIdleCallback === "function") {
@@ -123,23 +150,34 @@ export function useMotion<T extends HTMLElement = HTMLDivElement>(
 
   useEffect(() => {
     const root = ref.current;
-    if (!root || window.matchMedia(REDUCED).matches) return;
+    // The page's own toggle wins over the OS setting in both directions, so a
+    // reader who asks for motion here gets the bundle even when their system
+    // asks for less of it.
+    if (!root || reducedMotion()) return;
 
     let live = true;
     let ctx: { revert: () => void } | undefined;
+    let task = 0;
 
     const id = idle(() => {
       motionKit().then((kit) => {
-        // React remounts effects in development, and an idle callback can land
-        // after the element has already left the document.
-        if (!live || !root.isConnected) return;
-        ctx = kit.gsap.context(() => latest.current(kit, root), root);
+        // Every component waiting on the kit resumes in the same microtask
+        // checkpoint, so a page of pinned chapters would build all its triggers
+        // in one long main-thread task. Each one gets its own task instead, still
+        // in mount order, which is document order.
+        task = window.setTimeout(() => {
+          // React remounts effects in development, and an idle callback can land
+          // after the element has already left the document.
+          if (!live || !root.isConnected) return;
+          ctx = kit.gsap.context(() => latest.current(kit, root), root);
+        }, 0);
       });
     });
 
     return () => {
       live = false;
       cancelIdle(id);
+      window.clearTimeout(task);
       ctx?.revert();
     };
   }, []);

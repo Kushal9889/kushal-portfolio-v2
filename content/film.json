@@ -1,0 +1,307 @@
+{
+  "note": "Captions for the film's transit windows. Stage names only; any figure must come through a {slot} filled from content/ or a live request.",
+  "illustration": "How a request to a model is served. Illustration.",
+  "stages": {
+    "fabric": "Network fabric: the request crosses the data hall",
+    "retrieval": "Retrieval: lexical and dense ranks fused",
+    "descent": "From the app tier to a GPU server",
+    "prefill": "Prefill: the whole prompt in one pass",
+    "decode": "Decode: one token per step",
+    "kv": "KV cache: fixed-size blocks in HBM",
+    "baseboard": "Eight GPUs on one baseboard",
+    "rack": "Memory tiers: HBM, host DRAM, NVMe",
+    "hall": "The answer leaves the building"
+  },
+  "scale": [
+    {
+      "id": "fibreLight",
+      "label": "Light in glass",
+      "atom": "O1.fibreStrand",
+      "text": "About 5 microseconds per km",
+      "kind": "typical",
+      "source": "fibreSpeed"
+    },
+    {
+      "id": "rack",
+      "label": "Rack",
+      "atom": "O2.cabinet",
+      "text": "About 2.1 m tall, a little taller than a door",
+      "kind": "typical",
+      "source": "eia310"
+    },
+    {
+      "id": "gpuServer",
+      "label": "GPU server",
+      "atom": "O6.chassis",
+      "text": "About 18 cm tall and 90 cm deep",
+      "kind": "typical",
+      "source": "serverChassis"
+    },
+    {
+      "id": "fibre",
+      "label": "Fibre",
+      "atom": "O1.fibreStrand",
+      "text": "About 3 mm thick, like a phone charger cable",
+      "kind": "typical",
+      "source": "tray"
+    },
+    {
+      "id": "dimm",
+      "label": "Memory stick",
+      "atom": "O5.pcb",
+      "text": "About 13 cm long, a little shorter than a pen",
+      "kind": "typical",
+      "source": "jedecDimm"
+    },
+    {
+      "id": "coldPlate",
+      "label": "Cold plate",
+      "atom": "O9.flange",
+      "text": "About 7.6 x 6.8 cm, a little smaller than a palm",
+      "kind": "typical",
+      "source": "coldPlate"
+    },
+    {
+      "id": "qd",
+      "label": "Coupling",
+      "atom": "O10.body",
+      "text": "About 16 mm across, the width of a fingertip",
+      "kind": "typical",
+      "source": "quickDisconnect"
+    },
+    {
+      "id": "die",
+      "label": "GPU chip",
+      "atom": "O11.die",
+      "text": "Die about 26 x 33 mm, a little larger than a postage stamp",
+      "kind": "typical",
+      "source": "gpuDie"
+    },
+    {
+      "id": "tower",
+      "label": "Memory tower",
+      "atom": "O11.hbm",
+      "text": "About 11 x 10 mm, the size of a fingernail",
+      "kind": "typical",
+      "source": "jedecHbm"
+    },
+    {
+      "id": "sm",
+      "label": "Compute block",
+      "atom": "O13.sm",
+      "text": "About 2 mm across, smaller than a grain of rice",
+      "kind": "typical",
+      "source": "gpuDie"
+    },
+    {
+      "id": "via",
+      "label": "Via",
+      "atom": "O12.tsv",
+      "text": "About 5 to 10 thousandths of a millimetre across, a tenth of a hair",
+      "kind": "typical",
+      "source": "jedecHbm"
+    }
+  ],
+  "cards": {
+    "T1": {
+      "title": "Network fabric",
+      "line": "A slow answer is usually a request waiting in line, not a slow model, so teams measure the wait first.",
+      "scale": [
+        "fibreLight"
+      ],
+      "facts": [
+        "searchMedian",
+        "answerMedian"
+      ]
+    },
+    "T2": {
+      "title": "Retrieval",
+      "line": "Most wrong answers start here: if search misses the right note, no model can quote it.",
+      "live": [
+        "sources"
+      ],
+      "facts": [
+        "passages",
+        "cited"
+      ]
+    },
+    "T3": {
+      "title": "To the GPU server",
+      "line": "GPU time is the biggest cost, so the cheapest request is one that never needs a GPU.",
+      "acts": [
+        {
+          "title": "To the GPU server",
+          "line": "GPU time is the biggest cost, so the cheapest request is one that never needs a GPU."
+        },
+        {
+          "title": "The drop",
+          "line": "One GPU server answers many people at once by batching their requests together."
+        },
+        {
+          "title": "The descent",
+          "line": "Power and cooling, not chips alone, now limit how many GPUs a building can run."
+        }
+      ],
+      "scale": [
+        "gpuServer",
+        "coldPlate"
+      ],
+      "facts": [
+        "stored"
+      ]
+    },
+    "T4": {
+      "title": "Prefill",
+      "line": "Reading the prompt is fast, but a long prompt is paid for on every request, so teams trim it.",
+      "live": [
+        "tokensIn"
+      ],
+      "facts": [
+        "turnsKept",
+        "charsKept"
+      ]
+    },
+    "T5": {
+      "title": "Decode",
+      "line": "Answers are written one piece at a time, so the answer's length decides most of the wait.",
+      "live": [
+        "tokensOut"
+      ],
+      "facts": [
+        "answerCap",
+        "answerMedian"
+      ]
+    },
+    "T6": {
+      "title": "KV cache",
+      "line": "Memory, not speed, caps how many chats one GPU can hold, and fixed-size blocks let it hold more.",
+      "live": [
+        "blocks"
+      ],
+      "facts": [
+        "blockSize"
+      ],
+      "scale": [
+        "tower"
+      ]
+    },
+    "T7": {
+      "title": "Eight GPUs",
+      "line": "A model too big for one chip is split across several, so the links between chips matter as much as the chips.",
+      "scale": [
+        "die"
+      ],
+      "facts": [
+        "ringSteps"
+      ]
+    },
+    "T8": {
+      "title": "Memory tiers",
+      "line": "Fast memory is small and costly, so good systems keep what is needed now close and move the rest out.",
+      "scale": [
+        "tower",
+        "dimm",
+        "rack"
+      ]
+    },
+    "T9": {
+      "title": "The way out",
+      "line": "People remember the slowest answers, so teams watch the worst one in twenty, not the average.",
+      "facts": [
+        "answerMedian",
+        "answerSlow",
+        "evals"
+      ]
+    }
+  },
+  "live": {
+    "sources": "Notes matched",
+    "tokensIn": "Word pieces in",
+    "tokensOut": "Word pieces out",
+    "blocks": "Note blocks"
+  },
+  "arc": {
+    "note": "Both lines are written by hand. Empty renders nothing.",
+    "hook": "",
+    "closing": ""
+  },
+  "facts": {
+    "note": "Rows read from this site: {slot} is filled at build time from lib/agent/vitals.json, the index, the stored answers or lib/agent/limits.ts (app/components/film/facts.ts). Measured rows are the latest eval run; This site rows are what the code does.",
+    "rows": [
+      {
+        "id": "searchMedian",
+        "label": "Search, median",
+        "text": "{searchP50}",
+        "kind": "measured"
+      },
+      {
+        "id": "answerMedian",
+        "label": "Whole answer, median",
+        "text": "{answerP50}",
+        "kind": "measured"
+      },
+      {
+        "id": "answerSlow",
+        "label": "Slowest 1 in 20",
+        "text": "{answerP95}",
+        "kind": "measured"
+      },
+      {
+        "id": "cited",
+        "label": "Sentences with a source",
+        "text": "{citeShare}",
+        "kind": "measured"
+      },
+      {
+        "id": "evals",
+        "label": "Held-out questions",
+        "text": "{evals}",
+        "kind": "measured"
+      },
+      {
+        "id": "passages",
+        "label": "Passages searched",
+        "text": "{passages}",
+        "kind": "site"
+      },
+      {
+        "id": "stored",
+        "label": "Answered with no model",
+        "text": "{stored}",
+        "kind": "site"
+      },
+      {
+        "id": "turnsKept",
+        "label": "Earlier turns sent",
+        "text": "{historyTurns}",
+        "kind": "site"
+      },
+      {
+        "id": "charsKept",
+        "label": "Each earlier answer",
+        "text": "{historyChars}",
+        "kind": "site"
+      },
+      {
+        "id": "answerCap",
+        "label": "Usual answer cap",
+        "text": "{answerCap}",
+        "kind": "site"
+      },
+      {
+        "id": "blockSize",
+        "label": "Block size",
+        "text": "16 word pieces",
+        "kind": "typical",
+        "source": "pagedKv"
+      },
+      {
+        "id": "ringSteps",
+        "label": "Passes round 8 GPUs",
+        "text": "14 steps, 2 x (8 - 1)",
+        "kind": "typical",
+        "source": "ringAllreduce"
+      }
+    ]
+  }
+}

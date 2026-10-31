@@ -1,5 +1,6 @@
 import { loadContent } from "../content";
 import { nearestTerm } from "./vocab";
+import { STOPWORDS } from "./tokenize";
 
 /** Heading words too generic to mark a question as being about one section. */
 const STOP = new Set([
@@ -9,6 +10,13 @@ const STOP = new Set([
 ]);
 
 const { profile, sections } = loadContent();
+
+/** The person, however a visitor refers to them: any pronoun or the first name. */
+const FIRST = (profile.name ?? "").split(/\s+/)[0].toLowerCase().replace(/[^a-z]/g, "") || "he";
+const WHO = String.raw`(?:he|she|they|${FIRST})`;
+const WHOM = String.raw`(?:him|her|them|himself|herself|themselves|${FIRST})`;
+/** Possessive for the rewrite of "your", from the profile's pronouns. */
+const POSSESSIVE = /^she/i.test(profile.pronouns ?? "") ? "her" : /^they/i.test(profile.pronouns ?? "") ? "their" : "his";
 
 /**
  * Distinctive words from the section headings: "Growaza", "Questrom", "IMG".
@@ -25,7 +33,9 @@ const { profile, sections } = loadContent();
 const NAMED = new Set(
   sections
     .flatMap((s) => s.title.toLowerCase().split(/[^a-z0-9+#.-]+/))
-    .filter((w) => w.length > 3 && !STOP.has(w)),
+    // Grammar words in a heading ("What they do not do") are not names; without
+    // the shared stopword list every question saying "they" named a section.
+    .filter((w) => w.length > 3 && !STOP.has(w) && !STOPWORDS.has(w)),
 );
 
 function namesASection(question: string): boolean {
@@ -57,8 +67,7 @@ function namesASection(question: string): boolean {
  *
  * No amount of prompt wording fixes that, because the right section never
  * reaches the prompt. So the question is classified first, expanded into the
- * vocabulary the corpus actually uses, and the ranking is then weighted by what
- * kind of section can answer that kind of question. Each of the three is cheap,
+ * vocabulary the corpus actually uses. Both are cheap,
  * deterministic, and costs no network call.
  */
 export type Intent = "identity" | "shipped" | "limitation" | "system" | "specific";
@@ -69,6 +78,9 @@ export type ChunkMeta = {
   dated: boolean;
   current: boolean;
   year: number;
+  yearStart?: number;
+  yearEnd?: number;
+  kind?: string;
   metrics: number;
   artifacts: number;
 };
@@ -77,8 +89,6 @@ export type Analysis = {
   intent: Intent;
   /** What the retrievers score. May be wider than what the reader typed. */
   query: string;
-  /** Multiplier on a chunk's fused score. 1 leaves the ranking untouched. */
-  weight: (meta: ChunkMeta | undefined) => number;
   /**
    * The question as the model should receive it.
    *
@@ -109,8 +119,10 @@ export type Analysis = {
   floor?: number;
 };
 
-const IDENTITY =
-  /^\s*(?:so\s+)?(?:tell me (?:a bit )?about (?:yourself|him|himself|kushal)|who (?:is|are) (?:he|you|kushal)|introduce (?:yourself|him)|walk me through (?:his|your) background|what should i know about (?:him|kushal)|give me (?:a |the )?(?:quick |short )?(?:intro|introduction|overview|summary|rundown)|his background|about (?:him|yourself))\b/i;
+const IDENTITY = new RegExp(
+  String.raw`^\s*(?:so\s+)?(?:tell me (?:a bit )?about (?:yourself|${WHOM})|who (?:is|are) (?:${WHO}|you)|introduce (?:yourself|${WHOM})|walk me through (?:his|her|their|your) background|what should i know about ${WHOM}|give me (?:a |the )?(?:quick |short )?(?:intro|introduction|overview|summary|rundown)|(?:his|her|their) background|about (?:${WHOM}|yourself))\b`,
+  "i",
+);
 
 /** Asking what he has done, in any of the ways people ask it. */
 const SHIPPED =
@@ -130,76 +142,56 @@ const SYSTEM =
  * specific job. A limitation question names a skill, not a place, so the verb
  * has to be one of knowing or using rather than the general "do".
  */
-const LIMITATION =
-  /\b(?:does|can|has|did) (?:he|kushal) (?:know|use[sd]?|used|work(?:ed)? with|have any|ever)\b|\bis (?:he|kushal) (?:a|an) \w+/i;
+const LIMITATION = new RegExp(
+  String.raw`\b(?:does|do|can|has|have|did) ${WHO} (?:know|use[sd]?|used|work(?:ed)? with|have any|ever)\b|\b(?:is|are) ${WHO} (?:a|an) \w+`,
+  "i",
+);
 
-const NEUTRAL = () => 1;
+/*
+ * There were ranking weights here, one set per intent, multiplying the fused
+ * score. Removed 2026-10-10: with the cross-encoder deciding the top five they
+ * changed nothing on the held-out test split (nDCG@5 0.877 with and without;
+ * dev 0.884 to 0.869), and with the reranker down they reordered the keyword
+ * ranking so far that "Why does this site run without a checkpointer?" fell to
+ * "don't know". A hand prior that cannot be measured to help is a liability.
+ */
 
 /**
- * Ranking weights, one set per intent.
- *
- * Deliberately gentle. These multiply a fused rank score, so a strong lexical
- * or dense match still wins; the weights break ties and demote sections that
- * are structurally wrong for the question. A weight large enough to override
- * the retrievers would be a hand-written ranking wearing a retriever's clothes.
+ * Opinion and overview questions: why hire, what stands out, strongest work,
+ * best at, a summary. No section shares their words, yet every profile written
+ * to the template answers them in its `@kind profile` sections.
  */
-const WEIGHTS: Record<Intent, (m: ChunkMeta | undefined) => number> = {
-  /*
-   * Work questions want dated roles and measured outcomes, most recent first,
-   * and they do not want the page describing itself. The current role is
-   * boosted hardest because "what does he do" is present tense: a reader asking
-   * it is asking what he is doing now, not what he did in 2024.
-   */
-  shipped: (m) => {
-    if (!m) return 1;
-    let w = 1;
-    if (m.dated) w += 0.3;
-    if (m.current) w += 0.35;
-    else if (m.year >= 2025) w += 0.15;
-    if (m.metrics > 0) w += 0.2;
-    if (m.artifacts > 0) w += 0.1;
-    if (m.fromNotes) w -= 0.35;
-    return w;
-  },
+const OVERVIEW =
+  /\b(why (should|would|do) (we|i|you|anyone|a company|someone) (hire|pick|choose|consider)|what makes \w+ (different|stand out|unique|special|a good)|stand(s)? out|(strongest|best|most impressive|biggest|proudest) (project|work|skill|strength|achievement|result|thing)|(what|where) (is|are) \w+ (best|strongest|good) at|(his|her|their|key|main|biggest) strengths?|summar(y|ise|ize)|overview|(sell|pitch) (me|us)|elevator pitch|in (one|two|three) (line|sentence)s?)\b/i;
 
-  /* The mirror image: a question about this page wants the pages about it. */
-  system: (m) => (!m ? 1 : m.fromNotes ? 1.45 : m.dated ? 0.75 : 1),
+const ROLE_FIT = /\b(which|what) (roles?|jobs?|positions?)\b|\broles? (fit|suit)/i;
 
-  /*
-   * A limitation question needs both halves in context, and needs no reranking
-   * at all to get them.
-   *
-   * Asked "Does he know PyTorch?" retrieval returned one chunk -- the section
-   * listing what he does not do -- and the model, told to answer No and then
-   * name the nearest thing he has done, invented one from the other half of the
-   * sentence denying PyTorch. The fix was to admit more context, and the first
-   * attempt did it twice: it lowered the relevance floor *and* weighted
-   * capability sections up by 1.15.
-   *
-   * The weight was wrong and measurably so. "What he does not do" ranks first
-   * in both retrievers on that question -- lexical rank 1, dense rank 1, which
-   * is as unambiguous as this corpus gets -- and the multiplier promoted IMG
-   * Systems past it from lexical rank 9. Precision@1 across the benchmark fell
-   * from 1.00 to 0.87, both losses on limitation questions.
-   *
-   * The floor alone does the whole job: with no weight at all, the answer
-   * section leads and "What he is good at" arrives at rank 2 on its own merits.
-   * A weight that can overrule both retrievers is a hand-written ranking
-   * wearing a retriever's clothes, which is the thing this file is not allowed
-   * to become.
-   */
-  limitation: NEUTRAL,
+/**
+ * Question shapes every profile answers, keyed by the template's `@kind`
+ * (docs/facts-format.md). A short question like "when can they start" shares no
+ * word with "Available from March" and scores weakly on every signal, but its
+ * kind is unambiguous in any corpus written to the template.
+ */
+const KIND_INTENTS: [string, RegExp][] = [
+  // Which roles fit him takes what he is targeting and the work behind it. With
+  // the targets alone a model has no evidence to cite and invents some (measured:
+  // an internship at a lab he never worked at).
+  ["availability", ROLE_FIT],
+  ["role", ROLE_FIT],
+  ["availability", /\b(when can \w+ (start|join|begin)|start date|notice period|availab(le|ility)|open to (work|roles|offers|relocat\w*)|relocat\w*|looking for (a |an )?(role|job|position)|kind of (role|job|position))\b/i],
+  ["education", /\b(degree|universit(y|ies)|college|school|stud(y|ied|ying)|gpa|graduat\w*|major|master'?s|bachelor'?s|phd|coursework)\b/i],
+  ["credential", /\b(certif\w*|licen[cs]\w*|accredit\w*)\b/i],
+  ["publication", /\b(publication|published|papers?|journal|conference|research)\b/i],
+  ["award", /\b(awards?|achievements?|prizes?|honou?rs?|won|win)\b/i],
+  // About the person's toolkit, not about tools a system has ("how many tools does the agent expose").
+  ["skills", /\b((programming|spoken|coding) languages|what (languages|tools|technologies|frameworks) (do|does|did|has|have|can)|(his|her|their) (tools|stack|toolkit|languages)|tech stack|skills?|skill ?set|proficien\w*)\b/i],
+];
 
-  identity: (m) => {
-    if (!m) return 1;
-    if (m.fromNotes) return 0.6;
-    if (!m.dated && m.metrics === 0) return 1.35;
-    if (m.current) return 1.15;
-    return 1;
-  },
-
-  specific: NEUTRAL,
-};
+/** Template kinds whose sections answer this question shape. */
+export function kindsFor(question: string): string[] {
+  const kinds = KIND_INTENTS.filter(([, re]) => re.test(question)).map(([k]) => k);
+  return IDENTITY.test(question) || OVERVIEW.test(question) ? ["profile", ...kinds] : kinds;
+}
 
 export function analyze(question: string): Analysis {
   // A named section beats every heuristic below it. The reader has already said
@@ -218,22 +210,13 @@ export function analyze(question: string): Analysis {
             : "specific";
 
   /*
-   * Expansion, from the corpus rather than from a list written here.
-   *
-   * Both of these questions carry almost no retrievable terms -- "tell me about
-   * yourself" survives stopword removal as ["yourself"], which appears nowhere
-   * in a third-person corpus, and "what did he ship" as ["ship"]. The words
-   * that would have retrieved the right sections are in the frontmatter
-   * already, so they are read from there. A second copy of his role written
-   * into this file is a copy that can drift.
+   * No expansion. Appending the current role and focus to every "what has he
+   * done" question pulled the ranking toward the current job whatever the
+   * question named: "What did he do at IMG?" became thirty words about the
+   * current role and the employer asked about fell out of the top three. The
+   * identity rewrite below already turns "yourself" into the name, which the
+   * corpus does contain, so that is what gets scored.
    */
-  const query =
-    intent === "identity"
-      ? `${question} ${profile.role} ${profile.current} ${profile.focus}`
-      : intent === "shipped"
-        ? `${question} ${profile.role} ${profile.current} ${profile.focus} shipped built production`
-        : question;
-
   const asked =
     intent === "identity"
       ? question
@@ -241,8 +224,10 @@ export function analyze(question: string): Analysis {
           .replace(/\bwho are you\b/gi, `who is ${profile.name}`)
           .replace(/\bare you\b/gi, `is ${profile.name}`)
           .replace(/\byou\b/gi, profile.name)
-          .replace(/\byour\b/gi, "his")
+          .replace(/\byour\b/gi, POSSESSIVE)
       : question;
 
-  return { intent, query, weight: WEIGHTS[intent], asked, floor: intent === "limitation" ? 0.4 : undefined };
+  const query = intent === "identity" ? asked : question;
+
+  return { intent, query, asked, floor: intent === "limitation" ? 0.4 : undefined };
 }

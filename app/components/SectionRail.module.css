@@ -1,0 +1,193 @@
+/*
+ * Pinned to the left edge, outside the reading column.
+ *
+ * Hidden below 62rem rather than collapsed into something smaller. That is the
+ * width where the page drops to one column and the reading measure already
+ * takes the full viewport, so a rail there is either overlapping the text or
+ * squeezing it, and a phone has a scrollbar and a thumb for the job this does.
+ */
+.rail {
+  display: none;
+}
+
+@media (min-width: 62rem) {
+  .rail {
+    position: fixed;
+    inset-block-start: 50%;
+    inset-inline-start: 0;
+    translate: 0 -50%;
+    z-index: var(--z-furniture);
+    display: block;
+    /* The ticks are the target; the strip between them is not. Without this the
+       rail is an invisible 240px column sitting over the left edge of the page,
+       eating every click that lands near it. */
+    pointer-events: none;
+  }
+
+  .list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--s-1);
+  }
+
+  .link {
+    position: relative;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    /* 24px of height on a 2px mark: the hit area is the padding, not the glyph,
+       which is how a mark this small clears the target minimum without being
+       drawn any larger. */
+    padding: var(--s-2) var(--s-4);
+    text-decoration: none;
+    color: var(--ink-faint);
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+    font-size: var(--step--2);
+    letter-spacing: var(--track-wide);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  /* The drawn row stays 18px; the target reaches 22px, past the 20px desktop
+     minimum, and stops 2px short of each neighbour so no two targets overlap. */
+  .link::after {
+    content: "";
+    position: absolute;
+    inset: -2px 0;
+  }
+
+  /* The mark is laid out at its longest (--s-7) and drawn shorter with a scale
+     from its left end: 0.5 is --s-5 over --s-7, 0.667 is --s-6 over --s-7.
+     Animating inline-size lays the rail out on every frame. */
+  .tick {
+    display: block;
+    inline-size: var(--s-7);
+    block-size: var(--border-emphasis);
+    background: var(--rule);
+    flex: none;
+    transform: scaleX(0.5);
+    transform-origin: left center;
+    transition:
+      transform var(--t-normal) var(--ease-out),
+      background-color var(--t-normal) var(--ease-out);
+  }
+
+  /*
+   * The label is present and readable at every width; it is the visible width
+   * that changes, never the content. `clip` rather than `hidden` so nothing
+   * here can become a scroll container, and the text stays in the accessibility
+   * tree either way, which is the whole reason it is not a tooltip.
+   */
+  .label {
+    /* Out of flow and revealed with clip-path, so the reveal never animates a
+       layout property (U10). It starts where the flex gap after the tick used
+       to put it: the padding box minus the inline padding, plus the gap. */
+    position: absolute;
+    inset-inline-start: calc(100% - var(--s-4) + var(--s-3));
+    white-space: nowrap;
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      clip-path var(--t-mid) var(--ease-out),
+      opacity var(--t-normal) var(--ease-out);
+  }
+
+  .rail:hover .label,
+  .rail:focus-within .label {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .link:hover .tick,
+  .link:focus-visible .tick {
+    transform: scaleX(0.667);
+    background: var(--ink-soft);
+  }
+
+  .link:hover,
+  .link:focus-visible {
+    color: var(--ink);
+  }
+
+  /* The state the observer computes, and the only thing on this rail that
+     encodes one. Accent rather than ink: this is the reader's own position,
+     which is the one piece of information the rail exists to carry. */
+  .link[aria-current="true"] {
+    color: var(--ink);
+  }
+
+  .link[aria-current="true"] .tick {
+    transform: none;
+    background: var(--fill, var(--signal));
+  }
+}
+
+/*
+ * The rail arrives one mark at a time.
+ *
+ * Part of the same power-on as the registration marks, and held to the same
+ * rule: this is chrome, so it may animate. The links are present and clickable
+ * from the first frame -- only the tick's length is animated, never the anchor's
+ * opacity -- so a reader who reaches for a section during the first half second
+ * hits it.
+ */
+@media (min-width: 62rem) and (prefers-reduced-motion: no-preference) {
+  .tick {
+    animation: rail-arrive var(--t-slow) var(--ease-out) both;
+  }
+
+  .list li:nth-child(1) .tick { animation-delay: 60ms; }
+  .list li:nth-child(2) .tick { animation-delay: 110ms; }
+  .list li:nth-child(3) .tick { animation-delay: 160ms; }
+  .list li:nth-child(4) .tick { animation-delay: 210ms; }
+  .list li:nth-child(5) .tick { animation-delay: 260ms; }
+  .list li:nth-child(6) .tick { animation-delay: 310ms; }
+  .list li:nth-child(7) .tick { animation-delay: 360ms; }
+  .list li:nth-child(8) .tick { animation-delay: 410ms; }
+  .list li:nth-child(9) .tick { animation-delay: 460ms; }
+}
+
+@keyframes rail-arrive {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tick,
+  .label {
+    transition-property: background-color, opacity, color;
+  }
+}
+
+.mobile {
+  margin: var(--s-4) auto;
+  inline-size: calc(100% - 2 * var(--s-4));
+  padding: var(--s-3);
+  background: var(--paper-sunk);
+  border: var(--border-hair) solid var(--rule);
+}
+.mobile summary, .mobile a {
+  display: flex;
+  align-items: center;
+  min-block-size: 44px;
+  color: var(--ink);
+  padding-inline: var(--s-2);
+}
+.mobile summary { cursor: pointer; }
+.mobile .list { list-style: none; padding: 0; margin: 0; }
+@media (min-width: 62rem) {
+  .mobile { display: none; }
+  .link { min-block-size: 44px; }
+  .link::after { inset: 0; }
+}
+
+.rail[data-at-top] {
+  visibility: hidden;
+}

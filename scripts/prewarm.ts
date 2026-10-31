@@ -1,6 +1,7 @@
 import { writeFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { ask } from "../lib/agent/graph";
+import { LOAD_QUESTION, VISITOR_JOURNEYS } from "../lib/journeys";
 
 /**
  * Answers the opener questions at build time.
@@ -15,16 +16,9 @@ import { ask } from "../lib/agent/graph";
  * question fails here the entry is skipped rather than baked wrong, and it falls
  * through to the live path.
  */
-const OPENERS = [
-  "What has he shipped on Azure?",
-  "What broke in production and how did he find it?",
-  // Must match Agent.tsx OPENERS exactly. It did not: the agent offered
-  // "How does he know the retrieval is actually working?" and this baked an
-  // answer to a different question, so the third opener paid a full model round
-  // trip on every click while a warm answer nobody could reach sat in the
-  // bundle.
-  "How does he know the retrieval is actually working?",
-];
+// The hero's load question and every journey opener in Agent.tsx, read from the
+// same module so the baked keys cannot drift from the strings visitors click.
+const OPENERS = [LOAD_QUESTION, ...VISITOR_JOURNEYS.map((j) => j.question)];
 
 /**
  * Files whose contents decide what a baked answer says.
@@ -70,7 +64,8 @@ async function main() {
   for (const question of OPENERS) {
     try {
       const result = await ask(question);
-      if (result.answer && result.route === "answer") {
+      // No provider means the run fell back to the top passage word for word: never bake it.
+      if (result.answer && result.route === "answer" && result.provider) {
         warm[question.toLowerCase().trim()] = result;
         console.log(`prewarm: ${result.total}ms  ${question}`);
       }

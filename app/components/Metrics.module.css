@@ -1,16 +1,16 @@
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
-  gap: 1.25rem 2rem;
-  margin: 0 0 1.75rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--rule);
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: var(--s-5) var(--s-6);
+  margin: 0 0 var(--s-6);
+  padding-bottom: var(--s-5);
+  border-bottom: var(--border-hair) solid var(--rule);
 }
 
 .cell {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: var(--s-1);
 }
 
 /* The jump that makes these readable at a glance. Around 2.4x the body size and
@@ -20,7 +20,7 @@
   /* Its own step rather than reusing a heading size. A figure that matches the
      section title competes with it; the number has to win that contest, because
      it is the thing worth stopping for. Lands near 2.3x body. */
-  font-size: clamp(2.1rem, 1.5rem + 2.4vw, 3.2rem);
+  font-size: var(--step-3);
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -53,16 +53,31 @@
 .source {
   display: inline-block;
   margin-inline-start: 0.45em;
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
+  font-size: var(--step--2);
+  color: var(--ink-soft);
   vertical-align: 0.35em;
 }
 
 a.source {
-  border-bottom: 1px solid var(--rule);
+  /* The visible mark stays a 17px footnote; the target does not. A pseudo
+     element carries the hit area out to 28px without moving the glyph or the
+     baseline it is aligned to. */
+  position: relative;
+  /* Strict rule (2026-10-02): a figure's witness is a link, and a link that
+     vouches for a claim wears the claim colour, 2px like every link here. */
+  color: var(--mark);
+  border-bottom: 2px solid var(--mark);
   transition: color var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out);
+}
+
+a.source::after {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto;
+  translate: 0 -50%;
+  min-height: 28px;
+  height: 100%;
+  width: 100%;
 }
 
 a.source:hover {
@@ -72,30 +87,220 @@ a.source:hover {
 
 /* A figure carries the accent when, and only when, it carries a source.
  *
- * Colouring every number would flood the page and cost the accent its meaning,
- * which is the failure this whole system is built to avoid. Colouring the ones
- * a reader can go and check turns the palette into information: indigo here
- * means "there is a link under this", and the SOURCE tag beside it says where.
- * A figure whose only witness is a former employer stays in ink, honestly. */
-.cell[data-sourced] .value {
-  color: var(--mark);
-}
+* Every figure is set in ink, whichever way it is sourced.
+ *
+ * Sourced figures used to render in the indigo accent so the colour itself
+ * said "there is a link under this". Read as a strip it did the opposite of
+ * informing: four numbers side by side came out two black and two blue with
+ * nothing on screen explaining the split, so the first thing a reader asked
+ * was what the colours meant rather than what the numbers said. The SOURCE
+ * tag beside each figure already carries provenance in words, and it carries
+ * it unambiguously. */
 
 /* On a console surface a metrics strip is a readout bank, not three numbers
-   floating in a panel. Cell rules only between cells, so the block reads as one
-   instrument rather than three boxes. */
+   floating in a panel.
+ *
+ * Built as a compartment: the divider is the parent showing through a 1px gap,
+ * so no cell has to know which of its edges is shared. It was per-cell
+ * `border-inline-start` plus a `:first-child` exception to unpick the one that
+ * fell on the outside edge, which is the exception the construction exists to
+ * remove. Add a cell, wrap to a second row, and the old version drew a rule
+ * down the left of the wrapped cell too. */
 [data-surface="console"] .grid {
+  /* Wrapping flex, not auto-fit columns: the last row grows to the full width,
+     so three readings in two columns end as 2 + 1 across rather than 2 + a hole
+     (the 1 px gap shows the parent through the hole as a dead cell). */
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--border-hair);
+  background: var(--rule);
   border: var(--border-hair) solid var(--rule);
   border-radius: var(--r-md);
-  gap: 0;
   padding-bottom: 0;
 }
 
 [data-surface="console"] .cell {
+  flex: 1 1 9.5rem;
+  min-width: 0;
+  background: var(--paper);
   padding: var(--s-3) var(--s-4);
-  border-inline-start: var(--border-hair) solid var(--rule);
 }
 
-[data-surface="console"] .cell:first-child {
-  border-inline-start: none;
+
+/*
+ * The data voice, on readings only.
+ *
+ * Set by what the value is rather than by how long it is: anything leading with
+ * a digit is a measurement and takes the mono the rest of the page's figures
+ * use. Everything else -- `BM25 + vector`, `LLM-as-a-Judge` -- is a description
+ * and keeps the interface face, because mono on ordinary words is the tell one
+ * level up from setting a whole page in it.
+ */
+.value[data-numeric] {
+  font-family: var(--font-mono), ui-monospace, monospace;
+}
+
+/* ---------------------------------------------------------------------------
+ * The graduated edge.
+ *
+ * Taken from a sector dial rather than from a chart: an instrument face carries
+ * fine gradations along its edge, major marks at the decade and minor marks
+ * between, and a reading is placed against them. That is a different thing from
+ * a progress bar, which is why there is no filled track here and never will be.
+ * A track states the same number twice, once in digits and once in length, and
+ * the second statement is the one that lies when the domain is invented.
+ *
+ * Drawn with repeating-linear-gradient, which the old no-gradients rule barred
+ * and the owner has since waived. It is one paint, no elements, and it scales
+ * with the cell.
+ * ------------------------------------------------------------------------ */
+.cell::after {
+  content: "";
+  display: block;
+  height: 7px;
+  margin-block-start: var(--s-2);
+  order: 3;
+  background-image:
+    /* minor, every 5 */
+    repeating-linear-gradient(
+      to right,
+      color-mix(in oklch, var(--rule) 90%, transparent) 0 1px,
+      transparent 1px 5%
+    );
+  background-position: left bottom;
+  background-repeat: repeat-x;
+  background-size: 100% 4px;
+}
+
+/* Major marks at the decade, taller and in ink rather than rule, so the edge
+   has a rhythm to count against instead of being a comb. */
+.cell::before {
+  content: "";
+  display: block;
+  height: 7px;
+  order: 4;
+  margin-block-start: -7px;
+  background-image: repeating-linear-gradient(
+    to right,
+    color-mix(in oklch, var(--ink) 42%, transparent) 0 1px,
+    transparent 1px 25%
+  );
+  background-position: left bottom;
+  background-repeat: repeat-x;
+  background-size: 100% 7px;
+  pointer-events: none;
+}
+
+/* The reading itself.
+ *
+ * A real element rather than a third background layer. Two earlier attempts put
+ * it in a gradient and both failed the same way: a stop position written as
+ * calc() cannot be read as a hard stop by the checker that keeps interpolated
+ * gradients off this page, and it is genuinely ambiguous rather than a false
+ * positive. An element also lets the mark stand taller than the graduations it
+ * is measured against, which is how a pointer reads as a pointer.
+ *
+ * Full ink, not the accent. --signal means the thing to press (ADR-005) and a
+ * reading is not pressable; spending it here would blunt the one colour the
+ * page uses to mean "act on this". The mark earns its prominence from height
+ * and weight, which is what an instrument pointer has always used.
+ */
+.scaleMark {
+  position: absolute;
+  bottom: 0;
+  left: var(--at);
+  width: var(--border-emphasis);
+  height: 11px;
+  margin-inline-start: -1px;
+  background-color: var(--ink);
+}
+
+.cell[data-scaled] {
+  position: relative;
+}
+
+/* Two columns on a phone leave an odd last figure alone beside a gap; it takes
+   the full row instead. */
+@media (max-width: 40rem) {
+  .grid > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Phone: the figure and its label only. The scale rule under each reading is
+   detail for the desktop reader. */
+@media (max-width: 767px) {
+  .grid {
+    margin-bottom: var(--s-3);
+    padding-bottom: var(--s-2);
+  }
+
+  .cell::before,
+  .cell::after,
+  .scaleMark {
+    display: none;
+  }
+}
+
+/* A phrase figure names a product, so it takes that product's hue when the
+   box sets one; a number stays in ink, because a measurement is not a brand. */
+.value:not([data-numeric]) {
+  color: var(--figure-tint, var(--ink));
+}
+
+/* Measurements wear the accent. Numbers may wear a colour apart from the
+   product colours; the tone test in
+   scripts/ui-highlights.py: a figure that is a number is coloured, in one tone
+   across every box, so the eye finds the measurements before the prose. */
+.value[data-numeric] {
+  color: var(--signal);
+}
+
+/* A reading never breaks inside itself: the odometer builds one inline box
+   per digit, which gave the browser a break point between "91." and "4%". */
+.value[data-numeric] {
+  white-space: nowrap;
+}
+
+/* The ranking stamp on a lead figure: a small seal under the number, in the
+   figure face so it reads as part of the reading, never over its digits. */
+.seal {
+  display: block;
+  width: fit-content;
+  margin-block: 0 var(--s-2);
+  padding: 0.32em 0.6em 0.26em;
+  border-radius: 999px;
+  font-family: var(--font-plate, inherit);
+  font-size: var(--step--1);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--on-signal);
+  background: var(--ink);
+}
+
+/* A word is not a reading: set as one plain line, so display size stays with numbers. */
+.cell[data-word] {
+  display: block;
+  font-size: var(--step-0);
+  line-height: 1.4;
+}
+
+.cell[data-word] .value {
+  display: inline;
+  font-size: inherit;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: inherit;
+}
+
+.cell[data-word] .value::after {
+  content: ": ";
+}
+
+.cell[data-word] .label {
+  display: inline;
+  max-width: none;
+  font-size: inherit;
 }

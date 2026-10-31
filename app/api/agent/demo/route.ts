@@ -1,4 +1,7 @@
 import { ask } from "@/lib/agent/graph";
+import { listPrice, modelOf } from "@/lib/agent/model";
+import type { RetrievalTrace } from "@/lib/agent/retrieve";
+import { LOAD_QUESTION, LOAD_CACHE_MS } from "@/lib/journeys";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -22,8 +25,8 @@ export const maxDuration = 30;
  * The timings stay honest because they are the timings of a real run; the cache
  * window just decides how recent that run was.
  */
-const QUESTION = "What has he shipped on Azure?";
-const TTL_MS = 60_000;
+const QUESTION = LOAD_QUESTION;
+const TTL_MS = LOAD_CACHE_MS;
 
 /**
  * Past this, the request did not succeed slowly -- it failed and took its time.
@@ -50,6 +53,12 @@ type Demo = {
   total: number;
   usage: { in: number; out: number } | null;
   provider: string | null;
+  /** The ranking behind `sources`, so the corpus field can light what was retrieved. */
+  trace: RetrievalTrace | null;
+  /** What the same tokens cost at the serving model's published list price, in US dollars. Null when unlisted. */
+  listPrice: number | null;
+  /** When this run finished, epoch ms. A cache hit returns the same value, so the age a reader is shown is the age of the run. */
+  ranAt: number;
 };
 
 let cached: { at: number; demo: Demo } | null = null;
@@ -62,7 +71,7 @@ export async function GET() {
   }
 
   try {
-    const { answer, sources, timings, total, usage, provider } = await ask(QUESTION);
+    const { answer, sources, timings, total, usage, provider, trace } = await ask(QUESTION);
     const demo: Demo = {
       question: QUESTION,
       answer: (answer ?? "").toString(),
@@ -71,6 +80,9 @@ export async function GET() {
       total,
       usage: usage ?? null,
       provider: provider ?? null,
+      trace: trace ?? null,
+      listPrice: usage && provider && modelOf(provider) ? listPrice(modelOf(provider)!, usage) : null,
+      ranAt: Date.now(),
     };
     // Not cached and not served. The hero renders its unreachable copy, which
     // is what actually happened, rather than a four-minute figure.

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useMotion } from "@/lib/motion";
+import { AFTER, BEFORE } from "./diff-excerpt";
 import { GitHubMark } from "./Mark";
 import styles from "./DiffReveal.module.css";
 
@@ -22,22 +23,7 @@ const STEPS = ["The line that looked fine", "What it actually did", "The fix", "
  * already resolved. Nothing is gated behind the animation.
  */
 
-const BEFORE = [
-  { text: "results = []", tone: "plain" },
-  { text: "for route in self.routes:", tone: "plain" },
-  { text: "    results.extend(route_result.entries or [])", tone: "plain" },
-  { text: "", tone: "plain" },
-  { text: "default_result = self.default.ls(path)", tone: "plain" },
-  { text: "results.extend(default_result.entries or [])", tone: "bad" },
-  { text: "return ListResult(entries=results)", tone: "plain" },
-] as const;
-
-const AFTER = [
-  { text: "default_result = self.default.ls(path)", tone: "plain" },
-  { text: "if default_result.error:", tone: "good" },
-  { text: "    return ListResult(error=default_result.error)", tone: "good" },
-  { text: "results.extend(default_result.entries or [])", tone: "plain" },
-] as const;
+export { AFTER, BEFORE };
 
 /**
  * The merge credit, passed in rather than typed here.
@@ -111,7 +97,12 @@ export default function DiffReveal({
           // pinned, which reads as a bug rather than as a hold.
           pin: true,
           start: "top 12%",
-          end: "+=110%",
+          /* 110% of the viewport was 990px of scroll for four states -- 41% of
+             this section's height, spent on a runway rather than on the
+             argument the section exists to make, in the one section a reader
+             most needs to scan fast. 60% is 540px, 135px per state, which is
+             still slower than a reader can flick past. */
+          end: "+=60%",
           // A number rather than true: the sequence lags the scrollbar slightly,
           // which is what stops a fast flick from snapping through four states
           // in one frame.
@@ -177,7 +168,7 @@ export default function DiffReveal({
             rel="noreferrer"
           >
             <GitHubMark size={13} />
-            <span className="label">langchain-ai/deepagents</span>
+            <span className="ident">langchain-ai/deepagents</span>
           </a>
           <span className={styles.path}>CompositeBackend.ls()</span>
         </p>

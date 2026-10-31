@@ -1,5 +1,7 @@
 import evals from "@/content/evals.json";
 import styles from "./Measured.module.css";
+import Compare from "./Compare";
+import { longDate } from "@/lib/typeset";
 
 /**
  * The evaluation suite, reporting its own last run.
@@ -46,25 +48,27 @@ const ROWS = [
     note: `Scored apart from the answers, because retrieval and generation fail for different reasons and were being reported as one number. The right section is retrieved every time; precision@1 is ${evals.retrieval?.precision1?.toFixed(2) ?? "0.86"} and MRR ${evals.retrieval?.mrr?.toFixed(2) ?? "0.93"}. Every failure left in this suite is the model summarising a figure away, never the retriever missing it.`,
   },
   {
-    value: `${evals.p50}ms`,
+    value: `${(evals.p50 / 1000).toFixed(1)} s`,
     label: "median answer",
     note: "End to end, retrieval through generation, against a free tier with no warm instance held open.",
   },
   {
-    value: `${evals.p95}ms`,
+    value: `${(evals.p95 / 1000).toFixed(1)} s`,
     label: "95th percentile",
     note: "The slow tail is the honest number. It is what a visitor gets when the provider is busy and the request is not cached.",
   },
 ];
 
-export default function Measured() {
+export default function Measured({ children }: { children?: React.ReactNode }) {
   const groups = Object.entries(evals.groups ?? {});
-  const cases = evals.cases_detail ?? [];
   const bothRetrievers = evals.denseUsed ?? 0;
   const retrievals = evals.retrievals ?? 0;
 
   return (
-    <div className={styles.wrap}>
+    /* This block is the section's own summary and reads as a caption at half
+       width, so it spans. It says so itself rather than being selected by
+       position: see the note on [data-span] in page.module.css. */
+    <div className={styles.wrap} data-span="full">
       <dl className={styles.grid}>
         {ROWS.map((r) => (
           <div key={r.label} className={styles.row}>
@@ -72,11 +76,37 @@ export default function Measured() {
               <span className={`${styles.value} tabular`}>{r.value}</span>
               <span className="label">{r.label}</span>
             </dt>
-            <dd className={styles.note}>{r.note}</dd>
           </div>
         ))}
       </dl>
 
+      {/* The four figures stay in view; what each one means, the case groups,
+          the limits and the full evidence open together. */}
+      <details className={`more ${styles.limits}`}>
+        <summary>
+          <span className="more-open">How each figure is measured, and what the {evals.cases} cases cannot catch</span>
+          <span className="more-close">Show less</span>
+        </summary>
+        <dl className={styles.grid}>
+          {ROWS.map((r) => (
+            <div key={r.label} className={styles.row}>
+              <dt className="label">{r.label}</dt>
+              <dd className={styles.note}>{r.note}</dd>
+            </div>
+          ))}
+        </dl>
+
+      {/* The breakdown and the two latencies side by side: the cases on the
+          left, how long a visitor waits on the right. Median and tail on one
+          zero-based scale, so the gap between them is the length a reader sees. */}
+      {/* Second-level folds (ui-kit plan E18): one 1,500-word drawer read as a
+          wall; three named ones let a reader open only the part they came for. */}
+      <details className="more">
+        <summary>
+          <span className="more-open">Cases by group, and how long an answer takes</span>
+          <span className="more-close">Show less</span>
+        </summary>
+      <div className={styles.pair}>
       {groups.length > 0 && (
         <ul className={styles.groups}>
           {groups.map(([name, g]) => (
@@ -97,33 +127,32 @@ export default function Measured() {
           ))}
         </ul>
       )}
-
-      {/* Every assertion, written by the runner from the cases it executes.
-          Behind a disclosure because that many rows is a wall on a page that has
-          to be skimmable, and open in one click because the reader who wants
-          this is the one worth keeping. */}
-      {cases.length > 0 && (
-        <details className={styles.cases}>
-          <summary className={styles.summary}>
-            Read all {cases.length} assertions
-            <span className="label"> written by the runner, not typed here</span>
-          </summary>
-          <ol className={styles.caseList}>
-            {cases.map((c) => (
-              <li key={c.name} className={styles.case} data-pass={c.pass}>
-                <span className={styles.caseQ}>{c.name}</span>
-                <span className={styles.caseA}>{c.asserts}</span>
-              </li>
-            ))}
-          </ol>
-        </details>
+      {evals.p50 > 0 && evals.p95 > 0 && (
+        <Compare
+          title={`Answer latency, ${longDate(evals.measured)} run`}
+          min={0}
+          max={Math.ceil(evals.p95 / 2000) * 2}
+          ticks={Array.from({ length: Math.ceil(evals.p95 / 2000) + 1 }, (_, i) => i * 2)}
+          unit=" s"
+          rows={[
+            { label: "Median answer", value: evals.p50 / 1000, shown: `${(evals.p50 / 1000).toFixed(1)} s`, lead: true },
+            { label: "95th percentile", value: evals.p95 / 1000, shown: `${(evals.p95 / 1000).toFixed(1)} s` },
+          ]}
+        />
       )}
+      </div>
+      </details>
+
+      {/* Every assertion lives in the eval matrix below, case by case (D52). */}
 
       {/* The limits of the thing above, stated by the thing above.
           A suite that only publishes its score is advertising; one that
           publishes what it cannot see is evidence. */}
-      <div className={styles.limits}>
-        <h3 className={styles.limitHead}>What these {evals.cases} cases cannot catch</h3>
+      <details className="more">
+        <summary>
+          <span className="more-open">What the {evals.cases} cases cannot catch</span>
+          <span className="more-close">Show less</span>
+        </summary>
         <ul className={styles.limitList}>
           <li>
             Assertions are substring and route checks. Nothing here grades whether an answer reads
@@ -141,20 +170,22 @@ export default function Measured() {
           {retrievals > 0 && (
             <li>
               Both retrievers ran on {bothRetrievers} of {retrievals} retrievals. A short-circuit
-              used to skip the embedding call when one keyword hit led the rest by 2.2x; measured
+              used to skip the embedding call when one keyword hit led the rest by 2.2×; measured
               across the suite it never fired on the rare-term queries it was written for, and fired
               only on the weakest-scoring ones, where it answered a question about his work with a
               paragraph about this website. It was removed rather than retuned.
             </li>
           )}
         </ul>
-      </div>
 
       <p className={styles.foot}>
-        Measured <time dateTime={evals.measured}>{evals.measured}</time> by{" "}
+        Measured <time dateTime={evals.measured}>{longDate(evals.measured)}</time> by{" "}
         <code>npm run test:evals</code>, which writes the file this section reads. Nothing here is
         entered by hand, so the figures cannot drift from the run that produced them.
       </p>
+      </details>
+      {children}
+      </details>
     </div>
   );
 }

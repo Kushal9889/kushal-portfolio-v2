@@ -1,11 +1,40 @@
+import { CHAPTERS } from "@/lib/chapters";
 import type { Metadata } from "next";
-import { Martian_Mono, Newsreader } from "next/font/google";
+import { Martian_Mono, Bricolage_Grotesque } from "next/font/google";
+import localFont from "next/font/local";
 import { loadContent, loadCertifications, section } from "@/lib/content";
-import "./globals.css";
+// The stage page's share of the old stylesheet: tokens, the element base, and
+// the global classes the reused components match. The classic document's own
+// system is imported by the routes that render it, so the home page no longer
+// ships 68KB of CSS it never matches.
+import "./base.css";
+import Rum from "./Rum";
 
 // Self-hosted by next/font at build time. The previous site loaded two of its
 // three families through a render-blocking <link> to fonts.googleapis.com, which
 // put a network round trip in front of the headline.
+
+/*
+ * Two voices. Display, interface and reading are one family at different
+ * optical sizes, and data is the other.
+ *
+ *   display    Bricolage Grotesque   headlines, labels, controls, prose
+ *   data       Martian Mono          figures, identifiers, code
+ *
+ * Every non-default axis is requested explicitly. next/font ships only `wght`,
+ * so anything else has to be named or `font-variation-settings` silently does
+ * nothing.
+ */
+// The classic document's display face. The stage no longer uses it, so it is
+// not preloaded: a preload on the home page would fetch 131KB nothing renders.
+const display = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+  axes: ["opsz", "wdth"],
+  preload: false,
+});
+
 const mono = Martian_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
@@ -13,26 +42,89 @@ const mono = Martian_Mono({
   weight: ["300", "400", "600"],
 });
 
-const serif = Newsreader({
-  subsets: ["latin"],
-  variable: "--font-serif",
+/*
+ * The stage's voices. One per kind of document a chapter is, self-hosted and
+ * subset to Latin (licences in app/fonts/LICENSES.md). Only the two faces the
+ * first screen renders are preloaded; the rest arrive with their chapters.
+ *
+ *   spine     Switzer              interface, labels, body
+ *   signature Mona Sans            the name and the contact title
+ *   plate     Hubot Sans           chapter titles, settled figures
+ *   paper     Sentient             the research chapter, which is a paper
+ */
+const spine = localFont({
+  src: [
+    { path: "./fonts/Switzer-300.woff2", weight: "300" },
+    { path: "./fonts/Switzer-400.woff2", weight: "400" },
+    { path: "./fonts/Switzer-500.woff2", weight: "500" },
+    { path: "./fonts/Switzer-600.woff2", weight: "600" },
+  ],
+  variable: "--font-spine",
   display: "swap",
-  style: ["normal", "italic"],
+});
+
+
+
+
+const paper = localFont({
+  src: [
+    { path: "./fonts/Sentient-400.woff2", weight: "400" },
+    { path: "./fonts/Sentient-500.woff2", weight: "500" },
+    { path: "./fonts/Sentient-700.woff2", weight: "700" },
+  ],
+  variable: "--font-paper",
+  display: "swap",
+  preload: false,
+});
+
+
+/*
+ * The signature face and the chapter plate face, both variable (plan 3.2, D.3).
+ * Mona Sans carries the name and the contact title; Hubot Sans, its mechanical
+ * sibling, carries chapter titles and settled historical figures. Both expose
+ * wght 200 to 900 and wdth 75 to 125 and nothing else (no ital or opsz axis), so
+ * the D.3 slant coordinate is the Mona italic file, never a synthesised oblique.
+ */
+const signature = localFont({
+  src: [
+    { path: "./fonts/MonaSans-latin-var.woff2", weight: "200 900", style: "normal" },
+    { path: "./fonts/MonaSans-latin-var-italic.woff2", weight: "200 900", style: "italic" },
+  ],
+  variable: "--font-signature",
+  display: "swap",
+  declarations: [{ prop: "font-stretch", value: "75% 125%" }],
+});
+
+const plate = localFont({
+  src: "./fonts/HubotSans-latin-var.woff2",
+  weight: "200 900",
+  variable: "--font-plate",
+  display: "swap",
+  declarations: [{ prop: "font-stretch", value: "75% 125%" }],
+});
+
+// IBM's own open mono, scoped to the IBM credential plates only. Not preloaded:
+// two plates far down the page are its only readers.
+const ibm = localFont({
+  src: [
+    { path: "./fonts/IBMPlexMono-latin-400.woff2", weight: "400" },
+    { path: "./fonts/IBMPlexMono-latin-500.woff2", weight: "500" },
+  ],
+  variable: "--font-ibm",
+  display: "swap",
+  preload: false,
 });
 
 const { profile } = loadContent();
 
 export const metadata: Metadata = {
   metadataBase: new URL(profile.site),
-  title: `${profile.name} — ${profile.role}`,
-  // The description is the line a search result quotes and an assistant
-  // paraphrases. The tagline alone carried neither the role nor the institution,
-  // which are the two strings someone who half-remembers him will type.
-  description: `${profile.tagline} ${profile.role} at Boston University. ${profile.proof}`,
+  title: `${profile.name}, ${profile.role}`,
+  description: `${profile.tagline} ${profile.current}. ${profile.proof}`,
   authors: [{ name: profile.name, url: profile.site }],
   openGraph: {
     type: "profile",
-    title: `${profile.name} — ${profile.role}`,
+    title: `${profile.name}, ${profile.role}`,
     description: `${profile.tagline} ${profile.proof}`,
     url: profile.site,
     siteName: profile.name,
@@ -40,7 +132,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${profile.name} — ${profile.role}`,
+    title: `${profile.name}, ${profile.role}`,
     description: `${profile.tagline} ${profile.proof}`,
     images: ["/og"],
   },
@@ -49,20 +141,16 @@ export const metadata: Metadata = {
 };
 
 /**
- * Person + WebSite in one @graph. Search engines and assistants read this to
- * resolve "who is Kushal Gaddamwar" as an entity rather than guessing from prose,
- * which matters because recruiters increasingly ask a model about a candidate
- * before opening the site.
+ * Person, WebSite and WebPage in one @graph, so machine readers resolve him as an
+ * entity and the page's chapters as addressable parts rather than prose.
  */
 const ORCID = "https://orcid.org/0009-0009-9318-1616";
 
 /**
  * Every technology named anywhere in the corpus, deduplicated.
  *
- * A screener matching this profile against a job description is looking for
- * these strings. Deriving them from the same `stack` lines the page renders
- * means the list cannot fall behind the site, which is exactly what the previous
- * hardcoded array had already done.
+ * Derived from the same `stack` lines the page renders, so the list cannot fall
+ * behind the site, which the previous hardcoded array had already done.
  */
 function knowsAbout() {
   const { sections } = loadContent();
@@ -120,13 +208,10 @@ function structuredData() {
           name: "Boston University, Questrom Computational Lab",
         },
         // Generated from the corpus, not typed here. This was a hardcoded list
-        // of six terms while the sections carried twenty, so the machine-readable
-        // copy of him was a stale subset of the human-readable one. Roughly 90%
-        // of employers now screen with an AI tool before a person opens the page,
-        // which makes this block the version most likely to be read first.
+        // of six terms while the sections carried twenty.
         knowsAbout: knowsAbout(),
-        // Credentials with their verification URL attached, so a screener can
-        // follow the claim instead of taking it.
+        // Credentials with their verification URL attached, so the claim can be
+        // followed rather than taken.
         hasCredential: loadCertifications()
           .filter((c) => c.url)
           .map((c) => ({
@@ -140,6 +225,18 @@ function structuredData() {
       },
       ...publications(),
       {
+        "@type": "WebPage",
+        "@id": `${profile.site}/#page`,
+        url: profile.site,
+        about: { "@id": `${profile.site}/#person` },
+        hasPart: CHAPTERS.map((c) => ({
+          "@type": "WebPageElement",
+          "@id": `${profile.site}/#${c.id}`,
+          name: c.name,
+          url: `${profile.site}/#${c.id}`,
+        })),
+      },
+      {
         "@type": "WebSite",
         "@id": `${profile.site}/#website`,
         url: profile.site,
@@ -152,8 +249,15 @@ function structuredData() {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${mono.variable} ${serif.variable}`}>
+    // Theme and FilmBoot intentionally set root attributes before hydration.
+    <html
+      suppressHydrationWarning
+      lang="en"
+      className={[display, mono, spine, signature, plate, paper, ibm].map((f) => f.variable).join(" ")}
+    >
       <head>
+        {/* The film's frames come from this origin when set; the handshake starts before the engine asks. */}
+        {process.env.NEXT_PUBLIC_FILM_ORIGIN && <link rel="preconnect" href={process.env.NEXT_PUBLIC_FILM_ORIGIN} crossOrigin="anonymous" />}
         {/* The condensed view was a keystroke nobody finds. As a URL it is a
             second, shorter read of the same page that can be sent in a reply,
             and applying it here rather than in an effect means the full page
@@ -167,7 +271,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               // Restores a chosen theme before first paint, so a reader who
               // picked dark never sees the page flash light on the way in.
               // Read from storage only: the ADR keeps light unconditional and
-              // ignores the system preference deliberately, so that a recruiter
+              // ignores the system preference deliberately, so that every reader
               // sees the design that was measured rather than a variant of it.
               // The dark scheme has been in the stylesheet and unreachable since
               // it was written, because nothing ever set this attribute.
@@ -186,6 +290,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to content
         </a>
         {children}
+        {process.env.NEXT_PUBLIC_RUM === "1" && <Rum />}
       </body>
     </html>
   );

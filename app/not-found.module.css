@@ -1,0 +1,118 @@
+/*
+ * The dead URL, in the page's own register.
+ *
+ * Machine ground, because this is the site reporting a state rather than
+ * presenting written material, and the one hazard stripe at the top is the same
+ * mark the section turn carries. Nothing here is drawn: the research is
+ * consistent that recovery above the fold beats an illustration, and this page
+ * has never carried an illustration anyway.
+ */
+.page {
+  min-block-size: 100dvh;
+  padding-block: var(--s-9) var(--s-8);
+  color-scheme: dark;
+
+  --paper: oklch(0.168 0.005 258);
+  --ink: oklch(0.968 0.002 250);
+  --ink-soft: oklch(0.862 0.004 250);
+  --ink-faint: oklch(0.775 0.006 250);
+  --rule: oklch(0.335 0.006 258);
+  --signal: oklch(0.968 0.002 250);
+  --on-signal: oklch(0.16 0 0);
+
+  background-color: var(--paper);
+  color: var(--ink);
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      var(--hazard) 0 12px,
+      oklch(0.118 0.004 258) 12px 24px
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      color-mix(in oklch, var(--ink) 9%, transparent) 0 1.1px,
+      transparent 1.1px 100%
+    );
+  background-repeat: no-repeat, repeat;
+  background-size: 100% var(--s-2), 13px 13px;
+  background-position: top left, 0 0;
+}
+
+.code {
+  font-family: var(--font-mono), monospace;
+  font-size: var(--step--1);
+  letter-spacing: var(--track-caps);
+  color: var(--ink-faint);
+  margin: 0 0 var(--s-4);
+}
+
+.title {
+  font-size: clamp(2.5rem, 9vw, 6rem);
+  font-weight: 700;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  margin: 0 0 var(--s-5);
+  text-shadow: 0.045em 0.045em 0 var(--signal);
+}
+
+.lead {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: var(--step-prose);
+  color: var(--ink-soft);
+  max-inline-size: var(--measure);
+  margin: 0 0 var(--s-7);
+}
+
+/* The one thing to press, and it is the largest target here. Square, filled,
+   the same control the rest of the site uses for a primary action. */
+.cta {
+  display: inline-block;
+  padding: var(--s-4) var(--s-6);
+  background: var(--fill, var(--signal));
+  color: var(--on-signal);
+  font-weight: 600;
+  text-decoration: none;
+  margin-block-end: var(--s-8);
+  transition: background-color var(--t-fast) var(--ease-out);
+}
+
+.cta:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.cta:active {
+  scale: 0.98;
+}
+
+.list {
+  list-style: none;
+  margin: 0 0 var(--s-7);
+  padding: 0;
+  display: grid;
+  gap: 1px;
+  background: var(--rule);
+  border-block: var(--border-hair) solid var(--rule);
+  max-inline-size: 34rem;
+}
+
+.list li {
+  background: var(--paper);
+}
+
+.list a {
+  display: block;
+  padding: var(--s-4);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.list a:hover {
+  background: var(--fill, var(--signal));
+  color: var(--on-signal);
+}
+
+.reach {
+  color: var(--ink-soft);
+  margin: 0;
+}

@@ -1,7 +1,14 @@
 import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 
-const CONTENT_DIR = join(process.cwd(), "content");
+/**
+ * The corpus folder. `AGENT_CORPUS` points the whole agent at another person's
+ * facts (a folder holding facts.md, optional certifications.json and its own
+ * index.json), which is how the fixtures in tests/fixtures prove the retrieval
+ * code holds nothing specific to this corpus.
+ */
+export const CONTENT_DIR = join(process.cwd(), process.env.AGENT_CORPUS ?? "content");
 
 export type Metric = { value: string; label: string; source?: string };
 
@@ -12,6 +19,9 @@ export type Metric = { value: string; label: string; source?: string };
  * hero can only carry three. These sit at the close of the section that answers
  * them, so the prompt appears exactly where the curiosity does.
  */
+/** One tile of the evidence wall: a short label, what it is for a screen reader,
+ *  and where a reader can check it (a URL, or the resume PDF). */
+export type Badge = { group: string; label: string; name: string; href: string; mark?: string };
 export type Ask = { question: string; source: string };
 
 /** A failure this codebase shipped, and the thing that now stops it returning. */
@@ -50,6 +60,17 @@ export type Section = {
    *  2026-08-20, which is exactly the duplication hard rule 1 exists to stop:
    *  editing a date in the corpus left the heading showing the old one. */
   roleParts: { title: string; dates: string; location: string };
+  /** Where this section's bold claims point: a URL, or `resume` (the PDF). Every
+   *  bold claim on the page is a link, so a section with bold text needs one. */
+  claim?: string;
+  /** Tiles for the evidence wall, from `@badge` lines. */
+  badges: Badge[];
+  /** Stable id from `@id`, else a slug of the title. Evals reference this, so a renamed heading does not break them. */
+  id: string;
+  /** From `@kind` (docs/facts-format.md). `private` sections are answered by a fixed route and never retrieved. */
+  kind?: string;
+  /** Other names a reader may type for this section's subject, from `@alias a, b`. */
+  aliases: string[];
 };
 
 export type Profile = Record<string, string>;
@@ -124,6 +145,11 @@ function splitSections(body: string, source: string): Section[] {
       const defects: Defect[] = [];
       let stack: string[] = [];
       let role = "";
+      let claim: string | undefined;
+      const badges: Badge[] = [];
+      let id: string | undefined;
+      let kind: string | undefined;
+      const aliases: string[] = [];
 
       // Line-oriented directives are pulled out before the prose is assembled.
       // Stack and Role wrap in the source, so a continuation line is any line
@@ -180,6 +206,35 @@ function splitSections(body: string, source: string): Section[] {
           continue;
         }
 
+        // `@badge group | label | name | url or resume | optional brand mark`.
+        const badge = line.match(/^@badge\s+(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(\S+)(?:\s*\|\s*(.+?))?\s*$/);
+        if (badge) {
+          badges.push({
+            group: badge[1],
+            label: badge[2],
+            name: badge[3],
+            href: badge[4] === "resume" ? "/kushal-gaddamwar-resume.pdf" : badge[4],
+            ...(badge[5] ? { mark: badge[5] } : {}),
+          });
+          continue;
+        }
+
+        // `@source url` or `@source resume`: the witness for every bold claim in
+        // this section (strict rule, 2026-10-02).
+        const witness = line.match(/^@source\s+(\S+)\s*$/);
+        if (witness) {
+          claim = witness[1] === "resume" ? "/kushal-gaddamwar-resume.pdf" : witness[1];
+          continue;
+        }
+
+        const tag = line.match(/^@(id|kind|alias)\s+(.+?)\s*$/);
+        if (tag) {
+          if (tag[1] === "id") id = tag[2];
+          else if (tag[1] === "kind") kind = tag[2].toLowerCase();
+          else aliases.push(...tag[2].split(",").map((a) => a.trim()).filter(Boolean));
+          continue;
+        }
+
         const directive = line.match(/^(Stack|Role):\s*(.+)$/);
         if (directive) {
           let value = directive[2];
@@ -202,9 +257,13 @@ function splitSections(body: string, source: string): Section[] {
       }
 
       const body = kept.join("\n");
+      const title = block.slice(0, nl).trim();
 
       return {
-        title: block.slice(0, nl).trim(),
+        title,
+        id: id ?? title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+        ...(kind ? { kind } : {}),
+        aliases,
         body: body.trim(),
         source,
         metrics,
@@ -214,6 +273,8 @@ function splitSections(body: string, source: string): Section[] {
         defects,
         role,
         roleParts: splitRole(role),
+        ...(claim ? { claim } : {}),
+        badges,
       };
     })
     .filter((s) => s.body.length > 0);
@@ -263,6 +324,11 @@ export type Certification = {
   url: string | null;
   kind: string;
   featured: boolean;
+  /** Shown as one of the two certificate cards, with its badge image. */
+  pinned?: boolean;
+  image?: string;
+  /** The plate colour behind the artwork when it is drawn as a 3D medallion. */
+  plate?: string;
   why?: string;
   components?: { name: string; url: string | null }[];
 };
@@ -279,8 +345,9 @@ export function progress(c: Certification) {
 }
 
 export function loadCertifications(): Certification[] {
-  const raw = readFileSync(join(CONTENT_DIR, "certifications.json"), "utf8");
-  return JSON.parse(raw).certifications;
+  const path = join(CONTENT_DIR, "certifications.json");
+  if (!existsSync(path)) return [];
+  return JSON.parse(readFileSync(path, "utf8")).certifications;
 }
 
 /** Every external URL the site renders, for the link checker. */
@@ -304,4 +371,49 @@ export function allLinks(): string[] {
     for (const comp of c.components ?? []) if (comp.url) found.add(comp.url);
   }
   return [...found];
+}
+
+/**
+ * One hash for everything the retrieval index is built from. build-index stores
+ * it and verify:facts compares, so an edit to facts.md or a note without a
+ * rebuilt index fails the check instead of serving stale passages.
+ */
+export function corpusHash(): string {
+  return createHash("sha256")
+    .update(JSON.stringify(loadContent().sections.map((s) => [s.title, s.body])))
+    .digest("hex");
+}
+
+/**
+ * Where each section renders on the home page, by stable section id. Page ids
+ * are a public API (shared links end in them), so this lists only ids
+ * ClassicPage.tsx renders; a section the page does not show (BU Life AI,
+ * Skills, Work authorisation) has no entry and gets no link.
+ * tests/thread.test.ts checks every id against ClassicPage.tsx.
+ */
+export const PAGE_HOME: Record<string, string> = {
+  "who-he-is": "approach",
+  "what-he-is-good-at": "approach",
+  "what-he-does-not-do": "approach",
+  "boston-university-questrom-computational-lab-backend": "role-2",
+  "boston-university-questrom-computational-lab": "role-1",
+  "img-systems": "role-3",
+  growaza: "role-4",
+  "open-source-langchain-deepagents": "opensource",
+  certifications: "proof",
+  publications: "research",
+  education: "education",
+  achievements: "education",
+  "proof-wall": "contact",
+  availability: "contact",
+  "this-site": "running",
+};
+
+/** Per section title: its place on the page and the role's dates, for the agent's Sources. */
+export function sectionHomes(): Record<string, { href?: string; dates?: string }> {
+  return Object.fromEntries(
+    loadContent()
+      .sections.map((s) => [s.title, { ...(PAGE_HOME[s.id] ? { href: `#${PAGE_HOME[s.id]}` } : {}), ...(s.roleParts.dates ? { dates: s.roleParts.dates } : {}) }] as const)
+      .filter(([, h]) => h.href || h.dates),
+  );
 }

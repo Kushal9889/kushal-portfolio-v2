@@ -1,0 +1,44 @@
+{
+  "reach": {
+    "https://bulife-ai.netlify.app/": {
+      "ms": 198,
+      "checkedOn": "2026-10-25"
+    }
+  },
+  "commits": {
+    "Kushal9889/BU-Life-AI": {
+      "at": "2026-08-11T19:28:53Z",
+      "stars": 0,
+      "checkedOn": "2026-10-25"
+    },
+    "Kushal9889/kushal-portfolio-v2": {
+      "at": "2026-08-25T05:27:13Z",
+      "stars": 0,
+      "checkedOn": "2026-10-25"
+    }
+  },
+  "states": {
+    "langchain-ai/deepagents#4846": {
+      "state": "closed",
+      "checkedOn": "2026-10-25"
+    },
+    "langchain-ai/deepagents#4925": {
+      "state": "merged",
+      "checkedOn": "2026-10-25"
+    },
+    "vllm-project/vllm#56846": {
+      "state": "open",
+      "checkedOn": "2026-10-25"
+    },
+    "modelcontextprotocol/python-sdk#3490": {
+      "state": "open",
+      "checkedOn": "2026-10-25"
+    }
+  },
+  "citations": {
+    "10.1109/ICAICCIT64383.2024.10912101": {
+      "count": 1,
+      "checkedOn": "2026-10-25"
+    }
+  }
+}

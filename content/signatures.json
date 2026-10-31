@@ -1,0 +1,52 @@
+{
+  "note": "Personalization dials (plan Appendix D) as data, so no styling fact lives in a component. Identity hues are the organisations' own published colours, used only as a 1px rule or a mark fill on hover, never behind text.",
+  "issuers": {
+    "NVIDIA": {
+      "hue": "#76B900",
+      "garment": "stamp",
+      "border": "corners",
+      "nameplate": null
+    },
+    "IBM": {
+      "hue": "#0F62FE",
+      "garment": "split",
+      "border": "stripe",
+      "nameplate": "IBM"
+    },
+    "Amazon Web Services": {
+      "hue": "#232F3E",
+      "garment": "underline",
+      "border": "hairline",
+      "nameplate": "AWS"
+    },
+    "Google Cloud": {
+      "hue": "#4285F4",
+      "garment": "chip",
+      "border": "quartered",
+      "nameplate": null,
+      "quarters": [
+        "#4285F4",
+        "#EA4335",
+        "#FBBC04",
+        "#34A853"
+      ]
+    }
+  },
+  "organisations": {
+    "Boston University": {
+      "hue": "#CC0000"
+    },
+    "IIIT Design and Manufacturing Jabalpur": {
+      "hue": null
+    },
+    "CodeChef": {
+      "hue": "#5B4638"
+    },
+    "IEEE": {
+      "hue": "#00629B"
+    },
+    "LangChain": {
+      "hue": "#1C3C3C"
+    }
+  }
+}

@@ -19,7 +19,7 @@ type Edge = { a: number; b: number; shared: string[] };
 
 const KIND = (title: string) => {
   if (/Questrom|IMG Systems|Growaza/.test(title)) return "role";
-  if (/BU Life AI|deepagents/.test(title)) return "project";
+  if (/This site|deepagents/.test(title)) return "project";
   if (/Skills|good at|does not do|Who he is/.test(title)) return "capability";
   return "context";
 };
@@ -35,7 +35,7 @@ const SHORT: Record<string, string> = {
 const { sections } = loadContent();
 
 const nodes: Node[] = sections
-  .filter((s) => s.stack.length > 0 || /Questrom|IMG|Growaza|BU Life|deepagents|Skills/.test(s.title))
+  .filter((s) => s.stack.length > 0 || /Questrom|IMG|Growaza|This site|deepagents|Skills/.test(s.title))
   .map((s) => ({
     id: s.title,
     label: SHORT[s.title] ?? s.title,

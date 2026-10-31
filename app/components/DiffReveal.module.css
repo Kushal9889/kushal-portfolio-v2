@@ -1,24 +1,35 @@
 .stage {
-  margin-block: clamp(1rem, 4vh, 2rem);
+  margin-block: var(--s-6);
 }
 
 .sticky {
   display: grid;
-  gap: 1rem;
-  padding: clamp(1.25rem, 3vw, 2rem);
-  border: 1px solid var(--rule);
+  gap: var(--s-4);
+  padding: var(--s-6);
+  border: var(--border-hair) solid var(--rule);
   background: var(--paper-sunk);
-  /* This panel paints its own recessed ground, so it owes the same ink
-     compensation the [data-tone="sunk"] scope gives section 06. Without it the
-     credit line measured Lc 70.8 against a 75 floor. */
-  --ink-faint: oklch(0.442 0.018 62);
-  --ink-soft: oklch(0.375 0.016 62);
+}
+
+:global(html[data-film="live"]) .sticky {
+  background: color-mix(in oklab, var(--paper-sunk) 55%, transparent);
+}
+
+/* This panel paints its own recessed ground, so on the light theme it owes the
+   same ink compensation the [data-tone="sunk"] scope gives section 06: without
+   it the credit line measured Lc 70.8 against a 75 floor. Light only. These
+   are light-ground inks, and unscoped they put the caption and the code on the
+   dark recessed ground at 1.9:1. The dark ramp gains contrast on a darker
+   ground and needs no restatement. Hue 250 matches the rest of the page (the
+   old hue-62 soft ink painted ten diff elements cream). */
+:global(:root[data-theme="light"]) .sticky {
+  --ink-faint: oklch(0.455 0.007 250);
+  --ink-soft: oklch(0.375 0.006 250);
 }
 
 .caption {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--s-3);
   align-items: baseline;
   margin: 0;
 }
@@ -31,7 +42,7 @@
 .code {
   margin: 0;
   display: grid;
-  font-size: clamp(0.68rem, 0.5rem + 1.1vw, 0.85rem);
+  font-size: var(--step--1);
   line-height: 1.75;
   overflow-x: auto;
 }
@@ -39,7 +50,7 @@
 .line {
   white-space: pre;
   color: var(--ink-soft);
-  padding-inline: 0.5rem;
+  padding-inline: var(--s-2);
 }
 
 /*
@@ -53,11 +64,16 @@
   initial-value: 0;
 }
 
+/* --fail, not --signal. This line is the defect the section is about, and the
+   accent means "press this". A struck line is not a target, and painting it in
+   the target colour spent the accent on the one thing a reader must not act on.
+   The gutter mark is a diff marker: it names the state of the line it sits on,
+   which is the condition a semantic colour has to meet. */
 .bad {
   position: relative;
   color: var(--ink);
-  background: var(--signal-wash);
-  box-shadow: inset 2px 0 0 var(--signal);
+  background: var(--fail-wash);
+  box-shadow: inset 2px 0 0 var(--fail);
 }
 
 /* The line is struck, not deleted. The whole point is that this code looked
@@ -70,7 +86,7 @@
   inset-inline: 0.5rem;
   inset-block-start: 50%;
   height: 1px;
-  background: var(--signal);
+  background: var(--fail);
   transform: scaleX(var(--strike, 0));
   transform-origin: left center;
   pointer-events: none;
@@ -142,7 +158,7 @@
 .repo {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--s-2);
   min-height: 44px;
 }
 
@@ -167,25 +183,29 @@
 @media (max-width: 62rem) {
   .mobileSteps {
     display: block;
-    margin-block-end: 0.75rem;
+    margin-block-end: var(--s-3);
   }
 
   .mobileStepBtn {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--s-2);
     min-height: 44px;
     padding: 0.5em 1em;
     font-size: var(--step--1);
     letter-spacing: 0.02em;
     color: var(--ink);
     background: var(--paper-sunk);
-    border: 1px solid var(--rule);
+    border: var(--border-hair) solid var(--rule);
     transition: border-color var(--t-fast) var(--ease-standard);
   }
 
   .mobileStepBtn:hover {
     border-color: var(--ink);
+  }
+
+  .mobileStepBtn:active {
+    scale: 0.98;
   }
 
   /* Step 0: only the broken line is visible, at rest, unstruck. Everything
@@ -223,4 +243,27 @@
   .sticky[data-step="3"] .bad {
     --strike: 1;
   }
+}
+
+/* Phone: code keeps its lines (a wrapped identifier reads as a typo), set
+   one step smaller, and scrolls sideways; the right edge fades so the cut
+   reads as more to the right, not as a broken line. */
+@media (max-width: 767px) {
+  .code,
+  .code * {
+    font-size: var(--step--2);
+  }
+
+  .code {
+    overflow-x: auto;
+    mask-image: linear-gradient(to right, var(--ink) 82%, transparent);
+    -webkit-mask-image: linear-gradient(to right, var(--ink) 82%, transparent);
+    padding-right: var(--s-6);
+  }
+}
+
+/* Same box grammar as every other evidence box: the product hue (LangChain)
+   down the left edge. */
+.sticky {
+  border-left: 1px solid var(--brand-langchain);
 }

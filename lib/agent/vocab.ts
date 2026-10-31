@@ -1,4 +1,4 @@
-import index from "./index.json";
+import { index } from "./corpus-index";
 
 /**
  * Typo tolerance, against the vocabulary the corpus actually contains.
@@ -122,8 +122,13 @@ export function nearestTerm(token: string): string | null {
   let bestDistance = max + 1;
   let bestPrefix = -1;
 
-  if (max > 0) {
+  // A number is never a misspelling of another number ("2021" is not "2020"),
+  // and a misspelling keeps its first letter: without that rule real words were
+  // "repaired" into other real words (tell -> well, know -> now, best -> test),
+  // adding terms that matched the wrong passages.
+  if (max > 0 && !/^\d/.test(token)) {
     for (const term of VOCAB) {
+      if (term[0] !== token[0]) continue;
       const d = within(token, term, max);
       if (d === null) continue;
       const prefix = sharedPrefix(token, term);

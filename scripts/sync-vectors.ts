@@ -1,124 +1,66 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+
+const envFile = join(process.cwd(), ".env.local");
+if (existsSync(envFile)) process.loadEnvFile(envFile);
 import { neon } from "@neondatabase/serverless";
+import { tableFor } from "../lib/agent/store";
 
 /**
- * Publishes the passage index to Postgres, with a real HNSW index.
+ * Copies the built index into Neon pgvector (RAG v3 phase 3, ADR-008).
  *
- * The visitor's request path does not touch this. Retrieval serves from the
- * bundled index in memory, measured at 0.351ms for an exhaustive scan over all
- * 53 passages -- against 236-421ms for the network round trip that fetches the
- * query vector alone. A database in front of that would make the page slower to
- * answer a question it can already answer instantly, and Neon's free tier
- * scales to zero, so the first visitor after a quiet spell would pay a cold
- * start measured in seconds. On sporadic portfolio traffic that visitor is
- * likely to be a recruiter.
+ *   [AGENT_CORPUS=<dir>] npx tsx scripts/sync-vectors.ts
  *
- * So why does it exist. Because "a vector database is unnecessary here" is
- * either a measurement or an excuse, and the difference is whether the
- * alternative was actually built. This is the real thing -- real pgvector, real
- * HNSW, real SQL anyone can open -- and the page puts its measured latency next
- * to the in-process number so a reader can see the size of the trade rather
- * than take a sentence's word for it.
- *
- * `npm run sync:vectors`. Degrades to a warning when NEON_DATABASE_URL is
- * unset, the same way build-index.ts degrades without an embedding key.
+ * One table per index build, `passages_<hash8>`, named from the index's section
+ * hashes: a deploy never empties the table the live build is reading, and an
+ * unchanged corpus is a no-op. Tables older than the two newest are dropped.
+ * The vectors are 2,048-dim and pgvector's HNSW on `vector` stops at 2,000, so
+ * the column is `halfvec`, which HNSW indexes up to 4,000. Without a URL this
+ * warns and exits 0: the site serves from the bundled index either way.
  */
-
 type Index = {
-  passages: { parent: string; ordinal: number; text: string; tokens: number }[];
-  parents: { title: string; source: string }[];
+  passages: { parent: string; ordinal: number; text: string }[];
+  parents: { title: string; meta?: { kind?: string; yearStart?: number; yearEnd?: number; current?: boolean } }[];
   vectors: number[][] | null;
+  hashes?: Record<string, string>;
 };
 
 async function main() {
   const url = process.env.NEON_DATABASE_URL;
-  if (!url) {
-    console.warn(
-      "sync-vectors: NEON_DATABASE_URL not set, skipping.\n" +
-        "  The page serves retrieval from the bundled index either way; only the\n" +
-        "  live-database comparison is unavailable.",
-    );
-    return;
-  }
-
-  const index = JSON.parse(
-    readFileSync(join(process.cwd(), "lib/agent/index.json"), "utf8"),
-  ) as Index;
-
-  if (!index.vectors) {
-    console.error("sync-vectors: index has no vectors. Run `npm run build:index` with a key set.");
-    process.exit(1);
-  }
-
+  if (!url) return console.warn("sync-vectors: NEON_DATABASE_URL not set, skipping (bundled index serves).");
+  const dir = process.env.AGENT_CORPUS ? join(process.cwd(), process.env.AGENT_CORPUS) : join(process.cwd(), "lib/agent");
+  const index = JSON.parse(readFileSync(join(dir, "index.json"), "utf8")) as Index;
+  if (!index.vectors) throw new Error("sync-vectors: index has no vectors");
   const sql = neon(url);
+  const table = tableFor(index);
   const dims = index.vectors[0].length;
-
   await sql`CREATE EXTENSION IF NOT EXISTS vector`;
-
-  /*
-   * Dropped and rebuilt rather than migrated.
-   *
-   * The corpus is the source of truth and it is rewritten on every build, so
-   * the table is a projection of a file rather than a store anything owns. A
-   * migration path here would be ceremony protecting data that is regenerated
-   * from disk in under a minute.
-   */
-  await sql`DROP TABLE IF EXISTS passages`;
-  // `unsafe` because a vector column's dimension is part of the type and cannot
-  // be a bind parameter. The value is `index.vectors[0].length`, computed from
-  // our own build output, never from input.
-  await sql.query(`
-    CREATE TABLE passages (
-      id        integer PRIMARY KEY,
-      parent    text NOT NULL,
-      ordinal   integer NOT NULL,
-      source    text NOT NULL,
-      tokens    integer NOT NULL,
-      body      text NOT NULL,
-      embedding vector(${dims}) NOT NULL
-    )
-  `);
-
-  const sourceOf = new Map(index.parents.map((p) => [p.title, p.source]));
-
-  for (const [i, passage] of index.passages.entries()) {
-    await sql`
-      INSERT INTO passages (id, parent, ordinal, source, tokens, body, embedding)
-      VALUES (
-        ${i},
-        ${passage.parent},
-        ${passage.ordinal},
-        ${sourceOf.get(passage.parent) ?? "facts"},
-        ${passage.tokens},
-        ${passage.text},
-        ${JSON.stringify(index.vectors[i])}
-      )
-    `;
+  const [{ exists }] = (await sql`SELECT to_regclass(${table}) IS NOT NULL AS exists`) as { exists: boolean }[];
+  if (!exists) {
+    await sql.query(`CREATE TABLE ${table} (
+      id integer PRIMARY KEY, parent text NOT NULL, ordinal integer NOT NULL, body text NOT NULL,
+      kind text, year_start integer, year_end integer, current boolean,
+      embedding halfvec(${dims}) NOT NULL, created timestamptz DEFAULT now())`);
+    const meta = new Map(index.parents.map((p) => [p.title, p.meta ?? {}]));
+    // One multi-row insert per 20 passages instead of one round trip each.
+    for (let i = 0; i < index.passages.length; i += 20) {
+      const rows = index.passages.slice(i, i + 20).map((p, j) => {
+        const m = meta.get(p.parent) ?? {};
+        return [i + j, p.parent, p.ordinal, p.text, m.kind ?? null, m.yearStart || null, m.yearEnd || null, !!m.current, JSON.stringify(index.vectors![i + j])];
+      });
+      const values = rows.map((_, r) => `(${Array.from({ length: 9 }, (_, c) => `$${r * 9 + c + 1}`).join(",")})`).join(",");
+      await sql.query(`INSERT INTO ${table} (id,parent,ordinal,body,kind,year_start,year_end,current,embedding) VALUES ${values}`, rows.flat());
+    }
+    await sql.query(`CREATE INDEX ${table}_hnsw ON ${table} USING hnsw (embedding halfvec_cosine_ops)`);
+    await sql.query(`CREATE INDEX ${table}_meta ON ${table} (kind, year_start, year_end)`);
   }
-
-  /*
-   * HNSW rather than IVFFlat.
-   *
-   * IVFFlat needs a training pass over representative data and its recall
-   * depends on the list count being right for the row count, which for a table
-   * rebuilt on every deploy means retuning a parameter nobody will retune.
-   * HNSW builds incrementally, needs no training, and its defaults are sane at
-   * any size. The cost is a slower build and more memory, and at 53 rows both
-   * are irrelevant -- which is itself the finding this table exists to show.
-   *
-   * `vector_cosine_ops` because the embedding model was trained against cosine.
-   * These vectors are unit length, so `vector_l2_ops` would rank identically;
-   * cosine is the one that says what is meant.
-   */
-  await sql`CREATE INDEX passages_embedding_idx ON passages USING hnsw (embedding vector_cosine_ops)`;
-
-  // Metadata filtering is the one thing a database gives that the bundled index
-  // does not, so the column it would filter on gets an index too.
-  await sql`CREATE INDEX passages_parent_idx ON passages (parent)`;
-
-  const [{ count }] = (await sql`SELECT count(*)::int AS count FROM passages`) as { count: number }[];
-  console.log(`sync-vectors: ${count} passages, ${dims}-dim, HNSW on vector_cosine_ops`);
+  // Keep the two newest builds per corpus prefix; older ones are unreachable.
+  const prefix = table.replace(/_[0-9a-f]{8}$/, "");
+  const old = (await sql`SELECT c.relname FROM pg_class c WHERE c.relkind = 'r' AND c.relname LIKE ${prefix + "\\_%"} ORDER BY c.oid DESC OFFSET 2`) as { relname: string }[];
+  for (const { relname } of old) if (/^[a-z0-9_]+$/.test(relname)) await sql.query(`DROP TABLE ${relname}`);
+  const plan = (await sql.query(`EXPLAIN SELECT id FROM ${table} ORDER BY embedding <=> (SELECT embedding FROM ${table} LIMIT 1) LIMIT 5`)) as { "QUERY PLAN": string }[];
+  const [{ count }] = (await sql.query(`SELECT count(*)::int AS count FROM ${table}`)) as { count: number }[];
+  console.log(`sync-vectors: ${table} ${count} passages ${dims}-dim ${exists ? "(unchanged)" : "(built)"}; HNSW in plan: ${plan.some((r) => /hnsw/.test(r["QUERY PLAN"]))}; dropped ${old.length}`);
 }
 
 main().catch((err) => {

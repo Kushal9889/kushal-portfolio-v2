@@ -1,8 +1,10 @@
 import { Annotation, StateGraph, START, END } from "@langchain/langgraph";
-import { invokeWithFailover, activeProvider, chooseTool } from "./model";
+import { trace, SpanStatusCode, type Attributes } from "@opentelemetry/api";
+import { invokeWithFailover, activeProvider, chooseTool, modelOf, BUDGET_MS } from "./model";
 import { toolSchemas, openEvidence, composeIntro, runEval, type ToolResult } from "./tools";
-import { retrieve, type Chunk, type RetrievalTrace } from "./retrieve";
+import { retrieve, sourceTitles, type Chunk, type RetrievalTrace } from "./retrieve";
 import { analyze } from "./query";
+import { ground, type Grounding } from "./ground";
 import {
   classify,
   systemPrompt,
@@ -10,6 +12,11 @@ import {
   deflection,
   handoffAnswer,
   AUTHORISATION_ANSWER,
+  NOT_IN_PROFILE,
+  PARTIAL_NOTE,
+  AGGREGATE_NOTE,
+  answerLength,
+  answerFormat,
 } from "./policy";
 
 /**
@@ -48,6 +55,8 @@ const State = Annotation.Root({
   reply: Annotation<string>,
   /** The question as the model receives it. See `asked` in query.ts. */
   asked: Annotation<string>,
+  /** The passage the reranker put first, served when every provider fails. */
+  best: Annotation<string>,
   /** Token usage reported by the provider. Absent when no model was called. */
   usage: Annotation<{ in: number; out: number } | null>({
     reducer: (_, next) => next,
@@ -73,6 +82,11 @@ const State = Annotation.Root({
     reducer: (_, next) => next,
     default: () => null,
   }),
+  /** The answer's figures and names read back against its context (ground.ts). */
+  grounding: Annotation<Grounding | null>({
+    reducer: (_, next) => next,
+    default: () => null,
+  }),
   /** Which provider served the answer. Failover is real and was never visible. */
   provider: Annotation<string | null>({
     reducer: (_, next) => next,
@@ -87,13 +101,58 @@ const State = Annotation.Root({
 
 type S = typeof State.State;
 
-/** Wraps a node so every one of them is timed the same way, with no per-node bookkeeping. */
+const tracer = trace.getTracer("kushal-portfolio/agent");
+
+/**
+ * GenAI semantic-convention attributes for what a node did (OpenTelemetry
+ * GenAI conventions, stable 2026): a model call is a `chat` span with its
+ * provider, model and token usage; retrieval is an `execute_tool` span with
+ * how many sections came back and how the fusion ranked them.
+ */
+function genAi(name: string, r: Partial<S>): Attributes {
+  if (r.provider || r.usage) {
+    return {
+      "gen_ai.operation.name": "chat",
+      "gen_ai.provider.name": r.provider ?? "none",
+      "gen_ai.request.model": r.provider ? (modelOf(r.provider) ?? "unknown") : "none",
+      "gen_ai.usage.input_tokens": r.usage?.in ?? 0,
+      "gen_ai.usage.output_tokens": r.usage?.out ?? 0,
+      "gen_ai.response.finish_reasons": [r.reply ? "stop" : "error"],
+      ...(r.grounding ? { "answer.groundedness": r.grounding.g, "answer.claims": r.grounding.claims } : {}),
+    };
+  }
+  if (r.chunks) {
+    return {
+      "gen_ai.operation.name": "execute_tool",
+      "gen_ai.tool.name": name,
+      "retrieval.returned": r.chunks.length,
+      "retrieval.dense_used": r.trace?.denseUsed ?? false,
+    };
+  }
+  return { "gen_ai.operation.name": name };
+}
+
+/**
+ * Wraps a node so every one of them is timed and traced the same way, with no
+ * per-node bookkeeping. Without a registered OpenTelemetry SDK
+ * (instrumentation.ts) the span calls are no-ops.
+ */
 function timed(name: string, fn: (s: S) => Promise<Partial<S>>) {
-  return async (state: S): Promise<Partial<S>> => {
-    const start = performance.now();
-    const result = await fn(state);
-    return { ...result, timings: { [name]: Math.round(performance.now() - start) } };
-  };
+  return (state: S): Promise<Partial<S>> =>
+    tracer.startActiveSpan(`agent.${name}`, async (span) => {
+      const start = performance.now();
+      try {
+        const result = await fn(state);
+        span.setAttributes(genAi(name, result));
+        return { ...result, timings: { [name]: Math.round(performance.now() - start) } };
+      } catch (e) {
+        span.recordException(e as Error);
+        span.setStatus({ code: SpanStatusCode.ERROR });
+        throw e;
+      } finally {
+        span.end();
+      }
+    });
 }
 
 const route = timed("route", async (state) => ({
@@ -101,19 +160,22 @@ const route = timed("route", async (state) => ({
 }));
 
 const retrieveNode = timed("retrieve", async (state) => {
-  const { query, weight, asked, floor } = analyze(state.question);
-  const { chunks, trace } = await retrieve(query, 4, weight, floor);
-  return { chunks, trace, asked };
+  const { query, asked, floor } = analyze(state.question);
+  const { chunks, trace, best } = await retrieve(query, { floor, deadline: Date.now() + BUDGET_MS, question: state.question });
+  return { chunks, trace, asked, best: best ?? "" };
 });
 
 const answer = timed("answer", async (state) => {
-  const context = state.chunks.map((c) => `## ${c.title}\n${c.body}`).join("\n\n");
+  const context =
+    state.chunks.map((c) => `## ${c.title}\n${c.body}`).join("\n\n") +
+    (state.trace?.band === "partial" ? PARTIAL_NOTE : "") +
+    (state.trace?.graph?.length ? AGGREGATE_NOTE : "");
 
   // No provider configured, or every one of them failed. Returning the retrieved
   // source beats an error: the visitor still gets the grounded material, just
   // unsummarised, and the page around it keeps working.
   const fallback = () => ({
-    reply: state.chunks[0]?.body.split("\n\n")[0] ?? deflection(state.question),
+    reply: state.best || (state.chunks[0]?.body.split("\n\n")[0] ?? deflection(state.question)),
     usage: null,
     provider: null,
   });
@@ -122,15 +184,16 @@ const answer = timed("answer", async (state) => {
 
   try {
     const { text, usage, provider } = await invokeWithFailover([
-      { role: "system", content: systemPrompt(context) },
+      { role: "system", content: systemPrompt(context, answerLength(state.question), answerFormat(state.question)) },
       { role: "user", content: state.asked || state.question },
-    ]);
+    ], undefined, answerLength(state.question).tokens);
     // Stripped here rather than inside the provider adapter: the adapter's job
     // is transport, and reasoning leakage is a property of the answer.
     // A limit is only welcome when the question asked for one.
     const reply = cleanAnswer(
       state.intent === "handoff" ? handoffAnswer(text) : text,
       analyze(state.question).intent === "limitation",
+      Math.round(answerLength(state.question).words * 1.2),
     );
 
     // Nothing survived the clean, so the reply was scratchpad end to end. The
@@ -138,7 +201,7 @@ const answer = timed("answer", async (state) => {
     // thinking out loud under his name.
     if (!reply.trim()) return fallback();
 
-    return { reply, usage, provider };
+    return { reply, usage, provider, grounding: ground(cleanAnswer(text, analyze(state.question).intent === "limitation"), context, state.question) };
   } catch {
     return fallback();
   }
@@ -164,7 +227,8 @@ const act = timed("act", async (state) => {
       },
       { role: "user", content: state.question },
     ],
-    toolSchemas(),
+    toolSchemas(state.question),
+    Date.now() + BUDGET_MS,
   );
 
   const call = chosen?.calls[0];
@@ -173,7 +237,10 @@ const act = timed("act", async (state) => {
   if (!call) {
     result = {
       ok: false,
-      say: `I can open his LinkedIn, his GitHub, the source for this page, the LangChain issue and its merged fix, or either publication. I can also draft an email to him, or run one of this site's own eval cases.`,
+      // Same wording as the streaming path, and for the same reason: an answer
+      // that opens "I can" about its own abilities is the shape the reasoning
+      // gate flags, and the eval suite is the caller that sees this one.
+      say: `Open on request: his LinkedIn, his GitHub, the source for this page, the LangChain issue and its merged fix, either publication, a written draft email to him, or one of this site's own eval cases.`,
     };
   } else if (call.name === "open_evidence") {
     result = openEvidence(String(call.args.target ?? ""));
@@ -190,6 +257,9 @@ const act = timed("act", async (state) => {
   return { reply: result.say, action: result, provider: chosen?.provider ?? null };
 });
 
+// The unknown band is a graph branch, not a prompt instruction: no model call.
+const unknown = timed("unknown", async () => ({ reply: NOT_IN_PROFILE, usage: null, provider: null }));
+
 const deflect = timed("deflect", async (state) => ({
   reply:
     state.intent === "authorisation" ? AUTHORISATION_ANSWER : deflection(state.question),
@@ -200,6 +270,7 @@ export const graph = new StateGraph(State)
   .addNode("retrieve", retrieveNode)
   .addNode("answer", answer)
   .addNode("deflect", deflect)
+  .addNode("unknown", unknown)
   .addNode("act", act)
   .addEdge(START, "route")
   .addConditionalEdges(
@@ -212,13 +283,25 @@ export const graph = new StateGraph(State)
           : "retrieve",
     { deflect: "deflect", retrieve: "retrieve", act: "act" },
   )
-  .addEdge("retrieve", "answer")
+  .addConditionalEdges("retrieve", (s) => (s.trace?.band === "unknown" ? "unknown" : "answer"), { unknown: "unknown", answer: "answer" })
+  .addEdge("unknown", END)
   .addEdge("answer", END)
   .addEdge("deflect", END)
   .addEdge("act", END)
   .compile();
 
 export async function ask(question: string) {
+  return tracer.startActiveSpan("invoke_agent portfolio", async (span) => {
+    span.setAttributes({ "gen_ai.operation.name": "invoke_agent", "gen_ai.agent.name": "portfolio" });
+    try {
+      return await askTraced(question);
+    } finally {
+      span.end();
+    }
+  });
+}
+
+async function askTraced(question: string) {
   const started = performance.now();
   const result = await graph.invoke({ question });
   return {
@@ -226,10 +309,11 @@ export async function ask(question: string) {
     route: result.intent,
     timings: result.timings,
     total: Math.round(performance.now() - started),
-    sources: result.chunks.map((c) => c.title),
+    sources: sourceTitles(result.chunks),
     usage: result.usage,
     action: result.action,
     trace: result.trace,
     provider: result.provider,
+    grounding: result.grounding,
   };
 }

@@ -1,11 +1,11 @@
 .wrap {
-  margin-block-start: 1.6rem;
-  padding-block-start: 1.1rem;
-  border-block-start: 1px solid var(--rule);
+  margin-block-start: var(--s-5);
+  padding-block-start: var(--s-4);
+  border-block-start: var(--border-hair) solid var(--rule);
 }
 
 .head {
-  margin: 0 0 0.9rem;
+  margin: 0 0 var(--s-4);
   font-size: var(--step--1);
   font-weight: 400;
   letter-spacing: 0.04em;
@@ -15,7 +15,7 @@
 .list {
   margin: 0;
   display: grid;
-  gap: 0.85rem;
+  gap: var(--s-3);
 }
 
 /* Symptom left, guard right, so the eye reads "this broke -> this catches it"
@@ -24,7 +24,7 @@
 .row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.3rem 1.6rem;
+  gap: var(--s-1) var(--s-5);
   align-items: baseline;
 }
 
@@ -55,7 +55,7 @@
 }
 
 .note {
-  margin: 1rem 0 0;
+  margin: var(--s-4) 0 0;
   font-family: var(--font-serif), Georgia, serif;
   font-size: var(--step-prose);
   line-height: 1.55;
@@ -90,7 +90,6 @@
   border-radius: var(--r-sm);
   font-size: var(--step--2);
   letter-spacing: var(--track-caps);
-  text-transform: uppercase;
   color: var(--ink-faint);
   vertical-align: 0.1em;
 }

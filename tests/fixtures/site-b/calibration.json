@@ -1,0 +1,13 @@
+{
+ "note": "Abstain floors from lib/agent/null-questions.json, 90th percentile per signal. Regenerate after any corpus or model change.",
+ "at": "2026-10-25",
+ "n": 32,
+ "floor": {
+  "cosine": 0.5667,
+  "lexical": 2.6993,
+  "logit": -6.0039
+ },
+ "max": {
+  "logit": -5.390625
+ }
+}
