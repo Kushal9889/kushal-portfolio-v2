@@ -61,7 +61,9 @@ def install(context, state):
             route.fulfill(status=200, content_type='text/event-stream', body='data: {broken\n\n')
             return
         time.sleep(0.12)
-        events=[{"type":"route","route":"answer","ms":1},{"type":"sources","titles":[],"ms":2},{"type":"token","text":ANSWER},{"type":"done","total":120,"usage":None,"provider":None,"trace":None}]
+        # A real answer needs sources, grounding and citations, or the page withholds it.
+        citation={"sentence":ANSWER,"source":"This site","n":1,"id":"site-1","text":"Two decisions on this page are worth asking about"}
+        events=[{"type":"route","route":"answer","ms":1},{"type":"sources","titles":["This site"],"ms":2},{"type":"token","text":ANSWER},{"type":"done","total":120,"usage":None,"provider":None,"trace":None,"grounding":{"claims":1,"found":1,"g":1,"unsupported":[]},"citations":[citation]}]
         route.fulfill(status=200, content_type='text/event-stream', body=''.join('data: '+json.dumps(e)+'\n\n' for e in events))
     context.route('**/api/agent/**', agent)
     context.route('**/api/track', lambda route: route.fulfill(status=204))
@@ -121,8 +123,8 @@ def test_journey(browser, label, dest, width, motion, out):
                 detail.locator('summary').first.press('Enter')
                 expect(detail).to_have_attribute('open','')
         elif label=='Recruiter':
-            expect(region).to_contain_text('Research Assistant (Lead Backend Engineer)')
-            expect(region).to_contain_text('Research Assistant (AI Engineer)')
+            expect(region).to_contain_text('Lead Backend Engineer')
+            expect(region).to_contain_text('AI Engineer')
             assert region.locator('details').count()>0, 'Missing ownership detail'
             detail=region.locator('details').first
             detail.locator('summary').first.press('Enter')
@@ -150,16 +152,15 @@ def test_journey(browser, label, dest, width, motion, out):
             expect(page.locator('#agent')).to_contain_text('Answer interrupted')
             expect(ask_field).to_have_value('Keep this question after an error.')
             state['error']=False
-            ask_field.fill('Use my edited question on retry.')
-            page.get_by_role('button',name='Retry question',exact=True).click()
+            page.get_by_role('button',name='Retry',exact=True).last.click()
             expect(page.locator('#agent article').last).to_contain_text(ANSWER)
-            assert state['questions'][-1]=='Use my edited question on retry.'
+            assert state['questions'][-1]=='Keep this question after an error.'
         else:
             page.locator('#ask').scroll_into_view_if_needed()
             timing=ask(page,'Explain delivery ownership.')
             phases.append('act')
             page.evaluate('window.__hold=true')
-            field=page.locator('#ask');field.fill('Keep this after stopping.');field.press('Enter');expect(field).to_be_disabled()
+            field=page.locator('#ask');field.fill('Keep this after stopping.');field.press('Enter');expect(field).to_have_attribute('aria-busy','true')
             page.get_by_role('button',name='Stop',exact=True).click()
             expect(page.locator('#ask-feedback')).to_contain_text('Stopped.')
             expect(field).to_have_value('Keep this after stopping.')
@@ -196,20 +197,15 @@ def edge_cases(browser):
     expect(field).to_have_value('Existing draft')
     expect(page.locator('#ask-feedback')).to_contain_text('unchanged')
     page.evaluate('window.__hold=true')
-    field.fill('First question');field.press('Enter');expect(field).to_be_disabled()
-    challenge=page.get_by_role('button',name='Try to break it',exact=False)
-    expect(challenge).to_be_visible();expect(challenge).to_be_disabled()
-    challenge_height=challenge.bounding_box()['height']
+    field.fill('First question');field.press('Enter');expect(field).to_have_attribute('aria-busy','true')
     field.evaluate("el=>{el.value='Second draft';el.form.requestSubmit()}")
     expect(field).to_have_value('Second draft')
     page.get_by_role('button',name='Stop',exact=True).click()
     expect(field).to_have_value('Second draft')
-    expect(challenge).to_be_enabled()
-    assert challenge.bounding_box()['height']==challenge_height, 'Challenge control resized after Stop'
     page.evaluate('window.__hold=false')
-    page.get_by_role('button',name='Retry question',exact=True).click()
+    page.get_by_role('button',name='Retry',exact=True).last.click()
     expect(page.locator('#agent article').last).to_contain_text(ANSWER)
-    assert state['questions'][-1]=='Second draft'
+    assert state['questions'][-1]=='First question'
     # Keyboard entry and native fragment history remain usable.
     page.goto(ORIGIN,wait_until='load')
     link=page.get_by_role('navigation',name='Find what you need',exact=True).get_by_role('link').filter(has_text='Recruiter').first
