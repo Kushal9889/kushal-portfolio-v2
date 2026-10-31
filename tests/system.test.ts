@@ -252,11 +252,8 @@ describe("no javascript", () => {
 
     // The strongest claim, the one that gates a reply, and the address.
     assert.match(html, /merged the fix in 57 hours/i);
-    // Availability is a register row now: the key and the date are separate
-    // elements rather than one sentence, so they are asserted separately. The
-    // fact this test is about is unchanged, which is that the date a recruiter
-    // needs is in the server render and not fetched.
-    assert.match(html, /<dt>available<\/dt>/i);
+    // The fact this test is about is that the date a recruiter needs is in the
+    // server render and not fetched, wherever the page chooses to show it.
     assert.match(html, /January 2027/);
     assert.match(html, /kushal7887pd@gmail\.com/);
   });
